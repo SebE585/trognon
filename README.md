@@ -6,9 +6,10 @@ Open hardware enablement for unsupported Apple phones, A5 to A11
 (iPhone 4S → iPhone X), so that devices left in drawers can run a free
 operating system of their owner's choosing.
 
-**The goal is revival, not a single use case.** A phone Apple stopped
-supporting should become a usable everyday device again — a pocket computer,
-a phone, whatever its owner needs — instead of e-waste.
+**The value is reuse.** Trognon turns an unsupported phone into a base to
+build on: a GPS logger, an emulator, a kiosk, a Linux-like pocket computer —
+whatever its owner wants to make of it. Not necessarily a phone again; a
+platform, instead of e-waste.
 
 > The core is what's left when you've finished the apple — and it grows again.
 
