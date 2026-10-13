@@ -6,6 +6,10 @@ Open hardware enablement for unsupported Apple phones, A5 to A11
 (iPhone 4S → iPhone X), so that devices left in drawers can run a free
 operating system of their owner's choosing.
 
+**The goal is revival, not a single use case.** A phone Apple stopped
+supporting should become a usable everyday device again — a pocket computer,
+a phone, whatever its owner needs — instead of e-waste.
+
 > The core is what's left when you've finished the apple — and it grows again.
 
 ## Origin
