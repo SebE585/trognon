@@ -1,0 +1,13 @@
+Trognon is licensed per component. Full texts are in LICENSES/.
+
+- Kernel-facing code (drivers, device trees, anything meant for upstream
+  Linux): GPL-2.0-only            -> LICENSES/GPL-2.0-only.txt
+- Tooling, boot chain, dongle firmware, scripts (reusable by any OS,
+  BSDs included): MIT             -> LICENSES/MIT.txt
+- Documentation, research notes, support matrix: CC-BY-SA-4.0
+                                  -> LICENSES/CC-BY-SA-4.0.txt
+
+When in doubt, each file states its license in an SPDX-License-Identifier
+header. A file without one falls under the rule above for its directory.
+
+Trognon never distributes Apple firmware or software. Those remain Apple's.
