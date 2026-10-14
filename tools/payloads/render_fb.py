@@ -38,7 +38,8 @@ mu.hook_add(UC_HOOK_CODE, lambda *a: n.__setitem__(0, n[0] + 1))
 try:
     mu.emu_start(0x41000001, 0x42000000, count=20_000_000)
 except UcError as e:
-    print('EMULATION ERROR:', e, 'pc=%#x' % mu.reg_read(UC_ARM_REG_PC)); sys.exit(1)
+    # Exceptions are not modelled: report, but still save what was drawn up to that point.
+    print('EMULATION STOP:', e, 'pc=%#x' % mu.reg_read(UC_ARM_REG_PC))
 fb = bytes(mu.mem_read(FB, W * H * 4))
 # word 0x00RRGGBB, little-endian in memory: bytes are B, G, R, 0
 Image.frombuffer('RGBA', (W, H), fb, 'raw', 'BGRA', 0, 1).convert('RGB').save(sys.argv[2])

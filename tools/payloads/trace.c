@@ -49,6 +49,15 @@ static void rect(int x, int y, int w, int h, u32 color)
 			FB[j * W + i] = color;
 }
 
+/* Debug aid: push the framebuffer out of the write-back D-cache so the screen shows what the CPU
+ * really got through if it freezes (dirty lines are otherwise lost). Costs ~19200 MCRs. */
+static void fb_clean(void)
+{
+	for (u32 a = 0x4fd00000; a < 0x4fd00000 + W * H * 4; a += 32)
+		asm volatile("mcr p15, 0, %0, c7, c10, 1" :: "r"(a) : "memory");
+	asm volatile("dsb sy" ::: "memory");
+}
+
 static void putc_(char c)
 {
 	if (c == '\n' || SC->cx + CELL_W > W) {
@@ -67,7 +76,7 @@ static void putc_(char c)
 	SC->cx += CELL_W;
 }
 
-static void puts_(const char *s) { while (*s) putc_(*s++); }
+static void puts_(const char *s) { while (*s) putc_(*s++); fb_clean(); }
 
 static void hex(u32 v)
 {
@@ -75,7 +84,7 @@ static void hex(u32 v)
 		putc_("0123456789ABCDEF"[(v >> i) & 15]);
 }
 
-static void kv(const char *k, u32 v) { puts_(k); putc_(' '); hex(v); putc_('\n'); }
+static void kv(const char *k, u32 v) { puts_(k); putc_(' '); hex(v); putc_('\n'); fb_clean(); }
 
 static void at(int x, int y, u32 fg) { SC->cx = x; SC->cy = y; SC->fg = fg; }
 
@@ -127,6 +136,14 @@ __attribute__((naked, target("arm"))) void NAME(void) \
 		"1: str r2, [r1], #4\n" \
 		"subs r3, r3, #1\n" \
 		"bne 1b\n" \
+		"movw r1, #:lower16:" STR(BREADCRUMB) "\n" \
+		"movt r1, #:upper16:" STR(BREADCRUMB) "\n" \
+		"movw r3, #400\n" \
+		"2: mcr p15, 0, r1, c7, c10, 1\n" \
+		"add r1, r1, #32\n" \
+		"subs r3, r3, #1\n" \
+		"bne 2b\n" \
+		"dsb sy\n" \
 		"sub sp, sp, #4\n" \
 		"mov r0, #" STR(KIND) "\n" \
 		"mov r1, lr\n" \
