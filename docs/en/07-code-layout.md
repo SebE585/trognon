@@ -3,8 +3,8 @@
 **Status: done for the 3GS payloads (2026-10-15).** They started as one file, `tools/payloads/trace.c`,
 with the 3GS addresses written inline, which does not survive a second chip. The code is now split into
 `hal/` (portable), `soc/` (per-chip constants) and `trace.c` (the payload). The regression check was an
-emulated render of every stage, identical before and after the split (EMU); the split itself has **not**
-been re-run on the phone yet. The A4 header exists but is deliberately unusable until verified.
+emulated render of every stage, identical before and after the split (EMU), then `trace.bin` built from
+the split code was run on the phone and showed the same screen as before (**DEVICE**, 2026-10-15). The A4 header exists but is deliberately unusable until verified.
 
 ![Code layers, from hardware to Mods](../img/code-layers.svg)
 

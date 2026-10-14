@@ -3,8 +3,8 @@
 **Statut : fait pour les payloads du 3GS (2026-10-15).** Ils sont partis d'un seul fichier, `tools/payloads/trace.c`,
 avec les adresses du 3GS écrites en dur, ce qui ne survit pas à une deuxième puce. Le code est maintenant découpé en
 `hal/` (portable), `soc/` (constantes par puce) et `trace.c` (le payload). La vérification de non-régression est un
-rendu émulé de chaque étape, identique avant et après le découpage (EMU) ; le découpage n'a **pas** encore été
-rejoué sur le téléphone. L'en-tête A4 existe mais est volontairement inutilisable tant qu'il n'est pas vérifié.
+rendu émulé de chaque étape, identique avant et après le découpage (EMU), puis `trace.bin` construit depuis le
+code découpé a tourné sur le téléphone et a affiché le même écran qu'avant (**DEVICE**, 2026-10-15). L'en-tête A4 existe mais est volontairement inutilisable tant qu'il n'est pas vérifié.
 
 ![Couches du code, du matériel aux Mods](../img/code-layers.svg)
 
