@@ -3,31 +3,45 @@
  * Read-only USB identification: enumerate, read descriptors, parse the
  * serial string. No writes, no control transfers beyond standard
  * GET_DESCRIPTOR. See include/trognon/usb.h for the scope boundary.
+ *
+ * Important: in Recovery/DFU mode, Apple's serial string descriptor looks
+ * like:
+ *   "CPID:8930 CPRV:20 CPFM:03 SCEP:01 BDID:00 ECID:... IBFL:1B SRTG:[...]"
+ * It does NOT contain a literal model identifier such as "iPhone4,1" — the
+ * only reliable field is CPID (hex). In normal mode (booted iOS), the
+ * serial string is just the device's actual serial number and carries no
+ * chip or model information at all. This was wrong in an earlier version
+ * of this file (it searched for the substring "iPhone", which never
+ * matches either case) — verified 2026-10-14 against a real iPhone 3GS.
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <libusb.h>
 
 #include "trognon/usb.h"
 
-/* iOS/iBoot serial string descriptors look like:
- *   "CPID:8940 CPRV:11 CPFM:03 SCEP:01 BDID:00 ECID:... IBFL:03 ... PWND:[...]"
- * (DFU/recovery) or just the model identifier in normal mode. We only parse
- * what's needed to classify state and, if present, the PWND marker — we
- * never set it ourselves. */
 static enum trognon_bus_state
-classify_state(const char *serial)
+classify_state(const char *serial, uint32_t *cpid_out)
 {
+    *cpid_out = 0;
     if (!serial || serial[0] == '\0')
         return TROGNON_STATE_UNKNOWN;
+
+    const char *cpid_field = strstr(serial, "CPID:");
+    if (!cpid_field)
+        return TROGNON_STATE_NORMAL; /* booted iOS: plain serial number */
+
+    *cpid_out = (uint32_t)strtoul(cpid_field + strlen("CPID:"), NULL, 16);
+
     if (strstr(serial, "PWND:"))
         return TROGNON_STATE_DFU_PWNED;
-    if (strstr(serial, "CPID:"))
-        return TROGNON_STATE_DFU; /* also covers plain recovery strings;
-                                      refined later once we have real
-                                      descriptor samples to test against */
-    return TROGNON_STATE_NORMAL;
+
+    /* Recovery and DFU both carry CPID; telling them apart needs another
+     * field (IBFL's DFU bit) we don't parse yet. Report DFU for now —
+     * refine once we have samples of both from a real device. */
+    return TROGNON_STATE_DFU;
 }
 
 int
@@ -74,19 +88,17 @@ trognon_usb_probe(struct trognon_probe_result *result)
             }
         }
 
-        result->state = classify_state(result->serial);
+        uint32_t cpid = 0;
+        result->state = classify_state(result->serial, &cpid);
+        result->cpid = cpid;
 
-        /* Best-effort extraction of "iPhoneX,Y" out of the serial string,
-         * if present. Normal-mode serials don't carry it; this is a
-         * placeholder until we have real device samples. */
-        const char *model = strstr(result->serial, "iPhone");
-        if (model) {
-            strncpy(result->model_identifier, model,
-                    sizeof(result->model_identifier) - 1);
-        }
-
-        if (result->model_identifier[0])
-            result->device = trognon_device_find_by_identifier(result->model_identifier);
+        if (cpid)
+            result->device = trognon_device_find_by_cpid(cpid);
+        /* In normal mode there is nothing in the descriptors to identify
+         * the model from — result->device stays NULL. A future version
+         * could maintain a separate table of normal-mode product ids
+         * (result->product_id), but that's a distinct, less reliable
+         * identification path and not implemented here. */
 
         libusb_close(handle);
         break; /* first match only, for now */

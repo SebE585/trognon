@@ -42,6 +42,8 @@ cmd_probe(void)
            result.vendor_id, result.product_id, state_name(result.state));
     if (result.serial[0])
         printf("  serial string: %s\n", result.serial);
+    if (result.cpid)
+        printf("  CPID: 0x%04x\n", result.cpid);
 
     if (result.device) {
         printf("  identified as: %s (%s)\n",

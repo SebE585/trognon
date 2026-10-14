@@ -52,9 +52,19 @@ struct trognon_support {
 
 struct trognon_device {
     const char *model_name;      /* e.g. "iPhone 4S" */
-    const char *model_identifier; /* e.g. "iPhone4,1" */
+    const char *model_identifier; /* e.g. "iPhone4,1" — informational only,
+                                      never appears literally on the USB bus */
     enum trognon_soc_family soc;
     const char *soc_codename;     /* e.g. "S5L8940" */
+    uint32_t cpid;                 /* Chip ID as reported in the Recovery/DFU
+                                       serial string ("CPID:xxxx", hex).
+                                       Apple's codenames encode it directly:
+                                       T8015 -> 0x8015, S5L8940 -> 0x8940.
+                                       This is the only reliable field to
+                                       identify a device while it is in
+                                       Recovery or DFU mode; the literal
+                                       model identifier is NOT present on
+                                       the bus there. */
     const char *dt_platform;      /* mainline Linux DT name, or NULL if none */
     enum trognon_unlock_path unlock_path;
     struct trognon_support support;
@@ -64,9 +74,15 @@ struct trognon_device {
 extern const struct trognon_device trognon_device_catalog[];
 extern const size_t trognon_device_catalog_count;
 
-/* Look up by USB string descriptor product id, e.g. "iPhone4,1" captured
- * from a device already in DFU/Recovery mode. Returns NULL if unknown.
- * Pure lookup, no I/O. */
+/* Look up by model identifier string, e.g. "iPhone4,1". This string is
+ * never read off the USB bus directly (see cpid above) — it's for callers
+ * that already know the model some other way (user input, a prior lookup
+ * by cpid). Returns NULL if unknown. Pure lookup, no I/O. */
 const struct trognon_device *trognon_device_find_by_identifier(const char *model_identifier);
+
+/* Look up by CPID, parsed from a Recovery/DFU serial string's "CPID:xxxx"
+ * field. This is the lookup that actually works while probing a real
+ * device. Returns NULL if unknown or cpid is 0. Pure lookup, no I/O. */
+const struct trognon_device *trognon_device_find_by_cpid(uint32_t cpid);
 
 #endif /* TROGNON_DEVICE_H */

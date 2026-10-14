@@ -34,9 +34,12 @@ struct trognon_probe_result {
     uint16_t vendor_id;
     uint16_t product_id;
     enum trognon_bus_state state;
-    char serial[64];           /* USB serial string descriptor, truncated */
-    char model_identifier[32]; /* parsed from the serial string, e.g. "iPhone4,1" */
-    const struct trognon_device *device; /* NULL if not in device_db yet */
+    char serial[64];   /* raw USB serial string descriptor, truncated */
+    uint32_t cpid;      /* parsed from "CPID:xxxx" in the serial string;
+                            0 if the device is in normal mode (no CPID
+                            field there) or state is unknown */
+    const struct trognon_device *device; /* looked up by cpid; NULL if
+                                             unknown or in normal mode */
 };
 
 /* Opens libusb, enumerates devices with TROGNON_APPLE_VENDOR_ID, reads

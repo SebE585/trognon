@@ -16,6 +16,15 @@ main(void)
     assert(strcmp(d3gs->model_name, "iPhone 3GS") == 0);
     assert(d3gs->soc == TROGNON_SOC_S5L8920);
     assert(d3gs->unlock_path == TROGNON_UNLOCK_HOST_DIRECT);
+    assert(d3gs->cpid == 0x8920);
+
+    /* The lookup that actually works on a real device in Recovery/DFU:
+     * by CPID, not by model_identifier (verified against a real iPhone
+     * 3GS on 2026-10-14 — the literal model string never appears on the
+     * bus). */
+    assert(trognon_device_find_by_cpid(0x8920) == d3gs);
+    assert(trognon_device_find_by_cpid(0) == NULL);
+    assert(trognon_device_find_by_cpid(0xffff) == NULL);
 
     const struct trognon_device *d4 = trognon_device_find_by_identifier("iPhone3,1");
     assert(d4 != NULL);
