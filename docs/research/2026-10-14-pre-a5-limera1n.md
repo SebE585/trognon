@@ -75,11 +75,13 @@ it a full computer".
 
 - Added as two SoC families in `device_db.c` (`TROGNON_SOC_S5L8920`,
   `TROGNON_SOC_A4`, both `TROGNON_UNLOCK_HOST_DIRECT`).
-- No modern OS port target: last related work (OpeniBoot/iDroid) targeted
-  the A4's predecessor generation and died in 2012 — see
-  `docs/research/2026-10-13-a5-a6-32bit.md`. Don't invest kernel-port effort
-  here; it's useful as a cheap device to validate the boot-chain tooling
-  (identification, orchestration) end to end.
+- **Correction, 2026-10-14 (later same day):** this section originally said
+  "no modern OS port target, don't invest kernel-port effort here". Reversed
+  — see `docs/research/2026-10-14-microkernel-3gs.md`: OpeniBoot/iDroid has
+  more S5L8920 support than assumed (an explicit `iphone3gs` target, with a
+  2015 trace of it actually running interactively on real 3GS hardware).
+  The 3GS is now a real microkernel/driver target, not just boot-chain test
+  hardware. Decision taken 2026-10-14.
 
 ## Not verified
 
