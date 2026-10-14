@@ -20,9 +20,8 @@ Les familles ne forment pas une ligne continue. Il y a une rupture entre l'iPhon
 Le 3GS et l'iPhone 4 sont donc dans une même configuration (bare metal, notre code), le 4S et la suite
 dans une autre (du travail d'OS existant à rejoindre). Ce qui passe de A à B, c'est la méthode et les
 habitudes (niveaux de preuve, idée de la console à l'écran), pas les adresses. Dans le régime A, les deux
-téléphones diffèrent par l'outil d'exploit (limera1n contre SHAtter) : ma phrase précédente disant que
-les deux utilisent limera1n était imprécise, la [note de recherche](../research/2026-10-14-pre-a5-limera1n.md)
-porte la correction.
+téléphones diffèrent par l'outil d'exploit (limera1n contre SHAtter) : et d'anciens textes disent limera1n
+pour les deux : la [note de recherche](../research/2026-10-14-pre-a5-limera1n.md) porte la correction.
 
 ![Familles de puces et recouvrements](../img/chips-overlap.svg)
 

@@ -20,9 +20,8 @@ The families do not form one smooth line. There is a break between the iPhone 4 
 So the 3GS and the iPhone 4 sit together in one configuration (bare metal, our code), and the 4S and
 what follows in another (existing OS work to join). What carries over from A to B is the method and
 the habits (evidence levels, on-screen console idea), not the addresses. Inside regime A the two
-phones differ in their exploit tool (limera1n versus SHAtter), so the earlier statement that both use
-limera1n was imprecise: the [research note](../research/2026-10-14-pre-a5-limera1n.md) records the
-correction.
+phones differ in their exploit tool (limera1n versus SHAtter), and some older texts say limera1n
+for both: the [research note](../research/2026-10-14-pre-a5-limera1n.md) records the correction.
 
 ![Chip families and overlaps](../img/chips-overlap.svg)
 
