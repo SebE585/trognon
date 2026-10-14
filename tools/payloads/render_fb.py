@@ -4,6 +4,7 @@ Runs PAYLOAD.bin (Thumb, at 0x41000000) against a fake 320x480 RGB888
 framebuffer at 0x4fd00000, stubs env_set (0x84011798), and saves the result as
 a PNG. Verifies the LOGIC only: no caches, no timing, and the framebuffer
 address is the one read on the device (docs/journal/2026-10-15.md).
+The 1 MiB section 0x410xxxxx is mapped like on the device (payload, scratch, handler stack).
 Unmapped accesses (a payload writing outside the framebuffer) are reported.
 
 Usage: python3 render_fb.py PAYLOAD.bin OUT.png   (needs unicorn, Pillow)
@@ -15,7 +16,7 @@ from PIL import Image
 FB, W, H = 0x4fd00000, 320, 480
 code = open(sys.argv[1], 'rb').read()
 mu = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
-mu.mem_map(0x41000000, 0x10000); mu.mem_write(0x41000000, code)
+mu.mem_map(0x41000000, 0x100000); mu.mem_write(0x41000000, code)
 mu.mem_map(0x42000000, 0x10000)                 # stack + return sentinel
 mu.mem_map(FB, (W * H * 4 + 0xfff) & ~0xfff)
 mu.mem_map(0x84011000, 0x1000); mu.mem_write(0x84011798, b'\x70\x47' * 2)

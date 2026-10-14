@@ -4,8 +4,16 @@ OBJCOPY = arm-none-eabi-objcopy
 CFLAGS  = -mthumb -mcpu=cortex-a8 -Os -ffreestanding -fno-builtin -fno-pic \
           -fno-tree-loop-distribute-patterns -nostdlib -Wall -Wextra
 
+font.h: gen_font.py
+	python3 -I gen_font.py $@
+
+trace.elf trace_offline.elf: font.h
+
 %.elf: %.c payload.ld
 	$(CC) $(CFLAGS) -T payload.ld -o $@ $<
+
+trace_offline.elf: trace.c payload.ld font.h
+	$(CC) $(CFLAGS) -DOFFLINE -T payload.ld -o $@ $<
 
 %.bin: %.elf
 	$(OBJCOPY) -O binary $< $@
