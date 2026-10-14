@@ -1,5 +1,7 @@
 # Trognon
 
+**📖 Documentation site: [sebe585.github.io/trognon](https://sebe585.github.io/trognon/)** · English / Français, with diagrams and an evidence level on every claim.
+
 STATUT: ACTIF — 2026-10-15 (first code running on an iPhone 3GS: on-screen console and exception handlers; see Documentation)
 
 Open hardware enablement for unsupported Apple phones, A5 to A11
@@ -15,7 +17,7 @@ platform, instead of e-waste.
 
 ## Documentation
 
-Reverse-engineering notes with an evidence level on every claim (observed on the device,
+Same content as the [documentation site](https://sebe585.github.io/trognon/): reverse-engineering notes with an evidence level on every claim (observed on the device,
 emulated, read in source, or hypothesis), with diagrams:
 [English](docs/en/README.md) · [Français](docs/fr/README.md).
 Direction for what comes next (small self-contained *Mods* that grow a shared library instead
