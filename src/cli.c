@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "trognon/chain.h"
 #include "trognon/device.h"
 #include "trognon/usb.h"
 
@@ -71,6 +72,48 @@ cmd_probe(void)
     return 0;
 }
 
+static const char *
+chain_action_name(enum trognon_chain_action action)
+{
+    switch (action) {
+    case TROGNON_CHAIN_ENTER_DFU:        return "put the device in DFU";
+    case TROGNON_CHAIN_RUN_UNLOCK_TOOL:  return "run an external unlock tool";
+    case TROGNON_CHAIN_ALREADY_UNLOCKED: return "nothing — already unlocked";
+    case TROGNON_CHAIN_NOTHING_TO_DO:
+    default:                             return "nothing to do";
+    }
+}
+
+static int
+cmd_unlock(void)
+{
+    struct trognon_probe_result results[TROGNON_MAX_DEVICES];
+    size_t count = 0;
+    int rc = trognon_usb_probe_all(results, TROGNON_MAX_DEVICES, &count);
+    if (rc < 0) {
+        fprintf(stderr, "trognon: USB probe failed (libusb error %d)\n", rc);
+        return 1;
+    }
+    if (count == 0) {
+        printf("No Apple USB device found.\n");
+        return 0;
+    }
+
+    printf("trognon-unlock: planning only — no external tool is invoked by "
+           "this build. See docs/architecture.md and docs/upstream-tools.md.\n\n");
+
+    for (size_t i = 0; i < count; i++) {
+        struct trognon_chain_plan plan = trognon_chain_plan(&results[i]);
+        printf("[%zu] product=%04x state=%s\n",
+               i, results[i].product_id, state_name(results[i].state));
+        printf("    next step: %s (%s)\n",
+               chain_action_name(plan.action), plan.reason);
+        if (plan.tool_hint)
+            printf("    recommended tool: %s\n", plan.tool_hint);
+    }
+    return 0;
+}
+
 static int
 cmd_list_devices(void)
 {
@@ -88,11 +131,13 @@ int
 main(int argc, char **argv)
 {
     if (argc < 2) {
-        fprintf(stderr, "usage: %s {probe|list-devices}\n", argv[0]);
+        fprintf(stderr, "usage: %s {probe|unlock|list-devices}\n", argv[0]);
         return 1;
     }
     if (strcmp(argv[1], "probe") == 0)
         return cmd_probe();
+    if (strcmp(argv[1], "unlock") == 0)
+        return cmd_unlock();
     if (strcmp(argv[1], "list-devices") == 0)
         return cmd_list_devices();
 

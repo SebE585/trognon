@@ -67,6 +67,13 @@ struct trognon_device {
                                        the bus there. */
     const char *dt_platform;      /* mainline Linux DT name, or NULL if none */
     enum trognon_unlock_path unlock_path;
+    const char *unlock_tool_hint; /* Which upstream tool trognon-unlock would
+                                      point at for this device. Guidance
+                                      text, not a command line: exact CLI
+                                      syntax for each tool is not yet
+                                      verified on real hardware, so nothing
+                                      in this repo auto-generates argv from
+                                      it. See docs/upstream-tools.md. */
     struct trognon_support support;
 };
 

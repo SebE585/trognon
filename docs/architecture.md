@@ -77,8 +77,22 @@ tests/
 | pongoOS | micro-noyau de staging | upstream |
 | m1n1 (branche idevice, Hoolock) | bootloader intermédiaire | upstream |
 
+## État actuel (2026-10-14)
+
+Couche 1 (`libtrognon`) et une première tranche de la couche 2 existent :
+`trognon unlock` identifie l'appareil branché, décide de l'action suivante
+(mettre en DFU / lancer un outil / déjà débridé) et **affiche** l'outil
+recommandé — il ne lance encore aucun sous-processus. La logique de
+planification (`src/chain.c`, `trognon_chain_plan()`) est pure et testable
+sans matériel (`tests/test_chain.c`).
+
+L'exécution réelle (fork/exec vers `ipwndfu`/`gaster`/Legacy iOS Kit, jamais
+`system()`) est volontairement reportée : la syntaxe exacte de chaque outil
+n'a pas encore été vérifiée sur un appareil réel, et fabriquer des arguments
+de commande non vérifiés serait pire que de ne pas automatiser cette étape.
+
 ## Prochaine étape concrète
 
-`libtrognon` : énumération USB + table `device_db` pour les A5 à A11. Aucune
-écriture sur le bus, testable sans appareil branché (table statique +
-parsing de descripteurs fournis en fixture).
+Installer et vérifier la syntaxe réelle d'au moins un outil (`ipwndfu` ou
+Legacy iOS Kit) contre le 3GS déjà en DFU host-direct, puis ajouter
+l'exécution dans `src/chain.c` derrière un flag explicite (pas par défaut).

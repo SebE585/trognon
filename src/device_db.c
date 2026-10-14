@@ -27,6 +27,10 @@ const struct trognon_device trognon_device_catalog[] = {
                                                         (359.3.2) need
                                                         alloc8 instead;
                                                         both are host-direct. */
+        .unlock_tool_hint = "limera1n-based tooling (e.g. LukeZGD/Legacy "
+                             "iOS Kit) — host-direct claim not yet "
+                             "verified against hardware, see "
+                             "docs/research/2026-10-14-pre-a5-limera1n.md",
         .support = {
             .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "Oldest family in this catalog. No modern OS port "
@@ -50,6 +54,10 @@ const struct trognon_device trognon_device_catalog[] = {
                                                         host via USB control
                                                         transfers, no helper
                                                         board — unlike A5. */
+        .unlock_tool_hint = "limera1n-based tooling (e.g. LukeZGD/Legacy "
+                             "iOS Kit) — host-direct claim not yet "
+                             "verified against hardware, see "
+                             "docs/research/2026-10-14-pre-a5-limera1n.md",
         .support = {
             .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "No modern OS port; useful as a boot-chain test device "
@@ -66,6 +74,9 @@ const struct trognon_device trognon_device_catalog[] = {
         .dt_platform = NULL, /* no mainline DT; closest base is Project
                                  Cascadia (S5L8942, iPad mini 1) */
         .unlock_path = TROGNON_UNLOCK_HELPER_BOARD,
+        .unlock_tool_hint = "LukeZGD/checkm8-a5 via a Pico RP2040 or "
+                             "Arduino+MAX3421E helper board — host CLI "
+                             "cannot drive this exploit alone",
         .support = {
             .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "No port exists yet; nearest work is Project Cascadia "
@@ -80,6 +91,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "S5L8950",
         .dt_platform = NULL,
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
+        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
         .support = {
             .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "checkm8 works over plain USB (ipwndfu); no OS port found.",
@@ -93,6 +105,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "S5L8960X",
         .dt_platform = "s5l8960x",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
+        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "Mainline since Linux 6.13 (framebuffer, buttons).",
@@ -106,6 +119,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "T7000",
         .dt_platform = "t7000",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
+        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "Mainline since Linux 6.13.",
@@ -119,6 +133,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "S8000",
         .dt_platform = "s8000",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
+        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "Mainline since Linux 6.13; brightness since 6.15.",
@@ -132,6 +147,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "T8010",
         .dt_platform = "t8010",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
+        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "Mainline since Linux 6.13. First Linux boot via "
@@ -146,6 +162,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "T8015",
         .dt_platform = "t8015",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
+        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 1, .gpu = 0,
             .notes = "Internal NVMe storage mainline since Linux 6.18 "
@@ -160,6 +177,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "T8015",
         .dt_platform = "t8015",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
+        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 1, .gpu = 0,
             .notes = "Same T8015 as iPhone 8; brightness control not "
