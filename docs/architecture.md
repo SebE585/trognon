@@ -100,9 +100,10 @@ de commande non vérifiés serait pire que de ne pas automatiser cette étape.
 famille, la couche 3 réaliste n'est pas un mini-noyau mais le chargement
 d'un **iBSS patché**, déjà implémenté côté outil orchestré
 (`dfuexec.py`'s `boot_ibss()` dans ipwndfu, pas de code à écrire ici).
-Nécessite un IPSW officiel (iPhone2,1 4.3.5) pour en extraire l'iBSS,
-jamais hébergé dans ce dépôt — voir la politique firmware dans
-`docs/upstream-tools.md`.
+Fait le 2026-10-14 sur le 3GS : iBSS envoyé avec succès, appareil atteint
+le **Recovery mode**, point le plus avancé de la chaîne de démarrage
+testé à ce jour. Voir
+[`2026-10-14-pre-a5-limera1n.md`](research/2026-10-14-pre-a5-limera1n.md).
 
 Pour A7–A11, l'étape reste d'installer et vérifier la syntaxe réelle
 d'`ipwndfu`/`gaster` puis d'ajouter l'exécution dans `src/chain.c` derrière
