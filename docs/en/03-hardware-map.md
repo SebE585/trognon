@@ -60,8 +60,9 @@ Read-only survey. All registers answered, no abort.
 
 - The iBSS left **14 sources enabled in VIC0** (bits 6, 14, 17 and 19 to 29), all routed to IRQ,
   none pending, and IRQs are unmasked in the CPU: interrupts are live while our code runs.
-- `SOFTINT` is readable, so the register exists. Reading 0 does not prove that writing it raises an
-  interrupt: that is the next test (**HYPOTHESIS**).
+- `SOFTINT` works: writing bit 0 made `RAW` and `STATUS` read 1 and raised a real IRQ, taken by our handler
+  (see the [IRQ test](02-exception-console.md)). `INTENCLEAR` clears `ENABLE`, `SOFTINTCLEAR` clears the soft
+  interrupt, both read back on the device.
 - The iBSS handlers sit at `0x8400F9EC` (IRQ vector word `0x38`) and `0x8400FA34` (FIQ vector word `0x3C`).
 - Which peripheral each enabled bit is stays unknown.
 

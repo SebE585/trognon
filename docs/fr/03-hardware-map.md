@@ -60,8 +60,9 @@ Relevé en lecture seule. Tous les registres ont répondu, sans abort.
 
 - L'iBSS a laissé **14 sources activées dans VIC0** (bits 6, 14, 17 et 19 à 29), toutes en IRQ, aucune
   en attente, et les IRQ sont démasquées côté CPU : les interruptions sont vivantes pendant que notre code tourne.
-- `SOFTINT` est lisible, donc le registre existe. Lire 0 ne prouve pas qu'y écrire lève une
-  interruption : c'est le prochain test (**HYPOTHESIS**).
+- `SOFTINT` fonctionne : y écrire le bit 0 a fait lire 1 à `RAW` et `STATUS` et a levé une vraie IRQ, prise par
+  notre gestionnaire (voir le [test d'IRQ](02-exception-console.md)). `INTENCLEAR` vide `ENABLE`, `SOFTINTCLEAR` efface
+  l'interruption logicielle, relus tous deux sur l'appareil.
 - Les gestionnaires de l'iBSS sont en `0x8400F9EC` (mot de vecteur IRQ `0x38`) et `0x8400FA34` (mot FIQ `0x3C`).
 - Quel périphérique correspond à chaque bit activé reste inconnu.
 

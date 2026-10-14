@@ -5,14 +5,16 @@ nodes:
   - { id: l0, label: "L0  Run our code",             subtitle: "DONE",  style: stage }
   - { id: l1, label: "L1  Text on screen",           subtitle: "DONE",  style: stage }
   - { id: l2, label: "L2  Exceptions, visible dump", subtitle: "DONE",  style: stage }
-  - { id: l3, label: "L3  IRQ and timer",            subtitle: "NEXT",  style: accent }
+  - { id: l3, label: "L3  IRQ (software-triggered)", subtitle: "DONE",  style: stage }
+  - { id: l3b, label: "L3b Timer",                   subtitle: "NEXT",  style: accent }
   - { id: l4, label: "L4  Buttons (GPIO)",           subtitle: "to do", style: service }
   - { id: l5, label: "L5  Content over USB",         subtitle: "to do", style: service }
   - { id: l6, label: "L6  Storage, touch, sensors",  subtitle: "later", style: muted }
 edges:
   - { from: l0, to: l1 }
   - { from: l1, to: l2 }
-  - { from: l2, to: l3, style: accent }
-  - { from: l3, to: l4 }
+  - { from: l2, to: l3 }
+  - { from: l3, to: l3b, style: accent }
+  - { from: l3b, to: l4 }
   - { from: l4, to: l5 }
   - { from: l5, to: l6, style: dead }

@@ -36,10 +36,22 @@ shows which exception was entered.
 | UNDEF | Thumb `udf #0` | `LR` = address of the `udf` + 2, `SPSR` with T=1, clean return |
 | Data abort | `SCTLR.A` set, unaligned `ldr` | `FSR = 0x1` (alignment), `FAR` = the faulting address, clean return |
 | Prefetch abort | Thumb `bkpt #0` | `IFSR = 0x2` (debug event), `LR` = bkpt + 4, clean return |
+| IRQ | VIC0 `SOFTINT`, source 0, IRQs unmasked | handler entered once (`HITS 1`, `STRAY 0`), `STATUS = 1` seen inside, interrupt acknowledged and cleared, return with CPSR restored, the iBSS's enables back (`0x3FFA4040`) |
 
 `IFAR` after a debug event is architecturally UNKNOWN; we do not rely on it.
-Not yet tested: IRQ, FIQ, SWI. A `svc` from SVC mode would overwrite `SP_svc`/`LR_svc`,
+Not yet tested: FIQ, SWI. A `svc` from SVC mode would overwrite `SP_svc`/`LR_svc`,
 so the SWI test needs SYS mode (**HYPOTHESIS**).
+
+## The IRQ test (DEVICE, 2026-10-15)
+
+The iBSS leaves 14 VIC0 sources enabled and IRQs unmasked, so a stray interrupt could land in our
+handler at any time. The test therefore (1) masks IRQs, (2) saves VIC0 `ENABLE` and clears all of it, (3) hooks
+the IRQ vector, (4) enables one free source (bit 0) and raises it with `SOFTINT`, (5) unmasks, waits for our
+handler, which acknowledges (read `VICADDRESS`), clears the soft interrupt and the enable, and signals end of
+interrupt, (6) unhooks the vector **before** restoring the iBSS's enables, then restores the CPU mask.
+Read on the screen: `RAW = STAT = 1` right after the `SOFTINT` write, then `RAW2 = STAT2 = 0` and
+`EN BCK = 0x3FFA4040`. `VICADDRESS` read back `0` for source 0 (consistent with the convention that source n has
+vector address n, **HYPOTHESIS**).
 
 ## Why an alignment fault
 
@@ -52,7 +64,7 @@ bus access, so the test touches nothing.
 
 ```sh
 cd tools/payloads
-make trace.bin trace_pabt.bin             # arm-none-eabi-gcc, Thumb
+make trace.bin trace_pabt.bin trace_irq.bin   # arm-none-eabi-gcc, Thumb
 python3 -I render_fb.py trace.bin trace.png   # offline render with Unicorn
 ```
 

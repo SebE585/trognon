@@ -36,10 +36,22 @@ a été prise.
 | UNDEF | `udf #0` Thumb | `LR` = adresse de l'`udf` + 2, `SPSR` avec T=1, retour propre |
 | Data abort | `SCTLR.A` armé, `ldr` non aligné | `FSR = 0x1` (alignement), `FAR` = l'adresse fautive, retour propre |
 | Prefetch abort | `bkpt #0` Thumb | `IFSR = 0x2` (debug event), `LR` = bkpt + 4, retour propre |
+| IRQ | VIC0 `SOFTINT`, source 0, IRQ démasquées | gestionnaire pris une fois (`HITS 1`, `STRAY 0`), `STATUS = 1` vu dedans, interruption acquittée et effacée, retour avec CPSR restauré, activations de l'iBSS revenues (`0x3FFA4040`) |
 
 `IFAR` après un debug event est UNKNOWN selon l'architecture : on ne s'en sert pas. Non testés :
-IRQ, FIQ, SWI. Un `svc` depuis le mode SVC écraserait `SP_svc`/`LR_svc`, donc le test SWI demande
+FIQ, SWI. Un `svc` depuis le mode SVC écraserait `SP_svc`/`LR_svc`, donc le test SWI demande
 le mode SYS (**HYPOTHESIS**).
+
+## Le test d'IRQ (DEVICE, 2026-10-15)
+
+L'iBSS laisse 14 sources de VIC0 activées et les IRQ démasquées : une interruption parasite pourrait tomber dans
+notre gestionnaire à tout moment. Le test (1) masque les IRQ, (2) sauvegarde `ENABLE` de VIC0 et le vide, (3) accroche
+le vecteur IRQ, (4) active une source libre (bit 0) et la lève avec `SOFTINT`, (5) démasque et attend notre
+gestionnaire, qui acquitte (lecture de `VICADDRESS`), efface l'interruption logicielle et l'activation, puis signale
+la fin d'interruption, (6) décroche le vecteur **avant** de restaurer les activations de l'iBSS, puis restaure le masque CPU.
+Lu à l'écran : `RAW = STAT = 1` juste après l'écriture de `SOFTINT`, puis `RAW2 = STAT2 = 0` et `EN BCK = 0x3FFA4040`.
+`VICADDRESS` a relu `0` pour la source 0 (cohérent avec la convention « la source n a l'adresse de vecteur n »,
+**HYPOTHESIS**).
 
 ## Pourquoi un défaut d'alignement
 
@@ -52,7 +64,7 @@ le test ne touche à rien.
 
 ```sh
 cd tools/payloads
-make trace.bin trace_pabt.bin             # arm-none-eabi-gcc, Thumb
+make trace.bin trace_pabt.bin trace_irq.bin   # arm-none-eabi-gcc, Thumb
 python3 -I render_fb.py trace.bin trace.png   # rendu hors ligne avec Unicorn
 ```
 

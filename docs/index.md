@@ -34,7 +34,8 @@ d'exceptions CPU sans planter. Tout ce qui suit a été observé sur l'appareil.
 | Run our code from DFU, nothing written to the phone | <span class="tag tag-device">DEVICE</span> |
 | Text and shapes on the screen | <span class="tag tag-device">DEVICE</span> |
 | UNDEF, data abort, prefetch abort with a readable dump | <span class="tag tag-device">DEVICE</span> |
-| Interrupts and timer | <span class="tag tag-source">SOURCE</span> next |
+| Interrupts (software-triggered IRQ) | <span class="tag tag-device">DEVICE</span> |
+| Timer, then buttons | <span class="tag tag-source">SOURCE</span> next |
 | Buttons, content over USB, storage, touch | <span class="tag tag-hyp">HYPOTHESIS</span> |
 
 ## By chip / Par puce

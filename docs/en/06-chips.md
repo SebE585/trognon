@@ -49,7 +49,7 @@ address, the display path and the iBSS patch offsets: they are re-read on each c
   [boot chain](01-boot-chain.md). Registers, display, GPIO and interrupt controllers:
   [hardware map](03-hardware-map.md). Exceptions: [console](02-exception-console.md).
 - 320 x 480 screen, framebuffer `0x4fd00000`.
-- Next rung of the [ladder](04-mods.md): interrupts and a timer.
+- Next rung of the [ladder](04-mods.md): a timer (the software-triggered IRQ is proven).
 - OpeniBoot/iDroid is the code we read for addresses, and it is dormant since 2022
   (**SOURCE**, [research](../research/2026-10-14-microkernel-3gs.md)).
 
@@ -101,7 +101,7 @@ address, the display path and the iBSS patch offsets: they are re-read on each c
 
 ## Order of work
 
-1. 3GS: finish the interrupt rung (in progress).
+1. 3GS: the timer, then buttons.
 2. iPhone 4: prove the per-chip split with a second bench.
 3. iPhone 4S: Pico, then Cascadia's path on S5L8940.
 4. The rest follows the upstream projects already working there.

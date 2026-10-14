@@ -49,7 +49,7 @@ les adresses, le chemin d'affichage et les offsets de patch de l'iBSS : on les r
   [chaîne de démarrage](01-boot-chain.md). Registres, écran, GPIO et contrôleurs d'interruptions :
   [carte matérielle](03-hardware-map.md). Exceptions : [console](02-exception-console.md).
 - Écran 320 x 480, framebuffer `0x4fd00000`.
-- Prochain barreau de l'[échelle](04-mods.md) : interruptions et timer.
+- Prochain barreau de l'[échelle](04-mods.md) : un timer (l'IRQ déclenchée par logiciel est prouvée).
 - OpeniBoot/iDroid est le code lu pour les adresses, dormant depuis 2022
   (**SOURCE**, [recherche](../research/2026-10-14-microkernel-3gs.md)).
 
@@ -101,7 +101,7 @@ les adresses, le chemin d'affichage et les offsets de patch de l'iBSS : on les r
 
 ## Ordre de travail
 
-1. 3GS : finir le barreau des interruptions (en cours).
+1. 3GS : le timer, puis les boutons.
 2. iPhone 4 : prouver le découpage par puce avec un deuxième banc.
 3. iPhone 4S : le Pico, puis le chemin de Cascadia sur S5L8940.
 4. Le reste suit les projets amont déjà actifs.
