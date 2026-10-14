@@ -105,7 +105,7 @@ u32 exc_c(u32 kind, u32 lr, u32 spsr, u32 *r)
 	int expected = SC->expected;
 	if (expected)
 		SC->hit = SC->hit + 1;
-	at(4, kind ? 292 : 134, expected ? 0x0000B050 : 0x00E02020);   /* UNDEF and ABT dumps stack, not overlap */
+	at(4, kind ? 306 : 134, expected ? 0x0000B050 : 0x00E02020);   /* UNDEF and ABT dumps stack, not overlap */
 	puts_(expected ? "EXPECTED " : "UNEXPECTED ");
 	puts_(name[kind]);
 	putc_('\n');
@@ -182,15 +182,21 @@ static void hook(int on)
 #endif
 
 #if STAGE >= 3
-static u32 find_unmapped_va(void)
+/* First section whose descriptor is a translation fault (type 00) in the live page table.
+ * Scan starts at index 1 (index 0 is the vector page). Returns the VA, or 0 if none exists. */
+static u32 find_unmapped_va(u32 *nfault)
 {
-	u32 ttbr;
+	u32 ttbr, first = 0;
 	asm volatile("mrc p15, 0, %0, c2, c0, 0" : "=r"(ttbr));
 	volatile u32 *tt = (volatile u32 *)(ttbr & ~0x3fffu);
-	for (u32 idx = 0x300; idx < 0x800; idx++)
-		if ((tt[idx] & 3) == 0)
-			return idx << 20;           /* section descriptor type 00 = translation fault */
-	return 0;
+	*nfault = 0;
+	for (u32 idx = 1; idx < 0x1000; idx++)
+		if ((tt[idx] & 3) == 0) {
+			(*nfault)++;
+			if (!first)
+				first = idx << 20;
+		}
+	return first;
 }
 #endif
 
@@ -224,19 +230,23 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	at(4, 116, 0x00F0C040); puts_("STEP 2 UDF\n");
 	SC->expected = 1;
 	asm volatile("adr.w r0, 1f\n\tstr r0, [%0]\n\tudf #0\n1:" :: "r"(&SC->resume) : "r0", "memory");
+	SC->expected = 0;                     /* disarm: a later, unplanned exception must not resume here */
 	at(4, 230, 0x0000B050); puts_("UDF RESUMED\n");
 #endif
 #if STAGE >= 3
 	/* Test 2: deliberate data abort on a VA the page table says is unmapped. */
-	u32 va = find_unmapped_va();
+	u32 nfault, va = find_unmapped_va(&nfault);
 	at(4, 252, 0x00A0B0C0);
+	kv("FAULT ENTRIES", nfault);
 	kv("UNMAPPED VA", va);
 	if (va) {
-		at(4, 272, 0x00F0C040); puts_("STEP 3 DATA ABT\n");
+		at(4, 288, 0x00F0C040); puts_("STEP 3 DATA ABT\n");
 		u32 before = SC->hit;
+		SC->expected = 1;
 		asm volatile("adr.w r1, 1f\n\tstr r1, [%1]\n\tldr r0, [%0]\n1:"
 			     :: "r"(va), "r"(&SC->resume) : "r0", "r1", "memory");
-		at(4, 424, SC->hit == before ? 0x00E02020 : 0x0000B050);
+		SC->expected = 0;
+		at(4, 432, SC->hit == before ? 0x00E02020 : 0x0000B050);
 		puts_(SC->hit == before ? "NO ABORT\n" : "ABT RESUMED\n");
 	}
 #endif

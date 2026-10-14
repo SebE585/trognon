@@ -18,7 +18,7 @@ code = open(sys.argv[1], 'rb').read()
 mu = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
 mu.mem_map(0x41000000, 0x100000); mu.mem_write(0x41000000, code)
 mu.mem_map(0x42000000, 0x10000)                 # stack + return sentinel
-mu.mem_map(0x0, 0x1000)                         # vector page (iBSS image alias): fake pointers
+mu.mem_map(0x0, 0x4000)                         # vector page + a 16 KiB all-zero 'page table' at TTBR0=0
 for a, v in ((0x24, 0x8400fa7c), (0x2c, 0x8400faec), (0x30, 0x8400fb28)):
     mu.mem_write(a, v.to_bytes(4, 'little'))
 mu.mem_map(FB, (W * H * 4 + 0xfff) & ~0xfff)
