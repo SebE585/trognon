@@ -12,6 +12,12 @@ trace.elf trace_offline.elf: font.h
 %.elf: %.c payload.ld
 	$(CC) $(CFLAGS) -T payload.ld -o $@ $<
 
+trace_s1.elf: trace.c payload.ld font.h
+	$(CC) $(CFLAGS) -DSTAGE=1 -T payload.ld -o $@ $<
+
+trace_s2.elf: trace.c payload.ld font.h
+	$(CC) $(CFLAGS) -DSTAGE=2 -T payload.ld -o $@ $<
+
 trace_offline.elf: trace.c payload.ld font.h
 	$(CC) $(CFLAGS) -DOFFLINE -T payload.ld -o $@ $<
 

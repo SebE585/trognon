@@ -18,6 +18,9 @@ code = open(sys.argv[1], 'rb').read()
 mu = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
 mu.mem_map(0x41000000, 0x100000); mu.mem_write(0x41000000, code)
 mu.mem_map(0x42000000, 0x10000)                 # stack + return sentinel
+mu.mem_map(0x0, 0x1000)                         # vector page (iBSS image alias): fake pointers
+for a, v in ((0x24, 0x8400fa7c), (0x2c, 0x8400faec), (0x30, 0x8400fb28)):
+    mu.mem_write(a, v.to_bytes(4, 'little'))
 mu.mem_map(FB, (W * H * 4 + 0xfff) & ~0xfff)
 mu.mem_map(0x84011000, 0x1000); mu.mem_write(0x84011798, b'\x70\x47' * 2)
 mu.mem_write(0x42000000, b'\x70\x47')
@@ -40,4 +43,5 @@ fb = bytes(mu.mem_read(FB, W * H * 4))
 # word 0x00RRGGBB, little-endian in memory: bytes are B, G, R, 0
 Image.frombuffer('RGBA', (W, H), fb, 'raw', 'BGRA', 0, 1).convert('RGB').save(sys.argv[2])
 print('instructions:', n[0], '| env_set calls:', env)
+print('vector words 24/2c/30:', ' '.join('%08x' % int.from_bytes(mu.mem_read(a, 4), 'little') for a in (0x24, 0x2c, 0x30)))
 print('pixel(0,0) = %02x%02x%02x' % tuple(fb[2::-1]), '| pixel(W-1,H-1) = %02x%02x%02x' % tuple(fb[-2:-5:-1]))

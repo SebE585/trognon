@@ -92,7 +92,7 @@ u32 exc_c(u32 kind, u32 lr, u32 spsr, u32 *r)
 		asm volatile("mrc p15, 0, %0, c6, c0, 2" : "=r"(far));
 	}
 	int expected = SC->expected;
-	at(4, kind ? 240 : 100, expected ? 0x0000B050 : 0x00E02020);   /* UNDEF and ABT dumps stack, not overlap */
+	at(4, kind ? 240 : 134, expected ? 0x0000B050 : 0x00E02020);   /* UNDEF and ABT dumps stack, not overlap */
 	puts_(expected ? "EXPECTED " : "UNEXPECTED ");
 	puts_(name[kind]);
 	putc_('\n');
@@ -144,7 +144,15 @@ static void hook(int on)
 	}
 }
 
-#ifndef OFFLINE
+#ifndef STAGE
+#define STAGE 3
+#endif
+#ifdef OFFLINE
+#undef STAGE
+#define STAGE 0
+#endif
+
+#if STAGE >= 3
 static u32 find_unmapped_va(void)
 {
 	u32 ttbr;
@@ -172,30 +180,49 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	kv("SCTLR", sctlr);
 	SC->fg = 0x00FFFFFF;
 
-#ifndef OFFLINE
+#if STAGE >= 1
+	/* Each risky step is announced on screen BEFORE it runs, so a freeze shows how far we got. */
 	SC->expected = 0;
+	at(4, 80, 0x00F0C040); puts_("STEP 1 HOOK\n");
 	hook(1);
-
+	at(4, 98, 0x0000B050); puts_("HOOKED\n");
+#endif
+#if STAGE >= 2
 	/* Test 1: deliberate undefined instruction (Thumb UDF). */
+	at(4, 116, 0x00F0C040); puts_("STEP 2 UDF\n");
 	SC->expected = 1;
 	SC->resume = (u32)&&after_udf & ~1u;
 	asm volatile("udf #0");
 after_udf:
+	at(4, 224, 0x0000B050); puts_("UDF RESUMED\n");
+#endif
+#if STAGE >= 3
 	/* Test 2: deliberate data abort on a VA the page table says is unmapped. */
 	u32 va = find_unmapped_va();
-	at(4, 220, 0x00A0B0C0);
+	at(4, 380, 0x00A0B0C0);
 	kv("UNMAPPED VA", va);
 	if (va) {
+		at(4, 398, 0x00F0C040); puts_("STEP 3 DATA ABT\n");
 		SC->resume = (u32)&&after_dabt & ~1u;
 		asm volatile("ldr r0, [%0]" :: "r"(va) : "r0", "memory");
-		at(4, 440, 0x00E02020);
+		at(4, 416, 0x00E02020);
 		puts_("NO ABORT\n");
 	}
 after_dabt:
+#endif
+#if STAGE >= 1
 	SC->expected = 0;
 	hook(0);
-	at(4, 440, 0x0000B050);
-	puts_("HANDLERS OK\n");
+	at(4, 450, 0x0000B050);
+	puts_("UNHOOKED\n");
 #endif
+#if STAGE == 0
+	ENV_SET("trognon", "console-1", 1);   /* console only: no vector touched */
+#elif STAGE == 1
+	ENV_SET("trognon", "hook-1", 1);
+#elif STAGE == 2
+	ENV_SET("trognon", "udf-1", 1);
+#else
 	ENV_SET("trognon", "trace-1", 1);
+#endif
 }
