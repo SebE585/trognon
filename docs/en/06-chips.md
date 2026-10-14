@@ -5,6 +5,25 @@ page says, per family, what is known, how it boots, and what carries over from t
 Evidence tags as in the [index](README.md). Only the 3GS has been touched by us: everything about
 the other families is **SOURCE** (read in our research notes) or **HYPOTHESIS**.
 
+## Two regimes, not one ladder
+
+The families do not form one smooth line. There is a break between the iPhone 4 and the iPhone 4S.
+
+| | **Regime A: pre-A5** (3GS, iPhone 4) | **Regime B: A5 and later** (4S and next) |
+|---|---|---|
+| Boot exploit | limera1n (3GS), SHAtter (A4, per ipwndfu): bootrom bugs from 2010, **before** checkm8 (**SOURCE**) | checkm8 (2019), A5 to A11 (**SOURCE**) |
+| Helper board | none, host-direct | A5 needs a Pico (**SOURCE**); later chips do not |
+| Existing OS work | none worth building on today: OpeniBoot, dormant (**SOURCE**) | Project Cascadia (A5), Hoolock, Asahi tree, postmarketOS (**SOURCE**) |
+| What we do there | **bare-metal**: our own boot payloads, drivers and [Mods](04-mods.md) | **port an OS** and upstream, do not fork (**HYPOTHESIS** for the 4S) |
+| Role in Trognon | the laboratory: everything is proven here first | the destination for a general-purpose OS |
+
+So the 3GS and the iPhone 4 sit together in one configuration (bare metal, our code), and the 4S and
+what follows in another (existing OS work to join). What carries over from A to B is the method and
+the habits (evidence levels, on-screen console idea), not the addresses. Inside regime A the two
+phones differ in their exploit tool (limera1n versus SHAtter), so the earlier statement that both use
+limera1n was imprecise: the [research note](../research/2026-10-14-pre-a5-limera1n.md) records the
+correction.
+
 ![Chip families and overlaps](../img/chips-overlap.svg)
 
 ## Overlap at a glance

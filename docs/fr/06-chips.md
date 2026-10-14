@@ -5,6 +5,25 @@ famille de puces. Cette page dit, pour chaque famille, ce qu'on sait, comment el
 reporte depuis la voisine. Étiquettes de preuve comme dans l'[index](README.md). Nous n'avons touché
 que le 3GS : tout le reste est **SOURCE** (lu dans nos notes de recherche) ou **HYPOTHESIS**.
 
+## Deux régimes, pas une seule échelle
+
+Les familles ne forment pas une ligne continue. Il y a une rupture entre l'iPhone 4 et l'iPhone 4S.
+
+| | **Régime A : avant A5** (3GS, iPhone 4) | **Régime B : A5 et après** (4S et suivants) |
+|---|---|---|
+| Exploit de boot | limera1n (3GS), SHAtter (A4, selon ipwndfu) : bugs bootrom de 2010, **avant** checkm8 (**SOURCE**) | checkm8 (2019), A5 à A11 (**SOURCE**) |
+| Carte auxiliaire | aucune, hôte direct | l'A5 demande un Pico (**SOURCE**) ; les suivantes non |
+| Travail d'OS existant | rien sur quoi construire aujourd'hui : OpeniBoot, dormant (**SOURCE**) | Project Cascadia (A5), Hoolock, arbre Asahi, postmarketOS (**SOURCE**) |
+| Ce qu'on y fait | **bare metal** : nos propres payloads de boot, pilotes et [Mods](04-mods.md) | **porter un OS** et contribuer en amont, sans forker (**HYPOTHESIS** pour le 4S) |
+| Rôle dans Trognon | le laboratoire : tout est prouvé ici d'abord | la destination d'un OS généraliste |
+
+Le 3GS et l'iPhone 4 sont donc dans une même configuration (bare metal, notre code), le 4S et la suite
+dans une autre (du travail d'OS existant à rejoindre). Ce qui passe de A à B, c'est la méthode et les
+habitudes (niveaux de preuve, idée de la console à l'écran), pas les adresses. Dans le régime A, les deux
+téléphones diffèrent par l'outil d'exploit (limera1n contre SHAtter) : ma phrase précédente disant que
+les deux utilisent limera1n était imprécise, la [note de recherche](../research/2026-10-14-pre-a5-limera1n.md)
+porte la correction.
+
 ![Familles de puces et recouvrements](../img/chips-overlap.svg)
 
 ## Recouvrements en un coup d'œil
