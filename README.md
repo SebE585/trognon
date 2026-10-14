@@ -58,7 +58,7 @@ usable as an iPhone again, so it adds no resale value to a stolen phone.
 
 | Track | Existing work | Gap Trognon takes on |
 |---|---|---|
-| A4 (4), 32-bit | limera1n (2010), host-direct, no helper board. No modern OS port. | Boot-chain test device only, not a port target. |
+| S5L8920 (3GS) / A4 (4), 32-bit | limera1n (2010), host-direct, no helper board. No modern OS port. | Boot-chain test devices only, not a port target. |
 | A7–A11 (5s → X), arm64 | Device trees in mainline since 6.13; Hoolock Linux downstream; postmarketOS `apple-idevice`. Framebuffer, buttons, brightness, NVMe on A11. | Contribute upstream, don't fork. Nobody works on touch, Wi-Fi, audio, charging. |
 | A5/A6 (4S, 5, 5c), 32-bit | Project Cascadia: mainline 6.12 on iPad mini 1 (S5L8942) with touch and Wi-Fi, since 2026. Nothing for phones. | Port to S5L8940 (iPhone 4S, iPad 2), then A6. |
 | Host-free boot | checkm8-a5 on a Raspberry Pi Pico (A5); Pico DFU automation (A11). No unattended dongle published. | An always-attached boot dongle — the central open problem. |

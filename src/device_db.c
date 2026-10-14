@@ -13,6 +13,26 @@
 
 const struct trognon_device trognon_device_catalog[] = {
     {
+        .model_name = "iPhone 3GS",
+        .model_identifier = "iPhone2,1",
+        .soc = TROGNON_SOC_S5L8920,
+        .soc_codename = "S5L8920",
+        .dt_platform = NULL, /* pre-A4; no modern port effort found. */
+        .unlock_path = TROGNON_UNLOCK_HOST_DIRECT, /* limera1n applies to
+                                                        S5L8920 too — same
+                                                        unpatchable bootrom
+                                                        bug as A4. Some
+                                                        bootrom revisions
+                                                        (359.3.2) need
+                                                        alloc8 instead;
+                                                        both are host-direct. */
+        .support = {
+            .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
+            .notes = "Oldest family in this catalog. No modern OS port "
+                     "effort; boot-chain test device only, like the A4.",
+        },
+    },
+    {
         .model_name = "iPhone 4",
         .model_identifier = "iPhone3,1", /* GSM, model A1332. CDMA A1349 is
                                              iPhone3,3 — same A4, not yet in

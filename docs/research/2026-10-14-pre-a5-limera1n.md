@@ -1,25 +1,32 @@
-# iPhone 4 (A4, S5L8930): a different, older family
+# Pre-A5 devices (iPhone 3GS, iPhone 4): a different, older family
 
-Research date: 2026-10-14. Triggered by an actual device in hand: iPhone 4
-GSM, model A1332, 16 GB, black.
+Research date: 2026-10-14. Triggered by actual devices in hand: an iPhone 4
+GSM (A1332) bought 2026-10-13, several more iPhone 4 units bought for parts
+(3.6-5 EUR each), and an iPhone 3GS found in a drawer.
 
 ## Bottom line
 
-The iPhone 4 is **not** covered by checkm8 — it predates the A5–A11 range
-checkm8 targets. Its bootrom exploit is **limera1n** (2010), unrelated
-tooling, still runs host-direct (no helper board, unlike A5), but no modern
-Linux/BSD port effort targets it. Treat it as a boot-chain test device, not
-a realistic OS port target today.
+Neither the iPhone 3GS nor the iPhone 4 is covered by checkm8 — both predate
+the A5-A11 range checkm8 targets. Both share the same unpatchable bootrom
+bug, exploited by **limera1n** (2010); it runs host-direct (no helper board,
+unlike A5), but no modern Linux/BSD port effort targets either SoC. Treat
+them as boot-chain test devices, not realistic OS port targets today.
 
 ## SoC and scope
 
 - iPhone 4 (A1332, GSM) = **iPhone3,1**, SoC **A4 (S5L8930)**.
-- checkm8 (CVE-2019-8900, 2019) covers A5 through A11 only. A4 is explicitly
-  outside its scope.
+- iPhone 3GS = **iPhone2,1**, SoC **S5L8920** — predates Apple's "A" naming
+  entirely (that started with the A4 in the iPhone 4).
+- checkm8 (CVE-2019-8900, 2019) covers A5 through A11 only. Both S5L8920 and
+  A4 are explicitly outside its scope.
   https://securityaffairs.com/91795/hacking/checkm8-jailbreak.html
 - Between limera1n (2010-10-09) and checkm8 (2019-09-27), the A4 was the
   last Apple SoC with a publicly known bootrom vulnerability.
   https://theapplewiki.com/wiki/GeekGrade
+- limera1n applies to S5L8920 too: it is the same unpatchable bootrom bug.
+  Some S5L8920 bootrom revisions (359.3.2) additionally need **alloc8**
+  instead of the original 0x24000 segment-overflow path, but both chains are
+  host-direct. https://theapplewiki.com/wiki/IBoot-359.3.2
 
 ## limera1n
 
@@ -50,8 +57,8 @@ it a full computer".
 
 ## Implication for Trognon
 
-- Added as a third SoC family in `device_db.c` (`TROGNON_SOC_A4`,
-  `TROGNON_UNLOCK_HOST_DIRECT`).
+- Added as two SoC families in `device_db.c` (`TROGNON_SOC_S5L8920`,
+  `TROGNON_SOC_A4`, both `TROGNON_UNLOCK_HOST_DIRECT`).
 - No modern OS port target: last related work (OpeniBoot/iDroid) targeted
   the A4's predecessor generation and died in 2012 — see
   `docs/research/2026-10-13-a5-a6-32bit.md`. Don't invest kernel-port effort

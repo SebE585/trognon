@@ -11,6 +11,12 @@ main(void)
 {
     assert(trognon_device_catalog_count > 0);
 
+    const struct trognon_device *d3gs = trognon_device_find_by_identifier("iPhone2,1");
+    assert(d3gs != NULL);
+    assert(strcmp(d3gs->model_name, "iPhone 3GS") == 0);
+    assert(d3gs->soc == TROGNON_SOC_S5L8920);
+    assert(d3gs->unlock_path == TROGNON_UNLOCK_HOST_DIRECT);
+
     const struct trognon_device *d4 = trognon_device_find_by_identifier("iPhone3,1");
     assert(d4 != NULL);
     assert(strcmp(d4->model_name, "iPhone 4") == 0);

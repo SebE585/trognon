@@ -14,6 +14,7 @@
 
 enum trognon_soc_family {
     TROGNON_SOC_UNKNOWN = 0,
+    TROGNON_SOC_S5L8920, /* iPhone 3GS — predates Apple's "A" naming entirely */
     TROGNON_SOC_A4,   /* S5L8930 — 32-bit, predates checkm8's scope */
     TROGNON_SOC_A5,   /* S5L8940 / S5L8942 / S5L8945 — 32-bit */
     TROGNON_SOC_A6,   /* S5L8950 / S5L8955 — 32-bit */
