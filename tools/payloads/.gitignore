@@ -1,0 +1,4 @@
+# build outputs (make clean)
+*.elf
+*.bin
+*.png
