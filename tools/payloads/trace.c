@@ -38,6 +38,7 @@ struct scratch {
 };
 #define SC ((volatile struct scratch *)0x41080000)
 #define HANDLER_STACK_TOP 0x410f8000
+#define BREADCRUMB        (0x4fd00000 + 466 * 320 * 4)
 
 static void rect(int x, int y, int w, int h, u32 color)
 {
@@ -118,6 +119,14 @@ __attribute__((naked, target("arm"))) void NAME(void) \
 		"movw sp, #:lower16:" STR(HANDLER_STACK_TOP) "\n" \
 		"movt sp, #:upper16:" STR(HANDLER_STACK_TOP) "\n" \
 		"push {r0-r12}\n" \
+		/* breadcrumb, no C and no stack: 10 rows at y=466, red/green/blue for kind 0/1/2 */ \
+		"movw r1, #:lower16:" STR(BREADCRUMB) "\n" \
+		"movt r1, #:upper16:" STR(BREADCRUMB) "\n" \
+		"mov r2, #(0xFF0000 >> (8 * " STR(KIND) "))\n" \
+		"movw r3, #3200\n" \
+		"1: str r2, [r1], #4\n" \
+		"subs r3, r3, #1\n" \
+		"bne 1b\n" \
 		"sub sp, sp, #4\n" \
 		"mov r0, #" STR(KIND) "\n" \
 		"mov r1, lr\n" \
