@@ -23,6 +23,10 @@ struct scratch {
 	u32 irq_status;   /* VIC0 STATUS seen by the handler */
 	u32 irq_vec;      /* value read from VIC0 VICADDRESS */
 	u32 irq_bit;      /* the one VIC0 source we enabled */
+	u32 irq_mode;     /* 0: soft interrupt (SOFTINT), 1: timer IRQ */
+	u32 irq_tick;     /* free-running tick read inside the handler (timer mode) */
+	u32 tim_stat;     /* timer IRQSTAT seen by the handler (timer mode) */
+	u32 tim_stop;     /* address of the timer STATE register the handler zeroes (timer mode) */
 };
 #define SC ((volatile struct scratch *)SOC_SCRATCH)
 #endif

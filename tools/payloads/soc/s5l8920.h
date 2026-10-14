@@ -40,6 +40,10 @@
 /* Timer block. Base readable on the device (it is also the clock-gate base); the timer register
  * offsets used by the survey are SOURCE (OpeniBoot) until read on the phone. */
 #define SOC_TIMER_BASE        0xBF100000
+#define SOC_TIMER5_BASE       (SOC_TIMER_BASE + 0xC0)       /* SOURCE offset; STATE read 0 on the device */
+#define SOC_TIMER_IRQSTAT     (SOC_TIMER_BASE + 0x10000)    /* SOURCE, never read before STAGE 10 */
+#define SOC_TIMER_IRQLATCH    (SOC_TIMER_BASE + 0xF8)       /* SOURCE, never read before STAGE 10 */
+#define SOC_TIMER_VIC0_BIT    6                             /* SOURCE: TIMER_IRQ 6, enabled by the iBSS (EN bit 6) */
 #define SOC_CLOCK_GATE_2C     0xBF100128
 
 #endif

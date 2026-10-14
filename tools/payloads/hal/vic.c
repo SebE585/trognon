@@ -10,8 +10,21 @@ void irq_c(void)
 	SC->irq_status = st;
 	if (st & SC->irq_bit) {
 		SC->irq_vec = VICREG(SOC_VIC0, 0xF00);        /* read = "being serviced" */
-		VICREG(SOC_VIC0, 0x01C) = SC->irq_bit;        /* SOFTINTCLEAR */
-		VICREG(SOC_VIC0, 0x014) = SC->irq_bit;        /* INTENCLEAR */
+		if (SC->irq_mode == 1) {
+			/* Timer line. Same ack order as OpeniBoot's timerIRQHandler (SOURCE): read IRQSTAT, read
+			 * IRQLATCH ("being handled"), later write IRQLATCH back with the status ("handled"). Our own
+			 * timer is stopped first so the line cannot re-assert, and the VIC source goes off at once. */
+			SC->irq_tick = *(volatile u32 *)(SOC_TIMER_BASE + 0x200);
+			u32 ts = *(volatile u32 *)SOC_TIMER_IRQSTAT;
+			SC->tim_stat = ts;
+			*(volatile u32 *)SC->tim_stop = 0;
+			VICREG(SOC_VIC0, 0x014) = SC->irq_bit;    /* INTENCLEAR */
+			(void)*(volatile u32 *)SOC_TIMER_IRQLATCH;
+			*(volatile u32 *)SOC_TIMER_IRQLATCH = ts;
+		} else {
+			VICREG(SOC_VIC0, 0x01C) = SC->irq_bit;    /* SOFTINTCLEAR */
+			VICREG(SOC_VIC0, 0x014) = SC->irq_bit;    /* INTENCLEAR */
+		}
 		VICREG(SOC_VIC0, 0xF00) = 0;                  /* end of interrupt */
 		SC->irq = SC->irq + 1;
 	} else {

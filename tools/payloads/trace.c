@@ -203,6 +203,74 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	kv("STAT2 ", stat2);
 	kv("EN BCK", en_back);
 #endif
+#if STAGE == 10
+	/* Test 5: a real timer interrupt. Timer 5 (STATE read 0 on the device: looks unused) is programmed
+	 * with the OpeniBoot recipe (SOURCE): config 0x7000 = INT0/INT1/OVF enables, divider code 1, count N,
+	 * STATE 2 (manual update) then 1 (start). The IRQ line is VIC0 source 6 (also used by the iBSS's own
+	 * timers). Same guards as the soft-IRQ test; the timeout uses the 24 MHz free-running tick. */
+	at(4, 116, 0x00F0C040); puts_("STEP 10 TIMER IRQ\n");
+	at(4, 134, 0x00FFFFFF);
+	u32 ts0 = 0xDEAD0000;
+	SC->expected = 1; SC->quiet = 1;
+	u32 hit0 = SC->hit;
+	asm volatile("adr.w r1, 1f\n\tstr r1, [%2]\n\tldr %0, [%1]\n1:"
+		     : "+r"(ts0) : "r"(SOC_TIMER_IRQSTAT), "r"(&SC->resume) : "r1", "memory");
+	SC->expected = 0; SC->quiet = 0;
+	if (SC->hit != hit0) {
+		SC->fg = 0x00E02020; puts_("NO IRQSTAT, STOP\n");
+	} else {
+		kv("IRQSTAT0", ts0);
+		volatile u32 *t5 = (volatile u32 *)SOC_TIMER5_BASE;       /* +0 CFG, +4 STATE, +8 CNT, +C CNT2, +10 PRES */
+		kv("T5 STATE", t5[1]);
+		u32 cpsr1, en0 = VICREG(SOC_VIC0, 0x010), bit = 1u << SOC_TIMER_VIC0_BIT;
+		asm volatile("mrs %0, cpsr" : "=r"(cpsr1));
+		SC->irq = 0; SC->stray = 0; SC->irq_bit = bit; SC->irq_status = 0; SC->irq_vec = 0;
+		SC->irq_mode = 1; SC->irq_tick = 0; SC->tim_stat = 0; SC->tim_stop = (u32)&t5[1];
+		kv("EN0     ", en0);
+		asm volatile("cpsid i" ::: "memory");
+		VICREG(SOC_VIC0, 0x014) = 0xFFFFFFFF;                      /* INTENCLEAR: all of VIC0 off */
+		hook_irq(1);
+		VICREG(SOC_VIC0, 0x010) = bit;                             /* INTENABLE: the timer line only */
+		t5[1] = 0;                                                 /* STATE: stop */
+		t5[0] = 0x7000 | (1 << 8);                                 /* CFG: INT0/INT1/OVF enable, divider code 1 */
+		t5[2] = 0x00200000;                                        /* COUNT_BUFFER (N = 2097152 counts) */
+		t5[3] = 0x00200000;                                        /* COUNT_BUFFER2 */
+		t5[4] = 0;                                                 /* PRESCALER */
+		t5[1] = 2;                                                 /* STATE: manual update */
+		u32 t_start = *(volatile u32 *)(SOC_TIMER_BASE + 0x200);
+		t5[1] = 1;                                                 /* STATE: start */
+		asm volatile("dsb sy" ::: "memory");
+		asm volatile("cpsie i" ::: "memory");
+		while (!SC->irq && !SC->stray && (*(volatile u32 *)(SOC_TIMER_BASE + 0x200) - t_start) < 72000000u) ;
+		asm volatile("cpsid i" ::: "memory");
+		t5[1] = 0; t5[0] = 0;                                      /* our timer off, interrupts off */
+		hook_irq(0);                                               /* vector back BEFORE the iBSS source returns */
+		u32 ts1 = *(volatile u32 *)SOC_TIMER_IRQSTAT;
+		VICREG(SOC_VIC0, 0x014) = 0xFFFFFFFF;
+		/* give the line back only if nothing is still asserted */
+		VICREG(SOC_VIC0, 0x010) = ts1 ? (en0 & ~bit) : en0;
+		u32 en_back = VICREG(SOC_VIC0, 0x010);
+		if (!(cpsr1 & 0x80))
+			asm volatile("cpsie i" ::: "memory");
+		SC->irq_mode = 0;
+		at(4, 134 + 4 * 18, SC->irq ? 0x0000B050 : 0x00E02020);
+		puts_(SC->irq ? "TIMER IRQ TAKEN\n" : "NO TIMER IRQ\n");
+		at(4, 134 + 5 * 18, 0x00FFFFFF);
+		u32 elapsed = SC->irq_tick - t_start;
+		kv("HITS    ", SC->irq);
+		kv("STRAY   ", SC->stray);
+		kv("H STAT  ", SC->irq_status);
+		kv("H TIMST ", SC->tim_stat);
+		kv("ELAPSED ", elapsed);
+		kv("IRQSTAT2", ts1);
+		kv("T5 STATE", t5[1]);
+		kv("EN BACK ", en_back);
+		result_hex("t_hits", SC->irq);
+		result_hex("t_elapsed", elapsed);
+		result_hex("t_timst", SC->tim_stat);
+		result_hex("t_stray", SC->stray);
+	}
+#endif
 #if STAGE == 4
 	/* Test 3: deliberate PREFETCH ABORT. A Thumb BKPT with the debug unit not in halt mode raises
 	 * a prefetch abort (IFSR = 0x2, "debug event"), with no memory fetch involved. Resume address
@@ -233,6 +301,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "irq-1", 1);
 #elif STAGE == 8
 	ENV_SET("trognon", "timer-1", 1);
+#elif STAGE == 10
+	ENV_SET("trognon", "tirq-1", 1);
 #elif STAGE == 5
 	ENV_SET("trognon", "regs-1", 1);
 #elif STAGE == 6

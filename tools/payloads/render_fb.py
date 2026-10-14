@@ -65,6 +65,15 @@ def vic_write(uc, access, addr, size, value, _):
     elif off == 0x014: wr(V0 + 0x010, rd(V0 + 0x010) & ~value)
     elif off == 0x010: wr(V0 + 0x010, rd(V0 + 0x010) | value)
 mu.hook_add(UC_HOOK_MEM_WRITE, vic_write, begin=V0, end=V0 + 0xfff)
+# Timer 5 model (STATE at 0xBF1000C4): writing 1 starts it and raises VIC0 source 6 with IRQSTAT = 0x100;
+# writing 0 stops it and drops the line; writing IRQLATCH (+0xF8) clears IRQSTAT.
+mu.mem_map(0xBF110000, 0x1000)
+def timer_write(uc, access, addr, size, value, _):
+    if addr == 0xBF1000C4:
+        if value == 1: wr(V0, 0x40); wr(V0 + 8, 0x40); wr(0xBF110000, 0x100); irq['pending'] = True
+        elif value == 0: wr(V0, rd(V0) & ~0x40); wr(V0 + 8, rd(V0 + 8) & ~0x40); irq['pending'] = False
+    elif addr == 0xBF1000F8: wr(0xBF110000, 0)
+mu.hook_add(UC_HOOK_MEM_WRITE, timer_write, begin=0xBF1000C4, end=0xBF1000FB)
 wr(V0 + 0x010, 0x3FFA4040)       # what the iBSS leaves enabled (DEVICE, 2026-10-15)
 def irq_check(uc, addr, size, _):
     if irq['pending'] and not (uc.reg_read(UC_ARM_REG_CPSR) & 0x80) and rd(V0 + 0x010) & rd(V0 + 0x000):
