@@ -48,6 +48,8 @@ nav:
       - 3. Hardware map: en/03-hardware-map.md
       - 4. Mods: en/04-mods.md
       - 5. Field notes: en/05-field-notes.md
+      - 6. Support by chip: en/06-chips.md
+      - 7. Modular code layout: en/07-code-layout.md
   - Français:
       - Présentation: fr/README.md
       - 1. Chaîne de démarrage: fr/01-boot-chain.md
@@ -55,6 +57,8 @@ nav:
       - 3. Carte matérielle: fr/03-hardware-map.md
       - 4. Mods: fr/04-mods.md
       - 5. Notes de terrain: fr/05-field-notes.md
+      - 6. Support par puce: fr/06-chips.md
+      - 7. Code modulaire: fr/07-code-layout.md
   - Research:
       - A5/A6, 32-bit: research/2026-10-13-a5-a6-32bit.md
       - A7 to A11, mainline: research/2026-10-13-a7-a11-mainline.md

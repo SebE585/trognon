@@ -45,6 +45,13 @@ Cela colle aux contraintes trouvées :
 - Le tactile et les radios sont les barreaux chers. L'échelle est ordonnée pour que des Mods utiles
   existent avant d'en avoir besoin.
 
+## Portabilité entre puces
+
+Un Mod appelle la bibliothèque partagée et ne voit jamais une adresse. Les adresses vivent dans un
+fichier de constantes par puce (`soc/<puce>.h`, voir l'[organisation du code](07-code-layout.md)), donc
+un Mod tourne sur toute puce qui a un fichier vérifié, et nulle part ailleurs (**HYPOTHESIS**, rien ne
+le prouve encore sur une deuxième puce).
+
 ## Règle pour ajouter un pilote
 
 Un pilote entre dans la bibliothèque partagée seulement avec (1) les adresses de registres lues sur

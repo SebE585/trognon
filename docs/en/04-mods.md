@@ -44,6 +44,12 @@ This fits the constraints we found:
 - Touch and radios are the expensive rungs. The ladder is ordered so useful Mods
   exist before they are needed.
 
+## Portability between chips
+
+A Mod calls the shared library and never sees an address. Addresses live in one constants file per
+chip (`soc/<chip>.h`, see [code layout](07-code-layout.md)), so a Mod runs on any chip that has a
+verified file, and nowhere else (**HYPOTHESIS**, nothing proves it yet on a second chip).
+
 ## Rule for adding a driver
 
 A driver enters the shared library only with (1) the register addresses read on the

@@ -18,6 +18,8 @@ State as of 2026-10-15, one device (ECID redacted), iBSS 4.3.5 for `n88ap`
 3. [Hardware map: what is verified](03-hardware-map.md)
 4. [Mods: building the OS one use case at a time](04-mods.md)
 5. [Field notes: what fails and how to tell](05-field-notes.md)
+6. [Support by chip: 3GS, 4, 4S, then the rest](06-chips.md)
+7. [Modular code layout](07-code-layout.md)
 
 Français : [`../fr/README.md`](../fr/README.md).
 Older working notes (French, mixed with the log): [`../architecture.md`](../architecture.md).

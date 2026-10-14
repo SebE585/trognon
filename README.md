@@ -4,9 +4,10 @@
 
 STATUT: ACTIF — 2026-10-15 (first code running on an iPhone 3GS: on-screen console and exception handlers; see Documentation)
 
-Open hardware enablement for unsupported Apple phones, A5 to A11
-(iPhone 4S → iPhone X), so that devices left in drawers can run a free
-operating system of their owner's choosing.
+Open hardware enablement for old, unsupported Apple phones, so that devices left in
+drawers can run code, and in time a free operating system, of their owner's choosing.
+Work goes **chip family by chip family**: the iPhone 3GS first (code already runs on it),
+then the iPhone 4, then the iPhone 4S, then the newer families, reusing what carries over.
 
 **The value is reuse.** Trognon turns an unsupported phone into a base to
 build on: a GPS logger, an emulator, a kiosk, a Linux-like pocket computer —
@@ -15,11 +16,28 @@ platform, instead of e-waste.
 
 > The core is what's left when you've finished the apple — and it grows again.
 
+## Where each chip stands
+
+Evidence tags: **DEVICE** observed on a real phone, **SOURCE** read in our notes or in OpenIBoot,
+**HYPOTHESIS** a plan. Detail and overlaps: [`docs/en/06-chips.md`](docs/en/06-chips.md).
+
+| Family | Boot | Our status | Overlap with the previous one |
+|---|---|---|---|
+| **iPhone 3GS** (S5L8920) | limera1n, host-direct | **DEVICE**: code runs, on-screen console, three exception types handled | the reference |
+| **iPhone 4** (A4, S5L8930) | SHAtter per ipwndfu, host-direct (**SOURCE**) | not tried | same CPU family: method and CPU-level code should carry over (**HYPOTHESIS**) |
+| **iPhone 4S** (A5, S5L8940) | checkm8-a5 with a Pico (**SOURCE**) | not tried | still 32-bit, but another exploit, helper board and loader chain |
+| iPhone 5, 5c (A6) | checkm8, native (**SOURCE**) | not tried | next door to the A5 |
+| iPhone 5s to X (A7 to A11) | checkm8, arm64 (**SOURCE**) | not tried | 64-bit: a different track, contribute upstream |
+
+What carries over between chips is the boot *method* and the CPU-level code. Addresses, the display
+and the iBSS offsets are re-read on each chip, so the code is split to keep them in one small file per
+chip: [`docs/en/07-code-layout.md`](docs/en/07-code-layout.md).
+
 ## Documentation
 
-Same content as the [documentation site](https://sebe585.github.io/trognon/): reverse-engineering notes with an evidence level on every claim (observed on the device,
-emulated, read in source, or hypothesis), with diagrams:
-[English](docs/en/README.md) · [Français](docs/fr/README.md).
+Same content as the [documentation site](https://sebe585.github.io/trognon/): reverse-engineering notes
+with an evidence level on every claim (observed on the device, emulated, read in source, or hypothesis),
+with diagrams: [English](docs/en/README.md) · [Français](docs/fr/README.md).
 Direction for what comes next (small self-contained *Mods* that grow a shared library instead
 of writing an OS up front): [`docs/en/04-mods.md`](docs/en/04-mods.md).
 
@@ -36,7 +54,8 @@ Trognon is **OS-agnostic**. It is not "a Linux distro for iPhones". It is the
 layer every free OS needs and none should have to rebuild:
 
 1. **Boot chain** — getting a device from DFU to a payload we control
-   (checkm8 bootrom exploit, A5–A11), reproducibly, from open tooling.
+   (limera1n on the 3GS, SHAtter on the A4, checkm8 from the A5 up), reproducibly,
+   from open tooling.
 2. **Hardware enablement** — per-SoC, per-device descriptions and drivers
    (display, touch, storage, USB, Wi-Fi, battery, camera…), upstreamed
    wherever an upstream exists (mainline Linux, BSDs).
@@ -50,11 +69,11 @@ upstream first, no fork kept alive for its own sake.
 
 ## Hard constraints (known before writing a line)
 
-- **Tethered boot.** checkm8 lives in the bootrom and does not persist across
+- **Tethered boot.** The bootrom exploits (limera1n, SHAtter, checkm8) do not persist across
   reboots. Every cold boot needs a host (or a dongle) to re-run it. Turning
   that into something a non-expert can live with is the central problem.
-- **32-bit vs 64-bit.** A5/A6 (4S, 5, 5c) are 32-bit ARMv7 with 512 MB–1 GB
-  RAM; A7–A11 (5s → X) are arm64. Two very different tracks.
+- **32-bit vs 64-bit.** The 3GS, A4, A5 and A6 (3GS, 4, 4S, 5, 5c) are 32-bit ARMv7; A7–A11
+  (5s → X) are arm64. Two very different tracks, and only the 32-bit one shares our code.
 - **Batteries.** A ten-year-old Li-ion pack is often dead or swollen. Refurbishing
   is part of the project, not an afterthought.
 

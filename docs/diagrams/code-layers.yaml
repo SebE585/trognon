@@ -1,0 +1,14 @@
+charte: trognon
+title: Code layers, from hardware to Mods
+direction: up
+nodes:
+  - { id: hw,      label: Device hardware,       subtitle: "one chip, one panel, one set of wiring", style: source }
+  - { id: soc,     label: soc/<chip>.h,           subtitle: "addresses and sizes, each tagged with its evidence", style: accent }
+  - { id: hal,     label: hal/,                   subtitle: "console, exceptions, interrupts: no address inside", style: stage }
+  - { id: payload, label: Payload (trace.c),      subtitle: "assembles hal and soc into a bring-up image",        style: service }
+  - { id: mods,    label: Mods,                   subtitle: "gamebook, emulator... same code on any chip",        style: muted }
+edges:
+  - { from: hw,      to: soc,     label: "read on the device" }
+  - { from: soc,     to: hal,     label: "-DSOC=..." }
+  - { from: hal,     to: payload }
+  - { from: payload, to: mods,    style: dead }

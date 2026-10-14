@@ -18,6 +18,8 @@ Chaque affirmation porte un niveau de preuve :
 3. [Carte matérielle : ce qui est vérifié](03-hardware-map.md)
 4. [Mods : construire l'OS un cas d'usage à la fois](04-mods.md)
 5. [Notes de terrain : ce qui échoue et comment le voir](05-field-notes.md)
+6. [Support par puce : 3GS, 4, 4S, puis le reste](06-chips.md)
+7. [Code modulaire](07-code-layout.md)
 
 English: [`../en/README.md`](../en/README.md).
 Anciennes notes de travail (mêlées au journal) : [`../architecture.md`](../architecture.md).
