@@ -244,21 +244,35 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	at(4, 432, SC->hit == before ? 0x00E02020 : 0x0000B050);
 	puts_(SC->hit == before ? "NO ABORT\n" : "ABT RESUMED\n");
 #endif
-#if STAGE == 5
+#if STAGE == 5 || STAGE == 6
 	/* Read-only register survey, shown on screen. Each load is armed as an expected data abort, so
 	 * an unmapped register prints ABORT instead of resetting the phone. GPIOIC (0x39A00000) is NOT
 	 * read: it dropped the USB link once (docs/en/03-hardware-map.md). Offsets from OpeniBoot
 	 * (plat-s5l8920/clcd.c, gpio.c, includes/hardware/gpio.h): to be checked against the answer. */
+#if STAGE == 5
 	static const struct { const char *n; u32 a; } regs[] = {
 		{ "VIDCON1 ", 0x85401B14 }, { "VIDCON1b", 0x85401B14 }, { "VIDCON1c", 0x85401B14 },
 		{ "VIDEN   ", 0x85401B10 }, { "VIDTCON2", 0x85401B24 }, { "FBADDR  ", 0x85400024 },
 		{ "GPIO+00 ", 0x83000000 }, { "GPIO+80 ", 0x83000080 }, { "GPIO+A0 ", 0x830000A0 },
 		{ "GPIO+320", 0x83000320 }, { "CLKGT2C ", 0xBF100128 },
 	};
-	at(4, 116, 0x00F0C040); puts_("STEP 5 REGS\n");
+#else
+	/* Interrupt controllers, read-only. VICADDRESS (0xF00) is NOT read: reading it tells the VIC an
+	 * interrupt is being serviced. Vector words 0x28/0x38/0x3c = where the iBSS sends SWI/IRQ/FIQ. */
+	static const struct { const char *n; u32 a; } regs[] = {
+		{ "V0 STAT ", 0xBF200000 }, { "V0 RAW  ", 0xBF200008 }, { "V0 SEL  ", 0xBF20000C },
+		{ "V0 EN   ", 0xBF200010 }, { "V0 SOFT ", 0xBF200018 },
+		{ "V1 STAT ", 0xBF210000 }, { "V1 RAW  ", 0xBF210008 }, { "V1 SEL  ", 0xBF21000C },
+		{ "V1 EN   ", 0xBF210010 }, { "V1 SOFT ", 0xBF210018 },
+		{ "V2 STAT ", 0xBF220000 }, { "V2 RAW  ", 0xBF220008 }, { "V2 SEL  ", 0xBF22000C },
+		{ "V2 EN   ", 0xBF220010 }, { "V2 SOFT ", 0xBF220018 },
+		{ "VEC IRQ ", 0x00000038 }, { "VEC FIQ ", 0x0000003C },
+	};
+#endif
+	at(4, 116, 0x00F0C040); puts_(STAGE == 5 ? "STEP 5 REGS\n" : "STEP 6 VIC\n");
 	SC->quiet = 1;
 	for (u32 i = 0; i < sizeof regs / sizeof *regs; i++) {
-		if (i == 1 || i == 2)
+		if (STAGE == 5 && (i == 1 || i == 2))
 			for (volatile u32 d = 0; d < 0x300000; d++) ;   /* spacing: is VIDCON1 a live counter? */
 		u32 before = SC->hit, v = 0;
 		SC->expected = 1;
@@ -300,6 +314,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "pabt-1", 1);
 #elif STAGE == 5
 	ENV_SET("trognon", "regs-1", 1);
+#elif STAGE == 6
+	ENV_SET("trognon", "vic-1", 1);
 #else
 	ENV_SET("trognon", "trace-1", 1);
 #endif
