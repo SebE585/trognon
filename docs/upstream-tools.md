@@ -14,7 +14,7 @@ documented, standard DFU state.
 
 | Tool | Scope | Why we call it instead of rewriting it |
 |---|---|---|
-| [axi0mX/ipwndfu](https://github.com/axi0mX/ipwndfu) | checkm8 on A7–A11 (and A6 partially) over plain USB | Reference implementation, still maintained |
+| [axi0mX/ipwndfu](https://github.com/axi0mX/ipwndfu) | A single `-p` flag dispatches by CPID to the right exploit: limera1n (0x8920/0x8922), SHAtter (0x8930), or checkm8 (0x8947, 0x8950, 0x8955, 0x8960, 0x8002, 0x8004, 0x8010, 0x8011, 0x8015) | One tool covers both our pre-A5 devices and most of A6–A11; confirmed 2026-10-14 by reading its source, not yet run against hardware |
 | [gaster](https://github.com/verygenericname/gaster) | checkm8 on A7–A11, used by Hoolock's documented boot chain | Faster, scriptable, what Hoolock's own docs recommend |
 | [LukeZGD/checkm8-a5](https://github.com/LukeZGD/checkm8-a5) | checkm8 on A5/A5X via Arduino + USB Host Shield or RP2040 Pico | The *only* documented path for the 4S generation; needs a microcontroller, not something a host-side CLI can do alone |
 | [HoolockLinux](https://github.com/HoolockLinux) (m1n1 `idevice` branch, kernel) | pongoOS → m1n1 → Linux boot chain, A7–A11 device trees | Upstream target for any A7–A11 kernel work — contribute there, don't fork |
@@ -34,6 +34,15 @@ Per `docs/research/2026-10-13-legal-frame.md`: Trognon never redistributes
 Apple firmware blobs. Where a boot stage needs one (Wi-Fi firmware, SEP
 images), it is extracted from the device owner's own IPSW at install time,
 the way Asahi Linux's installer extracts macOS firmware — never hosted here.
+
+## Gap: A8 and A9 (iPhone 6, iPhone 6s)
+
+`ipwndfu`'s own checkm8 CPID list (above) does not include `0x7000`
+(T7000, A8) or `0x8000` (S8000, A9) — checked 2026-10-14 by reading its
+source. Both are in `device_db.c` as `TROGNON_UNLOCK_HOST_DIRECT`, which is
+still correct (no helper board needed), but the tool to use is unverified:
+likely `gaster`, not `ipwndfu`. Don't assume `ipwndfu -p` works on these two
+without checking first.
 
 ## Open question
 

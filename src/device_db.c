@@ -27,10 +27,9 @@ const struct trognon_device trognon_device_catalog[] = {
                                                         (359.3.2) need
                                                         alloc8 instead;
                                                         both are host-direct. */
-        .unlock_tool_hint = "limera1n-based tooling (e.g. LukeZGD/Legacy "
-                             "iOS Kit) — host-direct claim not yet "
-                             "verified against hardware, see "
-                             "docs/research/2026-10-14-pre-a5-limera1n.md",
+        .unlock_tool_hint = "ipwndfu -p (dispatches to its limera1n "
+                             "exploit for CPID 0x8920, confirmed in the "
+                             "tool's own source 2026-10-14)",
         .support = {
             .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "Oldest family in this catalog. No modern OS port "
@@ -49,19 +48,28 @@ const struct trognon_device trognon_device_catalog[] = {
                                  no modern Linux port effort found (last
                                  related work: OpeniBoot/iDroid, dead since
                                  2012). */
-        .unlock_path = TROGNON_UNLOCK_HOST_DIRECT, /* limera1n (2010),
-                                                        runs from a normal
-                                                        host via USB control
-                                                        transfers, no helper
-                                                        board — unlike A5. */
-        .unlock_tool_hint = "limera1n-based tooling (e.g. LukeZGD/Legacy "
-                             "iOS Kit) — host-direct claim not yet "
-                             "verified against hardware, see "
-                             "docs/research/2026-10-14-pre-a5-limera1n.md",
+        .unlock_path = TROGNON_UNLOCK_HOST_DIRECT, /* Same unpatchable
+                                                        bootrom-era bug
+                                                        family as S5L8920,
+                                                        host-direct — but a
+                                                        *different* exploit:
+                                                        SHAtter, not
+                                                        limera1n. Corrected
+                                                        2026-10-14 after
+                                                        checking ipwndfu's
+                                                        own CPID dispatch
+                                                        table; the research
+                                                        doc originally
+                                                        conflated the two. */
+        .unlock_tool_hint = "ipwndfu -p (dispatches to its SHAtter "
+                             "exploit for CPID 0x8930, confirmed in the "
+                             "tool's own source 2026-10-14 — not limera1n, "
+                             "see docs/research/2026-10-14-pre-a5-limera1n.md "
+                             "correction)",
         .support = {
             .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "No modern OS port; useful as a boot-chain test device "
-                     "(limera1n/redsn0w-era tooling), not a realistic Linux "
+                     "(SHAtter/redsn0w-era tooling), not a realistic Linux "
                      "target today.",
         },
     },
@@ -91,7 +99,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "S5L8950",
         .dt_platform = NULL,
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
-        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
+        .unlock_tool_hint = "ipwndfu -p (checkm8) — this CPID is in ipwndfu's own checkm8 dispatch list, confirmed 2026-10-14",
         .support = {
             .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "checkm8 works over plain USB (ipwndfu); no OS port found.",
@@ -105,7 +113,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "S5L8960X",
         .dt_platform = "s5l8960x",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
-        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
+        .unlock_tool_hint = "ipwndfu -p (checkm8) — this CPID is in ipwndfu's own checkm8 dispatch list, confirmed 2026-10-14",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "Mainline since Linux 6.13 (framebuffer, buttons).",
@@ -119,7 +127,10 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "T7000",
         .dt_platform = "t7000",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
-        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
+        .unlock_tool_hint = "gaster, not ipwndfu — CPID 0x7000 is absent "
+                             "from ipwndfu's own checkm8 CPID list "
+                             "(checked 2026-10-14), unverified which tool "
+                             "actually covers it; don't assume ipwndfu works",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "Mainline since Linux 6.13.",
@@ -133,7 +144,10 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "S8000",
         .dt_platform = "s8000",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
-        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
+        .unlock_tool_hint = "gaster, not ipwndfu — CPID 0x8000 is absent "
+                             "from ipwndfu's own checkm8 CPID list "
+                             "(checked 2026-10-14), unverified which tool "
+                             "actually covers it; don't assume ipwndfu works",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "Mainline since Linux 6.13; brightness since 6.15.",
@@ -147,7 +161,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "T8010",
         .dt_platform = "t8010",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
-        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
+        .unlock_tool_hint = "ipwndfu -p (checkm8) — this CPID is in ipwndfu's own checkm8 dispatch list, confirmed 2026-10-14",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "Mainline since Linux 6.13. First Linux boot via "
@@ -162,7 +176,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "T8015",
         .dt_platform = "t8015",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
-        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
+        .unlock_tool_hint = "ipwndfu -p (checkm8) — this CPID is in ipwndfu's own checkm8 dispatch list, confirmed 2026-10-14",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 1, .gpu = 0,
             .notes = "Internal NVMe storage mainline since Linux 6.18 "
@@ -177,7 +191,7 @@ const struct trognon_device trognon_device_catalog[] = {
         .soc_codename = "T8015",
         .dt_platform = "t8015",
         .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
-        .unlock_tool_hint = "ipwndfu or gaster (checkm8) over plain USB",
+        .unlock_tool_hint = "ipwndfu -p (checkm8) — this CPID is in ipwndfu's own checkm8 dispatch list, confirmed 2026-10-14",
         .support = {
             .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 1, .gpu = 0,
             .notes = "Same T8015 as iPhone 8; brightness control not "

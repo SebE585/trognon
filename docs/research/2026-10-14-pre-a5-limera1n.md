@@ -4,11 +4,27 @@ Research date: 2026-10-14. Triggered by actual devices in hand: an iPhone 4
 GSM (A1332) bought 2026-10-13, several more iPhone 4 units bought for parts
 (3.6-5 EUR each), and an iPhone 3GS found in a drawer.
 
+## Correction, 2026-10-14 (later same day)
+
+This doc originally said limera1n applies to both S5L8920 and A4
+(S5L8930). That's wrong. Checked directly in `axi0mX/ipwndfu`'s own
+source (its `-p` flag's CPID dispatch table, fetched from
+`github.com/axi0mX/ipwndfu`):
+
+- `CPID:8920` / `CPID:8922` (S5L8920/S5L8922, iPhone 3GS) → **limera1n**
+- `CPID:8930` (S5L8930, iPhone 4/A4) → **SHAtter**, a different exploit
+
+Both are host-direct, both are "the bootrom-era bug family", but they are
+not the same exploit — the earlier text in this doc conflated them. Any
+future tooling must pick the right one per CPID, same as ipwndfu itself
+does; see `device_db.c`'s `unlock_tool_hint` per entry.
+
 ## Bottom line
 
 Neither the iPhone 3GS nor the iPhone 4 is covered by checkm8 — both predate
-the A5-A11 range checkm8 targets. Both share the same unpatchable bootrom
-bug, exploited by **limera1n** (2010); it runs host-direct (no helper board,
+the A5-A11 range checkm8 targets. Both share the same unpatchable-bootrom-era
+bug family, but exploited by two *different* tools — **limera1n** (3GS) and
+**SHAtter** (A4), see correction above — both host-direct (no helper board,
 unlike A5), but no modern Linux/BSD port effort targets either SoC. Treat
 them as boot-chain test devices, not realistic OS port targets today.
 
@@ -73,3 +89,6 @@ it a full computer".
   tooling on this assumption.
 - CDMA iPhone 4 (A1349, iPhone3,3): not yet in the catalog, same A4 SoC
   expected.
+- `ipwndfu -p`'s exact behavior and output once run against real hardware —
+  confirmed only by reading its source, not by running it yet. See
+  `docs/upstream-tools.md`.
