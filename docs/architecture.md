@@ -1,6 +1,9 @@
 # Architecture
 
-Statut : brouillon, 2026-10-13. Rien n'a tourné sur un appareil réel.
+Statut : brouillon, mis à jour 2026-10-14. Premier succès réel le
+2026-10-14 : un iPhone 3GS (S5L8920) a été débridé en DFU via `ipwndfu -p`
+(limera1n), confirmé par `trognon probe`. Voir
+[`2026-10-14-pre-a5-limera1n.md`](research/2026-10-14-pre-a5-limera1n.md).
 
 ## Principe : orchestrer, ne pas réécrire
 
@@ -93,6 +96,14 @@ de commande non vérifiés serait pire que de ne pas automatiser cette étape.
 
 ## Prochaine étape concrète
 
-Installer et vérifier la syntaxe réelle d'au moins un outil (`ipwndfu` ou
-Legacy iOS Kit) contre le 3GS déjà en DFU host-direct, puis ajouter
-l'exécution dans `src/chain.c` derrière un flag explicite (pas par défaut).
+`pongoOS` ne couvre pas le S5L8920/A4 (32-bit, pré-A7) — pour cette
+famille, la couche 3 réaliste n'est pas un mini-noyau mais le chargement
+d'un **iBSS patché**, déjà implémenté côté outil orchestré
+(`dfuexec.py`'s `boot_ibss()` dans ipwndfu, pas de code à écrire ici).
+Nécessite un IPSW officiel (iPhone2,1 4.3.5) pour en extraire l'iBSS,
+jamais hébergé dans ce dépôt — voir la politique firmware dans
+`docs/upstream-tools.md`.
+
+Pour A7–A11, l'étape reste d'installer et vérifier la syntaxe réelle
+d'`ipwndfu`/`gaster` puis d'ajouter l'exécution dans `src/chain.c` derrière
+un flag explicite (pas par défaut).
