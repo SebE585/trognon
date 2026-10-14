@@ -44,7 +44,7 @@ fill_result(libusb_device *dev, struct trognon_probe_result *result)
         }
     }
 
-    struct trognon_serial_info info = trognon_serial_parse(result->serial);
+    struct trognon_serial_info info = trognon_serial_parse(result->serial, desc.idProduct);
     result->state = info.state;
     result->cpid = info.cpid;
     if (result->cpid)

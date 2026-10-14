@@ -6,7 +6,7 @@
 #include "trognon/serial.h"
 
 struct trognon_serial_info
-trognon_serial_parse(const char *serial)
+trognon_serial_parse(const char *serial, uint16_t product_id)
 {
     struct trognon_serial_info info = { TROGNON_STATE_UNKNOWN, 0 };
 
@@ -26,9 +26,16 @@ trognon_serial_parse(const char *serial)
         return info;
     }
 
-    /* Recovery and DFU both carry CPID; telling them apart needs the IBFL
-     * field's DFU bit, which we don't decode yet (see "Not verified" in
-     * tests/test_serial.c). Report DFU for now. */
-    info.state = TROGNON_STATE_DFU;
+    /* Recovery and DFU carry an identical-looking CPID field; they are
+     * told apart by the USB product id, not the string. */
+    if (product_id == TROGNON_PID_RECOVERY || product_id == TROGNON_PID_RECOVERY_ALT)
+        info.state = TROGNON_STATE_RECOVERY;
+    else if (product_id == TROGNON_PID_DFU)
+        info.state = TROGNON_STATE_DFU;
+    else
+        info.state = TROGNON_STATE_UNKNOWN; /* CPID present but an
+                                                 unrecognized PID — don't
+                                                 guess */
+
     return info;
 }
