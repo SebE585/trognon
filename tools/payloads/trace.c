@@ -102,6 +102,11 @@ u32 exc_c(u32 kind, u32 lr, u32 spsr, u32 *r)
 		asm volatile("mrc p15, 0, %0, c5, c0, 1" : "=r"(fsr));
 		asm volatile("mrc p15, 0, %0, c6, c0, 2" : "=r"(far));
 	}
+	if (kind == 2) {                       /* drop SCTLR.A first: the alignment test arms it */
+		u32 c;
+		asm volatile("mrc p15, 0, %0, c1, c0, 0" : "=r"(c));
+		asm volatile("mcr p15, 0, %0, c1, c0, 0\n\tisb sy" :: "r"(c & ~2u));
+	}
 	int expected = SC->expected;
 	if (expected)
 		SC->hit = SC->hit + 1;
@@ -181,42 +186,6 @@ static void hook(int on)
 #define STAGE 0
 #endif
 
-#if STAGE >= 3
-/* Domain-fault target. The table has no translation-fault entries (read on the device
- * 2026-10-15: all of 1..0xfff are mapped), so we make the fault with DACR instead of editing the
- * table: pick a mapped section whose domain no code or data we touch uses, then set that domain
- * to "no access" (00) just around one load. The MMU raises a domain fault BEFORE any bus access,
- * so the target address is never read (no side effect even if it is a device).
- * Returns the VA (0 if no spare domain) and the domain mask in use. */
-static u32 dom_of(volatile u32 *tt, u32 va)
-{
-	u32 d = tt[va >> 20];
-	return (d & 3) == 0 || (d & 3) == 3 ? 16 : (d >> 5) & 15;   /* 16: not a section/coarse entry */
-}
-
-static u32 find_domain_va(u32 *used, u32 *dom)
-{
-	u32 ttbr, here, m = 0, first = 0;
-	asm volatile("mrc p15, 0, %0, c2, c0, 0" : "=r"(ttbr));
-	volatile u32 *tt = (volatile u32 *)(ttbr & ~0x3fffu);
-	u32 touched[] = { 0, (u32)SC, 0x41000000, (u32)&here, 0x4fd00000, 0x84000000,
-			  HANDLER_STACK_TOP - 4 };
-	for (u32 i = 0; i < sizeof touched / sizeof *touched; i++) {
-		u32 d = dom_of(tt, touched[i]);
-		if (d < 16)
-			m |= 1u << d;
-	}
-	*used = m;
-	for (u32 idx = 1; idx < 0x1000; idx++) {
-		u32 d = dom_of(tt, idx << 20);
-		if (d < 16 && !(m & (1u << d)) && !first) {
-			first = idx << 20;
-			*dom = d;
-		}
-	}
-	return first;
-}
-#endif
 
 __attribute__((section(".text.start"))) void payload_main(void)
 {
@@ -252,27 +221,24 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	at(4, 230, 0x0000B050); puts_("UDF RESUMED\n");
 #endif
 #if STAGE >= 3
-	/* Test 2: deliberate data abort (domain fault), see find_domain_va(). */
-	u32 used, dom = 0, dacr, va = find_domain_va(&used, &dom);
-	asm volatile("mrc p15, 0, %0, c3, c0, 0" : "=r"(dacr));
-	at(4, 252, 0x00A0B0C0);
-	puts_("DACR "); hex(dacr); puts_(" U "); hex(used); putc_('\n'); fb_clean();   /* U: domains in use */
-	if (va) {
-		at(4, 270, 0x00A0B0C0); kv("TARGET VA", va);
-		at(4, 288, 0x00F0C040); puts_("STEP 3 DATA ABT\n");
-		u32 before = SC->hit, cut = dacr & ~(3u << (2 * dom));
-		SC->expected = 1;
-		asm volatile("adr.w r1, 1f\n\tstr r1, [%1]\n\t"
-			     "mcr p15, 0, %2, c3, c0, 0\n\tisb sy\n\t"
-			     "ldr r0, [%0]\n1:\n\t"
-			     "mcr p15, 0, %3, c3, c0, 0\n\tisb sy"
-			     :: "r"(va), "r"(&SC->resume), "r"(cut), "r"(dacr) : "r0", "r1", "memory");
-		SC->expected = 0;
-		at(4, 432, SC->hit == before ? 0x00E02020 : 0x0000B050);
-		puts_(SC->hit == before ? "NO ABORT\n" : "ABT RESUMED\n");
-	} else {
-		at(4, 270, 0x00F0C040); puts_("NO SPARE DOMAIN\n");
-	}
+	/* Test 2: deliberate data abort = ALIGNMENT fault. The live page table has no translation-fault
+	 * entry and every section is in domain 0 (DACR=3, manager), read on the device 2026-10-15, so
+	 * neither a fault entry nor a domain fault is available. Instead set SCTLR.A (bit 1) around one
+	 * unaligned load on mapped RAM: the fault is raised before the bus access, nothing is touched.
+	 * exc_c() clears A on entry, so the handler never runs with strict alignment. */
+	u32 va = (u32)&SC->hit + 1;
+	at(4, 252, 0x00A0B0C0); kv("UNALIGNED VA", va);
+	at(4, 288, 0x00F0C040); puts_("STEP 3 DATA ABT\n");
+	u32 before = SC->hit, sctlr_a = sctlr | 2;
+	SC->expected = 1;
+	asm volatile("adr.w r1, 1f\n\tstr r1, [%1]\n\t"
+		     "mcr p15, 0, %2, c1, c0, 0\n\tisb sy\n\t"
+		     "ldr r0, [%0]\n1:\n\t"
+		     "mcr p15, 0, %3, c1, c0, 0\n\tisb sy"
+		     :: "r"(va), "r"(&SC->resume), "r"(sctlr_a), "r"(sctlr) : "r0", "r1", "memory");
+	SC->expected = 0;
+	at(4, 432, SC->hit == before ? 0x00E02020 : 0x0000B050);
+	puts_(SC->hit == before ? "NO ABORT\n" : "ABT RESUMED\n");
 #endif
 #if STAGE >= 1
 	SC->expected = 0;
