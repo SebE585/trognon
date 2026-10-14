@@ -3,7 +3,7 @@
 Runs PAYLOAD.bin (Thumb, at 0x41000000) against a fake 320x480 RGB888
 framebuffer at 0x4fd00000, stubs env_set (0x84011798), and saves the result as
 a PNG. Verifies the LOGIC only: no caches, no timing, and the framebuffer
-address is the one read on the device (docs/journal/2026-10-15.md).
+address is the one read on the device (docs/en/03-hardware-map.md).
 The 1 MiB section 0x410xxxxx is mapped like on the device (payload, scratch, handler stack).
 Unmapped accesses (a payload writing outside the framebuffer) are reported.
 

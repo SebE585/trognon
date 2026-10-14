@@ -1,7 +1,7 @@
 /* Draw a test card on the S5L8920 CLCD window-0 framebuffer (320x480 RGB888).
  * Freestanding Thumb payload, linked at 0x41000000 (see payload.ld).
  * Framebuffer address read on the device 2026-10-15 (CLCD_BASE+0x24).
- * No cache clean: not needed in the iBSS boot state (see docs/journal/2026-10-15.md).
+ * No cache clean: not needed in the iBSS boot state (see docs/en/03-hardware-map.md).
  */
 typedef unsigned int u32;
 typedef unsigned char u8;

@@ -40,7 +40,7 @@ enum trognon_unlock_path {
 };
 
 /* Mainline/community support, as surveyed 2026-10-13. Re-check before
- * trusting an entry older than ~6 months (per project CLAUDE.md policy). */
+ * trusting an entry older than ~6 months (per project policy). */
 struct trognon_support {
     int framebuffer;   /* boot console (simplefb) */
     int touch;

@@ -1,6 +1,6 @@
 /* On-screen console + exception handlers for the iPhone 3GS (S5L8920), as a Recovery payload.
  *
- * State facts (all read on the device 2026-10-15, docs/journal/2026-10-15.md):
+ * State facts (all read on the device 2026-10-15, docs/en/03-hardware-map.md):
  *  - CLCD window 0 framebuffer 0x4fd00000, 320x480 RGB888 (0x00RRGGBB), mapped C=1 B=1
  *    (write-back, no write-allocate): NEVER READ the framebuffer, or clean it after writing.
  *  - MMU + caches on, vectors at VA 0 (= PA 0x84000000, the iBSS image). Each vector is
@@ -247,7 +247,7 @@ __attribute__((section(".text.start"))) void payload_main(void)
 #if STAGE == 5
 	/* Read-only register survey, shown on screen. Each load is armed as an expected data abort, so
 	 * an unmapped register prints ABORT instead of resetting the phone. GPIOIC (0x39A00000) is NOT
-	 * read: it dropped the USB link once (docs/journal/2026-10-14.md). Offsets from OpeniBoot
+	 * read: it dropped the USB link once (docs/en/03-hardware-map.md). Offsets from OpeniBoot
 	 * (plat-s5l8920/clcd.c, gpio.c, includes/hardware/gpio.h): to be checked against the answer. */
 	static const struct { const char *n; u32 a; } regs[] = {
 		{ "VIDCON1 ", 0x85401B14 }, { "VIDCON1b", 0x85401B14 }, { "VIDCON1c", 0x85401B14 },

@@ -4,7 +4,7 @@ Writes COLOR (0x00RRGGBB, RGB888 32 bpp, assumed channel order) over
 FB..FB+0x96000 (320x480x4), cleans the D-cache by MVA over the range, drains
 the write buffer (dsb), then sets env 'trognon' = 'fb-filled' via the iBSS internal
 env_set() (0x84011798, iBSS 4.3.5 n88ap) as proof the payload ran to the end.
-FB comes from CLCD_BASE+0x24, read on the device 2026-10-15 (docs/journal/2026-10-15.md).
+FB comes from CLCD_BASE+0x24, read on the device 2026-10-15 (docs/en/03-hardware-map.md).
 
 Usage: python3 fill_fb.py OUT.bin [COLOR_HEX [noclean]]   (default 0D32B2; needs keystone-engine, capstone)
 'noclean' omits the D-cache clean loop (to test whether it is needed).

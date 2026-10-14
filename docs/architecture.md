@@ -425,8 +425,8 @@ comme pour les deux autres handlers).
 
 ### Pré-étude NotebookLM, 2026-10-14 (nuit) : confirme sans ajouter d'info nouvelle
 
-Corpus déposé dans NotebookLM : toute la doc `docs/` + `TODO.md` +
-`CLAUDE.md` + les sources `dfuexec.py`/`recovery.py`/`image3.py`
+Corpus déposé dans NotebookLM : toute la doc `docs/` + les notes de
+travail du projet (non publiées) + les sources `dfuexec.py`/`recovery.py`/`image3.py`
 d'ipwndfu (bundle à plat, non versionné). Réponse : confirme qu'elle n'a
 **pas** le dispatcher de commandes dans son corpus (normal — on ne l'a
 pas trouvé nous-mêmes, donc on ne pouvait pas le lui fournir), ne
@@ -472,9 +472,7 @@ Capstone avant envoi, aucun octet deviné à la main), envoyé par
 `recovery.send_data()` puis `recovery.send_command(device, 'run')`.
 `getenv` donne les **mêmes valeurs avant et après**
 (`build-version=iBoot-1072.61`, `config_board=n88ap`), et l'appareil
-reste en Recovery sans redémarrer ni se déconnecter. Détails complets,
-séquence exacte, dans `docs/journal/2026-10-14.md` (section « Premier
-code Trognon exécuté sur le 3GS réel »).
+reste en Recovery sans redémarrer ni se déconnecter. Séquence reproductible : [`docs/en/01-boot-chain.md`](en/01-boot-chain.md).
 
 Confirme en pratique tout ce qui précède dans cette section : le
 tampon `0x41000000` reçoit bien les données envoyées, le patch `run`

@@ -3,17 +3,17 @@
 Research date: 2026-10-14. Étude menée par un autre LLM à partir d'un prompt
 construit pour cette session (web uniquement ; rien revérifié sur le matériel
 pendant cette recherche — seul le dump ROM et le passage en Recovery via
-`boot_ibss()`, déjà faits et documentés dans `docs/journal/2026-10-14.md`,
+`boot_ibss()`, déjà faits et documentés dans [`docs/en/01-boot-chain.md`](../en/01-boot-chain.md),
 sont pris comme acquis).
 
 ## Tension avec la décision précédente — tranchée le 2026-10-14
 
 `docs/research/2026-10-14-pre-a5-limera1n.md` concluait initialement : « Treat
 them [3GS, A4] as boot-chain test devices, not realistic OS port targets
-today » et `TODO.md` reprenait la même position. **Décision prise le
+today » et la feuille de route reprenait la même position. **Décision prise le
 2026-10-14 : révoquée.** Le 3GS devient une cible réelle de micro noyau +
 driver, sur la base d'OpeniBoot comme environnement de dev. Reporté dans
-`docs/research/2026-10-14-pre-a5-limera1n.md` et `TODO.md`.
+`docs/research/2026-10-14-pre-a5-limera1n.md` et dans la feuille de route.
 
 ## Bottom line
 

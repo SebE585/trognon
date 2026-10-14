@@ -95,7 +95,7 @@ it a full computer".
   now confirmed: it works, 2026-10-14, against a real iPhone 3GS
   (S5L8920, 359.3.2 bootrom), succeeding on the 2nd-3rd attempt each time
   (matches the README's own "repeat if it fails" warning). See
-  `docs/journal/2026-10-14.md`.
+  [`docs/en/05-field-notes.md`](../en/05-field-notes.md).
 - `ipwndfu --dump-rom` after a successful `-p`: initially failed at the
   first post-pwn "exec" command (`dfuexec.py`'s `PwnedDFUDevice.execute()`)
   with a USB timeout, 10+ times in a row. Resolved, same day: a granular
