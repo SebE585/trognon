@@ -9,8 +9,8 @@ affiche `ABORT` au lieu de réinitialiser le téléphone.
 
 | Élément | Valeur | Sens |
 |---|---|---|
-| `MIDR` | `0x412FC0F1` | ARM, partie `0xC08` : Cortex-A8 |
-| `SCTLR` | `0x00C50078` | MMU + caches actifs, contrôle d'alignement coupé |
+| `MIDR` | `0x412FC081` | ARM, partie `0xC08`, variante 2, révision 1 : Cortex-A8 r2p1 |
+| `SCTLR` | `0x00C5187D` | M=1 (MMU), C=1 (cache D), I=1 (cache I), Z=1, A=0 (pas de contrôle d'alignement), V=0 (vecteurs en VA 0) |
 | `DACR` | `0x00000003` | domaine 0 manager, autres domaines sans accès |
 | Table de pages | sections de 1 Mio, toutes en domaine 0 | rien de non mappé aux index 1..0xfff |
 
@@ -46,8 +46,23 @@ Valeurs lues à l'œil sur l'écran ; largeur de champ supposée à 8 chiffres h
 `GPIOIC` (`0x39A00000`) : l'unique lecture a fait tomber la liaison USB (cause non déterminée).
 À tenir pour dangereux tant que ce n'est pas compris.
 
-## Suite sur cette carte
+## Contrôleurs d'interruptions VIC0/1/2 (DEVICE, 2026-10-15)
 
-VIC0/1/2 (`0xBF200000/10000/20000`, **SOURCE**) : relevé du statut, de l'activation, de la sélection
-et du masque de priorité, puis une interruption déclenchée par logiciel. Les registres du timer sont
-la partie la moins comprise d'OpenIBoot (son propre commentaire dit qu'ils sont copiés d'un SoC plus ancien).
+Relevé en lecture seule. Tous les registres ont répondu, sans abort.
+
+| Registre | VIC0 `0xBF200000` | VIC1 `0xBF210000` | VIC2 `0xBF220000` |
+|---|---|---|---|
+| `STATUS` (`+0x00`) | `0` | `0` | `0` |
+| `RAW` (`+0x08`) | `0` | `0` | `0` |
+| `SELECT` (`+0x0C`, 0 = IRQ) | `0` | `0` | `0` |
+| `ENABLE` (`+0x10`) | `0x3FFA4040` | `0` | `0` |
+| `SOFTINT` (`+0x18`) | `0` | `0` | `0` |
+
+- L'iBSS a laissé **14 sources activées dans VIC0** (bits 6, 14, 17 et 19 à 29), toutes en IRQ, aucune
+  en attente, et les IRQ sont démasquées côté CPU : les interruptions sont vivantes pendant que notre code tourne.
+- `SOFTINT` est lisible, donc le registre existe. Lire 0 ne prouve pas qu'y écrire lève une
+  interruption : c'est le prochain test (**HYPOTHESIS**).
+- Les gestionnaires de l'iBSS sont en `0x8400F9EC` (mot de vecteur IRQ `0x38`) et `0x8400FA34` (mot FIQ `0x3C`).
+- Quel périphérique correspond à chaque bit activé reste inconnu.
+
+Les registres du timer sont la partie la moins comprise d'OpenIBoot (son propre commentaire dit qu'ils sont copiés d'un SoC plus ancien).

@@ -40,4 +40,8 @@ control flow is right, nothing about the hardware.
 - Scratch RAM is not zeroed between payloads: initialise every flag.
 - Reading by eye from a screen loses digits (we saw `41000000C` for `4100010C`).
   Keep the on-screen format regular and ask for a re-read when a value matters.
+- Never copy a number from our own emulator into the docs as an observation. The emulator's fake
+  `MIDR`/`SCTLR` (`0x412FC0F1`, `0x00C50078`) were published as DEVICE values and caught only when a
+  photo of the real screen showed `0x412FC081` and `0x00C5187D`. Tag from the device reading, not
+  from a render.
 - A guess that was wrong is documented, not deleted: it is part of the material.

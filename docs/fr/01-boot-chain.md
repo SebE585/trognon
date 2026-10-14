@@ -28,7 +28,7 @@ sequenceDiagram
    patché pour que la commande Recovery `run` saute à `0x41000001`. La commande `go` n'est pas utilisée.
 3. **Payload.** `send_data` copie du Thumb brut en `0x41000000`, `run` y saute. État d'entrée : MMU
    et caches actifs, vecteurs en VA 0 (l'image iBSS à `0x84000000`), mode SVC,
-   `SCTLR = 0x00C50078`, IRQ non masquées.
+   `SCTLR = 0x00C5187D`, IRQ non masquées.
 4. **Canal de retour.** Le payload appelle `env_set()` interne de l'iBSS (`0x84011799`, Thumb) pour
    publier un marqueur, relu avec `getenv`. **Piège :** l'iBSS garde la variable d'un run à l'autre.
    La lire vide *avant* le run, sinon une valeur périmée ne prouve rien

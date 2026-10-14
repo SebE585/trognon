@@ -40,4 +40,8 @@ bon, rien du matériel.
 - La RAM scratch n'est pas remise à zéro entre payloads : initialiser chaque indicateur.
 - Lire à l'œil sur un écran fait perdre des chiffres (on a lu `41000000C` pour `4100010C`). Garder
   un format d'affichage régulier et demander une relecture quand une valeur compte.
+- Ne jamais recopier un chiffre de notre propre émulateur dans la doc comme une observation. Les
+  faux `MIDR`/`SCTLR` de l'émulateur (`0x412FC0F1`, `0x00C50078`) ont été publiés comme valeurs DEVICE et
+  n'ont été repérés qu'avec la photo de l'écran réel (`0x412FC081`, `0x00C5187D`). Étiqueter depuis
+  la lecture de l'appareil, pas depuis un rendu.
 - Une supposition fausse est documentée, pas effacée : elle fait partie du matériau.

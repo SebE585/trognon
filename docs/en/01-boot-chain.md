@@ -29,7 +29,7 @@ sequenceDiagram
    `0x41000001` instead of the stock behaviour. The Recovery command `go` is not used.
 3. **Payload.** `send_data` copies raw Thumb code to `0x41000000`, `run` jumps to it.
    Entry state: MMU and caches on, vectors at VA 0 (the iBSS image at `0x84000000`),
-   running in SVC mode, `SCTLR = 0x00C50078`, IRQs not masked.
+   running in SVC mode, `SCTLR = 0x00C5187D`, IRQs not masked.
 4. **Result channel.** The payload calls the iBSS internal `env_set()`
    (`0x84011799`, Thumb) to publish a marker, read back with `getenv`.
    **Trap:** the iBSS keeps the variable across runs. Read it unset *before* the run,

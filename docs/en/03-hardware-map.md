@@ -9,8 +9,8 @@ resetting the phone.
 
 | Item | Value | Meaning |
 |---|---|---|
-| `MIDR` | `0x412FC0F1` | ARM, part `0xC08`: Cortex-A8 |
-| `SCTLR` | `0x00C50078` | MMU + caches on, alignment checking off |
+| `MIDR` | `0x412FC081` | ARM, part `0xC08`, variant 2, revision 1: Cortex-A8 r2p1 |
+| `SCTLR` | `0x00C5187D` | M=1 (MMU), C=1 (D-cache), I=1 (I-cache), Z=1, A=0 (no alignment check), V=0 (vectors at VA 0) |
 | `DACR` | `0x00000003` | domain 0 manager, other domains no access |
 | Page table | 1 MiB sections, all in domain 0 | nothing unmapped in indexes 1..0xfff |
 
@@ -46,8 +46,23 @@ Values read by eye from the screen; field widths were assumed to be 8 hex digits
 `GPIOIC` (`0x39A00000`): the one read of it dropped the USB link (cause undetermined).
 Treat as dangerous until understood.
 
-## Next on this map
+## Interrupt controllers VIC0/1/2 (DEVICE, 2026-10-15)
 
-VIC0/1/2 (`0xBF200000/10000/20000`, **SOURCE**): relevé of status, enable, select,
-priority mask, then a software-triggered interrupt. Timer registers are the least
-understood part of OpenIBoot (its own comment says they are copied from an older SoC).
+Read-only survey. All registers answered, no abort.
+
+| Register | VIC0 `0xBF200000` | VIC1 `0xBF210000` | VIC2 `0xBF220000` |
+|---|---|---|---|
+| `STATUS` (`+0x00`) | `0` | `0` | `0` |
+| `RAW` (`+0x08`) | `0` | `0` | `0` |
+| `SELECT` (`+0x0C`, 0 = IRQ) | `0` | `0` | `0` |
+| `ENABLE` (`+0x10`) | `0x3FFA4040` | `0` | `0` |
+| `SOFTINT` (`+0x18`) | `0` | `0` | `0` |
+
+- The iBSS left **14 sources enabled in VIC0** (bits 6, 14, 17 and 19 to 29), all routed to IRQ,
+  none pending, and IRQs are unmasked in the CPU: interrupts are live while our code runs.
+- `SOFTINT` is readable, so the register exists. Reading 0 does not prove that writing it raises an
+  interrupt: that is the next test (**HYPOTHESIS**).
+- The iBSS handlers sit at `0x8400F9EC` (IRQ vector word `0x38`) and `0x8400FA34` (FIQ vector word `0x3C`).
+- Which peripheral each enabled bit is stays unknown.
+
+Timer registers are the least understood part of OpenIBoot (its own comment says they are copied from an older SoC).
