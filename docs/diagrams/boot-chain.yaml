@@ -1,0 +1,17 @@
+charte: trognon
+title: Boot chain on the iPhone 3GS
+direction: right
+nodes:
+  - { id: host,    label: Host (Mac),         subtitle: "ipwndfu + libusb",              style: source }
+  - { id: dfu,     label: Pwned DFU,          subtitle: "limera1n, signature checks off", style: stage }
+  - { id: ibss,    label: Patched iBSS,       subtitle: "Recovery 0x1281, run = 0x41000001", style: stage }
+  - { id: payload, label: Our payload,        subtitle: "Thumb at 0x41000000",            style: accent }
+  - { id: screen,  label: Screen,             subtitle: "framebuffer 0x4fd00000",         style: data }
+  - { id: env,     label: Env variable,       subtitle: "env_set / getenv",               style: data }
+edges:
+  - { from: host,    to: dfu,     label: "exploit" }
+  - { from: dfu,     to: ibss,    label: "boot_ibss()" }
+  - { from: host,    to: ibss,    label: "send_data + run", style: accent }
+  - { from: ibss,    to: payload, label: "jump" }
+  - { from: payload, to: screen,  label: "draw", style: tap }
+  - { from: payload, to: env,     label: "marker", style: tap }

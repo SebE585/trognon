@@ -1,0 +1,18 @@
+charte: trognon
+title: Mods on a shared library, on the boot chain
+direction: up
+groups:
+  - { id: mods, label: Mods (one RAM payload each), style: pipeline }
+nodes:
+  - { id: hw,    label: iPhone 3GS hardware,  subtitle: "S5L8920, Cortex-A8",          style: source }
+  - { id: boot,  label: Boot chain,           subtitle: "limera1n, patched iBSS, run",  style: stage }
+  - { id: hal,   label: Shared library,       subtitle: "screen, exceptions, then IRQ, GPIO, USB", style: accent }
+  - { id: m1,    label: Gamebook reader,      subtitle: "first Mod",                    group: mods, style: service }
+  - { id: m2,    label: Atari ST emulator,    subtitle: "stress test",                  group: mods, style: service }
+  - { id: m3,    label: "Compass, GPS",        subtitle: "needs sensors, to verify",     group: mods, style: muted }
+edges:
+  - { from: hw,   to: boot }
+  - { from: boot, to: hal }
+  - { from: hal,  to: m1 }
+  - { from: hal,  to: m2 }
+  - { from: hal,  to: m3, style: dead }

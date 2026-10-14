@@ -1,6 +1,6 @@
 # Trognon
 
-STATUT: ACTIF — 2026-10-13 (bootstrapping, no code yet)
+STATUT: ACTIF — 2026-10-15 (first code running on an iPhone 3GS: on-screen console and exception handlers; see Documentation)
 
 Open hardware enablement for unsupported Apple phones, A5 to A11
 (iPhone 4S → iPhone X), so that devices left in drawers can run a free
@@ -12,6 +12,14 @@ whatever its owner wants to make of it. Not necessarily a phone again; a
 platform, instead of e-waste.
 
 > The core is what's left when you've finished the apple — and it grows again.
+
+## Documentation
+
+Reverse-engineering notes with an evidence level on every claim (observed on the device,
+emulated, read in source, or hypothesis), with diagrams:
+[English](docs/en/README.md) · [Français](docs/fr/README.md).
+Direction for what comes next (small self-contained *Mods* that grow a shared library instead
+of writing an OS up front): [`docs/en/04-mods.md`](docs/en/04-mods.md).
 
 ## Origin
 
@@ -72,8 +80,11 @@ time from the owner's own device or IPSW, as Asahi Linux does.
 
 ## Reprise
 
-- **Run:** nothing to run yet.
-- **Breaks first:** n/a.
+- **Run:** payloads in `tools/payloads/` (`make trace.bin`) and `tools/run_payload.py`; the boot
+  recipe is in [`docs/en/01-boot-chain.md`](docs/en/01-boot-chain.md). Diagrams: `make diagrams`
+  (maintainer-side, SVGs are committed).
+- **Breaks first:** USB sends fail about one time in three and a stale `getenv` marker looks like
+  success: read [`docs/en/05-field-notes.md`](docs/en/05-field-notes.md) first.
 - **Know before touching:** the research notes are dated; anything older than
   six months on boot chains or mainline support must be re-checked.
 

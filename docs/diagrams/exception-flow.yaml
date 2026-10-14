@@ -1,0 +1,16 @@
+charte: trognon
+title: How an exception becomes a readable screen
+direction: down
+nodes:
+  - { id: test,  label: Test instruction,   subtitle: "udf, bkpt, unaligned ldr", style: source }
+  - { id: cpu,   label: CPU takes the exception, subtitle: "vector in RAM, hooked", style: stage }
+  - { id: stub,  label: Asm stub,           subtitle: "own stack, breadcrumb bar", style: service }
+  - { id: dump,  label: Dump on screen,     subtitle: "FSR, FAR, LR, SPSR",        style: data }
+  - { id: ok,    label: Resume,             subtitle: "address computed in asm",   style: accent }
+  - { id: chain, label: Chain to iBSS,      subtitle: "unexpected: show, wait, reset", style: muted }
+edges:
+  - { from: test, to: cpu }
+  - { from: cpu,  to: stub }
+  - { from: stub, to: dump }
+  - { from: dump, to: ok,    label: "expected", style: accent }
+  - { from: dump, to: chain, label: "unexpected", style: dead }
