@@ -1,0 +1,67 @@
+site_name: Trognon
+site_description: Open reverse engineering of the iPhone 3GS (S5L8920). Bilingual notes with evidence levels.
+site_url: https://sebe585.github.io/trognon/
+repo_url: https://github.com/SebE585/trognon
+repo_name: SebE585/trognon
+docs_dir: docs
+site_dir: site
+exclude_docs: |
+  journal/
+  diagrams/
+copyright: Documentation CC-BY-SA-4.0 · code GPL-2.0-only / MIT
+theme:
+  name: material
+  font: false
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: { icon: material/weather-night, name: Dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: { icon: material/weather-sunny, name: Light mode }
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - content.code.copy
+extra_css: [assets/extra.css]
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc: { permalink: true }
+  - pymdownx.superfences:
+      custom_fences:
+        - { name: mermaid, class: mermaid, format: !!python/name:pymdownx.superfences.fence_code_format }
+nav:
+  - Home: index.md
+  - English:
+      - Overview: en/README.md
+      - 1. Boot chain: en/01-boot-chain.md
+      - 2. Exception console: en/02-exception-console.md
+      - 3. Hardware map: en/03-hardware-map.md
+      - 4. Mods: en/04-mods.md
+      - 5. Field notes: en/05-field-notes.md
+  - Français:
+      - Présentation: fr/README.md
+      - 1. Chaîne de démarrage: fr/01-boot-chain.md
+      - 2. Console d'exceptions: fr/02-exception-console.md
+      - 3. Carte matérielle: fr/03-hardware-map.md
+      - 4. Mods: fr/04-mods.md
+      - 5. Notes de terrain: fr/05-field-notes.md
+  - Research:
+      - A5/A6, 32-bit: research/2026-10-13-a5-a6-32bit.md
+      - A7 to A11, mainline: research/2026-10-13-a7-a11-mainline.md
+      - Legal frame: research/2026-10-13-legal-frame.md
+      - Untethered boot: research/2026-10-13-untethered-boot.md
+      - Pre-A5 and limera1n: research/2026-10-14-pre-a5-limera1n.md
+      - Microkernel on the 3GS: research/2026-10-14-microkernel-3gs.md
+  - Notes:
+      - Architecture (working notes, FR): architecture.md
+      - Upstream tools: upstream-tools.md

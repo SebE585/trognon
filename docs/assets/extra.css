@@ -1,0 +1,19 @@
+:root, [data-md-color-scheme="default"] {
+  --md-primary-fg-color: #3F6A24;
+  --md-primary-fg-color--light: #8DB84A;
+  --md-primary-fg-color--dark: #2B3A24;
+  --md-accent-fg-color: #A23220;
+}
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #2B3A24;
+  --md-accent-fg-color: #8DB84A;
+}
+.md-typeset .tag { display:inline-block; padding:0 .45em; border-radius:2px; font-size:.75em; font-weight:700; letter-spacing:.03em; color:#fff; }
+.md-typeset .tag-device { background:#3F6A24; }
+.md-typeset .tag-emu { background:#1D4870; }
+.md-typeset .tag-source { background:#8A6410; }
+.md-typeset .tag-hyp { background:#A23220; }
+.md-typeset img[src$=".svg"] { display:block; margin:1rem auto; max-width:100%; max-height:34rem; width:auto; }
+.hero { padding:1.2rem 0 .4rem; }
+.hero h1 { font-size:2.4rem; margin:.2rem 0; }
+.hero p { font-size:1.05rem; max-width:44rem; }
