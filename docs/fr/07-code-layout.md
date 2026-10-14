@@ -1,9 +1,10 @@
 # 7. Code modulaire
 
-**Statut : en cours de refonte.** Les payloads sont partis d'un seul fichier, `tools/payloads/trace.c`,
-avec les adresses du 3GS écrites en dur. Cela ne survit pas à une deuxième puce, donc le code est en train
-d'être découpé. Cette page décrit la disposition **cible** ; vérifier l'arborescence avant de s'appuyer sur
-un chemin.
+**Statut : fait pour les payloads du 3GS (2026-10-15).** Ils sont partis d'un seul fichier, `tools/payloads/trace.c`,
+avec les adresses du 3GS écrites en dur, ce qui ne survit pas à une deuxième puce. Le code est maintenant découpé en
+`hal/` (portable), `soc/` (constantes par puce) et `trace.c` (le payload). La vérification de non-régression est un
+rendu émulé de chaque étape, identique avant et après le découpage (EMU) ; le découpage n'a **pas** encore été
+rejoué sur le téléphone. L'en-tête A4 existe mais est volontairement inutilisable tant qu'il n'est pas vérifié.
 
 ![Couches du code, du matériel aux Mods](../img/code-layers.svg)
 
@@ -14,7 +15,7 @@ un chemin.
 | **HAL** | `tools/payloads/hal/` | console (texte à l'écran), `exc` (gestionnaires d'exceptions), `vic` (interruptions). Code ARMv7 / Cortex-A8 portable. | **aucune adresse** |
 | **Constantes SoC** | `tools/payloads/soc/s5l8920.h` | les adresses, tailles et masques du 3GS, chaque ligne avec son étiquette de preuve | de la logique |
 | | `tools/payloads/soc/s5l8930.h` | les constantes de l'A4, **SOURCE seulement** (lues dans OpeniBoot, jamais sur un téléphone) | de la logique |
-| **Sélecteur** | `tools/payloads/soc.h` | choisit l'en-tête selon `-DSOC=...` | |
+| **Sélecteur** | `tools/payloads/soc.h` | choisit l'en-tête selon `-DSOC_<NOM>` (`make SOC=s5l8920`) | |
 | **Payload** | `tools/payloads/trace.c` | l'image de mise en route : assemble HAL et constantes SoC | de chiffre propre à une puce |
 
 Le HAL demande à `soc.h` des choses comme « où est le framebuffer » et « où est le contrôleur
@@ -50,5 +51,5 @@ make trace.bin                           # puce par défaut : le 3GS
 make trace.bin SOC=s5l8930 ALLOW_UNVERIFIED=1   # forme cible, A4 : non vérifié, attendez-vous à corriger des constantes
 ```
 
-Les noms exacts de variables sont ceux de la disposition cible et peuvent changer pendant que le découpage
-arrive.
+Le build d'une puce non vérifiée s'arrête sur un `#error` ; avec `ALLOW_UNVERIFIED=1` il échoue ensuite sur
+chaque constante à trouver (`SOC_SCRATCH`, `SOC_ENV_SET`...), ce qui est la liste de tâches honnête.

@@ -1,8 +1,10 @@
 # 7. Modular code layout
 
-**Status: being reworked.** The payloads started as one file, `tools/payloads/trace.c`, with the
-3GS addresses written inline. That does not survive a second chip, so the code is being split. This page
-describes the **target** layout; check the tree before relying on a path.
+**Status: done for the 3GS payloads (2026-10-15).** They started as one file, `tools/payloads/trace.c`,
+with the 3GS addresses written inline, which does not survive a second chip. The code is now split into
+`hal/` (portable), `soc/` (per-chip constants) and `trace.c` (the payload). The regression check was an
+emulated render of every stage, identical before and after the split (EMU); the split itself has **not**
+been re-run on the phone yet. The A4 header exists but is deliberately unusable until verified.
 
 ![Code layers, from hardware to Mods](../img/code-layers.svg)
 
@@ -13,7 +15,7 @@ describes the **target** layout; check the tree before relying on a path.
 | **HAL** | `tools/payloads/hal/` | console (text on screen), `exc` (exception handlers), `vic` (interrupts). Portable ARMv7 / Cortex-A8 code. | **any address** |
 | **SoC constants** | `tools/payloads/soc/s5l8920.h` | the 3GS addresses, sizes and masks, each line carrying its evidence tag | logic |
 | | `tools/payloads/soc/s5l8930.h` | the A4 constants, **SOURCE only** (read in OpenIBoot, never on a phone) | logic |
-| **Selector** | `tools/payloads/soc.h` | picks the header from `-DSOC=...` | |
+| **Selector** | `tools/payloads/soc.h` | picks the header from `-DSOC_<NAME>` (`make SOC=s5l8920`) | |
 | **Payload** | `tools/payloads/trace.c` | the bring-up image: assembles HAL and SoC constants | chip-specific numbers |
 
 The HAL asks `soc.h` for things like "where is the framebuffer" and "where is the interrupt controller".
@@ -48,4 +50,5 @@ make trace.bin                           # default chip: the 3GS
 make trace.bin SOC=s5l8930 ALLOW_UNVERIFIED=1   # target form, A4: unverified, expect to fix constants
 ```
 
-The exact variable names are those of the target layout and may change while the split lands.
+The build of an unverified chip stops with an `#error`; with `ALLOW_UNVERIFIED=1` it then fails on every
+constant still to find (`SOC_SCRATCH`, `SOC_ENV_SET`...), which is the honest to-do list.

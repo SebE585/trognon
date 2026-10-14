@@ -1,4 +1,5 @@
 /* On-screen console + exception handlers for the iPhone 3GS (S5L8920), as a Recovery payload.
+ * Bring-up payload: assembles hal/ (portable) and soc/ (per-chip constants), see docs/en/07-code-layout.md.
  *
  * State facts (all read on the device 2026-10-15, docs/en/03-hardware-map.md):
  *  - CLCD window 0 framebuffer 0x4fd00000, 320x480 RGB888 (0x00RRGGBB), mapped C=1 B=1
@@ -13,230 +14,14 @@
  * exception on screen then RESUME at scratch->resume (no reset, DFU is not needed again).
  * An unexpected exception shows its dump, waits, then chains to the original iBSS handler.
  */
-typedef unsigned int u32;
-typedef unsigned char u8;
-#include "font.h"
+#include "hal/hal.h"
+#include "hal/console.h"
+#include "hal/exc.h"
+#include "hal/vic.h"
 
-#define FB       ((volatile u32 *)0x4fd00000)
-#define W        320
-#define H        480
-#define SCALE    2
-#define CELL_W   (6 * SCALE)
-#define CELL_H   (9 * SCALE)
-#define ENV_SET  ((void (*)(const char *, const char *, int))0x84011799) /* iBSS 4.3.5 n88ap */
-
-#define VEC_UNDEF 0x24
-#define VEC_PABT  0x2c
-#define VEC_DABT  0x30
-
-struct scratch {
-	u32 old[4];       /* original vector pointers: undef, prefetch, data, irq */
-	u32 expected;     /* 1 while a deliberate exception is in flight */
-	u32 resume;       /* where a handled, expected exception resumes */
-	u32 hit;          /* number of expected exceptions handled */
-	u32 cx, cy;       /* console cursor in pixels */
-	u32 fg;
-	u32 quiet;        /* 1: a handled expected exception draws nothing (register survey) */
-	u32 irq;          /* IRQs taken for our soft-interrupt bit */
-	u32 stray;        /* IRQs taken for anything else (should stay 0) */
-	u32 irq_status;   /* VIC0 STATUS seen by the handler */
-	u32 irq_vec;      /* value read from VIC0 VICADDRESS */
-	u32 irq_bit;      /* the one VIC0 source we enabled */
-};
-#define SC ((volatile struct scratch *)0x41080000)
-#define HANDLER_STACK_TOP 0x410f8000
-#define IRQ_STACK_TOP     0x410f4000
-#define BREADCRUMB        (0x4fd00000 + 466 * 320 * 4)
-
-static void rect(int x, int y, int w, int h, u32 color)
-{
-	if (x < 0 || y < 0 || x + w > W || y + h > H)
-		return;
-	for (int j = y; j < y + h; j++)
-		for (int i = x; i < x + w; i++)
-			FB[j * W + i] = color;
-}
-
-/* Debug aid: push the framebuffer out of the write-back D-cache so the screen shows what the CPU
- * really got through if it freezes (dirty lines are otherwise lost). Costs ~19200 MCRs. */
-static void fb_clean(void)
-{
-	for (u32 a = 0x4fd00000; a < 0x4fd00000 + W * H * 4; a += 32)
-		asm volatile("mcr p15, 0, %0, c7, c10, 1" :: "r"(a) : "memory");
-	asm volatile("dsb sy" ::: "memory");
-}
-
-static void putc_(char c)
-{
-	if (c == '\n' || SC->cx + CELL_W > W) {
-		SC->cx = 4;
-		SC->cy += CELL_H;
-		if (c == '\n')
-			return;
-	}
-	if (SC->cy + CELL_H > H)
-		return;                       /* no scrolling: it would read the framebuffer */
-	const u8 *g = font5x7[c & 0x7f];
-	for (int r = 0; r < 7; r++)
-		for (int k = 0; k < 5; k++)
-			if (g[r] & (0x10 >> k))
-				rect(SC->cx + k * SCALE, SC->cy + r * SCALE, SCALE, SCALE, SC->fg);
-	SC->cx += CELL_W;
-}
-
-static void puts_(const char *s) { while (*s) putc_(*s++); fb_clean(); }
-
-static void hex(u32 v)
-{
-	for (int i = 28; i >= 0; i -= 4)
-		putc_("0123456789ABCDEF"[(v >> i) & 15]);
-}
-
-static void kv(const char *k, u32 v) { puts_(k); putc_(' '); hex(v); putc_('\n'); fb_clean(); }
-
-static void at(int x, int y, u32 fg) { SC->cx = x; SC->cy = y; SC->fg = fg; }
-
-/* Called from the asm stubs. kind: 0 undef, 1 prefetch abort, 2 data abort.
- * Returns the address to resume at (even: the Thumb state comes from SPSR). */
-u32 exc_c(u32 kind, u32 lr, u32 spsr, u32 *r)
-{
-	static const char *const name[] = { "UNDEF", "PREFETCH ABT", "DATA ABT" };
-	u32 fsr = 0, far = 0;
-	if (kind == 2) {
-		asm volatile("mrc p15, 0, %0, c5, c0, 0" : "=r"(fsr));
-		asm volatile("mrc p15, 0, %0, c6, c0, 0" : "=r"(far));
-	} else if (kind == 1) {
-		asm volatile("mrc p15, 0, %0, c5, c0, 1" : "=r"(fsr));
-		asm volatile("mrc p15, 0, %0, c6, c0, 2" : "=r"(far));
-	}
-	if (kind == 2) {                       /* drop SCTLR.A first: the alignment test arms it */
-		u32 c;
-		asm volatile("mrc p15, 0, %0, c1, c0, 0" : "=r"(c));
-		asm volatile("mcr p15, 0, %0, c1, c0, 0\n\tisb sy" :: "r"(c & ~2u));
-	}
-	int expected = SC->expected;
-	if (expected)
-		SC->hit = SC->hit + 1;
-	if (expected && SC->quiet)
-		return SC->resume;
-	at(4, kind ? 306 : 134, expected ? 0x0000B050 : 0x00E02020);   /* UNDEF and ABT dumps stack, not overlap */
-	puts_(expected ? "EXPECTED " : "UNEXPECTED ");
-	puts_(name[kind]);
-	putc_('\n');
-	kv("LR ", lr);
-	kv("SPSR", spsr);
-	if (kind) { kv("FSR", fsr); kv("FAR", far); }
-	for (int i = 0; i < 2; i++) { putc_('R'); putc_('0' + i); putc_(' '); hex(r[i]); putc_('\n'); }
-	if (expected)
-		return SC->resume;
-	for (volatile u32 i = 0; i < 0x20000000; i++) ;   /* leave time to read the screen */
-	return SC->old[kind];                              /* chain to the iBSS handler (will reset) */
-}
-
-/* Asm stubs: own stack (banked SP of the exception mode), save r0-r12, call exc_c, restore, return.
- * 13 regs + 4 pad keeps SP 8-byte aligned at the call. The pointer returned by exc_c becomes the
- * return address through `subs pc, lr, #0` (restores CPSR from SPSR). */
-#define STR_(x) #x
-#define STR(x) STR_(x)
-#define STUB(NAME, KIND) \
-__attribute__((naked, target("arm"))) void NAME(void) \
-{ \
-	asm volatile( \
-		"movw sp, #:lower16:" STR(HANDLER_STACK_TOP) "\n" \
-		"movt sp, #:upper16:" STR(HANDLER_STACK_TOP) "\n" \
-		"push {r0-r12}\n" \
-		/* breadcrumb, no C and no stack: 10 rows at y=466, red/green/blue for kind 0/1/2 */ \
-		"movw r1, #:lower16:" STR(BREADCRUMB) "\n" \
-		"movt r1, #:upper16:" STR(BREADCRUMB) "\n" \
-		"mov r2, #(0xFF0000 >> (8 * " STR(KIND) "))\n" \
-		"movw r3, #3200\n" \
-		"1: str r2, [r1], #4\n" \
-		"subs r3, r3, #1\n" \
-		"bne 1b\n" \
-		"movw r1, #:lower16:" STR(BREADCRUMB) "\n" \
-		"movt r1, #:upper16:" STR(BREADCRUMB) "\n" \
-		"movw r3, #400\n" \
-		"2: mcr p15, 0, r1, c7, c10, 1\n" \
-		"add r1, r1, #32\n" \
-		"subs r3, r3, #1\n" \
-		"bne 2b\n" \
-		"dsb sy\n" \
-		"sub sp, sp, #4\n" \
-		"mov r0, #" STR(KIND) "\n" \
-		"mov r1, lr\n" \
-		"mrs r2, spsr\n" \
-		"add r3, sp, #4\n" \
-		"bl exc_c\n" \
-		"mov lr, r0\n" \
-		"add sp, sp, #4\n" \
-		"pop {r0-r12}\n" \
-		"subs pc, lr, #0\n"); \
-}
-STUB(exc_undef, 0)
-STUB(exc_pabt, 1)
-STUB(exc_dabt, 2)
-
-static void hook(int on)
-{
-	static const u32 vec[3] = { VEC_UNDEF, VEC_PABT, VEC_DABT };
-	const u32 handler[3] = { (u32)exc_undef, (u32)exc_pabt, (u32)exc_dabt };
-	for (int i = 0; i < 3; i++) {
-		if (on)
-			SC->old[i] = *(volatile u32 *)vec[i];
-		*(volatile u32 *)vec[i] = on ? handler[i] : SC->old[i];
-	}
-}
-
-#if STAGE == 7
-#define VIC0_ADDR 0xBF200000
-#define VIC1_ADDR 0xBF210000
-#define VIC2_ADDR 0xBF220000
-#define VICREG(base, off) (*(volatile u32 *)((base) + (off)))
-#define VEC_IRQ 0x38
-
-/* Called from the IRQ stub. All VIC0 sources but ours are disabled while the test runs, so a hit on
- * another bit is a surprise: count it and shut every VIC up so it cannot storm. */
-void irq_c(void)
-{
-	u32 st = VICREG(VIC0_ADDR, 0x000);
-	SC->irq_status = st;
-	if (st & SC->irq_bit) {
-		SC->irq_vec = VICREG(VIC0_ADDR, 0xF00);        /* read = "being serviced" */
-		VICREG(VIC0_ADDR, 0x01C) = SC->irq_bit;        /* SOFTINTCLEAR */
-		VICREG(VIC0_ADDR, 0x014) = SC->irq_bit;        /* INTENCLEAR */
-		VICREG(VIC0_ADDR, 0xF00) = 0;                  /* end of interrupt */
-		SC->irq = SC->irq + 1;
-	} else {
-		VICREG(VIC0_ADDR, 0x014) = 0xFFFFFFFF;
-		VICREG(VIC1_ADDR, 0x014) = 0xFFFFFFFF;
-		VICREG(VIC2_ADDR, 0x014) = 0xFFFFFFFF;
-		SC->stray = SC->stray + 1;
-	}
-}
-
-/* IRQ entry: LR_irq = interrupted PC + 4, SPSR = interrupted CPSR. Own stack, save everything,
- * return to the interrupted instruction with CPSR restored (ldm ... ^). */
-__attribute__((naked, target("arm"))) void exc_irq(void)
-{
-	asm volatile(
-		"sub lr, lr, #4\n"
-		"movw sp, #:lower16:" STR(IRQ_STACK_TOP) "\n"
-		"movt sp, #:upper16:" STR(IRQ_STACK_TOP) "\n"
-		"push {r0-r12, lr}\n"
-		"bl irq_c\n"
-		"ldmfd sp!, {r0-r12, pc}^\n");
-}
-
-static void hook_irq(int on)
-{
-	u32 addr = VEC_IRQ;
-	asm volatile("" : "+r"(addr));          /* hide the constant: GCC would flag a write near address 0 */
-	volatile u32 *vec = (volatile u32 *)addr;
-	if (on)
-		SC->old[3] = *vec;
-	*vec = on ? (u32)exc_irq : SC->old[3];
-}
-#endif
+#define W        SOC_FB_W
+#define H        SOC_FB_H
+#define ENV_SET  ((void (*)(const char *, const char *, int))SOC_ENV_SET) /* iBSS 4.3.5 n88ap */
 
 #ifndef STAGE
 #define STAGE 3
@@ -308,22 +93,22 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	 * (plat-s5l8920/clcd.c, gpio.c, includes/hardware/gpio.h): to be checked against the answer. */
 #if STAGE == 5
 	static const struct { const char *n; u32 a; } regs[] = {
-		{ "VIDCON1 ", 0x85401B14 }, { "VIDCON1b", 0x85401B14 }, { "VIDCON1c", 0x85401B14 },
-		{ "VIDEN   ", 0x85401B10 }, { "VIDTCON2", 0x85401B24 }, { "FBADDR  ", 0x85400024 },
-		{ "GPIO+00 ", 0x83000000 }, { "GPIO+80 ", 0x83000080 }, { "GPIO+A0 ", 0x830000A0 },
-		{ "GPIO+320", 0x83000320 }, { "CLKGT2C ", 0xBF100128 },
+		{ "VIDCON1 ", (SOC_CLCD_BASE + 0x1B14) }, { "VIDCON1b", (SOC_CLCD_BASE + 0x1B14) }, { "VIDCON1c", (SOC_CLCD_BASE + 0x1B14) },
+		{ "VIDEN   ", (SOC_CLCD_BASE + 0x1B10) }, { "VIDTCON2", (SOC_CLCD_BASE + 0x1B24) }, { "FBADDR  ", (SOC_CLCD_BASE + 0x24) },
+		{ "GPIO+00 ", SOC_GPIO_BASE }, { "GPIO+80 ", (SOC_GPIO_BASE + 0x80) }, { "GPIO+A0 ", (SOC_GPIO_BASE + 0xA0) },
+		{ "GPIO+320", (SOC_GPIO_BASE + 0x320) }, { "CLKGT2C ", SOC_CLOCK_GATE_2C },
 	};
 #else
 	/* Interrupt controllers, read-only. VICADDRESS (0xF00) is NOT read: reading it tells the VIC an
 	 * interrupt is being serviced. Vector words 0x28/0x38/0x3c = where the iBSS sends SWI/IRQ/FIQ. */
 	static const struct { const char *n; u32 a; } regs[] = {
-		{ "V0 STAT ", 0xBF200000 }, { "V0 RAW  ", 0xBF200008 }, { "V0 SEL  ", 0xBF20000C },
-		{ "V0 EN   ", 0xBF200010 }, { "V0 SOFT ", 0xBF200018 },
-		{ "V1 STAT ", 0xBF210000 }, { "V1 RAW  ", 0xBF210008 }, { "V1 SEL  ", 0xBF21000C },
-		{ "V1 EN   ", 0xBF210010 }, { "V1 SOFT ", 0xBF210018 },
-		{ "V2 STAT ", 0xBF220000 }, { "V2 RAW  ", 0xBF220008 }, { "V2 SEL  ", 0xBF22000C },
-		{ "V2 EN   ", 0xBF220010 }, { "V2 SOFT ", 0xBF220018 },
-		{ "VEC IRQ ", 0x00000038 }, { "VEC FIQ ", 0x0000003C },
+		{ "V0 STAT ", SOC_VIC0 }, { "V0 RAW  ", (SOC_VIC0 + 0x08) }, { "V0 SEL  ", (SOC_VIC0 + 0x0C) },
+		{ "V0 EN   ", (SOC_VIC0 + 0x10) }, { "V0 SOFT ", (SOC_VIC0 + 0x18) },
+		{ "V1 STAT ", SOC_VIC1 }, { "V1 RAW  ", (SOC_VIC1 + 0x08) }, { "V1 SEL  ", (SOC_VIC1 + 0x0C) },
+		{ "V1 EN   ", (SOC_VIC1 + 0x10) }, { "V1 SOFT ", (SOC_VIC1 + 0x18) },
+		{ "V2 STAT ", SOC_VIC2 }, { "V2 RAW  ", (SOC_VIC2 + 0x08) }, { "V2 SEL  ", (SOC_VIC2 + 0x0C) },
+		{ "V2 EN   ", (SOC_VIC2 + 0x10) }, { "V2 SOFT ", (SOC_VIC2 + 0x18) },
+		{ "VEC IRQ ", SOC_VEC_IRQ }, { "VEC FIQ ", (SOC_VEC_IRQ + 4) },
 	};
 #endif
 	at(4, 116, 0x00F0C040); puts_(STAGE == 5 ? "STEP 5 REGS\n" : "STEP 6 VIC\n");
@@ -348,7 +133,7 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	 * left enabled is disabled (and restored after) so only ours can fire. */
 	at(4, 116, 0x00F0C040); puts_("STEP 7 SOFT IRQ\n");
 	at(4, 134, 0x00FFFFFF);
-	u32 cpsr0, en0 = VICREG(VIC0_ADDR, 0x010);
+	u32 cpsr0, en0 = VICREG(SOC_VIC0, 0x010);
 	asm volatile("mrs %0, cpsr" : "=r"(cpsr0));
 	u32 bit = ~en0 & -(~en0);                           /* lowest source not enabled by the iBSS */
 	SC->irq = 0; SC->stray = 0; SC->irq_bit = bit; SC->irq_status = 0; SC->irq_vec = 0;
@@ -356,13 +141,13 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	kv("EN0   ", en0);
 	kv("BIT   ", bit);
 	asm volatile("cpsid i" ::: "memory");
-	VICREG(VIC0_ADDR, 0x014) = 0xFFFFFFFF;               /* INTENCLEAR: all of VIC0 off */
-	u32 en_off = VICREG(VIC0_ADDR, 0x010);
+	VICREG(SOC_VIC0, 0x014) = 0xFFFFFFFF;               /* INTENCLEAR: all of VIC0 off */
+	u32 en_off = VICREG(SOC_VIC0, 0x010);
 	hook_irq(1);
-	VICREG(VIC0_ADDR, 0x010) = bit;                      /* INTENABLE: ours only */
-	VICREG(VIC0_ADDR, 0x018) = bit;                      /* SOFTINT: raise it */
+	VICREG(SOC_VIC0, 0x010) = bit;                      /* INTENABLE: ours only */
+	VICREG(SOC_VIC0, 0x018) = bit;                      /* SOFTINT: raise it */
 	asm volatile("dsb sy" ::: "memory");
-	u32 raw = VICREG(VIC0_ADDR, 0x008), stat = VICREG(VIC0_ADDR, 0x000);
+	u32 raw = VICREG(SOC_VIC0, 0x008), stat = VICREG(SOC_VIC0, 0x000);
 	kv("EN OFF", en_off);
 	kv("RAW   ", raw);
 	kv("STAT  ", stat);
@@ -371,11 +156,11 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	for (volatile u32 w = 0; w < 0x4000000 && !SC->irq && !SC->stray; w++) ;
 	asm volatile("cpsid i" ::: "memory");
 	hook_irq(0);                                         /* vector back BEFORE the iBSS sources return */
-	u32 raw2 = VICREG(VIC0_ADDR, 0x008), stat2 = VICREG(VIC0_ADDR, 0x000);
-	VICREG(VIC0_ADDR, 0x014) = 0xFFFFFFFF;
-	VICREG(VIC0_ADDR, 0x01C) = bit;                      /* SOFTINTCLEAR, in case nothing took it */
-	VICREG(VIC0_ADDR, 0x010) = en0;                      /* restore the iBSS's enables */
-	u32 en_back = VICREG(VIC0_ADDR, 0x010);
+	u32 raw2 = VICREG(SOC_VIC0, 0x008), stat2 = VICREG(SOC_VIC0, 0x000);
+	VICREG(SOC_VIC0, 0x014) = 0xFFFFFFFF;
+	VICREG(SOC_VIC0, 0x01C) = bit;                      /* SOFTINTCLEAR, in case nothing took it */
+	VICREG(SOC_VIC0, 0x010) = en0;                      /* restore the iBSS's enables */
+	u32 en_back = VICREG(SOC_VIC0, 0x010);
 	if (!(cpsr0 & 0x80))
 		asm volatile("cpsie i" ::: "memory");
 	at(4, 134 + 7 * 18, SC->irq ? 0x0000B050 : 0x00E02020);

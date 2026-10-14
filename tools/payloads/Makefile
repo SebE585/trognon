@@ -1,37 +1,46 @@
-# Payloads for the 3GS (Thumb, raw, loaded at 0x41000000). `make draw.png` renders offline.
+# Payloads for the 3GS (Thumb, raw, loaded where the SoC header says). Portable code lives in hal/,
+# per-chip constants in soc/, the payload itself in trace.c (see docs/en/07-code-layout.md).
+#   make trace.bin trace_pabt.bin trace_regs.bin trace_vic.bin trace_irq.bin
+#   make SOC=s5l8930 ALLOW_UNVERIFIED=1 ...    (refused otherwise: constants not verified on a device)
+# `make draw.png`-style offline renders: python3 -I render_fb.py X.bin X.png
+SOC     ?= s5l8920
+SOCDEF  := -DSOC_$(shell echo $(SOC) | tr a-z A-Z)
+ifdef ALLOW_UNVERIFIED
+SOCDEF  += -DALLOW_UNVERIFIED
+endif
 CC      = arm-none-eabi-gcc
 OBJCOPY = arm-none-eabi-objcopy
 CFLAGS  = -mthumb -mcpu=cortex-a8 -Os -ffreestanding -fno-builtin -fno-pic \
-          -fno-tree-loop-distribute-patterns -nostdlib -Wall -Wextra
+          -fno-tree-loop-distribute-patterns -nostdlib -Wall -Wextra \
+          -ffunction-sections -I. $(SOCDEF)
+# One source of truth for the load address: the SoC header.
+PAYLOAD_BASE = $(shell echo SOC_PAYLOAD_BASE | $(CC) -E -P -x c -include soc.h $(SOCDEF) - 2>/dev/null | tr -d ' ')
+LDFLAGS = -T payload.ld -Wl,--gc-sections -Wl,--defsym=PAYLOAD_BASE=$(PAYLOAD_BASE)
+HAL     = hal/console.o hal/exc.o hal/vic.o
+
+# stage number per payload (STAGE is read by trace.c)
+STAGE_trace      = 3
+STAGE_trace_s1   = 1
+STAGE_trace_s2   = 2
+STAGE_trace_pabt = 4
+STAGE_trace_regs = 5
+STAGE_trace_vic  = 6
+STAGE_trace_irq  = 7
 
 font.h: gen_font.py
 	python3 -I gen_font.py $@
 
-trace.elf trace_offline.elf: font.h
+hal/%.o: hal/%.c hal/*.h soc.h soc/*.h font.h
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-%.elf: %.c payload.ld
-	$(CC) $(CFLAGS) -T payload.ld -o $@ $<
+trace.o: trace.c hal/*.h soc.h soc/*.h font.h
+	$(CC) $(CFLAGS) -DSTAGE=$(STAGE_trace) -c -o $@ $<
 
-trace_s1.elf: trace.c payload.ld font.h
-	$(CC) $(CFLAGS) -DSTAGE=1 -T payload.ld -o $@ $<
+trace_%.o: trace.c hal/*.h soc.h soc/*.h font.h
+	$(CC) $(CFLAGS) -DSTAGE=$(STAGE_trace_$*) -c -o $@ $<
 
-trace_s2.elf: trace.c payload.ld font.h
-	$(CC) $(CFLAGS) -DSTAGE=2 -T payload.ld -o $@ $<
-
-trace_pabt.elf: trace.c payload.ld font.h
-	$(CC) $(CFLAGS) -DSTAGE=4 -T payload.ld -o $@ $<
-
-trace_regs.elf: trace.c payload.ld font.h
-	$(CC) $(CFLAGS) -DSTAGE=5 -T payload.ld -o $@ $<
-
-trace_vic.elf: trace.c payload.ld font.h
-	$(CC) $(CFLAGS) -DSTAGE=6 -T payload.ld -o $@ $<
-
-trace_irq.elf: trace.c payload.ld font.h
-	$(CC) $(CFLAGS) -DSTAGE=7 -T payload.ld -o $@ $<
-
-trace_offline.elf: trace.c payload.ld font.h
-	$(CC) $(CFLAGS) -DOFFLINE -T payload.ld -o $@ $<
+%.elf: %.o $(HAL) payload.ld
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(HAL)
 
 %.bin: %.elf
 	$(OBJCOPY) -O binary $< $@
@@ -40,6 +49,6 @@ trace_offline.elf: trace.c payload.ld font.h
 	python3 -I render_fb.py $< $@
 
 clean:
-	rm -f *.elf *.bin *.png
+	rm -f *.o hal/*.o *.elf *.bin *.png
 .PHONY: clean
 .SECONDARY:
