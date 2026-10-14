@@ -78,8 +78,32 @@ trognon_usb_probe_all(struct trognon_probe_result *results, size_t max, size_t *
 
     size_t found = 0;
     for (ssize_t i = 0; i < n && found < max; i++) {
-        if (fill_result(list[i], &results[found]))
-            found++;
+        struct trognon_probe_result candidate;
+        if (!fill_result(list[i], &candidate))
+            continue;
+
+        /* macOS's IOKit backend can report the same physical device more
+         * than once, in a non-deterministic order, as several distinct
+         * libusb_device entries sharing one serial number — observed
+         * 2026-10-14 (one iPhone 3GS showed up 3 times) and documented
+         * for other Apple USB devices: see
+         * https://github.com/LedgerHQ/ledgercomm/pull/6. Deduplicate by
+         * non-empty serial before keeping a result; an empty serial (seen
+         * if the string descriptor read failed) is never deduplicated
+         * against, since we can't tell devices apart in that case. */
+        int is_duplicate = 0;
+        if (candidate.serial[0]) {
+            for (size_t j = 0; j < found; j++) {
+                if (strcmp(results[j].serial, candidate.serial) == 0) {
+                    is_duplicate = 1;
+                    break;
+                }
+            }
+        }
+        if (is_duplicate)
+            continue;
+
+        results[found++] = candidate;
     }
 
     if (count)
