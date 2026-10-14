@@ -18,6 +18,7 @@
 #include "hal/console.h"
 #include "hal/exc.h"
 #include "hal/vic.h"
+#include "hal/result.h"
 
 #define W        SOC_FB_W
 #define H        SOC_FB_H
@@ -38,6 +39,16 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	asm volatile("mrc p15, 0, %0, c0, c0, 0" : "=r"(midr));
 	asm volatile("mrc p15, 0, %0, c1, c0, 0" : "=r"(sctlr));
 
+#if STAGE == 9
+	/* Tick-rate probe: read the free-running counter FIRST, publish it for the host, nothing else.
+	 * The host runs this twice a measured time apart and divides (tools/tick_rate.py). */
+	u32 t_lo = *(volatile u32 *)(SOC_TIMER_BASE + 0x200);
+	u32 t_hi = *(volatile u32 *)(SOC_TIMER_BASE + 0x204);
+	result_hex("ticks", t_lo);
+	result_hex("ticks_hi", t_hi);
+	ENV_SET("trognon", "ticks-1", 1);
+	return;
+#endif
 	SC->quiet = 0;                        /* scratch RAM keeps the previous payload's values */
 	rect(0, 0, W, H, 0x00101820);
 	rect(0, 0, W, 6, 0x000D32B2);
