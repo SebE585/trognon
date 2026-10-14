@@ -5,3 +5,4 @@
 *.o
 /trognon
 /tests/test_device_db
+/tests/test_serial

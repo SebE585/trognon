@@ -14,20 +14,13 @@
 #include <stdint.h>
 
 #include "trognon/device.h"
+#include "trognon/serial.h" /* enum trognon_bus_state lives there — pure
+                                parsing, no libusb, testable without
+                                hardware. See serial.h for the format. */
 
 /* Apple's USB vendor id, for filtering enumeration. Public, well-known
  * constant — not a secret, not an exploit. */
 #define TROGNON_APPLE_VENDOR_ID 0x05ac
-
-enum trognon_bus_state {
-    TROGNON_STATE_UNKNOWN = 0,
-    TROGNON_STATE_NORMAL,     /* booted iOS, USB in normal mode */
-    TROGNON_STATE_RECOVERY,   /* iBoot recovery mode */
-    TROGNON_STATE_DFU,        /* standard DFU, SecureROM signature checks active */
-    TROGNON_STATE_DFU_PWNED,  /* DFU after an unlock step ran — reported by
-                                  the OS string descriptor ("PWND:[...]"),
-                                  not something this header decides */
-};
 
 struct trognon_probe_result {
     int found;
