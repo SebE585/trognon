@@ -94,10 +94,15 @@ it a full computer".
   (S5L8920, 359.3.2 bootrom), succeeding on the 2nd-3rd attempt each time
   (matches the README's own "repeat if it fails" warning). See
   `docs/journal/2026-10-14.md`.
-- `ipwndfu --dump-rom` after a successful `-p`: fails reproducibly
-  (10+ attempts, with and without a USB hub) at the first post-pwn "exec"
-  command (`dfuexec.py`'s `PwnedDFUDevice.execute()`), a USB timeout. Not
-  resolved — root cause unclear, possibly a deeper Python 3 port issue in
-  the exec protocol itself. Confirmed reproducible, not pursued further
-  2026-10-14 since fixing it would mean reverse-engineering the exploit's
-  own command protocol, not just porting syntax.
+- `ipwndfu --dump-rom` after a successful `-p`: initially failed at the
+  first post-pwn "exec" command (`dfuexec.py`'s `PwnedDFUDevice.execute()`)
+  with a USB timeout, 10+ times in a row. Resolved, same day: a granular
+  diagnostic (reading DFU GET_STATUS between every single control
+  transfer) showed the full protocol sequence succeeding cleanly on a
+  later attempt — same inherent flakiness as `-p` itself (the tool's own
+  README already warns about this for `-p`), not a Python 3 port bug.
+  Confirmed by actually dumping SecureROM and checking its SHA256 against
+  the known-good hash in `dfuexec.py`'s config (`0e6feb11...` for
+  359.3.2) — matched exactly. Lesson: for this exploit family, a failure
+  at any step means "retry", not "investigate a protocol bug", unless the
+  failure is 100% reproducible across a full fresh pwn cycle.
