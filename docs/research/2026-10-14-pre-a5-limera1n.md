@@ -106,3 +106,14 @@ it a full computer".
   359.3.2) — matched exactly. Lesson: for this exploit family, a failure
   at any step means "retry", not "investigate a protocol bug", unless the
   failure is 100% reproducible across a full fresh pwn cycle.
+- `ipwndfu`'s `PwnedDFUDevice.boot_ibss()`: also now confirmed working,
+  2026-10-14. Sends a patched iBSS (extracted from the official
+  `iPhone2,1_4.3.5_8L1_Restore.ipsw`, SHA256-verified) and reaches
+  **Recovery mode** (USB product 0x1281) — the furthest point in the
+  boot chain reached by this project so far. First attempt appeared to
+  fail (blank screen, no USB device at all); a second attempt with the
+  same granular GET_STATUS diagnostic succeeded cleanly — same inherent
+  flakiness as `-p`/`--dump-rom`, not a bug. `image3.py` needed several
+  Python 3 porting fixes beyond plain 2to3 (byte-string tag magic
+  comparisons that silently never matched, a `bytes`-shadowing local
+  variable) before it would even decrypt correctly.
