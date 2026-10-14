@@ -182,20 +182,38 @@ static void hook(int on)
 #endif
 
 #if STAGE >= 3
-/* First section whose descriptor is a translation fault (type 00) in the live page table.
- * Scan starts at index 1 (index 0 is the vector page). Returns the VA, or 0 if none exists. */
-static u32 find_unmapped_va(u32 *nfault)
+/* Domain-fault target. The table has no translation-fault entries (read on the device
+ * 2026-10-15: all of 1..0xfff are mapped), so we make the fault with DACR instead of editing the
+ * table: pick a mapped section whose domain no code or data we touch uses, then set that domain
+ * to "no access" (00) just around one load. The MMU raises a domain fault BEFORE any bus access,
+ * so the target address is never read (no side effect even if it is a device).
+ * Returns the VA (0 if no spare domain) and the domain mask in use. */
+static u32 dom_of(volatile u32 *tt, u32 va)
 {
-	u32 ttbr, first = 0;
+	u32 d = tt[va >> 20];
+	return (d & 3) == 0 || (d & 3) == 3 ? 16 : (d >> 5) & 15;   /* 16: not a section/coarse entry */
+}
+
+static u32 find_domain_va(u32 *used, u32 *dom)
+{
+	u32 ttbr, here, m = 0, first = 0;
 	asm volatile("mrc p15, 0, %0, c2, c0, 0" : "=r"(ttbr));
 	volatile u32 *tt = (volatile u32 *)(ttbr & ~0x3fffu);
-	*nfault = 0;
-	for (u32 idx = 1; idx < 0x1000; idx++)
-		if ((tt[idx] & 3) == 0) {
-			(*nfault)++;
-			if (!first)
-				first = idx << 20;
+	u32 touched[] = { 0, (u32)SC, 0x41000000, (u32)&here, 0x4fd00000, 0x84000000,
+			  HANDLER_STACK_TOP - 4 };
+	for (u32 i = 0; i < sizeof touched / sizeof *touched; i++) {
+		u32 d = dom_of(tt, touched[i]);
+		if (d < 16)
+			m |= 1u << d;
+	}
+	*used = m;
+	for (u32 idx = 1; idx < 0x1000; idx++) {
+		u32 d = dom_of(tt, idx << 20);
+		if (d < 16 && !(m & (1u << d)) && !first) {
+			first = idx << 20;
+			*dom = d;
 		}
+	}
 	return first;
 }
 #endif
@@ -234,20 +252,26 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	at(4, 230, 0x0000B050); puts_("UDF RESUMED\n");
 #endif
 #if STAGE >= 3
-	/* Test 2: deliberate data abort on a VA the page table says is unmapped. */
-	u32 nfault, va = find_unmapped_va(&nfault);
+	/* Test 2: deliberate data abort (domain fault), see find_domain_va(). */
+	u32 used, dom = 0, dacr, va = find_domain_va(&used, &dom);
+	asm volatile("mrc p15, 0, %0, c3, c0, 0" : "=r"(dacr));
 	at(4, 252, 0x00A0B0C0);
-	kv("FAULT ENTRIES", nfault);
-	kv("UNMAPPED VA", va);
+	puts_("DACR "); hex(dacr); puts_(" U "); hex(used); putc_('\n'); fb_clean();   /* U: domains in use */
 	if (va) {
+		at(4, 270, 0x00A0B0C0); kv("TARGET VA", va);
 		at(4, 288, 0x00F0C040); puts_("STEP 3 DATA ABT\n");
-		u32 before = SC->hit;
+		u32 before = SC->hit, cut = dacr & ~(3u << (2 * dom));
 		SC->expected = 1;
-		asm volatile("adr.w r1, 1f\n\tstr r1, [%1]\n\tldr r0, [%0]\n1:"
-			     :: "r"(va), "r"(&SC->resume) : "r0", "r1", "memory");
+		asm volatile("adr.w r1, 1f\n\tstr r1, [%1]\n\t"
+			     "mcr p15, 0, %2, c3, c0, 0\n\tisb sy\n\t"
+			     "ldr r0, [%0]\n1:\n\t"
+			     "mcr p15, 0, %3, c3, c0, 0\n\tisb sy"
+			     :: "r"(va), "r"(&SC->resume), "r"(cut), "r"(dacr) : "r0", "r1", "memory");
 		SC->expected = 0;
 		at(4, 432, SC->hit == before ? 0x00E02020 : 0x0000B050);
 		puts_(SC->hit == before ? "NO ABORT\n" : "ABT RESUMED\n");
+	} else {
+		at(4, 270, 0x00F0C040); puts_("NO SPARE DOMAIN\n");
 	}
 #endif
 #if STAGE >= 1

@@ -21,6 +21,10 @@ mu.mem_map(0x42000000, 0x10000)                 # stack + return sentinel
 mu.mem_map(0x0, 0x4000)                         # vector page + a 16 KiB all-zero 'page table' at TTBR0=0
 for a, v in ((0x24, 0x8400fa7c), (0x2c, 0x8400faec), (0x30, 0x8400fb28)):
     mu.mem_write(a, v.to_bytes(4, 'little'))
+# Seed the fake page table (TTBR0=0): the payload's own sections in domain 0, one spare section
+# (VA 0x50000000, domain 5, left unmapped here so Unicorn raises the abort the MMU would raise).
+for idx, dom in ((0, 0), (0x410, 0), (0x4fd, 0), (0x840, 0), (0x500, 5)):
+    mu.mem_write(idx * 4, ((dom << 5) | 2).to_bytes(4, 'little'))
 mu.mem_map(FB, (W * H * 4 + 0xfff) & ~0xfff)
 mu.mem_map(0x84011000, 0x1000); mu.mem_write(0x84011798, b'\x70\x47' * 2)
 mu.mem_write(0x42000000, b'\x70\x47')
