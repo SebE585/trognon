@@ -67,3 +67,25 @@ Relevé en lecture seule. Tous les registres ont répondu, sans abort.
 - Quel périphérique correspond à chaque bit activé reste inconnu.
 
 Les registres du timer sont la partie la moins comprise d'OpenIBoot (son propre commentaire dit qu'ils sont copiés d'un SoC plus ancien).
+
+## Bloc timer, `TIMER_BASE = 0xBF100000` (DEVICE, 2026-10-15)
+
+| Registre | Décalage | Observé |
+|---|---|---|
+| Tick libre, poids faible | `+0x200` | avance ; **24,001 MHz mesurés contre l'horloge du Mac** (3 échantillons, 12,2 s, à 0,004 % de 24 MHz) |
+| Tick libre, poids fort | `+0x204` | `0` (le mot de 32 bits boucle toutes les ~179 s) |
+| `STATE` timer 0 | `+0x04` | `0x00669601` |
+| `STATE` timer 1 | `+0x24` | `0x00000E02` |
+| `STATE` timers 2 et 3 | `+0x44`, `+0x64` | `0x00000B00` chacun |
+| `STATE` timer 5 | `+0xC4` | `0` (semble inutilisé) |
+| `STATE`, `CFG`, `CNT`, `CNT2` timer 4 ; `STATE` timer 6 ; clock gate `0x25` | `+0xA4, +0xA0, +0xA8, +0xAC, +0xE4, +0x10C` | tous exactement `0x0000000F` ; `PRES` du timer 4 (`+0xB0`) lit `0` |
+
+- Le tick tourne à 24 MHz. OpeniBoot dit la même chose (`TicksPerSec = PLLFrequencies[3]`, **SOURCE**) : la
+  mesure est une confirmation, pas une surprise.
+- Les mots `STATE` des timers 0 à 3 semblent structurés (ce n'est probablement pas qu'un bit de démarrage) ; on ne les décode pas.
+- Le mur de `0x0000000F` sur les timers 4 et 6 n'est pas expliqué : il ressemble aux registres de clock gate (`0xF`
+  partout), donc ces registres sont peut-être des alias ou non implémentés. Ne pas les interpréter.
+- `IRQSTAT` et `IRQLATCH` (`+0x10000`, `+0xF8`) n'ont pas été lus : ils peuvent s'effacer à la lecture.
+- Outil de mesure : `make trace_ticks.bin` et `tools/tick_rate.py`. Il publie le compteur dans une variable
+  d'environnement lue par `getenv`, donc sans photo. Deux échantillons dans deux invocations séparées : un
+  processus ne peut pas garder l'appareil à travers une pause (la deuxième connexion échoue).

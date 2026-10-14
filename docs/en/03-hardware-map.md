@@ -67,3 +67,25 @@ Read-only survey. All registers answered, no abort.
 - Which peripheral each enabled bit is stays unknown.
 
 Timer registers are the least understood part of OpenIBoot (its own comment says they are copied from an older SoC).
+
+## Timer block, `TIMER_BASE = 0xBF100000` (DEVICE, 2026-10-15)
+
+| Register | Offset | Observed |
+|---|---|---|
+| Free-running tick, low | `+0x200` | advances; **24.001 MHz measured against the host clock** (3 samples, 12.2 s, 0.004 % off 24 MHz) |
+| Free-running tick, high | `+0x204` | `0` (the 32-bit low word wraps every ~179 s) |
+| Timer 0 `STATE` | `+0x04` | `0x00669601` |
+| Timer 1 `STATE` | `+0x24` | `0x00000E02` |
+| Timers 2 and 3 `STATE` | `+0x44`, `+0x64` | `0x00000B00` each |
+| Timer 5 `STATE` | `+0xC4` | `0` (looks unused) |
+| Timer 4 `STATE`, `CFG`, `CNT`, `CNT2`; Timer 6 `STATE`; clock gate `0x25` | `+0xA4, +0xA0, +0xA8, +0xAC, +0xE4, +0x10C` | all exactly `0x0000000F`; Timer 4 `PRES` (`+0xB0`) reads `0` |
+
+- The tick runs at 24 MHz. OpeniBoot says the same (`TicksPerSec = PLLFrequencies[3]`, **SOURCE**), which is why
+  the measurement is a confirmation, not a surprise.
+- The `STATE` words of timers 0 to 3 look structured (they are probably not just a start bit); we do not decode them.
+- The wall of `0x0000000F` on timer 4 and 6 is not explained: it resembles the clock-gate registers (`0xF`
+  everywhere), so those registers may be aliased or not implemented. Do not interpret them.
+- `IRQSTAT` and `IRQLATCH` (`+0x10000`, `+0xF8`) were not read: they may be read-to-clear.
+- Measurement tool: `make trace_ticks.bin` plus `tools/tick_rate.py`. It publishes the counter through an
+  environment variable read with `getenv`, so no photo is needed. Two samples taken in two separate
+  invocations: one process cannot hold the device across a pause (the second acquire fails).
