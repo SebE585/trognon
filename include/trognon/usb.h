@@ -28,7 +28,13 @@ struct trognon_probe_result {
     uint16_t vendor_id;
     uint16_t product_id;
     enum trognon_bus_state state;
-    char serial[64];   /* raw USB serial string descriptor, truncated */
+    char serial[256]; /* raw USB serial string descriptor. 256 matches the
+                           read buffer in usb_probe.c and the real-world max
+                           for a USB string descriptor (127 UTF-16 code
+                           units). A 64-byte version of this field silently
+                           truncated the PWND:[...] field, confirmed
+                           2026-10-14 against a real pwned iPhone 3GS:
+                           trognon reported it as still-locked DFU. */
     uint32_t cpid;      /* parsed from "CPID:xxxx" in the serial string;
                             0 if the device is in normal mode (no CPID
                             field there) or state is unknown */
