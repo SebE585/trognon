@@ -36,6 +36,7 @@ struct scratch {
 	u32 hit;          /* number of expected exceptions handled */
 	u32 cx, cy;       /* console cursor in pixels */
 	u32 fg;
+	u32 quiet;        /* 1: a handled expected exception draws nothing (register survey) */
 };
 #define SC ((volatile struct scratch *)0x41080000)
 #define HANDLER_STACK_TOP 0x410f8000
@@ -110,6 +111,8 @@ u32 exc_c(u32 kind, u32 lr, u32 spsr, u32 *r)
 	int expected = SC->expected;
 	if (expected)
 		SC->hit = SC->hit + 1;
+	if (expected && SC->quiet)
+		return SC->resume;
 	at(4, kind ? 306 : 134, expected ? 0x0000B050 : 0x00E02020);   /* UNDEF and ABT dumps stack, not overlap */
 	puts_(expected ? "EXPECTED " : "UNEXPECTED ");
 	puts_(name[kind]);
@@ -193,6 +196,7 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	asm volatile("mrc p15, 0, %0, c0, c0, 0" : "=r"(midr));
 	asm volatile("mrc p15, 0, %0, c1, c0, 0" : "=r"(sctlr));
 
+	SC->quiet = 0;                        /* scratch RAM keeps the previous payload's values */
 	rect(0, 0, W, H, 0x00101820);
 	rect(0, 0, W, 6, 0x000D32B2);
 	at(4, 12, 0x00FFFFFF);
@@ -240,6 +244,34 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	at(4, 432, SC->hit == before ? 0x00E02020 : 0x0000B050);
 	puts_(SC->hit == before ? "NO ABORT\n" : "ABT RESUMED\n");
 #endif
+#if STAGE == 5
+	/* Read-only register survey, shown on screen. Each load is armed as an expected data abort, so
+	 * an unmapped register prints ABORT instead of resetting the phone. GPIOIC (0x39A00000) is NOT
+	 * read: it dropped the USB link once (docs/journal/2026-10-14.md). Offsets from OpeniBoot
+	 * (plat-s5l8920/clcd.c, gpio.c, includes/hardware/gpio.h): to be checked against the answer. */
+	static const struct { const char *n; u32 a; } regs[] = {
+		{ "VIDCON1 ", 0x85401B14 }, { "VIDCON1b", 0x85401B14 }, { "VIDCON1c", 0x85401B14 },
+		{ "VIDEN   ", 0x85401B10 }, { "VIDTCON2", 0x85401B24 }, { "FBADDR  ", 0x85400024 },
+		{ "GPIO+00 ", 0x83000000 }, { "GPIO+80 ", 0x83000080 }, { "GPIO+A0 ", 0x830000A0 },
+		{ "GPIO+320", 0x83000320 }, { "CLKGT2C ", 0xBF100128 },
+	};
+	at(4, 116, 0x00F0C040); puts_("STEP 5 REGS\n");
+	SC->quiet = 1;
+	for (u32 i = 0; i < sizeof regs / sizeof *regs; i++) {
+		if (i == 1 || i == 2)
+			for (volatile u32 d = 0; d < 0x300000; d++) ;   /* spacing: is VIDCON1 a live counter? */
+		u32 before = SC->hit, v = 0;
+		SC->expected = 1;
+		asm volatile("adr.w r1, 1f\n\tstr r1, [%2]\n\tldr %0, [%1]\n1:"
+			     : "+r"(v) : "r"(regs[i].a), "r"(&SC->resume) : "r1", "memory");
+		SC->expected = 0;
+		at(4, 134 + i * 18, 0x00FFFFFF);
+		puts_(regs[i].n); putc_(' '); hex(regs[i].a); putc_(' ');
+		if (SC->hit != before) { SC->fg = 0x00E02020; puts_("ABORT"); } else hex(v);
+		putc_('\n'); fb_clean();
+	}
+	SC->quiet = 0;
+#endif
 #if STAGE == 4
 	/* Test 3: deliberate PREFETCH ABORT. A Thumb BKPT with the debug unit not in halt mode raises
 	 * a prefetch abort (IFSR = 0x2, "debug event"), with no memory fetch involved. Resume address
@@ -266,6 +298,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "udf-1", 1);
 #elif STAGE == 4
 	ENV_SET("trognon", "pabt-1", 1);
+#elif STAGE == 5
+	ENV_SET("trognon", "regs-1", 1);
 #else
 	ENV_SET("trognon", "trace-1", 1);
 #endif

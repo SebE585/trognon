@@ -25,6 +25,11 @@ for a, v in ((0x24, 0x8400fa7c), (0x2c, 0x8400faec), (0x30, 0x8400fb28)):
 # (VA 0x50000000, domain 5, left unmapped here so Unicorn raises the abort the MMU would raise).
 for idx, dom in ((0, 0), (0x410, 0), (0x4fd, 0), (0x840, 0), (0x500, 5)):
     mu.mem_write(idx * 4, ((dom << 5) | 2).to_bytes(4, 'little'))
+# Fake peripherals, only for payloads that survey registers (harmless for the others): CLCD, GPIO, clock gates.
+# GPIO is left unmapped on purpose so the survey's ABORT path is exercised.
+for base in (0x85400000, 0xBF100000):
+    mu.mem_map(base, 0x2000)
+mu.mem_write(0x85401B14, (0x18ce0).to_bytes(4, 'little')); mu.mem_write(0x85400024, FB.to_bytes(4, 'little'))
 mu.mem_map(FB, (W * H * 4 + 0xfff) & ~0xfff)
 mu.mem_map(0x84011000, 0x1000); mu.mem_write(0x84011798, b'\x70\x47' * 2)
 mu.mem_write(0x42000000, b'\x70\x47')
@@ -49,7 +54,7 @@ EXC = {UC_ERR_INSN_INVALID: ('UNDEF', 0x1b, 0x04), UC_ERR_READ_UNMAPPED: ('DABT'
 start, taken = 0x41000001, 0
 while True:
     try:
-        mu.emu_start(start, 0x42000000, count=20_000_000)
+        mu.emu_start(start, 0x42000000, count=300_000_000)
         break
     except UcError as e:
         if e.errno not in EXC or taken >= 8:
