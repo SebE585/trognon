@@ -26,6 +26,7 @@ STAGE_trace_pabt = 4
 STAGE_trace_regs = 5
 STAGE_trace_vic  = 6
 STAGE_trace_irq  = 7
+STAGE_trace_timer = 8
 
 font.h: gen_font.py
 	python3 -I gen_font.py $@

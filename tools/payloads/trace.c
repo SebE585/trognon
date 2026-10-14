@@ -86,7 +86,7 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	at(4, 432, SC->hit == before ? 0x00E02020 : 0x0000B050);
 	puts_(SC->hit == before ? "NO ABORT\n" : "ABT RESUMED\n");
 #endif
-#if STAGE == 5 || STAGE == 6
+#if STAGE == 5 || STAGE == 6 || STAGE == 8
 	/* Read-only register survey, shown on screen. Each load is armed as an expected data abort, so
 	 * an unmapped register prints ABORT instead of resetting the phone. GPIOIC (0x39A00000) is NOT
 	 * read: it dropped the USB link once (docs/en/03-hardware-map.md). Offsets from OpeniBoot
@@ -97,6 +97,22 @@ __attribute__((section(".text.start"))) void payload_main(void)
 		{ "VIDEN   ", (SOC_CLCD_BASE + 0x1B10) }, { "VIDTCON2", (SOC_CLCD_BASE + 0x1B24) }, { "FBADDR  ", (SOC_CLCD_BASE + 0x24) },
 		{ "GPIO+00 ", SOC_GPIO_BASE }, { "GPIO+80 ", (SOC_GPIO_BASE + 0x80) }, { "GPIO+A0 ", (SOC_GPIO_BASE + 0xA0) },
 		{ "GPIO+320", (SOC_GPIO_BASE + 0x320) }, { "CLKGT2C ", SOC_CLOCK_GATE_2C },
+	};
+#elif STAGE == 8
+	/* Timer block, read-only. Offsets from OpeniBoot (plat-s5l8920 hardware/timer.h, SOURCE): free-running
+	 * ticks at +0x200/+0x204, per-timer STATE at +0x04, 0x24, 0x44, 0x64, 0xA4, 0xC4, 0xE4, timer 4 (the
+	 * event timer) registers at +0xA0.., timer clock gate 0x25 at +0x10C. IRQSTAT/IRQLATCH (+0xF8,
+	 * +0x10000) are NOT read: they may be read-to-clear. VIC0 bit 6 (timer IRQ 6) is enabled by the iBSS. */
+	static const struct { const char *n; u32 a; } regs[] = {
+		{ "TICK LO ", SOC_TIMER_BASE + 0x200 }, { "TICK HI ", SOC_TIMER_BASE + 0x204 },
+		{ "TICK LO2", SOC_TIMER_BASE + 0x200 }, { "TICK LO3", SOC_TIMER_BASE + 0x200 },
+		{ "T0 STATE", SOC_TIMER_BASE + 0x04 }, { "T1 STATE", SOC_TIMER_BASE + 0x24 },
+		{ "T2 STATE", SOC_TIMER_BASE + 0x44 }, { "T3 STATE", SOC_TIMER_BASE + 0x64 },
+		{ "T4 STATE", SOC_TIMER_BASE + 0xA4 }, { "T5 STATE", SOC_TIMER_BASE + 0xC4 },
+		{ "T6 STATE", SOC_TIMER_BASE + 0xE4 },
+		{ "T4 CFG  ", SOC_TIMER_BASE + 0xA0 }, { "T4 CNT  ", SOC_TIMER_BASE + 0xA8 },
+		{ "T4 CNT2 ", SOC_TIMER_BASE + 0xAC }, { "T4 PRES ", SOC_TIMER_BASE + 0xB0 },
+		{ "CLKGT25 ", SOC_TIMER_BASE + 0x10C },
 	};
 #else
 	/* Interrupt controllers, read-only. VICADDRESS (0xF00) is NOT read: reading it tells the VIC an
@@ -111,11 +127,13 @@ __attribute__((section(".text.start"))) void payload_main(void)
 		{ "VEC IRQ ", SOC_VEC_IRQ }, { "VEC FIQ ", (SOC_VEC_IRQ + 4) },
 	};
 #endif
-	at(4, 116, 0x00F0C040); puts_(STAGE == 5 ? "STEP 5 REGS\n" : "STEP 6 VIC\n");
+	at(4, 116, 0x00F0C040); puts_(STAGE == 5 ? "STEP 5 REGS\n" : STAGE == 8 ? "STEP 8 TIMER\n" : "STEP 6 VIC\n");
 	SC->quiet = 1;
 	for (u32 i = 0; i < sizeof regs / sizeof *regs; i++) {
-		if (STAGE == 5 && (i == 1 || i == 2))
-			for (volatile u32 d = 0; d < 0x300000; d++) ;   /* spacing: is VIDCON1 a live counter? */
+		if ((STAGE == 5 && (i == 1 || i == 2)) || (STAGE == 8 && i == 2))
+			for (volatile u32 d = 0; d < 0x300000; d++) ;   /* spacing: is it a live counter? */
+		if (STAGE == 8 && i == 3)
+			for (volatile u32 d = 0; d < 0x1000000; d++) ;  /* longer gap: gives a rate estimate */
 		u32 before = SC->hit, v = 0;
 		SC->expected = 1;
 		asm volatile("adr.w r1, 1f\n\tstr r1, [%2]\n\tldr %0, [%1]\n1:"
@@ -202,6 +220,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "pabt-1", 1);
 #elif STAGE == 7
 	ENV_SET("trognon", "irq-1", 1);
+#elif STAGE == 8
+	ENV_SET("trognon", "timer-1", 1);
 #elif STAGE == 5
 	ENV_SET("trognon", "regs-1", 1);
 #elif STAGE == 6

@@ -37,6 +37,9 @@
 #define SOC_VIC1              0xBF210000
 #define SOC_VIC2              0xBF220000
 #define SOC_GPIO_BASE         0x83000000
+/* Timer block. Base readable on the device (it is also the clock-gate base); the timer register
+ * offsets used by the survey are SOURCE (OpeniBoot) until read on the phone. */
+#define SOC_TIMER_BASE        0xBF100000
 #define SOC_CLOCK_GATE_2C     0xBF100128
 
 #endif
