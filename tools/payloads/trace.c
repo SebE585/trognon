@@ -33,6 +33,7 @@ struct scratch {
 	u32 old[3];       /* original vector pointers: undef, prefetch, data */
 	u32 expected;     /* 1 while a deliberate exception is in flight */
 	u32 resume;       /* where a handled, expected exception resumes */
+	u32 hit;          /* number of expected exceptions handled */
 	u32 cx, cy;       /* console cursor in pixels */
 	u32 fg;
 };
@@ -102,14 +103,16 @@ u32 exc_c(u32 kind, u32 lr, u32 spsr, u32 *r)
 		asm volatile("mrc p15, 0, %0, c6, c0, 2" : "=r"(far));
 	}
 	int expected = SC->expected;
-	at(4, kind ? 240 : 134, expected ? 0x0000B050 : 0x00E02020);   /* UNDEF and ABT dumps stack, not overlap */
+	if (expected)
+		SC->hit = SC->hit + 1;
+	at(4, kind ? 292 : 134, expected ? 0x0000B050 : 0x00E02020);   /* UNDEF and ABT dumps stack, not overlap */
 	puts_(expected ? "EXPECTED " : "UNEXPECTED ");
 	puts_(name[kind]);
 	putc_('\n');
 	kv("LR ", lr);
 	kv("SPSR", spsr);
 	if (kind) { kv("FSR", fsr); kv("FAR", far); }
-	for (int i = 0; i < 4; i++) { putc_('R'); putc_('0' + i); putc_(' '); hex(r[i]); putc_('\n'); }
+	for (int i = 0; i < 2; i++) { putc_('R'); putc_('0' + i); putc_(' '); hex(r[i]); putc_('\n'); }
 	if (expected)
 		return SC->resume;
 	for (volatile u32 i = 0; i < 0x20000000; i++) ;   /* leave time to read the screen */
@@ -214,27 +217,28 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	at(4, 98, 0x0000B050); puts_("HOOKED\n");
 #endif
 #if STAGE >= 2
-	/* Test 1: deliberate undefined instruction (Thumb UDF). */
+	/* Test 1: deliberate undefined instruction (Thumb UDF).
+	 * The resume address is computed by the assembler right after the faulting instruction:
+	 * GCC resolved `&&label` to the function start here (seen on the device 2026-10-15), which
+	 * made every handled exception restart the whole payload. */
 	at(4, 116, 0x00F0C040); puts_("STEP 2 UDF\n");
 	SC->expected = 1;
-	SC->resume = (u32)&&after_udf & ~1u;
-	asm volatile("udf #0");
-after_udf:
-	at(4, 224, 0x0000B050); puts_("UDF RESUMED\n");
+	asm volatile("adr.w r0, 1f\n\tstr r0, [%0]\n\tudf #0\n1:" :: "r"(&SC->resume) : "r0", "memory");
+	at(4, 230, 0x0000B050); puts_("UDF RESUMED\n");
 #endif
 #if STAGE >= 3
 	/* Test 2: deliberate data abort on a VA the page table says is unmapped. */
 	u32 va = find_unmapped_va();
-	at(4, 380, 0x00A0B0C0);
+	at(4, 252, 0x00A0B0C0);
 	kv("UNMAPPED VA", va);
 	if (va) {
-		at(4, 398, 0x00F0C040); puts_("STEP 3 DATA ABT\n");
-		SC->resume = (u32)&&after_dabt & ~1u;
-		asm volatile("ldr r0, [%0]" :: "r"(va) : "r0", "memory");
-		at(4, 416, 0x00E02020);
-		puts_("NO ABORT\n");
+		at(4, 272, 0x00F0C040); puts_("STEP 3 DATA ABT\n");
+		u32 before = SC->hit;
+		asm volatile("adr.w r1, 1f\n\tstr r1, [%1]\n\tldr r0, [%0]\n1:"
+			     :: "r"(va), "r"(&SC->resume) : "r0", "r1", "memory");
+		at(4, 424, SC->hit == before ? 0x00E02020 : 0x0000B050);
+		puts_(SC->hit == before ? "NO ABORT\n" : "ABT RESUMED\n");
 	}
-after_dabt:
 #endif
 #if STAGE >= 1
 	SC->expected = 0;
