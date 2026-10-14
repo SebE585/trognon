@@ -24,39 +24,50 @@ state_name(enum trognon_bus_state state)
     }
 }
 
+#define TROGNON_MAX_DEVICES 16
+
+static void
+print_one(const struct trognon_probe_result *result, int index)
+{
+    printf("[%d] vendor=%04x product=%04x state=%s\n",
+           index, result->vendor_id, result->product_id, state_name(result->state));
+    if (result->serial[0])
+        printf("    serial string: %s\n", result->serial);
+    if (result->cpid)
+        printf("    CPID: 0x%04x\n", result->cpid);
+
+    if (result->device) {
+        printf("    identified as: %s (%s)\n",
+               result->device->model_name, result->device->model_identifier);
+        printf("    SoC: %s, unlock path: %s\n",
+               result->device->soc_codename,
+               result->device->unlock_path == TROGNON_UNLOCK_HELPER_BOARD
+                   ? "needs a USB-host helper board (Pico/Arduino)"
+                   : "host-direct (ipwndfu/gaster)");
+        printf("    support notes: %s\n", result->device->support.notes);
+    } else {
+        printf("    not in trognon's device catalog yet.\n");
+    }
+}
+
 static int
 cmd_probe(void)
 {
-    struct trognon_probe_result result;
-    int rc = trognon_usb_probe(&result);
+    struct trognon_probe_result results[TROGNON_MAX_DEVICES];
+    size_t count = 0;
+    int rc = trognon_usb_probe_all(results, TROGNON_MAX_DEVICES, &count);
     if (rc < 0) {
         fprintf(stderr, "trognon: USB probe failed (libusb error %d)\n", rc);
         return 1;
     }
-    if (!result.found) {
+    if (count == 0) {
         printf("No Apple USB device found.\n");
         return 0;
     }
 
-    printf("Found Apple device: vendor=%04x product=%04x state=%s\n",
-           result.vendor_id, result.product_id, state_name(result.state));
-    if (result.serial[0])
-        printf("  serial string: %s\n", result.serial);
-    if (result.cpid)
-        printf("  CPID: 0x%04x\n", result.cpid);
-
-    if (result.device) {
-        printf("  identified as: %s (%s)\n",
-               result.device->model_name, result.device->model_identifier);
-        printf("  SoC: %s, unlock path: %s\n",
-               result.device->soc_codename,
-               result.device->unlock_path == TROGNON_UNLOCK_HELPER_BOARD
-                   ? "needs a USB-host helper board (Pico/Arduino)"
-                   : "host-direct (ipwndfu/gaster)");
-        printf("  support notes: %s\n", result.device->support.notes);
-    } else {
-        printf("  not in trognon's device catalog yet.\n");
-    }
+    printf("Found %zu Apple device(s):\n", count);
+    for (size_t i = 0; i < count; i++)
+        print_one(&results[i], (int)i);
     return 0;
 }
 
