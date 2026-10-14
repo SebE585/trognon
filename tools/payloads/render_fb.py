@@ -42,10 +42,10 @@ mu.hook_add(UC_HOOK_CODE, lambda *a: n.__setitem__(0, n[0] + 1))
 # Exceptions are modelled by hand: Unicorn stops on UNDEF / unmapped access, we do the ARM exception
 # entry (mode switch, banked LR/SPSR, jump to the vector) and resume emulation. The vector page holds
 # the same `ldr pc,[pc,#0x18]` as the iBSS; the pointer words are whatever the payload wrote there.
-for vec in (0x04, 0x0c, 0x10):
+for vec in (0x04, 0x0c, 0x10):   # undef, prefetch abort, data abort
     mu.mem_write(vec, (0xe59ff018).to_bytes(4, 'little'))
 EXC = {UC_ERR_INSN_INVALID: ('UNDEF', 0x1b, 0x04), UC_ERR_READ_UNMAPPED: ('DABT', 0x17, 0x10),
-       UC_ERR_WRITE_UNMAPPED: ('DABT', 0x17, 0x10)}
+       UC_ERR_WRITE_UNMAPPED: ('DABT', 0x17, 0x10), UC_ERR_EXCEPTION: ('PABT', 0x17, 0x0c)}   # EXCEPTION = BKPT here
 start, taken = 0x41000001, 0
 while True:
     try:
@@ -57,7 +57,7 @@ while True:
         name, mode, vec = EXC[e.errno]
         pc, cpsr = mu.reg_read(UC_ARM_REG_PC), mu.reg_read(UC_ARM_REG_CPSR)
         thumb = bool(cpsr & 0x20)
-        lr = pc + (8 if name == 'DABT' else (2 if thumb else 4))
+        lr = pc + (8 if name == 'DABT' else 4 if name == 'PABT' else (2 if thumb else 4))
         mu.reg_write(UC_ARM_REG_CPSR, (cpsr & ~0x3f) | mode | 0x80)   # enter mode, ARM state, IRQ masked
         mu.reg_write(UC_ARM_REG_SPSR, cpsr)
         mu.reg_write(UC_ARM_REG_LR, lr)

@@ -209,7 +209,7 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	hook(1);
 	at(4, 98, 0x0000B050); puts_("HOOKED\n");
 #endif
-#if STAGE >= 2
+#if STAGE == 2 || STAGE == 3
 	/* Test 1: deliberate undefined instruction (Thumb UDF).
 	 * The resume address is computed by the assembler right after the faulting instruction:
 	 * GCC resolved `&&label` to the function start here (seen on the device 2026-10-15), which
@@ -220,7 +220,7 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	SC->expected = 0;                     /* disarm: a later, unplanned exception must not resume here */
 	at(4, 230, 0x0000B050); puts_("UDF RESUMED\n");
 #endif
-#if STAGE >= 3
+#if STAGE == 3
 	/* Test 2: deliberate data abort = ALIGNMENT fault. The live page table has no translation-fault
 	 * entry and every section is in domain 0 (DACR=3, manager), read on the device 2026-10-15, so
 	 * neither a fault entry nor a domain fault is available. Instead set SCTLR.A (bit 1) around one
@@ -240,6 +240,18 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	at(4, 432, SC->hit == before ? 0x00E02020 : 0x0000B050);
 	puts_(SC->hit == before ? "NO ABORT\n" : "ABT RESUMED\n");
 #endif
+#if STAGE == 4
+	/* Test 3: deliberate PREFETCH ABORT. A Thumb BKPT with the debug unit not in halt mode raises
+	 * a prefetch abort (IFSR = 0x2, "debug event"), with no memory fetch involved. Resume address
+	 * computed in asm like for the UDF. */
+	at(4, 116, 0x00F0C040); puts_("STEP 4 BKPT\n");
+	u32 before = SC->hit;
+	SC->expected = 1;
+	asm volatile("adr.w r0, 1f\n\tstr r0, [%0]\n\tbkpt #0\n1:" :: "r"(&SC->resume) : "r0", "memory");
+	SC->expected = 0;
+	at(4, 270, SC->hit == before ? 0x00E02020 : 0x0000B050);
+	puts_(SC->hit == before ? "NO ABORT\n" : "PABT RESUMED\n");
+#endif
 #if STAGE >= 1
 	SC->expected = 0;
 	hook(0);
@@ -252,6 +264,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "hook-1", 1);
 #elif STAGE == 2
 	ENV_SET("trognon", "udf-1", 1);
+#elif STAGE == 4
+	ENV_SET("trognon", "pabt-1", 1);
 #else
 	ENV_SET("trognon", "trace-1", 1);
 #endif
