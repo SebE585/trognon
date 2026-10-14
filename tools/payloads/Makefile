@@ -27,6 +27,9 @@ trace_regs.elf: trace.c payload.ld font.h
 trace_vic.elf: trace.c payload.ld font.h
 	$(CC) $(CFLAGS) -DSTAGE=6 -T payload.ld -o $@ $<
 
+trace_irq.elf: trace.c payload.ld font.h
+	$(CC) $(CFLAGS) -DSTAGE=7 -T payload.ld -o $@ $<
+
 trace_offline.elf: trace.c payload.ld font.h
 	$(CC) $(CFLAGS) -DOFFLINE -T payload.ld -o $@ $<
 

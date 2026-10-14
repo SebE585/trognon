@@ -47,15 +47,43 @@ mu.hook_add(UC_HOOK_CODE, lambda *a: n.__setitem__(0, n[0] + 1))
 # Exceptions are modelled by hand: Unicorn stops on UNDEF / unmapped access, we do the ARM exception
 # entry (mode switch, banked LR/SPSR, jump to the vector) and resume emulation. The vector page holds
 # the same `ldr pc,[pc,#0x18]` as the iBSS; the pointer words are whatever the payload wrote there.
-for vec in (0x04, 0x0c, 0x10):   # undef, prefetch abort, data abort
+for vec in (0x04, 0x0c, 0x10, 0x18):   # undef, prefetch abort, data abort, irq
     mu.mem_write(vec, (0xe59ff018).to_bytes(4, 'little'))
 EXC = {UC_ERR_INSN_INVALID: ('UNDEF', 0x1b, 0x04), UC_ERR_READ_UNMAPPED: ('DABT', 0x17, 0x10),
        UC_ERR_WRITE_UNMAPPED: ('DABT', 0x17, 0x10), UC_ERR_EXCEPTION: ('PABT', 0x17, 0x0c)}   # EXCEPTION = BKPT here
+# Minimal VIC0 model for the soft-IRQ payload: SOFTINT sets STATUS/RAW, SOFTINTCLEAR clears them,
+# INTENCLEAR clears ENABLE bits, INTENABLE sets bits. When SOFTINT is written and the CPU has IRQs
+# unmasked, the next instruction boundary takes an IRQ (entry done by hand, like the other exceptions).
+V0 = 0xBF200000
+irq = {'pending': False, 'taken': 0}
+def rd(a): return int.from_bytes(mu.mem_read(a, 4), 'little')
+def wr(a, v): mu.mem_write(a, (v & 0xffffffff).to_bytes(4, 'little'))
+def vic_write(uc, access, addr, size, value, _):
+    off = addr - V0
+    if off == 0x018: wr(V0 + 0x000, value); wr(V0 + 0x008, value); irq['pending'] = True
+    elif off == 0x01C: wr(V0 + 0x000, rd(V0) & ~value); wr(V0 + 0x008, rd(V0 + 8) & ~value); irq['pending'] = False
+    elif off == 0x014: wr(V0 + 0x010, rd(V0 + 0x010) & ~value)
+    elif off == 0x010: wr(V0 + 0x010, rd(V0 + 0x010) | value)
+mu.hook_add(UC_HOOK_MEM_WRITE, vic_write, begin=V0, end=V0 + 0xfff)
+wr(V0 + 0x010, 0x3FFA4040)       # what the iBSS leaves enabled (DEVICE, 2026-10-15)
+def irq_check(uc, addr, size, _):
+    if irq['pending'] and not (uc.reg_read(UC_ARM_REG_CPSR) & 0x80) and rd(V0 + 0x010) & rd(V0 + 0x000):
+        irq['pending'] = False; irq['at'] = addr | (1 if uc.reg_read(UC_ARM_REG_CPSR) & 0x20 else 0); uc.emu_stop()
+mu.hook_add(UC_HOOK_CODE, irq_check)
 start, taken = 0x41000001, 0
 while True:
     try:
         mu.emu_start(start, 0x42000000, count=300_000_000)
-        break
+        if 'at' not in irq:
+            break
+        pc, cpsr = irq.pop('at') & ~1, mu.reg_read(UC_ARM_REG_CPSR)
+        mu.reg_write(UC_ARM_REG_CPSR, (cpsr & ~0x3f) | 0x12 | 0x80)    # IRQ mode, ARM state, IRQ masked
+        mu.reg_write(UC_ARM_REG_SPSR, cpsr)
+        mu.reg_write(UC_ARM_REG_LR, pc + 4)
+        irq['taken'] += 1
+        print('irq %d: at pc=%#x -> LR=%#x, vector 0x18' % (irq['taken'], pc, pc + 4))
+        start = 0x18
+        continue
     except UcError as e:
         if e.errno not in EXC or taken >= 8:
             print('EMULATION STOP:', e, 'pc=%#x' % mu.reg_read(UC_ARM_REG_PC)); break

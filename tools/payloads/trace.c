@@ -30,16 +30,22 @@ typedef unsigned char u8;
 #define VEC_DABT  0x30
 
 struct scratch {
-	u32 old[3];       /* original vector pointers: undef, prefetch, data */
+	u32 old[4];       /* original vector pointers: undef, prefetch, data, irq */
 	u32 expected;     /* 1 while a deliberate exception is in flight */
 	u32 resume;       /* where a handled, expected exception resumes */
 	u32 hit;          /* number of expected exceptions handled */
 	u32 cx, cy;       /* console cursor in pixels */
 	u32 fg;
 	u32 quiet;        /* 1: a handled expected exception draws nothing (register survey) */
+	u32 irq;          /* IRQs taken for our soft-interrupt bit */
+	u32 stray;        /* IRQs taken for anything else (should stay 0) */
+	u32 irq_status;   /* VIC0 STATUS seen by the handler */
+	u32 irq_vec;      /* value read from VIC0 VICADDRESS */
+	u32 irq_bit;      /* the one VIC0 source we enabled */
 };
 #define SC ((volatile struct scratch *)0x41080000)
 #define HANDLER_STACK_TOP 0x410f8000
+#define IRQ_STACK_TOP     0x410f4000
 #define BREADCRUMB        (0x4fd00000 + 466 * 320 * 4)
 
 static void rect(int x, int y, int w, int h, u32 color)
@@ -181,6 +187,57 @@ static void hook(int on)
 	}
 }
 
+#if STAGE == 7
+#define VIC0_ADDR 0xBF200000
+#define VIC1_ADDR 0xBF210000
+#define VIC2_ADDR 0xBF220000
+#define VICREG(base, off) (*(volatile u32 *)((base) + (off)))
+#define VEC_IRQ 0x38
+
+/* Called from the IRQ stub. All VIC0 sources but ours are disabled while the test runs, so a hit on
+ * another bit is a surprise: count it and shut every VIC up so it cannot storm. */
+void irq_c(void)
+{
+	u32 st = VICREG(VIC0_ADDR, 0x000);
+	SC->irq_status = st;
+	if (st & SC->irq_bit) {
+		SC->irq_vec = VICREG(VIC0_ADDR, 0xF00);        /* read = "being serviced" */
+		VICREG(VIC0_ADDR, 0x01C) = SC->irq_bit;        /* SOFTINTCLEAR */
+		VICREG(VIC0_ADDR, 0x014) = SC->irq_bit;        /* INTENCLEAR */
+		VICREG(VIC0_ADDR, 0xF00) = 0;                  /* end of interrupt */
+		SC->irq = SC->irq + 1;
+	} else {
+		VICREG(VIC0_ADDR, 0x014) = 0xFFFFFFFF;
+		VICREG(VIC1_ADDR, 0x014) = 0xFFFFFFFF;
+		VICREG(VIC2_ADDR, 0x014) = 0xFFFFFFFF;
+		SC->stray = SC->stray + 1;
+	}
+}
+
+/* IRQ entry: LR_irq = interrupted PC + 4, SPSR = interrupted CPSR. Own stack, save everything,
+ * return to the interrupted instruction with CPSR restored (ldm ... ^). */
+__attribute__((naked, target("arm"))) void exc_irq(void)
+{
+	asm volatile(
+		"sub lr, lr, #4\n"
+		"movw sp, #:lower16:" STR(IRQ_STACK_TOP) "\n"
+		"movt sp, #:upper16:" STR(IRQ_STACK_TOP) "\n"
+		"push {r0-r12, lr}\n"
+		"bl irq_c\n"
+		"ldmfd sp!, {r0-r12, pc}^\n");
+}
+
+static void hook_irq(int on)
+{
+	u32 addr = VEC_IRQ;
+	asm volatile("" : "+r"(addr));          /* hide the constant: GCC would flag a write near address 0 */
+	volatile u32 *vec = (volatile u32 *)addr;
+	if (on)
+		SC->old[3] = *vec;
+	*vec = on ? (u32)exc_irq : SC->old[3];
+}
+#endif
+
 #ifndef STAGE
 #define STAGE 3
 #endif
@@ -286,6 +343,52 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	}
 	SC->quiet = 0;
 #endif
+#if STAGE == 7
+	/* Test 4: software-triggered IRQ on VIC0. IRQs masked while we set up; every VIC0 source the iBSS
+	 * left enabled is disabled (and restored after) so only ours can fire. */
+	at(4, 116, 0x00F0C040); puts_("STEP 7 SOFT IRQ\n");
+	at(4, 134, 0x00FFFFFF);
+	u32 cpsr0, en0 = VICREG(VIC0_ADDR, 0x010);
+	asm volatile("mrs %0, cpsr" : "=r"(cpsr0));
+	u32 bit = ~en0 & -(~en0);                           /* lowest source not enabled by the iBSS */
+	SC->irq = 0; SC->stray = 0; SC->irq_bit = bit; SC->irq_status = 0; SC->irq_vec = 0;
+	kv("CPSR  ", cpsr0);
+	kv("EN0   ", en0);
+	kv("BIT   ", bit);
+	asm volatile("cpsid i" ::: "memory");
+	VICREG(VIC0_ADDR, 0x014) = 0xFFFFFFFF;               /* INTENCLEAR: all of VIC0 off */
+	u32 en_off = VICREG(VIC0_ADDR, 0x010);
+	hook_irq(1);
+	VICREG(VIC0_ADDR, 0x010) = bit;                      /* INTENABLE: ours only */
+	VICREG(VIC0_ADDR, 0x018) = bit;                      /* SOFTINT: raise it */
+	asm volatile("dsb sy" ::: "memory");
+	u32 raw = VICREG(VIC0_ADDR, 0x008), stat = VICREG(VIC0_ADDR, 0x000);
+	kv("EN OFF", en_off);
+	kv("RAW   ", raw);
+	kv("STAT  ", stat);
+	at(4, 134 + 6 * 18, 0x00F0C040); puts_("UNMASKING\n");
+	asm volatile("cpsie i" ::: "memory");
+	for (volatile u32 w = 0; w < 0x4000000 && !SC->irq && !SC->stray; w++) ;
+	asm volatile("cpsid i" ::: "memory");
+	hook_irq(0);                                         /* vector back BEFORE the iBSS sources return */
+	u32 raw2 = VICREG(VIC0_ADDR, 0x008), stat2 = VICREG(VIC0_ADDR, 0x000);
+	VICREG(VIC0_ADDR, 0x014) = 0xFFFFFFFF;
+	VICREG(VIC0_ADDR, 0x01C) = bit;                      /* SOFTINTCLEAR, in case nothing took it */
+	VICREG(VIC0_ADDR, 0x010) = en0;                      /* restore the iBSS's enables */
+	u32 en_back = VICREG(VIC0_ADDR, 0x010);
+	if (!(cpsr0 & 0x80))
+		asm volatile("cpsie i" ::: "memory");
+	at(4, 134 + 7 * 18, SC->irq ? 0x0000B050 : 0x00E02020);
+	puts_(SC->irq ? "IRQ TAKEN\n" : "NO IRQ\n");
+	at(4, 134 + 8 * 18, 0x00FFFFFF);
+	kv("HITS  ", SC->irq);
+	kv("STRAY ", SC->stray);
+	kv("H STAT", SC->irq_status);
+	kv("H VEC ", SC->irq_vec);
+	kv("RAW2  ", raw2);
+	kv("STAT2 ", stat2);
+	kv("EN BCK", en_back);
+#endif
 #if STAGE == 4
 	/* Test 3: deliberate PREFETCH ABORT. A Thumb BKPT with the debug unit not in halt mode raises
 	 * a prefetch abort (IFSR = 0x2, "debug event"), with no memory fetch involved. Resume address
@@ -312,6 +415,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "udf-1", 1);
 #elif STAGE == 4
 	ENV_SET("trognon", "pabt-1", 1);
+#elif STAGE == 7
+	ENV_SET("trognon", "irq-1", 1);
 #elif STAGE == 5
 	ENV_SET("trognon", "regs-1", 1);
 #elif STAGE == 6
