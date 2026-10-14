@@ -105,3 +105,13 @@ les adresses, le chemin d'affichage et les offsets de patch de l'iBSS : on les r
 2. iPhone 4 : prouver le découpage par puce avec un deuxième banc.
 3. iPhone 4S : le Pico, puis le chemin de Cascadia sur S5L8940.
 4. Le reste suit les projets amont déjà actifs.
+
+## Un dépôt, deux pistes
+
+Décision (2026-10-15) : Trognon reste **un seul dépôt avec deux pistes nommées**, par technologie :
+**A, bare metal** (3GS et iPhone 4) et **B, OS sur A5 et suivants** (4S et suite). La piste B n'a pas
+encore de code propre : un dépôt séparé serait vide et couperait un public déjà petit. **Règle de scission :**
+le jour où la piste B contient du code qui n'a plus rien à voir avec `hal/` (par exemple le chargeur A5 pour le
+Pico), elle passe dans son propre dépôt, avec un noyau commun dans un dépôt `-shared` si les deux en ont encore
+besoin. Le 3GS et l'iPhone 4 restent ensemble : ils partagent une méthode et un cœur CPU, pas leurs adresses,
+donc passer de l'un à l'autre est un deuxième en-tête `soc/`, pas un deuxième projet.

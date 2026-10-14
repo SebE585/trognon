@@ -105,3 +105,13 @@ address, the display path and the iBSS patch offsets: they are re-read on each c
 2. iPhone 4: prove the per-chip split with a second bench.
 3. iPhone 4S: Pico, then Cascadia's path on S5L8940.
 4. The rest follows the upstream projects already working there.
+
+## One repository, two tracks
+
+Decision (2026-10-15): Trognon stays **one repository with two named tracks**, by technology:
+**A, bare metal** (3GS and iPhone 4) and **B, OS enablement on A5 and later** (4S and next).
+Track B has no code of its own yet, so a separate repository would be empty and would split a small
+audience. **Split rule:** the day track B holds code that has nothing to do with `hal/` (for example the
+A5 loader for the Pico), it moves to its own repository, with a shared core kept in a `-shared` repository
+if both still need it. The 3GS and the iPhone 4 stay together: they share a method and a CPU core, not
+their addresses, so moving from one to the other is a second `soc/` header, not a second project.
