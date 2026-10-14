@@ -2,3 +2,6 @@
 .env
 *.swp
 *~
+*.o
+/trognon
+/tests/test_device_db
