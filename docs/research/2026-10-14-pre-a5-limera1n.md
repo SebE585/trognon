@@ -90,5 +90,14 @@ it a full computer".
 - CDMA iPhone 4 (A1349, iPhone3,3): not yet in the catalog, same A4 SoC
   expected.
 - `ipwndfu -p`'s exact behavior and output once run against real hardware —
-  confirmed only by reading its source, not by running it yet. See
-  `docs/upstream-tools.md`.
+  now confirmed: it works, 2026-10-14, against a real iPhone 3GS
+  (S5L8920, 359.3.2 bootrom), succeeding on the 2nd-3rd attempt each time
+  (matches the README's own "repeat if it fails" warning). See
+  `docs/journal/2026-10-14.md`.
+- `ipwndfu --dump-rom` after a successful `-p`: fails reproducibly
+  (10+ attempts, with and without a USB hub) at the first post-pwn "exec"
+  command (`dfuexec.py`'s `PwnedDFUDevice.execute()`), a USB timeout. Not
+  resolved — root cause unclear, possibly a deeper Python 3 port issue in
+  the exec protocol itself. Confirmed reproducible, not pursued further
+  2026-10-14 since fixing it would mean reverse-engineering the exploit's
+  own command protocol, not just porting syntax.
