@@ -86,6 +86,12 @@ Les registres du timer sont la partie la moins comprise d'OpenIBoot (son propre 
 - Le mur de `0x0000000F` sur les timers 4 et 6 n'est pas expliqué : il ressemble aux registres de clock gate (`0xF`
   partout), donc ces registres sont peut-être des alias ou non implémentés. Ne pas les interpréter.
 - `IRQSTAT` et `IRQLATCH` (`+0x10000`, `+0xF8`) n'ont pas été lus : ils peuvent s'effacer à la lecture.
+- **Une interruption de timer n'est pas prouvée.** La ligne 6 de VIC0 (la ligne timer d'OpeniBoot) peut être
+  prise par notre gestionnaire, mais la source n'est pas la nôtre : avec le timer 5 jamais démarré, l'interruption est
+  quand même arrivée 127 ticks (5 microsecondes) après l'activation de la ligne, parce qu'elle était déjà levée.
+  `IRQSTAT` (`+0x10000`) lit `0xFFFFFF81` avant, pendant et après, quoi qu'on fasse : ce n'est pas un registre de
+  statut de timer, et la séquence d'acquittement copiée d'OpeniBoot (`IRQSTAT`, `IRQLATCH`) n'efface rien. Le gestionnaire
+  de timer d'OpeniBoot pour cette puce est commenté. Tenir ces deux décalages pour faux tant qu'ils ne sont pas prouvés.
 - Outil de mesure : `make trace_ticks.bin` et `tools/tick_rate.py`. Il publie le compteur dans une variable
   d'environnement lue par `getenv`, donc sans photo. Deux échantillons dans deux invocations séparées : un
   processus ne peut pas garder l'appareil à travers une pause (la deuxième connexion échoue).

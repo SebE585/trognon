@@ -204,12 +204,12 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	kv("STAT2 ", stat2);
 	kv("EN BCK", en_back);
 #endif
-#if STAGE == 10
-	/* Test 5: a real timer interrupt. Timer 5 (STATE read 0 on the device: looks unused) is programmed
+#if STAGE == 10 || STAGE == 11
+	/* Test 5 (STAGE 11 = control run: identical, but the timer is never started): a real timer interrupt. Timer 5 (STATE read 0 on the device: looks unused) is programmed
 	 * with the OpeniBoot recipe (SOURCE): config 0x7000 = INT0/INT1/OVF enables, divider code 1, count N,
 	 * STATE 2 (manual update) then 1 (start). The IRQ line is VIC0 source 6 (also used by the iBSS's own
 	 * timers). Same guards as the soft-IRQ test; the timeout uses the 24 MHz free-running tick. */
-	at(4, 116, 0x00F0C040); puts_("STEP 10 TIMER IRQ\n");
+	at(4, 116, 0x00F0C040); puts_(STAGE == 10 ? "STEP 10 TIMER IRQ\n" : "STEP 11 CONTROL\n");
 	at(4, 134, 0x00FFFFFF);
 	u32 ts0 = 0xDEAD0000;
 	SC->expected = 1; SC->quiet = 1;
@@ -239,7 +239,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 		t5[4] = 0;                                                 /* PRESCALER */
 		t5[1] = 2;                                                 /* STATE: manual update */
 		u32 t_start = *(volatile u32 *)(SOC_TIMER_BASE + 0x200);
-		t5[1] = 1;                                                 /* STATE: start */
+		if (STAGE == 10)
+			t5[1] = 1;                                             /* STATE: start (not in the control run) */
 		asm volatile("dsb sy" ::: "memory");
 		asm volatile("cpsie i" ::: "memory");
 		while (!SC->irq && !SC->stray && (*(volatile u32 *)(SOC_TIMER_BASE + 0x200) - t_start) < 72000000u) ;
@@ -270,6 +271,11 @@ __attribute__((section(".text.start"))) void payload_main(void)
 		result_hex("t_elapsed", elapsed);
 		result_hex("t_timst", SC->tim_stat);
 		result_hex("t_stray", SC->stray);
+		/* Diagnostic: the screen and the env variable disagreed on ELAPSED once (2026-10-15). */
+		result_hex("t_el_b", elapsed);
+		result_hex("t_itick", SC->irq_tick);
+		result_hex("t_start", t_start);
+		result_hex("t_const", 0x009170A8u);
 	}
 #endif
 #if STAGE == 4
@@ -305,6 +311,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "timer-1", 1);
 #elif STAGE == 10
 	ENV_SET("trognon", "tirq-1", 1);
+#elif STAGE == 11
+	ENV_SET("trognon", "tirqc-1", 1);
 #elif STAGE == 5
 	ENV_SET("trognon", "regs-1", 1);
 #elif STAGE == 6

@@ -41,6 +41,10 @@ bon, rien du matériel.
 
 ## Leçons diverses
 
+- L'`env_set()` de l'iBSS ne préserve pas r4 à r11. Des variables locales gardées en registre à travers le
+  premier appel sont revenues corrompues (un compteur lu à 0, un temps écoulé affiché d'une valeur à l'écran
+  et d'une autre par USB). `hal/result.c` sauvegarde et restaure maintenant ces registres autour de l'appel.
+  Quand un nombre publié contredit l'écran, soupçonner l'appel avant le matériel.
 - La RAM scratch n'est pas remise à zéro entre payloads : initialiser chaque indicateur.
 - Lire à l'œil sur un écran fait perdre des chiffres (on a lu `41000000C` pour `4100010C`). Garder
   un format d'affichage régulier et demander une relecture quand une valeur compte.

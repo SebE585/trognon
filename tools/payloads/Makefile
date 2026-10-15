@@ -29,6 +29,7 @@ STAGE_trace_irq  = 7
 STAGE_trace_timer = 8
 STAGE_trace_ticks = 9
 STAGE_trace_tirq  = 10
+STAGE_trace_tirqc = 11
 
 # Objects are built for one SoC. Without this stamp, `make SOC=other` would silently reuse objects built for
 # the previous chip. The stamp is rewritten only when SOC or the flags change.

@@ -86,6 +86,12 @@ Timer registers are the least understood part of OpenIBoot (its own comment says
 - The wall of `0x0000000F` on timer 4 and 6 is not explained: it resembles the clock-gate registers (`0xF`
   everywhere), so those registers may be aliased or not implemented. Do not interpret them.
 - `IRQSTAT` and `IRQLATCH` (`+0x10000`, `+0xF8`) were not read: they may be read-to-clear.
+- **A timer interrupt is not proven.** Line 6 of VIC0 (the timer line in OpeniBoot) can be taken by our
+  handler, but the source is not ours: with timer 5 never started, the interrupt still arrived 127 ticks
+  (5 microseconds) after we enabled the line, because it was already asserted. `IRQSTAT` (`+0x10000`) reads
+  `0xFFFFFF81` before, during and after, whatever we do, so it is not a timer status register, and the
+  acknowledge sequence copied from OpeniBoot (`IRQSTAT`, `IRQLATCH`) clears nothing. OpeniBoot's own timer
+  handler for this SoC is commented out. Treat these two offsets as wrong until proven otherwise.
 - Measurement tool: `make trace_ticks.bin` plus `tools/tick_rate.py`. It publishes the counter through an
   environment variable read with `getenv`, so no photo is needed. Two samples taken in two separate
   invocations: one process cannot hold the device across a pause (the second acquire fails).

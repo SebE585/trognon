@@ -41,6 +41,10 @@ control flow is right, nothing about the hardware.
 
 ## Stray lessons
 
+- The iBSS `env_set()` does not preserve r4 to r11. Locals held in registers across the first call came
+  back as garbage (a counter read 0, an elapsed time printed one value on screen and another over USB).
+  `hal/result.c` now saves and restores those registers around the call. When a published number disagrees
+  with the screen, suspect the call, not the hardware.
 - Scratch RAM is not zeroed between payloads: initialise every flag.
 - Reading by eye from a screen loses digits (we saw `41000000C` for `4100010C`).
   Keep the on-screen format regular and ask for a re-read when a value matters.
