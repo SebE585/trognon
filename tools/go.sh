@@ -1,7 +1,8 @@
 #!/bin/sh
 # One command for the whole cycle: device in DFU -> pwn -> patched iBSS -> send the payload -> read variables.
 # The device leaves Recovery after a few idle minutes, so doing it in one go avoids a second DFU.
-# Usage: tools/go.sh PAYLOAD.bin [VARIABLE ...]     (variables are read after the nonce check)
+# Usage: tools/go.sh PAYLOAD.bin [run_payload.py options]   e.g. --vars t_hits,t_stray --wait 40
+# An evidence bundle is written under evidence/ (see tools/run_payload.py).
 set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"
 IPWNDFU="${IPWNDFU:-$HOME/tools/ipwndfu}"
@@ -14,11 +15,5 @@ until "$HERE/boot.sh" </dev/null 2>&1 | tee /tmp/trognon-boot.log | grep -q "boo
   echo "go.sh: pwn failed (try $tries), retrying"
 done
 status=0
-"$HERE/send.sh" "$PAYLOAD" || status=$?
-if [ $# -gt 0 ] && [ "$status" -ne 1 ]; then
-  if [ -z "${TROGNON_LIBUSB_PATH:-}" ] && [ -f /opt/homebrew/lib/libusb-1.0.dylib ]; then
-    export TROGNON_LIBUSB_PATH=/opt/homebrew/lib/libusb-1.0.dylib
-  fi
-  (cd "$IPWNDFU" && PYTHONPATH=. python3 "$HERE/getenv.py" "$@")
-fi
+"$HERE/send.sh" "$PAYLOAD" --evidence "$HERE/../evidence" "$@" || status=$?
 exit "$status"

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Send a payload to a device in Recovery (after tools/boot.sh) and verify its nonce.
-# Usage: tools/send.sh PAYLOAD.bin [VARIABLE]
+# Usage: tools/send.sh PAYLOAD.bin [MARKER] [run_payload.py options, e.g. --evidence evidence --vars a,b --wait 40]
 set -eu
 IPWNDFU="${IPWNDFU:-$HOME/tools/ipwndfu}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -11,4 +11,5 @@ if [ -z "${TROGNON_LIBUSB_PATH:-}" ] && [ -f /opt/homebrew/lib/libusb-1.0.dylib 
 fi
 export PYTHONPATH=.
 cd "$IPWNDFU"
-exec python3 "$HERE/run_payload.py" "$PAYLOAD" "${2:-trognon}"
+shift
+exec python3 "$HERE/run_payload.py" "$PAYLOAD" "$@"

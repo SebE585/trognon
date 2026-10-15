@@ -51,6 +51,7 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	return;
 #endif
 	SC->quiet = 0;                        /* scratch RAM keeps the previous payload's values */
+	transcript_clear();
 	rect(0, 0, W, H, 0x00101820);
 	rect(0, 0, W, 6, 0x000D32B2);
 	at(4, 12, 0x00FFFFFF);
@@ -278,6 +279,80 @@ __attribute__((section(".text.start"))) void payload_main(void)
 		result_hex("t_const", 0x009170A8u);
 	}
 #endif
+#if STAGE == 12
+	/* Button discovery by differences. OpeniBoot's button ids for this SoC look copied from an older one, so we
+	 * do not trust them: read bit 0 of every GPIO pin register (GPIO + (8*port+pin)*4, SOURCE layout), learn the
+	 * pins that move by themselves (noise), then ask for each button in turn and list the pins that changed
+	 * while it was handled. Read-only: no pin is ever written or reconfigured. Window length: 6 s each. */
+	#define NPIN 376
+	volatile u8 *base = (volatile u8 *)SOC_SNAPSHOTS;   /* base level */
+	volatile u8 *noisy = base + NPIN;                     /* moved with nobody touching */
+	volatile u8 *mark = base + 2 * NPIN;                  /* moved while a button was handled */
+	volatile u8 *readable = base + 3 * NPIN;
+	volatile u32 *gp = (volatile u32 *)SOC_GPIO_BASE;
+	#define TICK (*(volatile u32 *)(SOC_TIMER_BASE + 0x200))
+	at(4, 116, 0x00F0C040); puts_("STEP 12 BUTTONS\n");
+	at(4, 134, 0x00FFFFFF);
+	u32 nread = 0;
+	SC->quiet = 1;
+	for (u32 i = 0; i < NPIN; i++) {                          /* which pin registers answer */
+		u32 before = SC->hit, v = 0;
+		SC->expected = 1;
+		asm volatile("adr.w r1, 1f\n\tstr r1, [%2]\n\tldr %0, [%1]\n1:"
+			     : "+r"(v) : "r"(&gp[i]), "r"(&SC->resume) : "r1", "memory");
+		SC->expected = 0;
+		readable[i] = SC->hit == before;
+		base[i] = (u8)(v & 1); noisy[i] = 0; mark[i] = 0;
+		nread += readable[i];
+	}
+	SC->quiet = 0;
+	kv("READABLE", nread);
+	puts_("HANDS OFF 3 S\n");
+	{
+		u32 t0 = TICK;
+		while (TICK - t0 < 72000000u)                         /* noise: pins that move untouched */
+			for (u32 i = 0; i < NPIN; i++)
+				if (readable[i] && (u8)(gp[i] & 1) != base[i])
+					noisy[i] = 1;
+	}
+	u32 nn = 0;
+	for (u32 i = 0; i < NPIN; i++) nn += noisy[i];
+	kv("NOISY   ", nn);
+	static const char *const names[5] = { "HOME", "POWER", "VOL UP", "VOL DOWN", "RINGER" };
+	static const char *const keys[5] = { "b_home", "b_power", "b_volup", "b_voldown", "b_ringer" };
+	for (u32 b = 0; b < 5; b++) {
+		SC->fg = 0x00F0C040;
+		puts_("HOLD "); puts_(names[b]); puts_(" 6 S\n");
+		for (u32 i = 0; i < NPIN; i++) mark[i] = 0;
+		u32 t0 = TICK;
+		while (TICK - t0 < 144000000u)
+			for (u32 i = 0; i < NPIN; i++)
+				if (readable[i] && !noisy[i] && (u8)(gp[i] & 1) != base[i])
+					mark[i] = 1;
+		SC->fg = 0x0000B050;
+		puts_(names[b]); puts_(" PINS");
+		char list[64]; u32 n = 0, shown = 0;
+		for (u32 i = 0; i < NPIN && shown < 6; i++) {
+			if (!mark[i]) continue;
+			if (n + 6 > sizeof list - 1) break;
+			list[n++] = ' ';
+			list[n++] = "0123456789ABCDEF"[(i >> 3) >> 4];     /* port */
+			list[n++] = "0123456789ABCDEF"[(i >> 3) & 15];
+			list[n++] = '.';
+			list[n++] = (char)('0' + (i & 7));                 /* pin */
+			shown++;
+		}
+		list[n] = 0;
+		puts_(list); putc_('\n'); fb_clean();
+		result_str(keys[b], n ? list + 1 : "none");
+		u32 t1 = TICK;
+		while (TICK - t1 < 24000000u) ;                       /* 1 s to let go before the next prompt */
+	}
+	SC->fg = 0x00FFFFFF;
+	puts_("DONE\n");
+	result_hex("b_noisy", nn);
+	result_hex("b_readable", nread);
+#endif
 #if STAGE == 4
 	/* Test 3: deliberate PREFETCH ABORT. A Thumb BKPT with the debug unit not in halt mode raises
 	 * a prefetch abort (IFSR = 0x2, "debug event"), with no memory fetch involved. Resume address
@@ -296,6 +371,7 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	at(4, 450, 0x0000B050);
 	puts_("UNHOOKED\n");
 #endif
+	result_screen();
 	result_nonce();
 #if STAGE == 0
 	ENV_SET("trognon", "console-1", 1);   /* console only: no vector touched */
@@ -313,6 +389,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "tirq-1", 1);
 #elif STAGE == 11
 	ENV_SET("trognon", "tirqc-1", 1);
+#elif STAGE == 12
+	ENV_SET("trognon", "buttons-1", 1);
 #elif STAGE == 5
 	ENV_SET("trognon", "regs-1", 1);
 #elif STAGE == 6

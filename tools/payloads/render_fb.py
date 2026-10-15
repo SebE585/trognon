@@ -68,6 +68,10 @@ mu.hook_add(UC_HOOK_MEM_WRITE, vic_write, begin=V0, end=V0 + 0xfff)
 # Timer 5 model (STATE at 0xBF1000C4): writing 1 starts it and raises VIC0 source 6 with IRQSTAT = 0x100;
 # writing 0 stops it and drops the line; writing IRQLATCH (+0xF8) clears IRQSTAT.
 mu.mem_map(0xBF110000, 0x1000)
+mu.mem_map(0x83000000, 0x1000)        # GPIO pin registers (flat, bit 0 = level), idle pattern
+def tick_read(uc, access, addr, size, value, _):                # the free-running tick advances on every read
+    wr(0xBF100200, rd(0xBF100200) + 480000)
+mu.hook_add(UC_HOOK_MEM_READ, tick_read, begin=0xBF100200, end=0xBF100203)
 def timer_write(uc, access, addr, size, value, _):
     if addr == 0xBF1000C4:
         if value == 1: wr(V0, 0x40); wr(V0 + 8, 0x40); wr(0xBF110000, 0x100); irq['pending'] = True

@@ -29,6 +29,19 @@ void fb_clean(void)
 	asm volatile("dsb sy" ::: "memory");
 }
 
+#define TR ((volatile struct tr_row *)SOC_TRANSCRIPT)
+
+void transcript_clear(void)
+{
+	for (u32 r = 0; r < TR_ROWS; r++) {
+		TR[r].fg = 0;
+		for (u32 i = 0; i < TR_COLS + 2; i++)
+			TR[r].text[i] = 0;
+	}
+}
+
+const volatile struct tr_row *transcript(void) { return TR; }
+
 void putc_(char c)
 {
 	if (c == '\n' || SC->cx + CELL_W > W) {
@@ -39,6 +52,17 @@ void putc_(char c)
 	}
 	if (SC->cy + CELL_H > H)
 		return;                       /* no scrolling: it would read the framebuffer */
+	{
+		u32 row = SC->cy / CELL_H, col = (SC->cx - 4) / CELL_W;
+		if (row < TR_ROWS && col < TR_COLS) {
+			if (!TR[row].text[0])
+				TR[row].fg = SC->fg;
+			TR[row].text[col] = c;
+			for (u32 k = 0; k < col; k++)          /* unwritten cells before this one read as spaces */
+				if (!TR[row].text[k])
+					TR[row].text[k] = ' ';
+		}
+	}
 	const u8 *g = font5x7[c & 0x7f];
 	for (int r = 0; r < 7; r++)
 		for (int k = 0; k < 5; k++)

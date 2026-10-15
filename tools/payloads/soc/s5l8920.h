@@ -9,6 +9,9 @@
 #define SOC_PAYLOAD_BASE      0x41000000
 /* Our own choices inside the mapped 0x410xxxxx section (page table checked on the device). DEVICE */
 #define SOC_SCRATCH           0x41080000
+/* Screen transcript (26 rows x 32 bytes) and register snapshots: more of our own mapped section. */
+#define SOC_TRANSCRIPT       0x41081000
+#define SOC_SNAPSHOTS        0x41084000
 #define SOC_HANDLER_STACK_TOP 0x410f8000
 #define SOC_IRQ_STACK_TOP     0x410f4000
 
