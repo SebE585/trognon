@@ -140,7 +140,7 @@ if args.evidence:
         'tools': {'ipwndfu_commit': subprocess.run(['git', '-C', ipw, 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip(),
                   'python': sys.version.split()[0], 'host': sys.platform},
         'time_utc': stamp,
-        'command': ' '.join(sys.argv),
+        'command': ' '.join(sys.argv).replace(REPO, '<repo>').replace(os.path.expanduser('~'), '~'),   # no personal paths in a public bundle
         'screen_rows': len(rows),
     }
     json.dump(manifest, open(os.path.join(out, 'manifest.json'), 'w'), indent=2)
