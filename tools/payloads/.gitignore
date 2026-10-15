@@ -3,3 +3,4 @@
 *.o
 *.bin
 *.png
+.build-stamp

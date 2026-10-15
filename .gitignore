@@ -8,3 +8,7 @@
 /tests/test_serial
 /tests/test_chain
 /site/
+/tests/san_device_db
+/tests/san_serial
+/tests/san_chain
+*.dSYM/

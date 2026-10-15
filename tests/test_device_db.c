@@ -30,7 +30,7 @@ main(void)
     assert(d4 != NULL);
     assert(strcmp(d4->model_name, "iPhone 4") == 0);
     assert(d4->soc == TROGNON_SOC_A4);
-    assert(d4->unlock_path == TROGNON_UNLOCK_HOST_DIRECT); /* limera1n, no helper board */
+    assert(d4->unlock_path == TROGNON_UNLOCK_HOST_DIRECT); /* host-direct, no helper board (SHAtter on the A4) */
 
     const struct trognon_device *d4s = trognon_device_find_by_identifier("iPhone4,1");
     assert(d4s != NULL);
@@ -52,6 +52,17 @@ main(void)
         const struct trognon_device *d = &trognon_device_catalog[i];
         assert(d->model_name && d->model_identifier && d->soc_codename);
         assert(d->support.notes);
+        assert(d->provenance_date && d->provenance_date[0]);
+    }
+
+    /* Provenance: only the iPhone 3GS has been confirmed by Trognon on a unit. A second
+     * entry becoming DEVICE must be a deliberate edit of this test. */
+    for (size_t i = 0; i < trognon_device_catalog_count; i++) {
+        const struct trognon_device *d = &trognon_device_catalog[i];
+        if (strcmp(d->model_identifier, "iPhone2,1") == 0)
+            assert(d->provenance == TROGNON_PROV_DEVICE);
+        else
+            assert(d->provenance != TROGNON_PROV_DEVICE);
     }
 
     printf("test_device_db: %zu entries, all checks passed\n",

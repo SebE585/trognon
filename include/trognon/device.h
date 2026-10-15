@@ -50,6 +50,15 @@ struct trognon_support {
     const char *notes;  /* short pointer, e.g. "Hoolock downstream only" */
 };
 
+/* How well a catalog entry is established. The zero value is the weakest on purpose, so a new
+ * entry that forgets to set it is never taken for confirmed. */
+enum trognon_provenance {
+    TROGNON_PROV_CONJECTURE = 0, /* guessed or extrapolated, not sourced */
+    TROGNON_PROV_UPSTREAM,       /* documented by an upstream project or our dated research
+                                     notes, never tried by Trognon on a unit */
+    TROGNON_PROV_DEVICE,         /* confirmed by Trognon on a real unit (code ran on it) */
+};
+
 struct trognon_device {
     const char *model_name;      /* e.g. "iPhone 4S" */
     const char *model_identifier; /* e.g. "iPhone4,1" — informational only,
@@ -75,6 +84,8 @@ struct trognon_device {
                                       in this repo auto-generates argv from
                                       it. See docs/upstream-tools.md. */
     struct trognon_support support;
+    enum trognon_provenance provenance; /* of this whole entry */
+    const char *provenance_date;        /* YYYY-MM-DD of the survey or of the device test */
 };
 
 /* Static, read-only catalog. Defined in src/device_db.c. */

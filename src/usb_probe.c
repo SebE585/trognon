@@ -12,22 +12,27 @@
 
 #include "trognon/usb.h"
 
-/* Fills `result` from one already-opened handle/descriptor. Returns 1 if
- * it's an Apple device worth reporting, 0 to skip (not Apple, or we
- * couldn't open it — e.g. permissions). Never fails the whole scan: a
- * device we can't read is just absent from the results, not an error. */
+/* Outcomes of fill_result(). Never fails the whole scan, but the caller counts the
+ * devices it could not read so "nothing found" is not confused with "found but unreadable". */
+enum fill_outcome { FILL_OK = 1, FILL_SKIP = 0, FILL_DESC_FAILED = -1, FILL_OPEN_FAILED = -2 };
+
+/* Fills `result` from one already-opened handle/descriptor. */
 static int
-fill_result(libusb_device *dev, struct trognon_probe_result *result)
+fill_result(libusb_device *dev, struct trognon_probe_result *result, int *open_error)
 {
     struct libusb_device_descriptor desc;
     if (libusb_get_device_descriptor(dev, &desc) < 0)
-        return 0;
+        return FILL_DESC_FAILED;
     if (desc.idVendor != TROGNON_APPLE_VENDOR_ID)
-        return 0;
+        return FILL_SKIP;
 
     libusb_device_handle *handle = NULL;
-    if (libusb_open(dev, &handle) < 0)
-        return 0;
+    int orc = libusb_open(dev, &handle);
+    if (orc < 0) {
+        if (open_error)
+            *open_error = orc;
+        return FILL_OPEN_FAILED;
+    }
 
     memset(result, 0, sizeof(*result));
     result->found = 1;
@@ -53,12 +58,21 @@ fill_result(libusb_device *dev, struct trognon_probe_result *result)
      * model from — result->device stays NULL. See usb.h. */
 
     libusb_close(handle);
-    return 1;
+    return FILL_OK;
 }
 
 int
 trognon_usb_probe_all(struct trognon_probe_result *results, size_t max, size_t *count)
 {
+    return trognon_usb_probe_all_ex(results, max, count, NULL);
+}
+
+int
+trognon_usb_probe_all_ex(struct trognon_probe_result *results, size_t max, size_t *count,
+                         struct trognon_probe_stats *stats)
+{
+    if (stats)
+        memset(stats, 0, sizeof(*stats));
     if (count)
         *count = 0;
     if (!results || max == 0)
@@ -79,7 +93,19 @@ trognon_usb_probe_all(struct trognon_probe_result *results, size_t max, size_t *
     size_t found = 0;
     for (ssize_t i = 0; i < n && found < max; i++) {
         struct trognon_probe_result candidate;
-        if (!fill_result(list[i], &candidate))
+        int open_error = 0;
+        int outcome = fill_result(list[i], &candidate, &open_error);
+        if (stats) {
+            if (outcome == FILL_DESC_FAILED)
+                stats->descriptor_failed++;
+            else if (outcome == FILL_OPEN_FAILED) {
+                stats->apple_seen++;
+                stats->open_failed++;
+                stats->last_open_error = open_error;
+            } else if (outcome == FILL_OK)
+                stats->apple_seen++;
+        }
+        if (outcome != FILL_OK)
             continue;
 
         /* macOS's IOKit backend can report the same physical device more

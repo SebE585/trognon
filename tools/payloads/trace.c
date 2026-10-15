@@ -44,6 +44,7 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	 * The host runs this twice a measured time apart and divides (tools/tick_rate.py). */
 	u32 t_lo = *(volatile u32 *)(SOC_TIMER_BASE + 0x200);
 	u32 t_hi = *(volatile u32 *)(SOC_TIMER_BASE + 0x204);
+	result_nonce();
 	result_hex("ticks", t_lo);
 	result_hex("ticks_hi", t_hi);
 	ENV_SET("trognon", "ticks-1", 1);
@@ -289,6 +290,7 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	at(4, 450, 0x0000B050);
 	puts_("UNHOOKED\n");
 #endif
+	result_nonce();
 #if STAGE == 0
 	ENV_SET("trognon", "console-1", 1);   /* console only: no vector touched */
 #elif STAGE == 1

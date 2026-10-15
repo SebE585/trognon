@@ -11,10 +11,13 @@ Usage: python3 tick_rate.py PAYLOAD.bin [STATEFILE]      (state default: /tmp/tr
 Start from a clean state file after every new DFU (rm it): the counter restarts when the device resets.
 The 32-bit counter wraps: at 24 MHz that is every ~179 s, so two samples must be less than that apart.
 """
-import sys, time
+import os, sys, time
 import recovery
 
-payload = open(sys.argv[1], 'rb').read()
+base = open(sys.argv[1], 'rb').read()
+nonce = os.urandom(4)
+payload = base + b'\0' * ((-len(base)) % 4) + nonce
+nonce_hex = '%08X' % int.from_bytes(nonce, 'little')
 state = sys.argv[2] if len(sys.argv) > 2 else '/tmp/trognon_ticks.txt'
 
 def getenv(device, name):
@@ -29,7 +32,10 @@ t1 = time.time()
 time.sleep(0.3)
 device = recovery.acquire_device()
 ticks = int(getenv(device, 'ticks'), 16)
+got = getenv(device, 'nonce')
 recovery.release_device(device)
+if got != nonce_hex:
+    sys.exit('nonce mismatch (sent %s, read %s): this sample is not from this run, discarded' % (nonce_hex, got))
 t = (t0 + t1) / 2
 print('ticks = %#010x  (host %.3f, send+run %.3f s)' % (ticks, t, t1 - t0))
 

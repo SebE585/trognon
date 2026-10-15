@@ -1,0 +1,60 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  host:
+    name: Host tool and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev pkg-config
+      - name: Build the host tool
+        run: make
+      - name: Unit tests
+        run: make test
+      - name: Unit tests with AddressSanitizer and UBSan
+        run: make test-sanitize
+  payloads:
+    name: ARM payloads and emulation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi
+      - run: pip install unicorn==2.1.1 pillow==11.0.0
+      - name: Build every payload
+        working-directory: tools/payloads
+        run: make trace.bin trace_pabt.bin trace_regs.bin trace_vic.bin trace_irq.bin trace_timer.bin trace_ticks.bin trace_tirq.bin
+      - name: An unverified chip must be refused
+        working-directory: tools/payloads
+        run: |
+          if make SOC=s5l8930 -B trace.bin 2>err.txt; then echo "the A4 build was not refused"; exit 1; fi
+          grep -q "unverified" err.txt
+      - name: Emulate the proven stages (control flow only, no hardware claim)
+        working-directory: tools/payloads
+        run: |
+          for t in trace:trace-1 trace_irq:irq-1 trace_tirq:tirq-1; do
+            bin=${t%%:*}; marker=${t##*:}
+            python3 -I render_fb.py $bin.bin /tmp/$bin.png | tee /tmp/$bin.txt
+            grep -q "EMULATION STOP" /tmp/$bin.txt && { echo "$bin: emulation stopped early"; exit 1; }
+            grep -q "('trognon', '$marker')" /tmp/$bin.txt || { echo "$bin: marker $marker not set"; exit 1; }
+          done
+      - name: The nonce round trip works in emulation
+        working-directory: tools/payloads
+        run: |
+          python3 - <<'PY'
+          import os, subprocess
+          b = open('trace_ticks.bin', 'rb').read()
+          n = os.urandom(4)
+          open('/tmp/nonce.bin', 'wb').write(b + b'\0' * ((-len(b)) % 4) + n)
+          out = subprocess.run(['python3', '-I', 'render_fb.py', '/tmp/nonce.bin', '/tmp/nonce.png'],
+                               capture_output=True, text=True).stdout
+          want = "('nonce', '%08X')" % int.from_bytes(n, 'little')
+          assert want in out, (want, out)
+          print('nonce confirmed:', want)
+          PY

@@ -9,7 +9,7 @@ SRC     := src/device_db.c src/serial_parse.c src/usb_probe.c src/chain.c src/cl
 OBJ     := $(SRC:.c=.o)
 BIN     := trognon
 
-.PHONY: all clean test diagrams
+.PHONY: all clean test test-sanitize diagrams
 
 all: $(BIN)
 
@@ -24,6 +24,14 @@ test: tests/test_device_db tests/test_serial tests/test_chain
 	./tests/test_serial
 	./tests/test_chain
 
+# Same tests, built with AddressSanitizer + UBSan (CI runs this one).
+SAN_CFLAGS = -std=c11 -Wall -Wextra -Werror -g -O1 -fno-omit-frame-pointer -fsanitize=address,undefined -Iinclude
+test-sanitize:
+	$(CC) $(SAN_CFLAGS) -o tests/san_device_db tests/test_device_db.c src/device_db.c
+	$(CC) $(SAN_CFLAGS) -o tests/san_serial tests/test_serial.c src/serial_parse.c
+	$(CC) $(SAN_CFLAGS) -o tests/san_chain tests/test_chain.c src/chain.c src/device_db.c
+	./tests/san_device_db && ./tests/san_serial && ./tests/san_chain
+
 tests/test_device_db: tests/test_device_db.c src/device_db.c
 	$(CC) -std=c11 -Wall -Wextra -Iinclude -o $@ tests/test_device_db.c src/device_db.c
 
@@ -34,7 +42,7 @@ tests/test_chain: tests/test_chain.c src/chain.c src/device_db.c
 	$(CC) -std=c11 -Wall -Wextra -Iinclude -o $@ tests/test_chain.c src/chain.c src/device_db.c
 
 clean:
-	rm -f $(OBJ) $(BIN) tests/test_device_db tests/test_serial tests/test_chain
+	rm -f $(OBJ) $(BIN) tests/test_device_db tests/test_serial tests/test_chain tests/san_device_db tests/san_serial tests/san_chain; rm -rf tests/*.dSYM
 
 # Diagrams: docs/diagrams/*.yaml -> docs/img/*.svg, built with paper-forge (maintainer-side; the SVGs are
 # committed, so readers need nothing). Needs paper-forge's `trognon` charte (charte/trognon.tokens.yaml, `make tokens`).

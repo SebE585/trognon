@@ -12,3 +12,10 @@ void result_hex(const char *name, u32 v)
 	buf[8] = 0;
 	ENV_SET(name, buf, 1);
 }
+
+extern const u32 payload_end[];   /* defined by payload.ld */
+
+void result_nonce(void)
+{
+	result_hex("nonce", *(volatile const u32 *)payload_end);
+}

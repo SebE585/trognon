@@ -62,4 +62,19 @@ int trognon_usb_probe(struct trognon_probe_result *result);
  * that from this call alone. */
 int trognon_usb_probe_all(struct trognon_probe_result *results, size_t max, size_t *count);
 
+/* What a scan could not report. "Nothing found" and "found something I could not read" are
+ * different situations: on macOS a DFU device that another process holds, or a permissions
+ * problem, fails libusb_open() and used to look exactly like an empty bus. */
+struct trognon_probe_stats {
+    size_t apple_seen;        /* Apple-vendor devices enumerated, readable or not */
+    size_t open_failed;       /* of those, how many libusb_open() refused */
+    size_t descriptor_failed; /* enumerated but the device descriptor could not be read */
+    int last_open_error;      /* libusb error code of the last refused open (0 if none), e.g.
+                                 LIBUSB_ERROR_ACCESS (-3) */
+};
+
+/* Same as trognon_usb_probe_all(), and also fills `stats` (may be NULL). */
+int trognon_usb_probe_all_ex(struct trognon_probe_result *results, size_t max, size_t *count,
+                             struct trognon_probe_stats *stats);
+
 #endif /* TROGNON_USB_H */

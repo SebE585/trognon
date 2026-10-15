@@ -100,11 +100,13 @@ time from the owner's own device or IPSW, as Asahi Linux does.
 
 ## Reprise
 
-- **Run:** payloads in `tools/payloads/` (`make trace.bin`) and `tools/run_payload.py`; the boot
-  recipe is in [`docs/en/01-boot-chain.md`](docs/en/01-boot-chain.md). Diagrams: `make diagrams`
-  (maintainer-side, SVGs are committed).
-- **Breaks first:** USB sends fail about one time in three and a stale `getenv` marker looks like
-  success: read [`docs/en/05-field-notes.md`](docs/en/05-field-notes.md) first.
+- **Run:** `make test test-sanitize` for the host tool; payloads in `tools/payloads/` (`make trace.bin`);
+  on a device, `tools/boot.sh` then `tools/send.sh tools/payloads/trace.bin` (pinned ipwndfu, see
+  [`tools/ipwndfu/README.md`](tools/ipwndfu/README.md) and [`docs/en/01-boot-chain.md`](docs/en/01-boot-chain.md)).
+  Diagrams: `make diagrams` (maintainer-side, SVGs are committed).
+- **Breaks first:** USB sends fail about one time in three. A run counts only if `tools/send.sh` prints
+  `NONCE CONFIRMED`; a stale `getenv` marker no longer passes for success. See
+  [`docs/en/05-field-notes.md`](docs/en/05-field-notes.md).
 - **Know before touching:** the research notes are dated; anything older than
   six months on boot chains or mainline support must be re-checked.
 

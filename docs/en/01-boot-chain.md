@@ -44,13 +44,17 @@ Making it untethered on this SoC is **HYPOTHESIS**: see
 
 ## Reproduce
 
+One-time setup, with the pinned version and the patch kept in this repository
+([`tools/ipwndfu/README.md`](https://github.com/SebE585/trognon/blob/main/tools/ipwndfu/README.md)):
+ipwndfu at commit `0e28932`, plus `tools/ipwndfu/python3-arm64.patch` (a Python 3 port and a libusb path
+override, GPL-3.0 like ipwndfu). Then:
+
 ```sh
-cd ~/tools/ipwndfu                       # a checkout of ipwndfu
-export TROGNON_LIBUSB_PATH=/opt/homebrew/lib/libusb-1.0.dylib PYTHONPATH=.
-python3 ipwndfu -p                        # repeat if "Exploit failed"
-python3 trognon_boot_ibss_only.py         # local helper: boot_ibss() and stop
-python3 <repo>/tools/run_payload.py <repo>/tools/payloads/trace.bin
+tools/boot.sh                               # device in DFU: pwn it, boot the patched iBSS (Recovery)
+tools/send.sh tools/payloads/trace.bin      # send a payload, then check its nonce
 ```
 
-`trognon_boot_ibss_only.py` is a 20-line local wrapper around ipwndfu's
-`boot_ibss()`; it is not part of ipwndfu and not yet in this repository.
+`tools/boot.sh` refuses to run if ipwndfu is not at the pinned commit with the patch applied. `tools/send.sh`
+appends a random 32-bit nonce to the binary, the payload republishes it, and the script confirms it
+(exit status 3 and `NONCE NOT CONFIRMED` otherwise). It also prints the SHA-256 of the binary and appends
+the outcome to `~/trognon-runs.log`. A run is proven only when the nonce comes back.

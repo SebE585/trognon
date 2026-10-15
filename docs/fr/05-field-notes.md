@@ -18,6 +18,10 @@ valeur du run *précédent*. Toujours la lire avant le run (attendre `<unset>` a
 regarder l'écran : un payload repeint tout l'affichage d'abord, donc une ancienne image à l'écran
 signifie que le nouveau payload n'a pas tourné.
 
+Les outils le vérifient maintenant à la place de l'œil : `tools/send.sh` ajoute un nonce aléatoire au
+binaire, le payload le republie, et un marqueur périmé ne peut pas lui correspondre (voir la
+[chaîne de démarrage](01-boot-chain.md)). Les payloads antérieurs au nonce sont signalés comme non confirmés.
+
 ## Échecs du pwn
 
 `ipwndfu -p` annonce parfois `Exploit failed`. Le relancer, parfois après avoir remis en DFU,

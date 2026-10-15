@@ -14,6 +14,7 @@
  */
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "trognon/serial.h"
 
@@ -50,8 +51,7 @@ main(void)
         assert(info.cpid == 0x8920);
     }
 
-    /* DFU after an unlock step ran: PWND marker present. PID is ignored
-     * once PWND: is found. */
+    /* DFU after an unlock step ran: PWND marker present, on the DFU PID. */
     {
         struct trognon_serial_info info = trognon_serial_parse(
             "CPID:8940 CPRV:11 CPFM:03 SCEP:01 BDID:00 ECID:ABCDEF0123456789 "
@@ -84,10 +84,67 @@ main(void)
         assert(info.cpid == 0);
     }
     {
-        /* Garbage that happens to contain "CPID:" with no hex digits after it. */
+        /* Garbage that happens to contain "CPID:" with no hex digits after it:
+         * rejected (UNKNOWN), not classified as DFU with a CPID of 0. */
         struct trognon_serial_info info = trognon_serial_parse("CPID:", TROGNON_PID_DFU);
-        assert(info.state == TROGNON_STATE_DFU);
+        assert(info.state == TROGNON_STATE_UNKNOWN);
         assert(info.cpid == 0);
+    }
+
+    /* Adversarial table: malformed CPID fields and PID/marker combinations.
+     * Each row is (serial, pid, expected state, expected cpid). */
+    {
+        static const struct {
+            const char *serial;
+            uint16_t pid;
+            enum trognon_bus_state state;
+            uint32_t cpid;
+        } rows[] = {
+            /* CPID field shapes */
+            { "CPID:8920",                     TROGNON_PID_DFU, TROGNON_STATE_DFU,     0x8920 },
+            { "CPID:8920 CPRV:14",             TROGNON_PID_DFU, TROGNON_STATE_DFU,     0x8920 },
+            { "CPID:8",                        TROGNON_PID_DFU, TROGNON_STATE_DFU,     0x8 },
+            { "CPID:89200000",                 TROGNON_PID_DFU, TROGNON_STATE_DFU,     0x89200000 },
+            { "CPID:892000000",                TROGNON_PID_DFU, TROGNON_STATE_UNKNOWN, 0 },  /* 9 digits */
+            { "CPID:FFFFFFFFF",                TROGNON_PID_DFU, TROGNON_STATE_UNKNOWN, 0 },  /* would overflow */
+            { "CPID:zzzz",                     TROGNON_PID_DFU, TROGNON_STATE_UNKNOWN, 0 },
+            { "CPID:8920garbage",              TROGNON_PID_DFU, TROGNON_STATE_UNKNOWN, 0 },  /* glued text */
+            { "CPID: 8920",                    TROGNON_PID_DFU, TROGNON_STATE_UNKNOWN, 0 },  /* space first */
+            { "CPID:-1",                       TROGNON_PID_DFU, TROGNON_STATE_UNKNOWN, 0 },
+            { "CPID:0x8920",                   TROGNON_PID_DFU, TROGNON_STATE_UNKNOWN, 0 },  /* strtoul would have accepted */
+            { "CPID:8920\tCPRV:14",            TROGNON_PID_DFU, TROGNON_STATE_UNKNOWN, 0 },  /* tab, not a space */
+            { "cpid:8920",                     TROGNON_PID_DFU, TROGNON_STATE_NORMAL,  0 },  /* case-sensitive: no CPID field */
+            /* PWND: only counts on the DFU product id */
+            { "CPID:8920 PWND:[x]",            TROGNON_PID_DFU,          TROGNON_STATE_DFU_PWNED, 0x8920 },
+            { "CPID:8920 PWND:[x]",            TROGNON_PID_RECOVERY,     TROGNON_STATE_UNKNOWN,   0x8920 },
+            { "CPID:8920 PWND:[x]",            TROGNON_PID_RECOVERY_ALT, TROGNON_STATE_UNKNOWN,   0x8920 },
+            { "CPID:8920 PWND:[x]",            0x9999,                   TROGNON_STATE_UNKNOWN,   0x8920 },
+            { "CPID:8920 PWND:[x]",            0,                        TROGNON_STATE_UNKNOWN,   0x8920 },
+            { "CPID:8920",                     0,                        TROGNON_STATE_UNKNOWN,   0x8920 },
+            /* PWND: without a CPID field is just a plain serial */
+            { "PWND:[x]",                      TROGNON_PID_DFU, TROGNON_STATE_NORMAL, 0 },
+            /* PWND: before CPID: still needs a valid CPID */
+            { "PWND:[x] CPID:8920",            TROGNON_PID_DFU, TROGNON_STATE_DFU_PWNED, 0x8920 },
+            { "PWND:[x] CPID:",                TROGNON_PID_DFU, TROGNON_STATE_UNKNOWN,   0 },
+        };
+        for (unsigned i = 0; i < sizeof rows / sizeof rows[0]; i++) {
+            struct trognon_serial_info info = trognon_serial_parse(rows[i].serial, rows[i].pid);
+            if (info.state != rows[i].state || info.cpid != rows[i].cpid) {
+                fprintf(stderr, "row %u failed: \"%s\" pid=%#x -> state %d cpid %#x (want %d, %#x)\n",
+                        i, rows[i].serial, (unsigned)rows[i].pid, (int)info.state,
+                        (unsigned)info.cpid, (int)rows[i].state, (unsigned)rows[i].cpid);
+                return 1;
+            }
+        }
+    }
+    {
+        /* A serial longer than any real descriptor must not overrun anything. */
+        char big[1024];
+        memset(big, 'A', sizeof big - 1);
+        big[sizeof big - 1] = '\0';
+        memcpy(big + 100, "CPID:8920", 9);
+        struct trognon_serial_info info = trognon_serial_parse(big, TROGNON_PID_DFU);
+        assert(info.state == TROGNON_STATE_UNKNOWN);   /* "CPID:8920AAAA..." is glued text */
     }
 
     printf("test_serial: all fixture checks passed\n");

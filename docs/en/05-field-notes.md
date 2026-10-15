@@ -18,6 +18,10 @@ returns the *previous* run's value. Always read it before the run (expect `<unse
 after a fresh DFU) and check the screen: a payload repaints the whole display first,
 so an old image on screen means the new payload did not run.
 
+This is now checked by the tools instead of by eye: `tools/send.sh` appends a random nonce to the
+binary, the payload republishes it, and a stale marker cannot match it (see
+[boot chain](01-boot-chain.md)). Payloads that predate the nonce are reported as unconfirmed.
+
 ## Pwn failures
 
 `ipwndfu -p` sometimes reports `Exploit failed`. Re-running it, sometimes after

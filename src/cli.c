@@ -27,6 +27,16 @@ state_name(enum trognon_bus_state state)
 
 #define TROGNON_MAX_DEVICES 16
 
+static const char *
+provenance_name(enum trognon_provenance p)
+{
+    switch (p) {
+    case TROGNON_PROV_DEVICE:   return "confirmed by Trognon on a unit";
+    case TROGNON_PROV_UPSTREAM: return "documented upstream, not tried by Trognon";
+    default:                    return "conjecture";
+    }
+}
+
 static void
 print_one(const struct trognon_probe_result *result, int index)
 {
@@ -46,24 +56,41 @@ print_one(const struct trognon_probe_result *result, int index)
                    ? "needs a USB-host helper board (Pico/Arduino)"
                    : "host-direct (ipwndfu/gaster)");
         printf("    support notes: %s\n", result->device->support.notes);
+        printf("    evidence: %s (%s)\n", provenance_name(result->device->provenance),
+               result->device->provenance_date);
     } else {
         printf("    not in trognon's device catalog yet.\n");
     }
+}
+
+/* "No device" and "device seen but unreadable" are different: say which. */
+static void
+report_unreadable(const struct trognon_probe_stats *st)
+{
+    if (st->open_failed)
+        fprintf(stderr, "trognon: %zu Apple device(s) seen but could not be opened "
+                "(libusb error %d: permissions, or another process holds the device).\n",
+                st->open_failed, st->last_open_error);
+    if (st->descriptor_failed)
+        fprintf(stderr, "trognon: %zu USB device(s) had an unreadable descriptor.\n",
+                st->descriptor_failed);
 }
 
 static int
 cmd_probe(void)
 {
     struct trognon_probe_result results[TROGNON_MAX_DEVICES];
+    struct trognon_probe_stats stats;
     size_t count = 0;
-    int rc = trognon_usb_probe_all(results, TROGNON_MAX_DEVICES, &count);
+    int rc = trognon_usb_probe_all_ex(results, TROGNON_MAX_DEVICES, &count, &stats);
     if (rc < 0) {
         fprintf(stderr, "trognon: USB probe failed (libusb error %d)\n", rc);
         return 1;
     }
+    report_unreadable(&stats);
     if (count == 0) {
-        printf("No Apple USB device found.\n");
-        return 0;
+        printf("No readable Apple USB device found.\n");
+        return stats.open_failed ? 2 : 0;
     }
 
     printf("Found %zu Apple device(s):\n", count);
@@ -88,15 +115,17 @@ static int
 cmd_unlock(void)
 {
     struct trognon_probe_result results[TROGNON_MAX_DEVICES];
+    struct trognon_probe_stats stats;
     size_t count = 0;
-    int rc = trognon_usb_probe_all(results, TROGNON_MAX_DEVICES, &count);
+    int rc = trognon_usb_probe_all_ex(results, TROGNON_MAX_DEVICES, &count, &stats);
     if (rc < 0) {
         fprintf(stderr, "trognon: USB probe failed (libusb error %d)\n", rc);
         return 1;
     }
+    report_unreadable(&stats);
     if (count == 0) {
-        printf("No Apple USB device found.\n");
-        return 0;
+        printf("No readable Apple USB device found.\n");
+        return stats.open_failed ? 2 : 0;
     }
 
     printf("trognon-unlock: planning only — no external tool is invoked by "
@@ -119,10 +148,12 @@ cmd_list_devices(void)
 {
     for (size_t i = 0; i < trognon_device_catalog_count; i++) {
         const struct trognon_device *d = &trognon_device_catalog[i];
-        printf("%-12s %-16s SoC=%-10s DT=%-10s %s\n",
+        printf("%-12s %-16s SoC=%-10s DT=%-10s [%s %s] %s\n",
                d->model_name, d->model_identifier, d->soc_codename,
                d->dt_platform ? d->dt_platform : "-",
-               d->support.notes);
+               d->provenance == TROGNON_PROV_DEVICE ? "DEVICE" :
+               d->provenance == TROGNON_PROV_UPSTREAM ? "UPSTREAM" : "CONJECTURE",
+               d->provenance_date, d->support.notes);
     }
     return 0;
 }

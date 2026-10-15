@@ -14,6 +14,8 @@
 const struct trognon_device trognon_device_catalog[] = {
     {
         .model_name = "iPhone 3GS",
+        .provenance = TROGNON_PROV_DEVICE,
+        .provenance_date = "2026-10-15",
         .model_identifier = "iPhone2,1",
         .cpid = 0x8920,
         .soc = TROGNON_SOC_S5L8920,
@@ -32,12 +34,15 @@ const struct trognon_device trognon_device_catalog[] = {
                              "tool's own source 2026-10-14)",
         .support = {
             .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
-            .notes = "Oldest family in this catalog. No modern OS port "
-                     "effort; boot-chain test device only, like the A4.",
+            .notes = "Reference device of the bare-metal track: Trognon code "
+                     "runs on it (console, exceptions, IRQ). No modern OS "
+                     "port effort exists.",
         },
     },
     {
         .model_name = "iPhone 4",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-14",
         .model_identifier = "iPhone3,1", /* GSM, model A1332. CDMA A1349 is
                                              iPhone3,3 — same A4, not yet in
                                              this table. */
@@ -75,6 +80,8 @@ const struct trognon_device trognon_device_catalog[] = {
     },
     {
         .model_name = "iPhone 4S",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-13",
         .model_identifier = "iPhone4,1",
         .cpid = 0x8940,
         .soc = TROGNON_SOC_A5,
@@ -93,6 +100,8 @@ const struct trognon_device trognon_device_catalog[] = {
     },
     {
         .model_name = "iPhone 5",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-13",
         .model_identifier = "iPhone5,1",
         .cpid = 0x8950,
         .soc = TROGNON_SOC_A6,
@@ -107,6 +116,8 @@ const struct trognon_device trognon_device_catalog[] = {
     },
     {
         .model_name = "iPhone 5s",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-13",
         .model_identifier = "iPhone6,1",
         .cpid = 0x8960,
         .soc = TROGNON_SOC_A7,
@@ -121,6 +132,8 @@ const struct trognon_device trognon_device_catalog[] = {
     },
     {
         .model_name = "iPhone 6",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-13",
         .model_identifier = "iPhone7,2",
         .cpid = 0x7000,
         .soc = TROGNON_SOC_A8,
@@ -138,6 +151,8 @@ const struct trognon_device trognon_device_catalog[] = {
     },
     {
         .model_name = "iPhone 6s",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-13",
         .model_identifier = "iPhone8,1",
         .cpid = 0x8000,
         .soc = TROGNON_SOC_A9,
@@ -155,6 +170,8 @@ const struct trognon_device trognon_device_catalog[] = {
     },
     {
         .model_name = "iPhone 7",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-13",
         .model_identifier = "iPhone9,1",
         .cpid = 0x8010,
         .soc = TROGNON_SOC_A10,
@@ -170,6 +187,8 @@ const struct trognon_device trognon_device_catalog[] = {
     },
     {
         .model_name = "iPhone 8",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-13",
         .model_identifier = "iPhone10,1",
         .cpid = 0x8015,
         .soc = TROGNON_SOC_A11,
@@ -185,6 +204,8 @@ const struct trognon_device trognon_device_catalog[] = {
     },
     {
         .model_name = "iPhone X",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-13",
         .model_identifier = "iPhone10,3",
         .cpid = 0x8015,
         .soc = TROGNON_SOC_A11,

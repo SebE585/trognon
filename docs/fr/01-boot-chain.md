@@ -43,13 +43,17 @@ autonome sur ce SoC est une **HYPOTHESIS** : voir
 
 ## Reproduire
 
+Mise en place unique, avec la version épinglée et le correctif gardés dans ce dépôt
+([`tools/ipwndfu/README.md`](https://github.com/SebE585/trognon/blob/main/tools/ipwndfu/README.md)) :
+ipwndfu au commit `0e28932`, plus `tools/ipwndfu/python3-arm64.patch` (un portage Python 3 et un chemin
+libusb surchargeable, GPL-3.0 comme ipwndfu). Ensuite :
+
 ```sh
-cd ~/tools/ipwndfu                       # une copie d'ipwndfu
-export TROGNON_LIBUSB_PATH=/opt/homebrew/lib/libusb-1.0.dylib PYTHONPATH=.
-python3 ipwndfu -p                        # relancer si « Exploit failed »
-python3 trognon_boot_ibss_only.py         # aide locale : boot_ibss() puis arrêt
-python3 <repo>/tools/run_payload.py <repo>/tools/payloads/trace.bin
+tools/boot.sh                               # appareil en DFU : le pwn, puis l'iBSS patché (Recovery)
+tools/send.sh tools/payloads/trace.bin      # envoie un payload, puis vérifie son nonce
 ```
 
-`trognon_boot_ibss_only.py` est une enveloppe locale de 20 lignes autour de `boot_ibss()` d'ipwndfu ;
-elle ne fait pas partie d'ipwndfu et n'est pas encore dans ce dépôt.
+`tools/boot.sh` refuse de tourner si ipwndfu n'est pas au commit épinglé avec le correctif appliqué.
+`tools/send.sh` ajoute un nonce aléatoire de 32 bits au binaire, le payload le republie et le script le
+confirme (code de sortie 3 et `NONCE NOT CONFIRMED` sinon). Il affiche aussi le SHA-256 du binaire et ajoute
+le résultat à `~/trognon-runs.log`. Un run n'est prouvé que lorsque le nonce revient.

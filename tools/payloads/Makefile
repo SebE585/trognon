@@ -30,16 +30,22 @@ STAGE_trace_timer = 8
 STAGE_trace_ticks = 9
 STAGE_trace_tirq  = 10
 
+# Objects are built for one SoC. Without this stamp, `make SOC=other` would silently reuse objects built for
+# the previous chip. The stamp is rewritten only when SOC or the flags change.
+.build-stamp: FORCE
+	@echo "$(SOC) $(SOCDEF) $(CFLAGS)" | cmp -s - $@ || echo "$(SOC) $(SOCDEF) $(CFLAGS)" > $@
+FORCE:
+
 font.h: gen_font.py
 	python3 -I gen_font.py $@
 
-hal/%.o: hal/%.c hal/*.h soc.h soc/*.h font.h
+hal/%.o: hal/%.c hal/*.h soc.h soc/*.h font.h .build-stamp
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-trace.o: trace.c hal/*.h soc.h soc/*.h font.h
+trace.o: trace.c hal/*.h soc.h soc/*.h font.h .build-stamp
 	$(CC) $(CFLAGS) -DSTAGE=$(STAGE_trace) -c -o $@ $<
 
-trace_%.o: trace.c hal/*.h soc.h soc/*.h font.h
+trace_%.o: trace.c hal/*.h soc.h soc/*.h font.h .build-stamp
 	$(CC) $(CFLAGS) -DSTAGE=$(STAGE_trace_$*) -c -o $@ $<
 
 %.elf: %.o $(HAL) payload.ld
@@ -52,6 +58,6 @@ trace_%.o: trace.c hal/*.h soc.h soc/*.h font.h
 	python3 -I render_fb.py $< $@
 
 clean:
-	rm -f *.o hal/*.o *.elf *.bin *.png
-.PHONY: clean
+	rm -f *.o hal/*.o *.elf *.bin *.png .build-stamp
+.PHONY: clean FORCE
 .SECONDARY:
