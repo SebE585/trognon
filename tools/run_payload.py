@@ -28,12 +28,13 @@ ap.add_argument('--vars', default='', help='comma-separated extra env variables 
 ap.add_argument('--wait', type=float, default=3.0, help='seconds to wait for the payload to finish (it may prompt a human)')
 ap.add_argument('--evidence', default='', help='directory where the evidence bundle is written')
 ap.add_argument('--soc', default='s5l8920')
+ap.add_argument('--collect', default='', metavar='NONCE', help='do not send: only read back and verify an earlier run that used this nonce (hex, as printed by "nonce sent")')
 args = ap.parse_args()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 base = open(args.payload, 'rb').read()
-nonce = os.urandom(4)
+nonce = bytes.fromhex(args.collect)[::-1] if args.collect else os.urandom(4)   # --collect: the nonce of an earlier send
 payload = base + b'\0' * ((-len(base)) % 4) + nonce
 nonce_hex = '%08X' % int.from_bytes(nonce, 'little')   # the ARM payload reads the 4 bytes as a little-endian u32
 sha = hashlib.sha256(base).hexdigest()
@@ -71,16 +72,22 @@ try:
 except Exception:
     pass
 print('before:', args.marker, '=', repr(getenv(device, args.marker)), '| nonce =', repr(getenv(device, 'nonce')))
-print('sending %d bytes' % len(payload), flush=True)
-try:
-    recovery.send_data(device, payload)
-    print('data sent, issuing run', flush=True)
-    recovery.send_command(device, 'run')
-    print('run issued', flush=True)
-except usb.core.USBError as e:
-    print('USB error:', e)
-    log('usb-error')
-    sys.exit(1)
+if not args.collect:
+    print('sending %d bytes' % len(payload), flush=True)
+    try:
+        recovery.send_data(device, payload)
+        print('data sent, issuing run', flush=True)
+        try:
+            recovery.send_command(device, 'run')
+            print('run issued', flush=True)
+        except usb.core.USBError as e:
+            if e.errno != 60:                       # a timeout means the payload is still running (a prompt for a human)
+                raise
+            print('run: the payload is still running (control transfer timed out), waiting for it', flush=True)
+    except usb.core.USBError as e:
+        print('USB error:', e)
+        log('usb-error')
+        sys.exit(1)
 
 # The payload may take a while (a prompt for a human, a timeout): poll until the nonce comes back.
 got, deadline = '', time.time() + max(args.wait, 0.5)

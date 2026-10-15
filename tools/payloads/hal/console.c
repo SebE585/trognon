@@ -42,6 +42,17 @@ void transcript_clear(void)
 
 const volatile struct tr_row *transcript(void) { return TR; }
 
+void console_clear_row(int y)
+{
+	rect(0, y, W, CELL_H, CON_BG);
+	u32 row = (u32)y / CELL_H;
+	if (row < TR_ROWS) {
+		TR[row].fg = 0;
+		for (u32 i = 0; i < TR_COLS + 2; i++)
+			TR[row].text[i] = 0;
+	}
+}
+
 void putc_(char c)
 {
 	if (c == '\n' || SC->cx + CELL_W > W) {

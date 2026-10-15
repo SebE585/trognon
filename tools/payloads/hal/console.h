@@ -17,6 +17,9 @@ struct tr_row {
 	u32 fg;                  /* colour of the first character of the row, 0x00RRGGBB */
 	char text[TR_COLS + 2];  /* NUL terminated */
 };
+#define CON_BG 0x00101820
+/* Blank the text row that contains pixel line y, on screen and in the transcript (live status lines). */
+void console_clear_row(int y);
 void transcript_clear(void);
 const volatile struct tr_row *transcript(void);
 #endif

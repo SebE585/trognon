@@ -280,19 +280,20 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	}
 #endif
 #if STAGE == 12
-	/* Button discovery by differences. OpeniBoot's button ids for this SoC look copied from an older one, so we
-	 * do not trust them: read bit 0 of every GPIO pin register (GPIO + (8*port+pin)*4, SOURCE layout), learn the
-	 * pins that move by themselves (noise), then ask for each button in turn and list the pins that changed
-	 * while it was handled. Read-only: no pin is ever written or reconfigured. Window length: 6 s each. */
+	/* Button discovery by differences, paced by a human. OpeniBoot's button ids for this SoC look copied from an
+	 * older one, so we do not trust them: read bit 0 of every GPIO pin register (GPIO + (8*port+pin)*4, SOURCE
+	 * layout), learn the pins that move by themselves (noise), then ask for each button in turn, wait up to 30 s
+	 * for a pin to change and list the pins that moved. Read-only: no pin is ever written or reconfigured.
+	 * Results stay on the screen (and so in the transcript): no extra env variables, the iBSS env store is small. */
 	#define NPIN 376
-	volatile u8 *base = (volatile u8 *)SOC_SNAPSHOTS;   /* base level */
+	volatile u8 *base = (volatile u8 *)SOC_SNAPSHOTS;   /* level when the prompt appeared */
 	volatile u8 *noisy = base + NPIN;                     /* moved with nobody touching */
 	volatile u8 *mark = base + 2 * NPIN;                  /* moved while a button was handled */
 	volatile u8 *readable = base + 3 * NPIN;
 	volatile u32 *gp = (volatile u32 *)SOC_GPIO_BASE;
 	#define TICK (*(volatile u32 *)(SOC_TIMER_BASE + 0x200))
+	#define SEC 24000000u
 	at(4, 116, 0x00F0C040); puts_("STEP 12 BUTTONS\n");
-	at(4, 134, 0x00FFFFFF);
 	u32 nread = 0;
 	SC->quiet = 1;
 	for (u32 i = 0; i < NPIN; i++) {                          /* which pin registers answer */
@@ -306,35 +307,62 @@ __attribute__((section(".text.start"))) void payload_main(void)
 		nread += readable[i];
 	}
 	SC->quiet = 0;
+	at(4, 134, 0x00FFFFFF);
 	kv("READABLE", nread);
-	puts_("HANDS OFF 3 S\n");
+	/* 10 s to get ready, then 3 s of noise measurement with hands off. */
+	for (u32 s = 10; s > 0; s--) {
+		console_clear_row(152);
+		at(4, 152, 0x00F0C040); puts_("GET READY ");
+		hex(s); fb_clean();
+		u32 t0 = TICK;
+		while (TICK - t0 < SEC) ;
+	}
+	console_clear_row(152);
+	at(4, 152, 0x00F0C040); puts_("HANDS OFF 3 S"); fb_clean();
+	for (u32 i = 0; i < NPIN; i++) base[i] = (u8)(gp[i] & 1);
 	{
 		u32 t0 = TICK;
-		while (TICK - t0 < 72000000u)                         /* noise: pins that move untouched */
+		while (TICK - t0 < 3 * SEC)
 			for (u32 i = 0; i < NPIN; i++)
 				if (readable[i] && (u8)(gp[i] & 1) != base[i])
 					noisy[i] = 1;
 	}
 	u32 nn = 0;
 	for (u32 i = 0; i < NPIN; i++) nn += noisy[i];
-	kv("NOISY   ", nn);
+	console_clear_row(152);
+	at(4, 152, 0x00FFFFFF); kv("NOISY   ", nn);
 	static const char *const names[5] = { "HOME", "POWER", "VOL UP", "VOL DOWN", "RINGER" };
-	static const char *const keys[5] = { "b_home", "b_power", "b_volup", "b_voldown", "b_ringer" };
+	static const char *const verbs[5] = { "PRESS ", "PRESS ", "PRESS ", "PRESS ", "FLIP " };
+	u32 y = 170;
 	for (u32 b = 0; b < 5; b++) {
-		SC->fg = 0x00F0C040;
-		puts_("HOLD "); puts_(names[b]); puts_(" 6 S\n");
-		for (u32 i = 0; i < NPIN; i++) mark[i] = 0;
-		u32 t0 = TICK;
-		while (TICK - t0 < 144000000u)
+		for (u32 i = 0; i < NPIN; i++) { base[i] = (u8)(gp[i] & 1); mark[i] = 0; }   /* fresh baseline for this button */
+		at(4, y, 0x00F0C040);
+		puts_(verbs[b]); puts_(names[b]); puts_(" NOW"); fb_clean();
+		u32 t0 = TICK, t_found = 0, last_s = 99;
+		for (;;) {
+			u32 now = TICK - t0;
+			u32 left = 30 - now / SEC;
+			if (left != last_s) {                              /* live countdown on the next row */
+				last_s = left;
+				console_clear_row(y + 18);
+				at(4, y + 18, 0x00A0B0C0); puts_("WAITING "); hex(left); fb_clean();
+			}
 			for (u32 i = 0; i < NPIN; i++)
-				if (readable[i] && !noisy[i] && (u8)(gp[i] & 1) != base[i])
+				if (readable[i] && !noisy[i] && (u8)(gp[i] & 1) != base[i]) {
 					mark[i] = 1;
-		SC->fg = 0x0000B050;
-		puts_(names[b]); puts_(" PINS");
+					if (!t_found) t_found = now ? now : 1;
+				}
+			if (t_found && now - t_found > SEC)                /* a pin moved: 1 s more to catch the others */
+				break;
+			if (now > 30 * SEC)
+				break;
+		}
+		console_clear_row(y); console_clear_row(y + 18);
+		at(4, y, t_found ? 0x0000B050 : 0x00E02020);
+		puts_(names[b]);
 		char list[64]; u32 n = 0, shown = 0;
-		for (u32 i = 0; i < NPIN && shown < 6; i++) {
+		for (u32 i = 0; i < NPIN && shown < 5; i++) {
 			if (!mark[i]) continue;
-			if (n + 6 > sizeof list - 1) break;
 			list[n++] = ' ';
 			list[n++] = "0123456789ABCDEF"[(i >> 3) >> 4];     /* port */
 			list[n++] = "0123456789ABCDEF"[(i >> 3) & 15];
@@ -343,15 +371,15 @@ __attribute__((section(".text.start"))) void payload_main(void)
 			shown++;
 		}
 		list[n] = 0;
-		puts_(list); putc_('\n'); fb_clean();
-		result_str(keys[b], n ? list + 1 : "none");
-		u32 t1 = TICK;
-		while (TICK - t1 < 24000000u) ;                       /* 1 s to let go before the next prompt */
+		puts_(t_found ? list : " NONE"); putc_('\n'); fb_clean();
+		y += 18;
+		if (b < 4) {                                           /* let go before the next prompt */
+			u32 t1 = TICK;
+			while (TICK - t1 < 2 * SEC) ;
+		}
 	}
-	SC->fg = 0x00FFFFFF;
+	at(4, y + 18, 0x00FFFFFF);
 	puts_("DONE\n");
-	result_hex("b_noisy", nn);
-	result_hex("b_readable", nread);
 #endif
 #if STAGE == 4
 	/* Test 3: deliberate PREFETCH ABORT. A Thumb BKPT with the debug unit not in halt mode raises
