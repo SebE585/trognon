@@ -2,7 +2,7 @@
 ENTRY(payload_main)
 SECTIONS {
 	. = PAYLOAD_BASE;
-	.text : { *(.text.start) *(.text*) *(.rodata*) . = ALIGN(4); }
+	.text : { KEEP(*(.text.entry)) *(.text.start) *(.text*) *(.rodata*) . = ALIGN(4); }
 	/* The host appends a random 32-bit nonce right after the binary; the payload republishes it. */
 	payload_end = .;
 	/DISCARD/ : { *(.ARM.*) *(.comment) *(.note*) *(.data*) *(.bss*) }

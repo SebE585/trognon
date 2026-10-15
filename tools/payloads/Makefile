@@ -16,7 +16,7 @@ CFLAGS  = -mthumb -mcpu=cortex-a8 -Os -ffreestanding -fno-builtin -fno-pic \
 # One source of truth for the load address: the SoC header.
 PAYLOAD_BASE = $(shell echo SOC_PAYLOAD_BASE | $(CC) -E -P -x c -include soc.h $(SOCDEF) - 2>/dev/null | tr -d ' ')
 LDFLAGS = -T payload.ld -Wl,--gc-sections -Wl,--defsym=PAYLOAD_BASE=$(PAYLOAD_BASE)
-HAL     = hal/console.o hal/exc.o hal/vic.o hal/result.o
+HAL     = hal/entry.o hal/console.o hal/exc.o hal/vic.o hal/result.o
 
 # stage number per payload (STAGE is read by trace.c)
 STAGE_trace      = 3
