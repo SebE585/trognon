@@ -39,20 +39,22 @@ void result_nonce(void)
 void result_screen(void)
 {
 	const volatile struct tr_row *t = transcript();
+	/* Every row is published, empty ones as a bare colour: the iBSS keeps its env variables from the previous
+	 * payload, so a row we skipped would come back with the previous payload's text. */
 	for (u32 r = 0; r < TR_ROWS; r++) {
-		if (!t[r].text[0])
-			continue;
 		u32 tens = r >= 20 ? 2 : r >= 10 ? 1 : 0;           /* no libgcc division in a payload */
 		char name[4] = { 's', (char)('0' + tens), (char)('0' + (r - tens * 10)), 0 };
 		char val[8 + TR_COLS + 1];
 		u32 n = 0;
 		for (int i = 20; i >= 0; i -= 4)
 			val[n++] = "0123456789ABCDEF"[(t[r].fg >> i) & 15];
-		val[n++] = ' ';
-		for (u32 i = 0; i < TR_COLS && t[r].text[i]; i++)
-			val[n++] = t[r].text[i];
-		while (n > 7 && val[n - 1] == ' ')          /* trailing blanks carry nothing */
-			n--;
+		if (t[r].text[0]) {
+			val[n++] = ' ';
+			for (u32 i = 0; i < TR_COLS && t[r].text[i]; i++)
+				val[n++] = t[r].text[i];
+			while (n > 7 && val[n - 1] == ' ')      /* trailing blanks carry nothing */
+				n--;
+		}
 		val[n] = 0;
 		env_set_safe(name, val, 1);
 	}

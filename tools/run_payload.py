@@ -113,7 +113,7 @@ if args.evidence:
     rows = []
     for r in range(26):
         v = getenv(device, 's%02d' % r)
-        if v.startswith('<unset'):
+        if v.startswith('<unset') or len(v) <= 7:     # absent, or published as an empty row
             continue
         rows.append({'row': r, 'fg': v[:6], 'text': v[7:]})
     extra = {}
