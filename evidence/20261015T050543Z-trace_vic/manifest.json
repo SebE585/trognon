@@ -1,0 +1,29 @@
+{
+  "payload": "trace_vic.bin",
+  "sha256": "0a752bd2b46fca1ec470e8ca09bf424373ba53a9bbcce6647c66b640ef9f5d9d",
+  "bytes": 3324,
+  "soc": "s5l8920",
+  "nonce_sent": "20501C5B",
+  "nonce_read": "20501C5B",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "vic-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "e57856c9294554f4c9223dae9a1e06b7e101b37f",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261015T050543Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_vic.bin --evidence <repo>/tools/../evidence --wait 8",
+  "screen_rows": 24
+}

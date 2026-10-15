@@ -1,0 +1,29 @@
+{
+  "payload": "trace_timer.bin",
+  "sha256": "ad39f52a942db8fd4fefd5cd6795cce84c55aa6b79b198065ad67808deca17e7",
+  "bytes": 3360,
+  "soc": "s5l8920",
+  "nonce_sent": "C3276FD1",
+  "nonce_read": "C3276FD1",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "timer-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "e57856c9294554f4c9223dae9a1e06b7e101b37f",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261015T050544Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_timer.bin --evidence <repo>/tools/../evidence --wait 8",
+  "screen_rows": 23
+}

@@ -11,6 +11,13 @@ Roughly 6 of about 18 payload sends failed with `USBError 5` (I/O error) or `60`
 succeeded on retry every time so far. A single failure therefore says nothing about
 the payload. Retry from a clean DFU before suspecting the code.
 
+**Most of it was a cache bug, now fixed (2026-10-15).** `run` jumps to the payload address without flushing the
+CPU caches. A payload sent after another one at the same address could execute the previous payload's instructions
+and constants, and crash right after `run`: nearly every second send of a session failed. Every payload now begins
+with a byte-identical stub (`hal/entry.c`) that cleans and invalidates the data cache over the payload area and
+invalidates the instruction cache and branch predictor. Six payloads in a row then ran in 4 seconds, all with their
+nonce confirmed (see [Evidence](08-evidence.md)). A failed pwn, or a send after a long idle, can still happen.
+
 ## Stale marker
 
 The iBSS keeps the `trognon` variable across runs. After a failed send, `getenv`

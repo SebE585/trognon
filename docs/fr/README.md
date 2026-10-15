@@ -20,6 +20,7 @@ Chaque affirmation porte un niveau de preuve :
 5. [Notes de terrain : ce qui échoue et comment le voir](05-field-notes.md)
 6. [Support par puce : 3GS, 4, 4S, puis le reste](06-chips.md)
 7. [Code modulaire](07-code-layout.md)
+8. [Preuves : des affirmations aux exécutions reproductibles](08-evidence.md)
 
 English: [`../en/README.md`](../en/README.md).
 Anciennes notes de travail (mêlées au journal) : [`../architecture.md`](../architecture.md).

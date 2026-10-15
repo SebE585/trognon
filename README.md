@@ -104,8 +104,9 @@ time from the owner's own device or IPSW, as Asahi Linux does.
   on a device, `tools/boot.sh` then `tools/send.sh tools/payloads/trace.bin` (pinned ipwndfu, see
   [`tools/ipwndfu/README.md`](tools/ipwndfu/README.md) and [`docs/en/01-boot-chain.md`](docs/en/01-boot-chain.md)).
   Diagrams: `make diagrams` (maintainer-side, SVGs are committed).
-- **Breaks first:** USB sends fail about one time in three. A run counts only if `tools/send.sh` prints
-  `NONCE CONFIRMED`; a stale `getenv` marker no longer passes for success. See
+- **Breaks first:** the exploit (`ipwndfu -p`) sometimes needs several tries, and a device idle in Recovery for a few
+  minutes drops out. A run counts only if `tools/send.sh` prints `NONCE CONFIRMED`, and it then leaves an evidence
+  bundle under `evidence/` ([how to read it](docs/en/08-evidence.md)). See
   [`docs/en/05-field-notes.md`](docs/en/05-field-notes.md).
 - **Know before touching:** the research notes are dated; anything older than
   six months on boot chains or mainline support must be re-checked.

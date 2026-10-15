@@ -9,7 +9,7 @@ SRC     := src/device_db.c src/serial_parse.c src/usb_probe.c src/chain.c src/cl
 OBJ     := $(SRC:.c=.o)
 BIN     := trognon
 
-.PHONY: all clean test test-sanitize diagrams
+.PHONY: all clean test test-sanitize diagrams evidence-index
 
 all: $(BIN)
 
@@ -51,3 +51,6 @@ diagrams:
 	@for f in docs/diagrams/*.yaml; do n=$$(basename $$f .yaml); \
 	  python3 $(PAPER_FORGE)/diagrams/build.py $$PWD/$$f --no-pdf >/dev/null && \
 	  cp $(PAPER_FORGE)/diagrams/dist/$$n.svg docs/img/$$n.svg && echo "docs/img/$$n.svg"; done
+
+evidence-index:
+	python3 tools/evidence_index.py

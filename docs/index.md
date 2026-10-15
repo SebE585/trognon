@@ -90,6 +90,10 @@ de puces, en réutilisant ce qui se reporte.* Colour code: <span class="tag tag-
 
     One constants file per chip. [EN](en/07-code-layout.md), [FR](fr/07-code-layout.md)
 
+- **8. Evidence** (*Preuves*)
+
+    Every DEVICE claim tied to a reproducible run. [EN](en/08-evidence.md), [FR](fr/08-evidence.md)
+
 - **Research** (*Recherche*)
 
     Dated surveys of A5 to A11, the legal frame, untethered boot. [Index](research/2026-10-14-pre-a5-limera1n.md)

@@ -1,0 +1,29 @@
+{
+  "payload": "trace_pabt.bin",
+  "sha256": "f93bb9237ff80de839ef1e2eee11e4d722808472f5ad1cf34cb3a8c056cd708c",
+  "bytes": 2988,
+  "soc": "s5l8920",
+  "nonce_sent": "B757BEB5",
+  "nonce_read": "B757BEB5",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "pabt-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "e57856c9294554f4c9223dae9a1e06b7e101b37f",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261015T050540Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_pabt.bin --evidence <repo>/tools/../evidence --wait 8",
+  "screen_rows": 15
+}

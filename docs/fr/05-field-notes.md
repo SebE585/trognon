@@ -11,6 +11,13 @@ dépassé), puis l'appareil a montré le logo Apple ou est resté bloqué. Le m�
 nouvel essai à chaque fois jusqu'ici. Un échec isolé ne dit donc rien du payload. Refaire un essai
 depuis un DFU propre avant de soupçonner le code.
 
+**L'essentiel venait d'un défaut de cache, corrigé (2026-10-15).** `run` saute à l'adresse du payload sans vider les caches du
+processeur. Un payload envoyé après un autre à la même adresse pouvait exécuter les instructions et constantes du précédent,
+et planter juste après `run` : presque un envoi sur deux d'une session échouait. Chaque payload commence maintenant par un prologue
+identique octet pour octet (`hal/entry.c`) qui nettoie et invalide le cache de données sur la zone du payload et invalide le cache
+d'instructions et le prédicteur de branchements. Six payloads à la suite ont ensuite tourné en 4 secondes, tous avec leur nonce
+confirmé (voir [Preuves](08-evidence.md)). Un pwn raté, ou un envoi après une longue inactivité, peut toujours arriver.
+
 ## Marqueur périmé
 
 L'iBSS garde la variable `trognon` d'un run à l'autre. Après un envoi raté, `getenv` renvoie la

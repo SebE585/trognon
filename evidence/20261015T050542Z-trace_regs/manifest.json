@@ -1,0 +1,29 @@
+{
+  "payload": "trace_regs.bin",
+  "sha256": "e755591a1fd2d5e666f13462dcb0079ab1a8f6f4f856344cf7077dbd0ba2b16b",
+  "bytes": 3248,
+  "soc": "s5l8920",
+  "nonce_sent": "A9DC50D8",
+  "nonce_read": "A9DC50D8",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "regs-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "e57856c9294554f4c9223dae9a1e06b7e101b37f",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261015T050542Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_regs.bin --evidence <repo>/tools/../evidence --wait 8",
+  "screen_rows": 18
+}

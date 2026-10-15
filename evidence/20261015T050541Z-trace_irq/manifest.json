@@ -1,0 +1,29 @@
+{
+  "payload": "trace_irq.bin",
+  "sha256": "58f1697b44514954952f6ffb0097ee5d69cfaa0887052db809e13420357969d0",
+  "bytes": 3588,
+  "soc": "s5l8920",
+  "nonce_sent": "3AC38B0E",
+  "nonce_read": "3AC38B0E",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "irq-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "e57856c9294554f4c9223dae9a1e06b7e101b37f",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261015T050541Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_irq.bin --evidence <repo>/tools/../evidence --wait 8",
+  "screen_rows": 22
+}
