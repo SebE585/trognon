@@ -51,4 +51,4 @@ make trace.bin SOC=s5l8930 ALLOW_UNVERIFIED=1   # target form, A4: unverified, e
 ```
 
 The build of an unverified chip stops with an `#error`; with `ALLOW_UNVERIFIED=1` it then fails on every
-constant still to find (`SOC_SCRATCH`, `SOC_ENV_SET`...), which is the honest to-do list.
+constant still to find (`SOC_SCRATCH`, `SOC_ENV_SET`...), which lists what is left to verify.

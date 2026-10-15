@@ -1,8 +1,8 @@
 # Trognon
 
-**📖 Documentation site: [sebe585.github.io/trognon](https://sebe585.github.io/trognon/)** · English / Français, with diagrams and an evidence level on every claim.
+Documentation site: **[sebe585.github.io/trognon](https://sebe585.github.io/trognon/)**. English and French, with diagrams and an evidence level on every claim.
 
-STATUT: ACTIF — 2026-10-15 (first code running on an iPhone 3GS: on-screen console and exception handlers; see Documentation)
+STATUT: ACTIF, 2026-10-15 (first code running on an iPhone 3GS: on-screen console and exception handlers; see Documentation)
 
 Open hardware enablement for old, unsupported Apple phones, so that devices left in
 drawers can run code, and in time a free operating system, of their owner's choosing.
@@ -10,11 +10,10 @@ Work goes **chip family by chip family**: the iPhone 3GS first (code already run
 then the iPhone 4, then the iPhone 4S, then the newer families, reusing what carries over.
 
 **The value is reuse.** Trognon turns an unsupported phone into a base to
-build on: a GPS logger, an emulator, a kiosk, a Linux-like pocket computer —
-whatever its owner wants to make of it. Not necessarily a phone again; a
-platform, instead of e-waste.
+build on: a GPS logger, an emulator, a kiosk, a Linux-like pocket computer, whatever its owner wants to make of it.
+Not necessarily a phone again: a platform instead of e-waste.
 
-> The core is what's left when you've finished the apple — and it grows again.
+> The core is what's left when you've finished the apple, and it grows again.
 
 ## Where each chip stands
 
@@ -37,7 +36,7 @@ chip: [`docs/en/07-code-layout.md`](docs/en/07-code-layout.md).
 
 Same content as the [documentation site](https://sebe585.github.io/trognon/): reverse-engineering notes
 with an evidence level on every claim (observed on the device, emulated, read in source, or hypothesis),
-with diagrams: [English](docs/en/README.md) · [Français](docs/fr/README.md).
+with diagrams: [English](docs/en/README.md), [Français](docs/fr/README.md).
 Direction for what comes next (small self-contained *Mods* that grow a shared library instead
 of writing an OS up front): [`docs/en/04-mods.md`](docs/en/04-mods.md).
 
@@ -53,15 +52,15 @@ end of its life.
 Trognon is **OS-agnostic**. It is not "a Linux distro for iPhones". It is the
 layer every free OS needs and none should have to rebuild:
 
-1. **Boot chain** — getting a device from DFU to a payload we control
+1. **Boot chain**: getting a device from DFU to a payload we control
    (limera1n on the 3GS, SHAtter on the A4, checkm8 from the A5 up), reproducibly,
    from open tooling.
-2. **Hardware enablement** — per-SoC, per-device descriptions and drivers
-   (display, touch, storage, USB, Wi-Fi, battery, camera…), upstreamed
+2. **Hardware enablement**: per-SoC, per-device descriptions and drivers
+   (display, touch, storage, USB, Wi-Fi, battery, camera, and so on), upstreamed
    wherever an upstream exists (mainline Linux, BSDs).
-3. **Support matrix** — a generated, dated table of what works on which
+3. **Support matrix**: a generated, dated table of what works on which
    device, so nobody re-discovers it.
-4. **Targets** — Linux first because that is where prior work is; BSD and
+4. **Targets**: Linux first because that is where prior work is; BSD and
    other systems welcome on equal terms.
 
 Open innovation is the method: everything public, everything reproducible,
@@ -72,8 +71,8 @@ upstream first, no fork kept alive for its own sake.
 - **Tethered boot.** The bootrom exploits (limera1n, SHAtter, checkm8) do not persist across
   reboots. Every cold boot needs a host (or a dongle) to re-run it. Turning
   that into something a non-expert can live with is the central problem.
-- **32-bit vs 64-bit.** The 3GS, A4, A5 and A6 (3GS, 4, 4S, 5, 5c) are 32-bit ARMv7; A7–A11
-  (5s → X) are arm64. Two very different tracks, and only the 32-bit one shares our code.
+- **32-bit vs 64-bit.** The 3GS, A4, A5 and A6 (3GS, 4, 4S, 5, 5c) are 32-bit ARMv7; A7 to A11
+  (5s to X) are arm64. Two very different tracks, and only the 32-bit one shares our code.
 - **Batteries.** A ten-year-old Li-ion pack is often dead or swollen. Refurbishing
   is part of the project, not an afterthought.
 
@@ -88,9 +87,9 @@ usable as an iPhone again, so it adds no resale value to a stolen phone.
 | Track | Existing work | Gap Trognon takes on |
 |---|---|---|
 | S5L8920 (3GS) / A4 (4), 32-bit | limera1n (2010), host-direct, no helper board. No modern OS port. | Boot-chain test devices only, not a port target. |
-| A7–A11 (5s → X), arm64 | Device trees in mainline since 6.13; Hoolock Linux downstream; postmarketOS `apple-idevice`. Framebuffer, buttons, brightness, NVMe on A11. | Contribute upstream, don't fork. Nobody works on touch, Wi-Fi, audio, charging. |
+| A7 to A11 (5s to X), arm64 | Device trees in mainline since 6.13; Hoolock Linux downstream; postmarketOS `apple-idevice`. Framebuffer, buttons, brightness, NVMe on A11. | Contribute upstream, don't fork. Nobody works on touch, Wi-Fi, audio, charging. |
 | A5/A6 (4S, 5, 5c), 32-bit | Project Cascadia: mainline 6.12 on iPad mini 1 (S5L8942) with touch and Wi-Fi, since 2026. Nothing for phones. | Port to S5L8940 (iPhone 4S, iPad 2), then A6. |
-| Host-free boot | checkm8-a5 on a Raspberry Pi Pico (A5); Pico DFU automation (A11). No unattended dongle published. | An always-attached boot dongle — the central open problem. |
+| Host-free boot | checkm8-a5 on a Raspberry Pi Pico (A5); Pico DFU automation (A11). No unattended dongle published. | An always-attached boot dongle, the central open problem. |
 
 Details, dates and sources: [`docs/research/`](docs/research/).
 

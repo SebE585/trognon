@@ -23,7 +23,12 @@ the habits (evidence levels, on-screen console idea), not the addresses. Inside 
 phones differ in their exploit tool (limera1n versus SHAtter), and some older texts say limera1n
 for both: the [research note](../research/2026-10-14-pre-a5-limera1n.md) records the correction.
 
-![Chip families and overlaps](../img/chips-overlap.svg)
+
+## Timeline, chip by chip
+
+One card per chip generation, in release order. Colour of the left edge: regime. Green fill: where our code runs. Red outline: the next bench.
+
+--8<-- "docs/snippets/timeline.en.html"
 
 ## Overlap at a glance
 

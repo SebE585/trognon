@@ -35,7 +35,7 @@ Cela colle aux contraintes trouvées :
 | **Boussole / mouvement** | L1, L6 (capteurs I2C) | Demande le câblage du magnétomètre et de l'accéléromètre du 3GS (**à vérifier**, pas encore lu). |
 | **Gadget GPS** | L1, L6 | Sur cette génération le GPS est probablement derrière le baseband : possiblement très dur (**à vérifier**). |
 
-## Limites assumées
+## Limites
 
 - Un Mod n'est pas résident : il est envoyé à chaque démarrage. Un gadget de terrain (boussole en
   poche) demande un démarrage autonome, question ouverte

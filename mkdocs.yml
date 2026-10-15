@@ -8,6 +8,7 @@ site_dir: site
 exclude_docs: |
   journal/
   diagrams/
+  snippets/
 copyright: Documentation CC-BY-SA-4.0 · code GPL-2.0-only / MIT
 theme:
   name: material
@@ -36,6 +37,9 @@ markdown_extensions:
   - md_in_html
   - tables
   - toc: { permalink: true }
+  - pymdownx.snippets:
+      base_path: ['.']
+      check_paths: true
   - pymdownx.superfences:
       custom_fences:
         - { name: mermaid, class: mermaid, format: !!python/name:pymdownx.superfences.fence_code_format }

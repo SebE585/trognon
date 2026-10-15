@@ -52,4 +52,4 @@ make trace.bin SOC=s5l8930 ALLOW_UNVERIFIED=1   # forme cible, A4 : non vérifi�
 ```
 
 Le build d'une puce non vérifiée s'arrête sur un `#error` ; avec `ALLOW_UNVERIFIED=1` il échoue ensuite sur
-chaque constante à trouver (`SOC_SCRATCH`, `SOC_ENV_SET`...), ce qui est la liste de tâches honnête.
+chaque constante à trouver (`SOC_SCRATCH`, `SOC_ENV_SET`...), ce qui donne la liste de ce qui reste à vérifier.

@@ -17,3 +17,20 @@
 .hero { padding:1.2rem 0 .4rem; }
 .hero h1 { font-size:2.4rem; margin:.2rem 0; }
 .hero p { font-size:1.05rem; max-width:44rem; }
+
+/* Timeline by chip and generation */
+.timeline { margin:1.4rem 0; padding-left:1.4rem; border-left:3px solid var(--md-default-fg-color--lightest); }
+.tl-regime { margin:1.4rem 0 .5rem -1.4rem; padding:.1rem .6rem; font-size:.72rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#fff; display:inline-block; border-radius:2px; }
+.tl-regime.tl-a { background:#3F6A24; } .tl-regime.tl-b { background:#1D4870; } .tl-regime.tl-c { background:#5A3A22; }
+.tl-item { position:relative; display:flex; gap:1rem; margin:0 0 .7rem; padding:.6rem .9rem; border:1px solid var(--md-default-fg-color--lightest); border-left-width:5px; border-radius:2px; background:var(--md-code-bg-color); }
+.tl-item::before { content:""; position:absolute; left:calc(-1.4rem - 8px); top:1rem; width:11px; height:11px; border-radius:50%; background:var(--md-default-bg-color); border:3px solid currentColor; }
+.tl-item.tl-a { border-left-color:#3F6A24; color:#3F6A24; } .tl-item.tl-b { border-left-color:#1D4870; color:#1D4870; } .tl-item.tl-c { border-left-color:#5A3A22; color:#5A3A22; }
+.tl-item.tl-done { background:rgba(141,184,74,.18); } .tl-item.tl-done::before { background:currentColor; }
+.tl-item.tl-next { outline:2px solid #A23220; outline-offset:-2px; }
+.tl-item.tl-far { opacity:.82; }
+.tl-year { flex:0 0 4.4rem; font-weight:700; font-variant-numeric:tabular-nums; color:var(--md-default-fg-color); }
+.tl-body { color:var(--md-default-fg-color); }
+.tl-title { font-weight:700; } .tl-soc { font-weight:400; font-size:.85em; opacity:.8; margin-left:.3rem; }
+.tl-meta { font-size:.85em; opacity:.85; } .tl-state { font-size:.8em; margin-top:.2rem; }
+[data-md-color-scheme="slate"] .tl-item.tl-a, [data-md-color-scheme="slate"] .tl-item.tl-b, [data-md-color-scheme="slate"] .tl-item.tl-c { color:#8DB84A; }
+@media (max-width:40em) { .tl-item { flex-direction:column; gap:.2rem; } .tl-year { flex:none; } }

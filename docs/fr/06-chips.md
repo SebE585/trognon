@@ -23,7 +23,12 @@ habitudes (niveaux de preuve, idée de la console à l'écran), pas les adresses
 téléphones diffèrent par l'outil d'exploit (limera1n contre SHAtter) : et d'anciens textes disent limera1n
 pour les deux : la [note de recherche](../research/2026-10-14-pre-a5-limera1n.md) porte la correction.
 
-![Familles de puces et recouvrements](../img/chips-overlap.svg)
+
+## Frise, puce par puce
+
+Une carte par génération de puce, dans l'ordre de sortie. Couleur du bord gauche : régime. Fond vert : là où notre code tourne. Contour rouge : le prochain banc.
+
+--8<-- "docs/snippets/timeline.fr.html"
 
 ## Recouvrements en un coup d'œil
 

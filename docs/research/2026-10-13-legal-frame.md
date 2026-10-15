@@ -1,4 +1,4 @@
-# Legal frame (EU/France, US) — not legal advice
+# Legal frame (EU/France, US): not legal advice
 
 Research date: 2026-10-13. Secondary sources where EUR-Lex/Légifrance were
 unreachable.
@@ -11,7 +11,7 @@ unreachable.
 - Art. 8: contrary contract terms void.
 - Art. 7(1)(c): remedies against tools whose **sole intended purpose** is to
   circumvent a program's protection. A multi-purpose boot/OS project is
-  arguably outside it — a reading, not settled case law.
+  arguably outside it, though that is a reading, not settled case law.
 - https://www.legislation.gov.uk/eudr/2009/24
 
 ## Circumvention of TPMs
@@ -30,7 +30,7 @@ unreachable.
 - 89 FR 85448 (2024-10-28). 37 CFR 201.40(b)(9): smartphones, interoperability
   of applications or **removal of software**; (b)(15) repair.
 - Full OS replacement plausibly but not explicitly covered.
-- Exemptions cover the act, **not trafficking** (§1201(a)(2)) — relevant to
+- Exemptions cover the act, **not trafficking** (§1201(a)(2)); relevant to
   distributing a checkm8 tool. Next renewal ~October 2027 (inferred).
 - https://www.copyright.gov/1201/2024/
 
@@ -41,7 +41,7 @@ unreachable.
   for smartphones.
 - None require unlockable bootloaders: a policy argument, not a right.
 
-## Apple firmware blobs — clearest risk
+## Apple firmware blobs: clearest risk
 
 - No exception allows redistributing Apple firmware.
 - Asahi pattern: the installer extracts firmware from the user's own system at

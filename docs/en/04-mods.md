@@ -35,7 +35,7 @@ This fits the constraints we found:
 | **Compass / motion** | L1, L6 (I2C sensors) | Needs the 3GS magnetometer and accelerometer wiring (**to verify**, not read yet). |
 | **GPS gadget** | L1, L6 | On this generation the GPS is likely behind the baseband: possibly very hard (**to verify**). |
 
-## Honest limits
+## Limits
 
 - A Mod is not resident: it is sent each boot. A field gadget (compass in a pocket)
   needs untethered boot, an open question ([research note](../research/2026-10-13-untethered-boot.md)).
