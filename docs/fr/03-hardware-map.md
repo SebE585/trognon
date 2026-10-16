@@ -2,6 +2,9 @@
 
 ![Carte du SoC : ce que répond chaque bloc](../img/soc-map.svg)
 
+[Ouvrir le schéma en grand](../img/soc-map.svg) — adresses et sous-titres sont minuscules
+dans le rendu intégré.
+
 Les adresses de base seules, sans récit, sont tenues dans la
 [carte mémoire du SoC](../spec/soc-s5l8920.md) (en anglais, référence technique) — à
 consulter pour une recherche rapide d'adresse ; cette page-ci porte le raisonnement et les
@@ -109,21 +112,21 @@ Les registres du timer sont la partie la moins comprise d'OpenIBoot (son propre 
 
 ## NAND, `H2FMI0_BASE = 0x81200000` (DEVICE, 2026-10-15)
 
-Lecture d'identifiant (lecture pure : reset + commande READ ID, aucune lecture de page, aucune
-écriture) sur les 16 lignes de chip-select du bus 0, puis sa géométrie retrouvée dans la table
-figée d'OpeniBoot.
+Lecture d'identifiant : reset + commande READ ID (des écritures de contrôle, mais ni
+programmation ni effacement) sur les 16 lignes de chip-select du bus 0, puis sa géométrie
+retrouvée dans la table figée d'OpeniBoot.
 
 | Élément | Valeur | Signification |
 |---|---|---|
 | CE0, CE1 | `98 DE 95 32 7A 54 0C 00` | Toshiba (fabricant JEDEC `0x98`) ; même identifiant sur les deux, recoupement |
-| CE2 à CE15 | `00 00 00 00` | aucune puce présente |
+| CE2 à CE15 | `00 00 00 00` | aucune réponse d'identification exploitable dans ces conditions |
 | Géométrie (table OpeniBoot `nand_chip_info[]`, correspondance exacte) | `blocks_per_ce=0x2068`, `pages_per_block=0x80`, `bytes_per_page=0x2000`, `banks_per_ce=2` | correspondance SOURCE, pas lue sur l'appareil |
 | Capacité, calculée | 8296 x 128 x 8192 x 2 banks x 2 CE = 34,8 Go bruts | cohérent avec les 32 Go de l'étiquette de cet exemplaire, marge ECC/spare habituelle retirée (~8 %) |
 
-Bus 1 (`H2FMI1_BASE = 0x81300000`) pas encore balayé. Aucune lecture de page, aucune écriture
-tentée : la même prudence que ce projet applique au NOR (`tools/boot.sh` n'appelle jamais
-`flash_nor()`) s'applique ici aussi, avec une marge plus grande, puisque le NAND porte l'image
-iOS de l'appareil.
+Bus 1 (`H2FMI1_BASE = 0x81300000`) pas encore balayé : même approche lecture d'identifiant
+seule, ni programmation ni effacement ; la même prudence que ce projet applique au NOR
+(`tools/boot.sh` n'appelle jamais `flash_nor()`) s'applique ici aussi, avec une marge plus
+grande, puisque le NAND porte l'image iOS de l'appareil.
 
 ## Boutons, même base GPIO que ci-dessus (DEVICE, 2026-10-15)
 
@@ -146,36 +149,42 @@ côté hôte (`dev.reset()`, pas besoin de DFU) l'a réveillé — voir [preuves
 
 ## Accéléromètre, adresse i2c0 `0x1d` (DEVICE, 2026-10-16)
 
-**Statut** : DEVICE, du premier coup. Tout ce qui suit vient du device tree déchiffré
-propre à cet appareil, puis d'une vraie transaction I2C bit-bang sur GPIO.
+**Statut** : DEVICE, du premier coup, modèle exact de la puce encore ouvert. Tout ce qui
+suit vient du device tree déchiffré propre à cet appareil, puis d'une vraie transaction I2C
+bit-bang sur GPIO.
 
 **Ce qui est confirmé** : le device tree nomme un bus (`i2c0`, `compatible =
 "i2c,s5l8920x","iic,soft"` : logiciel, bit-bang, pas un contrôleur matériel dédié) avec
 SDA/SCL sur GPIO `04.01`/`04.00`, et un accéléromètre dessus (`compatible =
 "accelerometer,lis331dl","accelerometer,lis302dl"`) à l'adresse I2C `0x1d`. Une
 transaction I2C complète (START, adresse+écriture, registre `0x0F`, repeated START,
-adresse+lecture, un octet, STOP) a obtenu une vraie réponse : chaque bit d'acquittement
-est revenu à `1`, et l'octet lu était `0x3B` — exactement la valeur `WHO_AM_I` documentée
-du **LIS331DL** (la chaîne compatible LIS302DL de la même entrée du device tree aurait
-donné `0x3C` ; cet appareil est bien le LIS331DL).
+adresse+lecture, un octet, STOP) a obtenu une vraie réponse : les trois indicateurs
+logiciels d'acquittement valent `1` (chaque octet d'adresse/registre a bien été acquitté
+par l'appareil), et l'octet lu était `0x3B`. C'est la valeur `WHO_AM_I` documentée du
+LIS331DL — mais la fiche ST du LIS302DL (table 16) donne aussi `0x3B` comme valeur valide
+pour certaines révisions de ce composant : la lecture confirme une transaction qui fonctionne
+et un identifiant compatible avec les deux chaînes du device tree, pas lequel des deux
+composants est réellement monté.
 
 | Élément | Valeur | Statut |
 |---|---|---|
 | Bus | `i2c0`, SDA `04.01`, SCL `04.00` | le device tree donne le nom/les broches ; DEVICE : les deux lus au repos haut avant la transaction |
 | Adresse I2C | `0x1d` | propriété `reg` du device tree |
-| `WHO_AM_I` (registre `0x0F`) | `0x3B` | DEVICE : lecture I2C complète, les trois acquittements à `1` |
+| `WHO_AM_I` (registre `0x0F`) | `0x3B` | DEVICE : lecture I2C complète, les trois indicateurs logiciels d'acquittement à `1` |
 
-**Ce qui reste hypothèse** : lire les vraies données d'axe (les trois accélérations), et
-le sens exact de la propriété `orientation` du device tree. Un compass (AKM8973S, adresse
-`0x1e`) et un second `compass1` (`0x1f`, sans propriété `interrupts`) partagent le même
-bus, device tree seul, pas encore sondés.
+**Ce qui reste hypothèse** : lequel des deux composants compatibles (LIS331DL ou LIS302DL)
+est réellement présent, lire les vraies données d'axe (les trois accélérations), et le sens
+exact de la propriété `orientation` du device tree. Un compass (AKM8973S, adresse `0x1e`) et
+un second `compass1` (`0x1f`, sans propriété `interrupts`) partagent le même bus, device tree
+seul, pas encore sondés — deux nœuds de device tree ne prouvent pas à eux seuls deux puces
+physiques distinctes.
 
 **Comment reproduire** : `make trace_accel_i2c.bin` (voir `tools/payloads/`, STAGE 29).
 Lit d'abord le niveau de repos du bus et ne tente la transaction que s'il a l'air
 plausiblement tiré haut, pour qu'un mauvais câblage ne puisse pas ressembler à une
 réussite silencieuse.
 
-**Liens vers les preuves** : [dossier de preuve `20261016T101710Z-trace_accel_i2c`](08-evidence.md).
+**Liens vers les preuves** : [dossier de preuve `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), indexé sur la [page Preuves](08-evidence.md).
 
 ## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (DEVICE/HYPOTHÈSE mêlées, 2026-10-15/16)
 
@@ -184,9 +193,15 @@ le S5L8920 (contrairement au NAND). Tout ce qui suit l'adresse elle-même vient 
 tree et du kernelcache déchiffrés de cet appareil (IPSW du propriétaire, jamais
 redistribués), pas du code source.
 
-**Ce qui est confirmé** : l'adresse de base du bloc et sa disposition de registres (SDHCI
-standard) ; que tout registre du bloc lit `0` et ignore les écritures ; que les lignes GPIO
-de reset et de réveil sont réelles et que l'une d'elles est inscriptible.
+**Ce qui est confirmé** : l'adresse de base du bloc ; que tout décalage sondé lit `0` et
+qu'une relecture ne restitue jamais une valeur écrite ; que les lignes GPIO de reset et de
+réveil sont réelles et que l'une d'elles est inscriptible. **La disposition interne des
+registres reste ouverte** : deux candidats incompatibles existent en amont (la disposition
+simple CTRL/CMD/ARGU/STATE/DSTA de `plat-s5l8900`, et la disposition SDHCI standard de
+`plat-a4`), et seule la première a été réellement essayée sur cet appareil ; le résultat
+« tout à zéro / écritures qui ne tiennent pas » tient quel que soit le candidat, puisque le
+test d'écriture brute puis relecture (STAGE 24) écrit directement à l'adresse de base, sans
+dépendre d'une disposition de registres.
 
 | Élément | Valeur | Statut |
 |---|---|---|
@@ -196,16 +211,19 @@ de reset et de réveil sont réelles et que l'une d'elles est inscriptible.
 | `interrupts` | `0x22` | device tree, même réserve |
 | GPIO de reset (`gpio_baseband_wlan_reset`) | `16.5` | le device tree donne le nom/la broche ; DEVICE : lue à `0`, puis basculée bas 12 ms / haut 150 ms, relue à `1` — écriture confirmée |
 | GPIO de réveil (`gpio_sdio_device_wake`) | `14.4` | le device tree donne le nom/la broche ; DEVICE : lue à `0` |
-| Tout registre du bloc (disposition SDHCI standard : argument, commande, réponse, present-state, software-reset, statut/activation des interruptions) | lit `0`, les écritures ne tiennent pas | DEVICE, confirmé plusieurs fois (clock-gate activé, séquence d'init complète façon SDHCI, écriture brute puis relecture) |
+| Tout registre sondé dans le bloc, essayé sous la disposition héritée `plat-s5l8900` (STAGE 22) et en écriture brute directement à l'adresse de base (STAGE 24) — la disposition SDHCI standard n'a jamais été réellement essayée | lit `0`, les relectures ne restituent pas les valeurs écrites | DEVICE, confirmé plusieurs fois (clock-gate activé, séquence d'init façon ancienne disposition, écriture brute puis relecture) |
 
-**Ce qui reste hypothèse** : *pourquoi* les écritures ne tiennent pas. L'explication la
-plus probable est qu'un second processeur ARM embarqué (l'« IOP » d'Apple) possède ce bloc
-directement et fait tourner son propre système temps réel, le CPU principal ne faisant que
-poster des messages dans un canal de commande partagé — pas encore pleinement prouvé.
+**Ce qui reste hypothèse** : *pourquoi* les écritures ne tiennent pas, et laquelle des deux
+dispositions candidates (si l'une des deux) correspond réellement à ce SoC. L'explication la
+plus probable pour les écritures qui ne tiennent pas est qu'un second processeur ARM
+embarqué (l'« IOP » d'Apple) possède ce bloc directement et fait tourner son propre système
+temps réel, le CPU principal ne faisant que poster des messages dans un canal de commande
+partagé — pas encore pleinement prouvé.
 
-**Comment reproduire** : `make trace_sdio_init.bin` (voir `tools/payloads/`) déroule
-l'activation du clock-gate, la séquence d'init façon SDHCI, et l'écriture brute puis
-relecture sur chaque registre.
+**Comment reproduire** : `make trace_sdio_init.bin` (voir `tools/payloads/`, STAGE 22)
+déroule l'activation du clock-gate et la séquence d'init façon `plat-s5l8900` héritée — pas
+une séquence SDHCI standard. L'écriture brute puis relecture sur l'adresse de base est un
+autre build (STAGE 24).
 
 **Liens vers les preuves** : voir le
 [rapport sur l'architecture Wi-Fi/IOP](../research/2026-10-16-wifi-iop-architecture.md) pour la

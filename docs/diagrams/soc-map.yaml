@@ -15,9 +15,9 @@ nodes:
   - { id: buttons, label: "Buttons",          subtitle: "via GPIO, DEVICE",             group: io,   style: stage }
   - { id: i2c0,   label: "i2c0 (soft)",       subtitle: "GPIO 04.00/04.01, DEVICE",     group: io,   style: stage }
   - { id: accel,  label: "Accelerometer",     subtitle: "LIS331DL 0x1d, DEVICE",        group: io,   style: stage }
-  - { id: compass, label: "Compass x2",       subtitle: "AKM8973S, not probed",         group: io,   style: service }
+  - { id: compass, label: "Compass (2 DT nodes)", subtitle: "AKM8973S, not probed",     group: io,   style: service }
   - { id: sdio,   label: "Wi-Fi/SDIO",        subtitle: "0x80000000, mixed",            group: io,   style: accent }
-  - { id: iop,    label: "IOP coprocessor",   subtitle: "0x86300000, HYPOTHESIS",       group: io,   style: muted }
+  - { id: iop,    label: "IOP coprocessor",   subtitle: "0x86300000, state under iBSS open", group: io, style: service }
   - { id: bt,     label: "Bluetooth (UART3)", subtitle: "n88, GPIO 15.06/16.02",        group: io,   style: service }
 edges:
   - { from: cpu,   to: gpio }
@@ -26,10 +26,10 @@ edges:
   - { from: cpu,   to: timer }
   - { from: timer, to: tirq,  style: dead }
   - { from: cpu,   to: nand }
-  - { from: gpio,  to: buttons, style: tap }
-  - { from: gpio,  to: i2c0,  style: tap }
+  - { from: gpio,  to: buttons, style: tap, label: "levels" }
+  - { from: gpio,  to: i2c0,  style: tap, label: "bit-bang SDA/SCL" }
   - { from: i2c0,  to: accel }
   - { from: i2c0,  to: compass, style: dead }
   - { from: cpu,   to: sdio }
-  - { from: sdio,  to: iop,  style: dead }
-  - { from: gpio,  to: bt,  style: tap }
+  - { from: sdio,  to: iop,  style: dead, label: "message channel, unconfirmed under iBSS" }
+  - { from: gpio,  to: bt,  style: tap, label: "reset/wake only, not UART" }

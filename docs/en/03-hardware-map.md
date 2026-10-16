@@ -2,6 +2,9 @@
 
 ![SoC map: what each block answers](../img/soc-map.svg)
 
+[Open the diagram full-size](../img/soc-map.svg) — addresses and subtitles are small in an
+inline render.
+
 Base addresses alone, with no narrative, are kept in the stabilised
 [SoC memory map](../spec/soc-s5l8920.md) — look there for a quick address lookup; this
 page is where the reasoning and the evidence for each one live.
@@ -108,19 +111,20 @@ Timer registers are the least understood part of OpenIBoot (its own comment says
 
 ## NAND, `H2FMI0_BASE = 0x81200000` (DEVICE, 2026-10-15)
 
-Chip ID read (read-only: reset + READ ID command, no page read, no write) across all 16
-chip-select lines on bus 0, then its geometry looked up in OpeniBoot's own hardcoded table.
+Chip ID read: reset + READ ID command (control writes, but no program and no erase) across
+all 16 chip-select lines on bus 0, then its geometry looked up in OpeniBoot's own hardcoded
+table.
 
 | Item | Value | Meaning |
 |---|---|---|
 | CE0, CE1 | `98 DE 95 32 7A 54 0C 00` | Toshiba (JEDEC manufacturer `0x98`); the same ID on both, cross-check |
-| CE2 to CE15 | `00 00 00 00` | no chip present |
+| CE2 to CE15 | `00 00 00 00` | no exploitable identification response under these conditions |
 | Geometry (OpeniBoot table, `nand_chip_info[]`, exact ID match) | `blocks_per_ce=0x2068`, `pages_per_block=0x80`, `bytes_per_page=0x2000`, `banks_per_ce=2` | SOURCE match, not read from the device |
 | Capacity, computed | 8296 x 128 x 8192 x 2 banks x 2 CE = 34.8 GB raw | matches the 32 GB label on this unit after the usual ECC/spare margin (~8%) |
 
-Bus 1 (`H2FMI1_BASE = 0x81300000`) not swept yet. No page read, no write attempted: this
-project's NOR-equivalent caution (`tools/boot.sh` never calls `flash_nor()`) applies here too,
-with a larger margin, since NAND holds the device's own iOS image.
+Bus 1 (`H2FMI1_BASE = 0x81300000`) not swept yet: same ID-read-only approach, no program and
+no erase, this project's NOR-equivalent caution (`tools/boot.sh` never calls `flash_nor()`)
+applies here too, with a larger margin, since NAND holds the device's own iOS image.
 
 ## Buttons, same GPIO base as above (DEVICE, 2026-10-15)
 
@@ -142,35 +146,39 @@ close to 3 minutes) killed the USB control endpoint afterwards; a host-side USB 
 
 ## Accelerometer, i2c0 address `0x1d` (DEVICE, 2026-10-16)
 
-**Status**: DEVICE, first try. Everything below came from this device's own decrypted
-device tree, then a real bit-banged I2C transaction over GPIO.
+**Status**: DEVICE, first try, exact chip model still open. Everything below came from this
+device's own decrypted device tree, then a real bit-banged I2C transaction over GPIO.
 
 **What's confirmed**: the device tree names a bus (`i2c0`, `compatible = "i2c,s5l8920x",
 "iic,soft"`: software, bit-banged, not a dedicated hardware controller) with SDA/SCL on
 GPIO `04.01`/`04.00`, and an accelerometer on it (`compatible =
 "accelerometer,lis331dl","accelerometer,lis302dl"`) at I2C address `0x1d`. A full I2C
 transaction (START, address+write, register `0x0F`, repeated START, address+read, one
-byte, STOP) got a real answer: every ACK bit came back `1`, and the byte read back was
-`0x3B` — the documented `WHO_AM_I` value for the **LIS331DL** specifically (the LIS302DL
-compatible string in the same device tree entry would read `0x3C`; this device is the
-LIS331DL).
+byte, STOP) got a real answer: all three software ACK flags read `1` (each slave-address
+and register byte was acknowledged by the device), and the byte read back was `0x3B`. That
+is the documented `WHO_AM_I` value for the LIS331DL — but ST's LIS302DL datasheet (table 16)
+also lists `0x3B` as a valid value for some revisions of that part, so the read confirms a
+working transaction and an identifier consistent with both compatible strings in the device
+tree, not which of the two chips is actually on the board.
 
 | Item | Value | Status |
 |---|---|---|
 | Bus | `i2c0`, SDA `04.01`, SCL `04.00` | device tree gives the name/pins; DEVICE: both read idle-high before the transaction |
 | I2C address | `0x1d` | device tree `reg` property |
-| `WHO_AM_I` (register `0x0F`) | `0x3B` | DEVICE: full I2C read, all three ACKs `1` |
+| `WHO_AM_I` (register `0x0F`) | `0x3B` | DEVICE: full I2C read, all three software ACK flags `1` |
 
-**What remains hypothesis**: reading actual axis data (the three accelerations), and the
+**What remains hypothesis**: which of the two compatible-string chips (LIS331DL vs LIS302DL)
+is actually present, reading actual axis data (the three accelerations), and the
 `orientation` device-tree property's exact meaning. A compass (AKM8973S, address `0x1e`)
 and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, device tree
-only, not probed at all yet.
+only, not probed at all yet — two device-tree nodes do not by themselves prove two separate
+physical chips.
 
 **How to reproduce**: `make trace_accel_i2c.bin` (see `tools/payloads/`, STAGE 29). Reads
 the bus idle level first and only attempts the transaction if it looks plausibly
 pulled-up, so a mis-wired guess cannot look like a silent success.
 
-**Links to evidence**: [evidence bundle `20261016T101710Z-trace_accel_i2c`](08-evidence.md).
+**Links to evidence**: [evidence bundle `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), indexed on the [evidence page](08-evidence.md).
 
 ## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (mixed DEVICE/HYPOTHESIS, 2026-10-15/16)
 
@@ -179,9 +187,14 @@ S5L8920 at all (unlike NAND). Everything below the address itself came from this
 own decrypted device tree and kernelcache (owner's IPSW, never redistributed), not from
 source code.
 
-**What's confirmed**: the block's base address and register layout (standard SDHCI); that
-every register in it reads `0` and ignores writes; that the reset and wake GPIO lines are
-real and one of them is writable.
+**What's confirmed**: the block's base address; that every probed offset reads `0` and that
+re-reads never reflect a value written to them; that the reset and wake GPIO lines are real
+and one of them is writable. **The internal register layout itself is still open** — two
+incompatible candidates exist upstream (`plat-s5l8900`'s simple CTRL/CMD/ARGU/STATE/DSTA
+layout, and `plat-a4`'s SDHCI-standard layout), and only the first has actually been tried
+on this device; the all-zero/non-sticky result holds either way because the raw
+write-then-readback test (STAGE 24) writes straight to the base address and does not depend
+on either layout.
 
 | Item | Value | Status |
 |---|---|---|
@@ -191,15 +204,17 @@ real and one of them is writable.
 | `interrupts` | `0x22` | device tree, same caveat |
 | Reset GPIO (`gpio_baseband_wlan_reset`) | `16.5` | device tree gives the name/pin; DEVICE: read at `0`, then toggled low 12 ms / high 150 ms, read back `1` — confirmed write |
 | Wake GPIO (`gpio_sdio_device_wake`) | `14.4` | device tree gives the name/pin; DEVICE: read at `0` |
-| Any register in the block (standard SDHCI layout: argument, command, response, present-state, software-reset, interrupt status/enable) | reads `0`, writes do not stick | DEVICE, repeatedly confirmed (clock-gate on, full SDHCI-style init sequence, raw write-then-readback) |
+| Any probed register in the block, tried under the legacy `plat-s5l8900`-style layout (STAGE 22) and as a raw write straight to the base address (STAGE 24) — the SDHCI-standard layout was never actually tried | reads `0`, re-reads don't reflect values written | DEVICE, repeatedly confirmed (clock-gate on, legacy-layout init sequence, raw write-then-readback) |
 
-**What remains hypothesis**: *why* writes don't stick. The leading explanation is that a
-second, embedded ARM processor (Apple's "IOP") owns this block directly and runs its own
-real-time OS, with the application CPU only posting messages to it over a shared command
-channel — not yet fully proven.
+**What remains hypothesis**: *why* writes don't stick, and which register layout (if either
+of the two candidates above) actually matches this SoC. The leading explanation for the
+non-sticky writes is that a second, embedded ARM processor (Apple's "IOP") owns this block
+directly and runs its own real-time OS, with the application CPU only posting messages to
+it over a shared command channel — not yet fully proven.
 
-**How to reproduce**: `make trace_sdio_init.bin` (see `tools/payloads/`) runs the clock-gate
-enable, the SDHCI-style init sequence, and the raw write-then-readback on each register.
+**How to reproduce**: `make trace_sdio_init.bin` (see `tools/payloads/`, STAGE 22) runs the
+clock-gate enable and the legacy `plat-s5l8900`-style init sequence — not an SDHCI-standard
+sequence. The raw write-then-readback on the base address is a separate build (STAGE 24).
 
 **Links to evidence**: see the
 [Wi-Fi/IOP architecture report](../research/2026-10-16-wifi-iop-architecture.md) for the full

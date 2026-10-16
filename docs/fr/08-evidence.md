@@ -48,7 +48,7 @@ est déterministe avec la même chaîne d'outils), puis lire `screen.txt` face �
 | GPIO reset Wi-Fi basculée bas/haut, relue à `1` | `trace_wifi_reset` | avec dossier |
 | Dump des registres SDIO, deux hypothèses de clock-gate, tout à zéro | `trace_sdio_dump`, `trace_sdio_dump_b` | avec dossier |
 | Tentative `CMD0` SDIO, ne quitte jamais « pas prêt » | `trace_sdio_cmd0` | avec dossier |
-| Séquence d'init SDIO complète façon SDHCI, toujours tout à zéro | `trace_sdio_init` | avec dossier |
+| Séquence d'init SDIO façon `plat-s5l8900` héritée (pas SDHCI standard), toujours tout à zéro | `trace_sdio_init` | avec dossier |
 | Test de persistance d'écriture du clock-gate (faussé, dépassé ci-dessous) | `trace_gate_write` | avec dossier |
 | Écriture brute puis relecture sur la base SDIO, l'écriture ne tient pas | `trace_write_test` | avec dossier |
 | Registre d'horloge dynamique 16, lecture pure, ambigu | `trace_dyn_clock16` | avec dossier |

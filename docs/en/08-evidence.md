@@ -48,7 +48,7 @@ To check a bundle: check out its commit, `make -C tools/payloads <payload>`, com
 | Wi-Fi reset GPIO toggled low/high, read back `1` | `trace_wifi_reset` | bundled |
 | SDIO register dump, two clock-gate hypotheses, all zero | `trace_sdio_dump`, `trace_sdio_dump_b` | bundled |
 | SDIO `CMD0` attempt, never leaves "not ready" | `trace_sdio_cmd0` | bundled |
-| Full SDHCI-style SDIO init sequence, still all zero | `trace_sdio_init` | bundled |
+| Legacy `plat-s5l8900`-style SDIO init sequence (not SDHCI-standard), still all zero | `trace_sdio_init` | bundled |
 | Clock-gate write persistence check (flawed, superseded below) | `trace_gate_write` | bundled |
 | Raw write-then-readback to the SDIO base, write does not land | `trace_write_test` | bundled |
 | Dynamic-clock-16 register, read-only, ambiguous | `trace_dyn_clock16` | bundled |
