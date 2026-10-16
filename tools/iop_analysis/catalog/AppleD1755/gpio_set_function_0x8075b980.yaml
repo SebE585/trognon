@@ -11,7 +11,17 @@ review:
   status: complete
   reviewed_ranges:
     - ["0x8075b980", "0x8075ba5c"]
+  constant_ranges:
+    - ["0x8075ba5c", "0x8075ba74"]
   unresolved:
+    - id: PMU-GPIOFN-Q3
+      text: >
+        Observation, no explanation attached: the register is masked with 0x19 before the function bits are
+        added, and only 0x02 or 0x04 are added, so the bits 0xE0 are always zero when the polarity-zero path
+        tests them. The branch that logs "tried to set polarity on input" therefore looks unreachable in the
+        flow as reconstructed.
+      proof_needed: "re-read the instruction order at 0x8075b9e0..0x8075ba30; compare with the direction routine"
+
     - id: PMU-GPIOFN-Q1
       text: "Meaning of the preserved bits 0x19 (bits 0, 3 and 4) of the configuration register, and of function values 1 and 2 beyond 'sets bit 1' and 'sets bit 2'."
       proof_needed: "callers that pass function 2; the PMU datasheet, which is not available; behaviour on the device"
@@ -26,9 +36,12 @@ claims:
       lock at this+0x9c it reads register 0x50 + pin; if the property gpio-pin-config was loaded
       (this+0xac) it replaces the bits selected by byte 2 of that pin's 4-byte entry with byte 3; it
       keeps bits 0x19; function 1 sets bit 0x02, function 2 sets bit 0x04, function 0 sets nothing,
-      other values log "unsupported function" and return the error; if the polarity flag is zero and
-      none of the bits 0xE0 is set it flips bit 0x02, otherwise it logs "tried to set polarity on
-      input, not supported"; it writes the register back.
+      other values log "unsupported function" and return the error. A non-zero polarity flag then jumps
+      straight to the write, with no message. Only on the polarity-zero path does it test the bits 0xE0:
+      none set (the case in the reconstructed flow) flips bit 0x02, otherwise it logs "tried to set
+      polarity on input, not supported" (see PMU-GPIOFN-Q3). It writes the register back. The byte written
+      is rebuilt from (old with the overlay) & 0x19 plus the function bit, so it is not in general the old
+      byte with a bit added.
     status: device_disassembly_verified
     evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
 

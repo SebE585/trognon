@@ -34,12 +34,14 @@ claims:
       A table of twelve 8-byte entries at 0x80764174 (in __const) gives for each index: a minimum
       (u16, mV), a step, a count, a mask, a secondary-enable mask, an enable register and an enable
       bit mask. Entry 11 has minimum, step, count and mask all zero; its enable register is 0x11 and
-      its enable mask 0x40. Entries 0 to 10 use the registers 0x10 or 0x11 with masks from 0x08 to 0x80
-      and have a voltage table.
+      its enable mask 0x40. Entries 0 to 10 use the registers 0x10 or 0x11 with enable masks 0x08, 0x10,
+      0x20, 0x40, 0x80 (register 0x10) and 0x01, 0x02, 0x04, 0x80, 0x10, 0x20 (register 0x11), and have a
+      voltage table.
     status: device_disassembly_verified
     evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
   - id: PMU-LDO-003
     text: >
+      The index and the millivolt value are truncated to 8 and 16 bits (uxtb, uxth) before any check.
       Voltage step: if millivolts is non-zero and the entry has a non-zero step, the value must lie in
       [minimum, minimum + step * count] or the function returns the error; the register 0x17 + index
       is then read, its masked field replaced by a code computed from (millivolts - minimum) and the
@@ -51,8 +53,9 @@ claims:
       Enable step: unless bit 0 of flag A is set, the function reads the enable register of the entry,
       clears the entry's mask, sets it again if 'on' is non-zero, and writes the register back
       (new = (old & ~mask) | (on ? mask : 0)). For entries with a non-zero secondary-enable mask
-      (indices 0, 4, 5) the same read-modify-write is made first on register 0x22 using that mask,
-      gated by 'on' and bit 0 of flag A.
+      (indices 0, 4, 5) a read-modify-write is made first on register 0x22: the mask is cleared, and set
+      again only if 'on' is non-zero AND bit 0 of flag A is set. When bit 0 of flag A is set the main enable
+      update that follows is skipped altogether.
     status: device_disassembly_verified
     evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
 

@@ -11,6 +11,8 @@ review:
   status: complete
   reviewed_ranges:
     - ["0x8045cf08", "0x8045d0da"]
+  constant_ranges:
+    - ["0x8045d0dc", "0x8045d11c"]
   unresolved:
     - id: SPI-START-Q1
       text: "Meaning of the version constants (this+0x9c, +0xa0, +0xa4, +0xa8, +0xac): 0xf, 0x4000, 0x2000, 0x10 and 0x40000f for spi-version 1; 0xd, 0x1000, 0x800, 0x8 and a value for version 0. Plausibly field widths and FIFO or buffer sizes, not decoded."

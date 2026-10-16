@@ -138,17 +138,24 @@ is four bytes (`0x02000101` for the touch clock: `01 01 00 02`).
 configuration reads the register, optionally overlays two bytes (mask, value) from the PMU node's
 `gpio-pin-config` property (eight 4-byte entries; on this device only pin 5 is non-zero, so pin 0
 has no overlay), keeps bits `0x19`, then sets bit 1 (`0x02`) for function 1 or bit 2 (`0x04`) for
-function 2, and, when its polarity flag is zero, flips bit 1 if the upper bits `0xE0` are all zero
-(a message says polarity on an input is not supported). Another routine switches a pin between
+function 2. A non-zero polarity flag then goes straight to the write. When the flag is zero, the code
+flips bit 1 if the upper bits `0xE0` are all zero, and otherwise logs that polarity on an input is not
+supported; since the mask `0x19` has just cleared those bits, that message looks unreachable in the
+reconstructed flow, an observation without an explanation (`PMU-GPIOFN-Q3`). The byte written is rebuilt
+(old, with the overlay, masked with `0x19`, plus the function bit); it is not in general the old byte
+with one bit added. Another routine switches a pin between
 input (it sets `0x20`) and output (upper bits zero). A third updates a register with a mask and a
 value and can also update 3-bit per-pin fields packed in registers `0x59` to `0x5b`.
 
 **Reading for the touch clock enable** (`function-clock_enable`: pin 0, bytes `01 01 00 02`): the
 type byte (`+0xc`) is 1, so the default application is "function `0x00`, polarity flag `1`". A
 later "set" with a value calls the same routine with function `value != 0` and the same flag, which
-reads as: **asserting the clock enable sets bit 1 (`0x02`) of PMU register `0x50`**, and the flag
-being non-zero means active high. STAGE 36 read register `0x50` as `0x11` (bit 1 clear, upper bits
-zero), which reads as "configured as an output, level low". The asserted value would be `0x13`.
+reads as: **asserting the clock enable makes the setter rebuild PMU register `0x50` with bit 1
+(`0x02`) set**, and the flag being non-zero means the function bit is not flipped (active high). STAGE 36
+read register `0x50` as `0x11` (bit 1 clear, upper bits zero), which reads as "configured as an output,
+level low". The rebuilt value would be `0x13` (`0x11 & 0x19`, plus `0x02`), which equals `old | 0x02`
+only because the old byte has no bits outside `0x19`. That the touch driver calls this "set with a value"
+path for its clock enable is not established: only the descriptor and the path were read.
 This is a reading of about thirty instructions. The jump table (`PMU-GPIOAPPLY-003`) maps the type
 byte to: 0 an input direction, 1 an output direction, 2 and 3 a function taken from byte `+0xe` or
 `+0xf`; the touch clock's type is 1, which takes the function path when no explicit type is passed.
@@ -292,7 +299,7 @@ come from the readings above; none of the write semantics was ever exercised on 
 |---|---|---|---|---|---|---|
 | W1 (done, STAGE 38) | `spi1` clock gate | `0xBF100078 + 4 * 0x16` = `0xBF1000D0`, `0` to `0xF` (the pattern read on enabled gates) | `0` | write `0` | whether the gate takes the write (the only earlier gate-write test, STAGE 23, was uninformative: both gates already read `0xF`), then the idle registers of `spi1` become readable | enabling the clock of a block in an unknown state; the numbering of gates is the device tree's, not tested |
 | W2 (done, STAGE 38) | read only | `spi1` CONTROL, SETUP, STATUS, PIN, CLKDIVIDER, SPCNT, SPIDD at `0x82100000` (STAGE 37, second half) | not read | none needed | the reset state of the controller | none beyond W1 |
-| W3 | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (set bit `0x02`) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
+| W3 | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (rebuilt as `(old & 0x19) | 0x02`; equal to `old | 0x02` only for this old value) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
 | W4 | touch LDO | PMU register `0x11`, `0xBE` to `0xFE` (set bit `0x40`), read-modify-write | `0xBE` | write `0xBE` | nothing visible alone except the read-back and possibly the controller's behaviour on SPI | powers a rail; if the index-to-rail reading is wrong, a different rail is switched |
 | W5 | reset line | SoC GPIO `14.01` released to high impedance, then the driver's delay (`0xf`, unit unknown) | level `0` | drive low again | a change on SPI/attention if the controller starts | the polarity and the unit of the delay are unknown |
 | W6 | first SPI exchange | `spi1` registers, chip select `13.00`; if the `reg` reading above holds, word size 8 and a period of about 124 ns | n/a | n/a | any answer | requires the controller's register layout confirmed on this chip (CLKDIVIDER and PIN undecoded), the `reg` inference confirmed, and the bootloader protocol |

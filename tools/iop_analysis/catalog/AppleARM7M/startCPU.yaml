@@ -17,7 +17,7 @@ review:
   reviewed_ranges:
     - ["0x80713664", "0x80713788"]     # code only, entry to pop {pc}
   constant_ranges:                     # literal pool: constants read, NOT counted as code bytes reviewed
-    - ["0x80713788", "0x807137b0"]
+    - ["0x80713788", "0x807137b4"]
   resolved:
     - id: ARM7M-STARTCPU-Q1
       by: "full linear + branch trace of 0x80713664..0x80713786 on 2026-10-16 (this fiche)"
@@ -108,7 +108,8 @@ review:
       text: >
         Why the driver writes 0x86300000 into window0+0x118 (the exact open question). The constant 0x86300000 is also pair 0 of the `reg`
         property of the `iop` device-tree node (tools/iop_analysis/dt_node_reg.py): the CPU-visible base of
-        window 0 itself. So the constant is the register block's own address, not a RAM address. The image
+        window 0 itself. So the constant equals the host-view address of the block it is written into, not a RAM address;
+        that does not exclude a role as a base or alias in another address view (the IOP's). The image
         fwFirmwareImage.bin is linked at base 0 (small absolute handler addresses such as 0x40 and 0x939c in its
         vector table, no 0x86xxxxxx literal), so it is not the image's load address either. Why the IOP is told
         its own block's base (its view of the bus may differ from the host's) is unknown.

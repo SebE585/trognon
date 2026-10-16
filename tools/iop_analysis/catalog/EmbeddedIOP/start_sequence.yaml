@@ -46,6 +46,14 @@ review:
         The IOP personality of EmbeddedIOP asks for "IOPFirmware", and the string "IOPFirmware" is present in the
         firmware kext's strings; the code that sets the service name was not read.
       proof_needed: "find where IOP_s5l8920x_firmware sets its name, or read the registry on a device"
+    - id: EMBIOP-SEQ-Q7
+      text: >
+        The last three virtual calls of the start-IOP function 0x80767af0, after it sets this+0x7c: (a) a call on
+        its own object, slot +0x34c, whose result is the receiver of (b); (b) on that result, slot +0x94, with
+        the address of this+0x7c among its arguments; (c) on the object at this+0x80, slot +0x88, with the
+        constant 0x2710 (10000, no unit attributed). They are in the reviewed range; their effects were not
+        followed and may matter to the rest of the start-up.
+      proof_needed: "read slot +0x34c of EmbeddedIOP's own table, then the slots +0x94 and +0x88 of the classes of the objects they reach"
     - id: EMBIOP-SEQ-Q6
       text: >
         Where the located variables sit in the image (offsets given by the ConfigurationOffset, HeapBaseOffset,
@@ -97,14 +105,16 @@ claims:
       The start-IOP function 0x80767af0 does nothing if the byte this+0x7c is set. Otherwise it obtains the
       firmware descriptor (this+0xcc, slot +0x34c), calls the descriptor's slot +0x5c with (1, 0, length), calls the
       external function 0x8006cc28, then calls this+0x50 (the provider) slot +0x34c with this+0xcc as argument and
-      logs "IOP failed to start" (line 479) if the result is non-zero. It then sets this+0x7c. The provider class
+      logs "IOP failed to start" (line 479) if the result is non-zero. It then sets this+0x7c and makes three more
+      virtual calls (EMBIOP-SEQ-Q7). The provider class
       is IOSlaveCPU by the personality and AppleARM7M derives from it; slot +0x34c of the table at 0x8071409c of
       AppleARM7M holds the startCPU pointer 0x80713665.
     status: device_disassembly_verified
     evidence: "docs/research/2026-10-16-iop-boot-to-life.md#start-up-sequence-as-read-in-embeddediop"
   - id: EMBIOP-SEQ-006
     text: >
-      The translator at 0x80767094 maps an address of the IOP's own view to a host pointer: below the length of the
+      The translator at 0x80767094 maps an address of the IOP's own view to a host pointer: address zero returns
+      zero first, then, below the length of the
       firmware descriptor it returns slot+0x350 (the image base) plus the address, which fits an image seen by the
       IOP from address 0; otherwise it walks a list of allocations (this+0xc4) and uses the provider's slot +0x35c on
       each allocation's slot-+0x98 result.

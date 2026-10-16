@@ -123,7 +123,7 @@ transition below carries its proof or its unknown.
 | 4 | Allocate host buffers visible to the IOP: a heap (size from `HeapRequired`), optionally a page table, a control buffer, a message buffer (size `MessageChannelSize << 7`) | disassembly + REQUIRE strings for the allocation call, `EMBIOP-SEQ-003`/`-004` | exact slot semantics (`EMBIOP-SEQ-Q1`) |
 | 5 | **Write into the image**: `config[4] = 0` then `\|= 1` unless a flag is set; `config[0xc]`; heap base and size variables; page-table-base variable; `config[8]` = message buffer address | disassembly, `EMBIOP-SEQ-003` | what each field means to the IOP code (`EMBIOP-SEQ-Q6`) |
 | 6 | Create the control and message endpoints and those of a table | disassembly (middle of `start()`) | what each endpoint is (`EMBIOP-SEQ-Q4`) |
-| 7 | Start: descriptor slot `+0x5c` (1, 0, length), one external call, then provider slot `+0x34c` with the firmware driver. The provider is `AppleARM7M`, whose table at `0x8071409c` has `startCPU` at `+0x34c` | disassembly, `EMBIOP-SEQ-005`, `ARM7M-STARTCPU-006` | the descriptor step and the external call (`EMBIOP-SEQ-Q1`, `-Q2`) |
+| 7 | Start: descriptor slot `+0x5c` (1, 0, length), one external call, then provider slot `+0x34c` with the firmware driver. The provider is `AppleARM7M`, whose table at `0x8071409c` has `startCPU` at `+0x34c` | disassembly, `EMBIOP-SEQ-005`, `ARM7M-STARTCPU-006` | the descriptor step and the external call (`EMBIOP-SEQ-Q1`, `-Q2`); three further virtual calls after the start, not followed (`EMBIOP-SEQ-Q7`) |
 | 8 | Inside `startCPU`: register sequence of window 0, last write `+0x100 <- 1` | `ARM7M-STARTCPU-002`, `-005` | bit meanings, `+0x118` (`ARM7M-STARTCPU-Q13`, `-Q14`) |
 | 9 | Check: control message with command word `0x6e6f7020` (ASCII `nop `), timeout 5000 ms, failure logged as "startup ping failed" | disassembly of the call site, `EMBIOP-SEQ-004` | the body of the sender and the IOP-side handler (`EMBIOP-SEQ-Q3`) |
 
@@ -134,7 +134,7 @@ What this fixes for the open items:
   callers of the same slot are not excluded.
 - **`ARM7M-STARTCPU-Q4`**: the receiver is the firmware driver of step 2. It
   stays conditional on step 2's class.
-- **IOP address view**: the translator (`EMBIOP-SEQ-006`) maps IOP addresses
+- **IOP address view**: the translator (`EMBIOP-SEQ-006`; address zero returns zero first) maps IOP addresses
   below the image length to the image, which fits an image seen from address
   0. The provider's slot `+0x35c` is the `AppleARM7M` method of
   `ARM7M-ADDR-001`, called with the physical address of each allocation, so
@@ -175,7 +175,8 @@ which selects the masked form of `+0x114`.
 - **`0x86300000` is the window's own address.** It is pair 0 of the `reg`
   property of the `iop` node, i.e. the CPU-visible base of the register block
   that `startCPU` is writing into. It is neither a RAM address nor the image's
-  load address (`ARM7M-STARTCPU-Q14`). The earlier probe of `0x86300000` that
+  load address (`ARM7M-STARTCPU-Q14`). That it equals the host-view address of the block does not
+  exclude a role as a base or an alias in another address view, the IOP's. The earlier probe of `0x86300000` that
   read zero (`20261016T094340Z-trace_iop_probe_mmu`) was a read of this
   register block, not of RAM.
 - **The image is linked at base 0.** `fwFirmwareImage.bin` (110592 bytes)

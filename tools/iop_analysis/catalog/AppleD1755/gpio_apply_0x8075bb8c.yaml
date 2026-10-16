@@ -10,8 +10,11 @@ thumb_entry_pointer: "0x8075bb8d"
 review:
   status: partial
   reviewed_ranges:
-    - ["0x8075bb8c", "0x8075bbbc"]
-    - ["0x8075bbc2", "0x8075bc58"]
+    - ["0x8075bb8c", "0x8075bbb8"]
+    - ["0x8075bbbe", "0x8075bc50"]
+  constant_ranges:
+    - ["0x8075bbb8", "0x8075bbbe"]    # the 4-byte tbb table and 2 bytes of padding
+    - ["0x8075bc50", "0x8075bc54"]    # the literal 0xe00002c2
   unresolved:
     - id: PMU-GPIOAPPLY-Q1
       text: "The 'get' path (from 0x8075bc06 when an output pointer is given) returns a level computed from the configuration register and the polarity byte; the XOR logic was read but its result was not checked against a pin whose level is known."
@@ -34,7 +37,7 @@ claims:
       Called with a value, it calls the setter with function = (value != 0) and polarity flag =
       (byte +0xd != 0). For the touch node's clock enable (pin 0, bytes 01 01 00 02) the default
       application is therefore function 0 with flag 1, and a set with a non-zero value is function 1
-      with flag 1, which sets bit 0x02 of register 0x50.
+      with flag 1, which makes the setter rebuild the byte of register 0x50 as (old with overlay) & 0x19 plus 0x02, i.e. 0x13 from 0x11 (not in general old | 0x02). Whether the touch driver calls this 'set with a value' path for its clock enable is not established.
     status: device_disassembly_verified
     evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
 

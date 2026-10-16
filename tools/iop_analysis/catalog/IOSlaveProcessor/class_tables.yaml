@@ -34,14 +34,18 @@ claims:
     evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
   - id: IOSLAVE-TABLES-002
     text: >
-      CANDIDATE ATTRIBUTION, by size match only. Fact: three functions at 0x80399728, 0x8039974c and 0x80399764
-      store the table 0x8039a678 and then call a base function (the pattern of destructors), and the first
-      passes 0x68 to a delete call. Candidate: 0x68 is the instance size of IOSlaveProcessor and of no other
-      registered class, so the table is probably IOSlaveProcessor's and its +0x34c entry (the field accessor of
-      IOSLAVE-GETTER-001) probably a method of IOSlaveProcessor rather than of IOSlaveFirmware. Not confirmed:
-      no constructor was linked to the metaclass registration explicitly. The two 0x50 tables (CPU and
-      Firmware) cannot be told apart by size; see IOSLAVE-TABLES-Q1.
+      FACT. Three functions at 0x80399728, 0x8039974c and 0x80399764 store the table 0x8039a678 and then
+      call a base function (the pattern of destructors), and the first passes 0x68 to a delete call. The
+      +0x34c entry of that table is the field accessor of IOSLAVE-GETTER-001.
     status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
+  - id: IOSLAVE-TABLES-004
+    text: >
+      CANDIDATE ATTRIBUTION, not confirmed. 0x68 is the instance size of IOSlaveProcessor and of no other
+      registered class, so the table above is probably IOSlaveProcessor's and the accessor probably a method of
+      IOSlaveProcessor rather than of IOSlaveFirmware. No constructor was linked to the metaclass registration
+      explicitly. The two 0x50 tables (CPU and Firmware) cannot be told apart by size (IOSLAVE-TABLES-Q1).
+    status: hypothesis
     evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
   - id: IOSLAVE-TABLES-003
     text: >
