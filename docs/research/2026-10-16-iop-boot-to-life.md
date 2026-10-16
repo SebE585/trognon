@@ -33,24 +33,82 @@ established, so the links are separated by what supports them.
 | `startCPU` | 11 indirect or external calls (callee not read) | `ARM7M-STARTCPU-Q4`–`Q12` |
 | `start()` | window 0 mapped to `this+0x58`, window 1 to `this+0x60` | `ARM7M-START-001` |
 | the 0x80713511 method | a write of 8 or 4 to `window1+0x18` | `ARM7M-VIC-001` |
-| one data word at `0x807153e8` | `startCPU` (its only reference in this kext) | `ARM7M-STARTCPU-006` |
+| one data word at `0x807143e8` | `startCPU` (its only reference in this kext) | `ARM7M-STARTCPU-006` |
 
 **Assumed, not shown** (plausible, no evidence that the link exists):
 
 | Assumption | What is missing |
 |---|---|
-| `startCPU` triggers, or is followed by, the VIC method | the two functions sit in the same pointer table (`0x807153e8`, `0x807153f0`), which shows class membership only; no call between them was found |
+| `startCPU` triggers, or is followed by, the VIC method | the two functions sit in the same pointer table (`0x807143e8`, `0x807143f0`), which shows class membership only; no call between them was found |
 | the IOP reaches the ping handler after `startCPU` | no observation of the IOP running (see proof of life below) |
 | `startCPU`'s caller copies the image before the call | caller and producer not located (`ARM7M-STARTCPU-Q15`) |
+
+## Who starts the core and prepares the image
+
+Found on 2026-10-16 by following class metadata rather than call sites. All
+addresses below are in the kernelcache's own kexts; extraction is
+reproducible with `tools/iop_analysis/extract_kext.py` (it reproduces the
+SHA-256 of the previously extracted `AppleARM7M.kext.bin`).
+
+- **Class layout of `IOSlaveProcessor.kext`** (`IOSLAVE-TABLES-001`–`003`):
+  the sizes passed to the delete call of each instance table match the six
+  registered classes, so each pointer table has an owner. `IOSlaveCPU`,
+  `IOSlaveFirmware` and `IOSlaveProcessor` share one superclass metaclass
+  object and are siblings. The field accessor found earlier
+  (`IOSLAVE-GETTER-001`) belongs to `IOSlaveProcessor` (size 0x68).
+- **`AppleARM7M` derives from `IOSlaveCPU`**, instance size 0x90
+  (`ARM7M-META-001`).
+- **The concrete firmware class is `IOP_s5l8920x_firmware`**
+  (`IOP-CLASS-001`, `-002`), instance size 0x54, the only concrete subclass
+  of `IOSlaveFirmware` found by scanning the kernelcache for its metaclass
+  pointer. Its method at `+0x34c`, the one `startCPU` calls first
+  (`ARM7M-STARTCPU-Q4`), is a lazy getter that builds an object over
+  `0x80481000`, length `0x1b000` = 110592 bytes (the size of the extracted
+  `fwFirmwareImage.bin`), and caches it (`IOP-GETMD-001`). So the descriptor
+  `startCPU` works with covers the image as embedded in the kernelcache. This
+  holds if the object `startCPU` receives is an instance of that class,
+  which is not shown.
+- **A concrete `IOSlaveProcessor` subclass exists in `EmbeddedIOP`**
+  (bundle `com.apple.driver.EmbeddedIOP`, 28672 bytes). Its strings name
+  `EmbeddedIOP::start`, `_prepareFirmwareImage()`, a lookup of the firmware
+  driver by the property `IOPFirmwareName`, reads of firmware properties
+  (message channel size, panic buffer, heap base, size and requirement),
+  and three messages: "IOP failed to start", "startup ping failed",
+  "failed to allocate IOP-visible memory" (`EMBIOP-001`). No function of this
+  kext has been read.
+
+What this changes:
+
+- `ARM7M-STARTCPU-Q4` is resolved for the class above. `Q15` remains open as
+  worded: the caller is not identified. The only reference to `startCPU` found
+  is one data word at `0x807143e8`, which fits a virtual call and does not
+  show that every call passes through it. `EmbeddedIOP` is the candidate.
+- The host driver has its own check after starting: the "startup ping" at
+  `EmbeddedIOP.cpp:221`. That is a response from IOP code to a host message,
+  the form of evidence the proof-of-life section asks for, once the message and
+  the answering routine are identified (`EMBIOP-Q3`).
+- `_prepareFirmwareImage` is the candidate for whatever patches the image
+  (heap, channel, panic fields) before it starts (`EMBIOP-Q2`). A T2 that
+  loads the unmodified image would not match what the driver does.
+- `ARM7M-ADDR-001`: a method of `AppleARM7M` subtracts `0x40000000` (for
+  `iop-version` 1) from an address and compares it with the size field that
+  `startCPU` computes. Role unknown (`ARM7M-ADDR-Q1`); it is one more hint
+  that the IOP's view of addresses is not the host's.
+
+**Correction**: an earlier version of these notes placed the pointer table
+holding `startCPU` at `0x807153e8`. The kext's file offset 0x1000 maps to
+virtual address `0x80713000`, so the table is at `0x807143e8`; the earlier
+scan had used the wrong base. The values read were right, the addresses were
+shifted by `0x1000`.
 
 **Related functions** (same subsystem, no dependency claimed): the six
 `IOSlaveProcessor` class registrations (`IOSLAVE-INIT-001`), `sendIOPCommand`
 and the SDIO ping handler in the IOP firmware (architecture report, prose
 only, no fiche yet).
 
-Priority for the next reading: `Q8`/`Q9` (they precede the first register
-write and therefore frame T1) and `Q15` (producer of the buffer, which frames
-T2).
+Priority for the next reading: `EMBIOP-Q1` (the caller) and `EMBIOP-Q2` (what
+is patched in the image), then `Q8`/`Q9` (they precede the first register
+write and frame T1).
 
 ## What the register sequence says, and what it does not
 

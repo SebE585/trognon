@@ -1,0 +1,37 @@
+binary: AppleARM7M.kext.bin
+binary_sha256: f286d9fb9b05f3802dbe2bccef2a4e329bcddd41ee85748d7fadc0789a7fa2e1
+function_name_apple: null
+function_name_assigned: "addr_adjust_by_version (working name, not Apple's)"
+decode_mode: thumb
+subsystem: iop_startup
+entry_code_address: "0x80713020"
+thumb_entry_pointer: "0x80713021"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x80713020", "0x80713046"]
+  unresolved:
+    - id: ARM7M-ADDR-Q1
+      text: >
+        What the argument and the result are (an address in which address space, and whether -1 means failure),
+        and who calls this method. Note the odd reading of the iop-version 1 branch: the result is replaced by -1
+        when the offset is BELOW the size, which is the opposite of an in-range check; either the comparison
+        reads differently from this summary or the method has a purpose that is not a range check.
+      proof_needed: "find the callers through the table slot at 0x807143f8; re-read the 'it lo' predication at 0x80713036 bit by bit"
+
+claims:
+  - id: ARM7M-ADDR-001
+    text: >
+      A method (referenced from the table slot at 0x807143f8) takes one 32-bit argument and branches on
+      this+0x64 (the iop-version value). For 1 it subtracts 0x40000000 from the argument, compares the result
+      unsigned with the field at this+0x8c (the size field startCPU computes), and conditionally replaces it with
+      -1; for 2 it subtracts 0x80000000; for any other value it returns the argument unchanged.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "constants and control flow of a short function"

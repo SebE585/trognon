@@ -1,0 +1,135 @@
+{
+  "binary": "EmbeddedIOP.kext.bin",
+  "binary_sha256": "f7b66532a429ac56751a609fcd4caa19fe0b1c00e7aa2065b18cda610ff5b113",
+  "date": "2026-10-16",
+  "text_section_bytes": 9728,
+  "text_section_base": "0x80767000",
+  "auto_recognized_bytes": 3244,
+  "auto_recognized_functions": 30,
+  "recognized_ranges": [
+    [
+      "0x80767000",
+      "0x80767018"
+    ],
+    [
+      "0x80767094",
+      "0x80767132"
+    ],
+    [
+      "0x80767158",
+      "0x807671ec"
+    ],
+    [
+      "0x807672c0",
+      "0x807672f6"
+    ],
+    [
+      "0x8076730c",
+      "0x80767338"
+    ],
+    [
+      "0x807673b4",
+      "0x80767410"
+    ],
+    [
+      "0x80767524",
+      "0x80767588"
+    ],
+    [
+      "0x80767650",
+      "0x80767810"
+    ],
+    [
+      "0x80767850",
+      "0x807679ac"
+    ],
+    [
+      "0x80767af0",
+      "0x80767b74"
+    ],
+    [
+      "0x80767c28",
+      "0x80767c96"
+    ],
+    [
+      "0x80767cb4",
+      "0x80768064"
+    ],
+    [
+      "0x807686e8",
+      "0x80768702"
+    ],
+    [
+      "0x8076875c",
+      "0x80768776"
+    ],
+    [
+      "0x80768788",
+      "0x807687b4"
+    ],
+    [
+      "0x80768860",
+      "0x8076886e"
+    ],
+    [
+      "0x80768aac",
+      "0x80768ac6"
+    ],
+    [
+      "0x80768b20",
+      "0x80768b38"
+    ],
+    [
+      "0x80768b48",
+      "0x80768b74"
+    ],
+    [
+      "0x80768c18",
+      "0x80768c26"
+    ],
+    [
+      "0x80768c58",
+      "0x80768c5a"
+    ],
+    [
+      "0x80768ef4",
+      "0x80768fc2"
+    ],
+    [
+      "0x80769008",
+      "0x80769022"
+    ],
+    [
+      "0x807690dc",
+      "0x807690f4"
+    ],
+    [
+      "0x80769104",
+      "0x80769130"
+    ],
+    [
+      "0x807691d4",
+      "0x807691e2"
+    ],
+    [
+      "0x80769310",
+      "0x8076932a"
+    ],
+    [
+      "0x807693d4",
+      "0x807693ec"
+    ],
+    [
+      "0x807693fc",
+      "0x80769428"
+    ],
+    [
+      "0x807694cc",
+      "0x807694da"
+    ]
+  ],
+  "tool": "radare2",
+  "tool_version": "6.2.4 +0 abi:152 @ darwin-arm_64",
+  "method": "r2 -e asm.bits=16 -qc 'aaa; aflj' EmbeddedIOP.kext.bin, union of [addr, addr+size) ranges (half-open), restricted to __text",
+  "note": "Candidate pool only: r2's automatic detection undercounts these kexts (it missed most hand-found functions in AppleARM7M). Extraction: tools/iop_analysis/extract_kext.py."
+}

@@ -277,7 +277,7 @@ r2 -e asm.bits=16 -c 'px 32 @ 0x807137a0' /tmp/trognon_dt/AppleARM7M.kext.bin   
 ### Tables de pointeurs de `IOSlaveProcessor.kext` (2026-10-16, partiel)
 
 Recherche de l'appelant de `startCPU` et du producteur du tampon (`Q15`) :
-la seule référence à `0x80713665` est le mot de données `0x807153e8` (donc
+la seule référence à `0x80713665` est le mot de données `0x807143e8` (donc
 appel virtuel, pas de `bl`). Dans `IOSlaveProcessor.kext`, cinq tables de
 ~220 mots (pointeurs noyau ou kext) ressemblent à des vtables. L'une
 (départ heuristique `0x8039a678`) a en `+0x34c` la fonction `0x8039901d`

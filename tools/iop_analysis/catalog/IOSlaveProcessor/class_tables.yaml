@@ -1,0 +1,54 @@
+binary: IOSlaveProcessor.kext.bin
+binary_sha256: abff4df9877f8c83a899de4f2308bca80f556478790b982d1823d39fd366a0c9
+function_name_apple: null
+function_name_assigned: "class tables survey (pointer tables, destructor sizes, metaclass arguments)"
+decode_mode: thumb
+subsystem: iop_class_registry
+entry_code_address: null
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x80399728", "0x80399740"]   # IOSlaveProcessor destructor-with-delete, the one read in full
+  constant_ranges: []
+  unresolved:
+    - id: IOSLAVE-TABLES-Q1
+      text: "Which of the two 80-byte instance tables (0x80399d48, 0x8039a110) is IOSlaveCPU and which is IOSlaveFirmware: 0x8039a110 is installed by the constructor that IOP_s5l8920x_firmware calls (0x803997c5), which supports Firmware; IOSlaveCPU would be the other."
+      proof_needed: "read the constructors at 0x80399794 and 0x803997c4 and the AppleARM7M instance constructor's base call"
+    - id: IOSLAVE-TABLES-Q2
+      text: "The entry at offset +0x44 of the CPU, Firmware and Processor metaclass tables returns 0 (0x80399058, 0x8039904c, 0x80399028). Read as the allocator it would make them abstract; the table layout was not checked against OSMetaClass."
+      proof_needed: "compare with the allocator entry of a class that is instantiated (IOP_s5l8920x_firmware, IOP-CLASS-002)"
+    - id: IOSLAVE-TABLES-Q3
+      text: "Tables are delimited by runs of pointers, not from a located vtable header; the delete sizes were read from only the second entry of each."
+      proof_needed: "read each table's first two entries' bodies in full"
+
+claims:
+  - id: IOSLAVE-TABLES-001
+    text: >
+      In the second entry of each instance table of this kext, the size passed to the delete call is 8
+      (table 0x8039a4cc), 0x10 (0x80399c88), 0x38 (0x8039a588), 0x50 (0x80399d48 and 0x8039a110) and 0x68
+      (0x8039a678). These match the instance sizes of the six classes registered by the module init
+      (IOSLAVE-INIT-001): Memory 8, MemoryBuffer 16, Endpoint 56, CPU and Firmware 80, Processor 104.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
+  - id: IOSLAVE-TABLES-002
+    text: >
+      The 0x68-byte table 0x8039a678 is attributed to IOSlaveProcessor by size: three functions that store it and then call a base function (the pattern of destructors, the first of
+      which passes the size 0x68 to a delete call) are at 0x80399728, 0x8039974c and 0x80399764. Its +0x34c entry is the field accessor of IOSLAVE-GETTER-001, so that accessor is a method of
+      IOSlaveProcessor, not of IOSlaveFirmware.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
+  - id: IOSLAVE-TABLES-003
+    text: >
+      The module init passes, as superclass metaclass object, the same kernel address 0x802d38b4 for
+      IOSlaveCPU, IOSlaveFirmware and IOSlaveProcessor (so they are siblings under it, not derived from each
+      other), 0x802d3600 for IOSlaveMemory, 0x802d3b94 for IOSlaveEndpoint, and IOSlaveMemory's own metaclass
+      object 0x8039aae0 for IOSlaveMemoryBuffer.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "sizes and addresses"

@@ -1,0 +1,41 @@
+binary: EmbeddedIOP.kext.bin
+binary_sha256: f7b66532a429ac56751a609fcd4caa19fe0b1c00e7aa2065b18cda610ff5b113
+function_name_apple: null
+function_name_assigned: "EmbeddedIOP: survey by strings (no function read yet)"
+decode_mode: thumb
+subsystem: iop_host_driver
+entry_code_address: null
+
+review:
+  status: not_reviewed
+  reviewed_ranges: []
+  unresolved:
+    - id: EMBIOP-Q1
+      text: "Which function calls startCPU, and at which of the numbered source lines (EmbeddedIOP.cpp 99-241 in start(); 479 'IOP failed to start')."
+      proof_needed: "find the virtual call through the slot holding startCPU (AppleARM7M table, offset +0x34c of the IOSlaveCPU object) inside this kext"
+    - id: EMBIOP-Q2
+      text: "What _prepareFirmwareImage() changes in the image before startCPU: the strings name heap base and size offsets, message channel size, panic buffer; the actual writes were not read."
+      proof_needed: "disassemble _prepareFirmwareImage and _iopLocateFirmwareVariableWithProperty"
+    - id: EMBIOP-Q3
+      text: "What the 'startup ping' at EmbeddedIOP.cpp:221 sends and expects."
+      proof_needed: "disassemble the function containing the line-221 REQUIRE; link it to sendIOPCommand and the IOP-side ping handler"
+
+claims:
+  - id: EMBIOP-001
+    text: >
+      This kext (bundle com.apple.driver.EmbeddedIOP, source tree EmbeddedIOP-20.4) contains strings naming
+      EmbeddedIOP::start, EmbeddedIOP::_prepareFirmwareImage(), EmbeddedIOP::_iopLocateFirmwareVariableWithProperty,
+      a lookup of a firmware driver by the property IOPFirmwareName (cast to IOSlaveFirmware), reads of the
+      firmware driver's properties for target, build, version string, message channel size, panic bytes and
+      heap base, size and requirement, the messages "IOP failed to start", "startup ping failed" and "failed to
+      allocate IOP-visible memory", and the call IOSlaveProcessor::start(provider). It references the
+      metaclass objects of IOSlaveProcessor, IOSlaveEndpoint and IOSlaveMemoryBuffer as superclasses.
+      Strings and references only: no function body was read.
+    status: source_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "names and message texts as found in the binary, no code reproduced"

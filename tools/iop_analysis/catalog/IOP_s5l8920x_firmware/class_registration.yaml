@@ -1,0 +1,42 @@
+binary: IOP_s5l8920x_firmware.kext.bin
+binary_sha256: b8af809426e15cd23b5247a15c7ee950843aa893f8bdc7b4e2cc9e018100cd37
+function_name_apple: null
+function_name_assigned: "IOP_s5l8920x_firmware class registration (metaclass constructor, allocator, instance constructor head)"
+decode_mode: thumb
+subsystem: iop_firmware_container
+entry_code_address: "0x80480328"
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x8048030c", "0x80480322"]   # allocator
+    - ["0x80480328", "0x80480340"]   # metaclass constructor
+    - ["0x804802b4", "0x804802cc"]   # head of the instance constructor
+  constant_ranges:
+    - ["0x80480340", "0x80480350"]
+  unresolved:
+    - id: IOP-CLASS-Q1
+      text: "Instance constructor 0x804802b4 read only to its first external calls (offset 0x804802cc); the rest, and the value of the object at 0x80480a6c passed to the base constructor, were not read."
+      proof_needed: "continue the disassembly from 0x804802cc"
+
+claims:
+  - id: IOP-CLASS-001
+    text: >
+      The metaclass constructor registers the class name "IOP_s5l8920x_firmware" with superclass metaclass
+      object 0x8039aaf8 (IOSlaveFirmware's, per the module init of IOSlaveProcessor.kext) and instance size
+      0x54 (84 bytes), then stores the table 0x804805c0 as its own vtable pointer.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
+  - id: IOP-CLASS-002
+    text: >
+      The allocator (entry of the metaclass table 0x804805c0 at offset +0x44) allocates 0x54 bytes and calls
+      the instance constructor 0x804802b4, which calls the IOSlaveFirmware base constructor 0x803997c5 and
+      stores 0x80480614 as the instance vtable pointer.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "class name, sizes and addresses, not a code excerpt"

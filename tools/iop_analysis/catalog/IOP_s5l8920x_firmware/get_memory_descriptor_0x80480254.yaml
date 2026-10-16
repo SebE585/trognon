@@ -1,0 +1,52 @@
+binary: IOP_s5l8920x_firmware.kext.bin
+binary_sha256: b8af809426e15cd23b5247a15c7ee950843aa893f8bdc7b4e2cc9e018100cd37
+function_name_apple: null
+function_name_assigned: "firmware_memory_descriptor_getter (working name, not Apple's)"
+decode_mode: thumb
+subsystem: iop_firmware_container
+entry_code_address: "0x80480254"
+thumb_entry_pointer: "0x80480255"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x80480254", "0x8048027c"]
+  constant_ranges:
+    - ["0x8048027c", "0x80480284"]
+  resolved:
+    - id: ARM7M-STARTCPU-Q4
+      by: >
+        the +0x34c slot of the instance table installed by the IOP_s5l8920x_firmware constructor
+        (0x80480614) points to this function (IOP-GETMD-001). Caveat: IOP_s5l8920x_firmware is the only
+        concrete subclass of IOSlaveFirmware found by a scan of the kernelcache for its metaclass pointer;
+        that the object handed to startCPU is an instance of it is not shown.
+  unresolved:
+    - id: IOP-GETMD-Q1
+      text: >
+        Identity of the external function at 0x801ea699, called with (0x80481000, 0x1b000, 3). Its use as the
+        constructor of a memory descriptor over a virtual range is an inference from the result being stored,
+        then used as an object with a vtable.
+      proof_needed: "disassemble 0x801ea698 in the kernelcache"
+    - id: IOP-GETMD-Q2
+      text: "Slot +0xa0 of the returned object, called with (object, 0) right after creation; role unknown (a prepare or wire step is a guess)."
+      proof_needed: "read slot +0xa0 of that object's class in the kernelcache"
+    - id: IOP-GETMD-Q3
+      text: "Meaning of the third argument, the constant 3 (direction or options)."
+      proof_needed: "same function as IOP-GETMD-Q1"
+
+claims:
+  - id: IOP-GETMD-001
+    text: >
+      A lazy getter: if the field at this+0x50 is zero, it calls the external function 0x801ea699 with
+      (0x80481000, 0x1b000, 3), stores the result at this+0x50, calls the result's vtable slot +0xa0 with
+      (result, 0), and returns this+0x50. 0x80481000 is the start of the fwFirmwareImage segment of this kext
+      and 0x1b000 (110592) its size, equal to the size of the extracted fwFirmwareImage.bin. It is the
+      +0x34c entry of the instance table (0x80480614) installed by the IOP_s5l8920x_firmware constructor.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "constants and control flow of a short function, not a code excerpt"

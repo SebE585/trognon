@@ -1,0 +1,31 @@
+binary: AppleARM7M.kext.bin
+binary_sha256: f286d9fb9b05f3802dbe2bccef2a4e329bcddd41ee85748d7fadc0789a7fa2e1
+function_name_apple: null
+function_name_assigned: "AppleARM7M metaclass constructor"
+decode_mode: thumb
+subsystem: iop_startup
+entry_code_address: "0x8071347c"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8071347c", "0x80713494"]
+  constant_ranges:
+    - ["0x80713494", "0x807134a4"]
+  unresolved: []
+
+claims:
+  - id: ARM7M-META-001
+    text: >
+      The metaclass constructor registers the name "AppleARM7M" with superclass metaclass object 0x8039ab10
+      (IOSlaveCPU's, per the module init of IOSlaveProcessor.kext) and instance size 0x90 (144 bytes), and
+      stores 0x80714048 as the metaclass table pointer. AppleARM7M therefore derives from IOSlaveCPU as far as
+      the constructor arguments show.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "class name, size and addresses"
