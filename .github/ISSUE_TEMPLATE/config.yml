@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Missions
+    url: https://sebe585.github.io/trognon/en/missions/
+    about: Open questions you can take, with what you need and what a good answer looks like.
+  - name: Documentation
+    url: https://sebe585.github.io/trognon/
+    about: Start here to understand what has been observed and what has not.

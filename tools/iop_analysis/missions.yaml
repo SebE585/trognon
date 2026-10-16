@@ -1,0 +1,90 @@
+# Missions: open questions of the decompilation catalog, framed so that someone else can take one.
+# A mission points at a question id of an approved catalog entry (tools/iop_analysis/catalog/*/*.yaml); the question text and the
+# link to its entry come from the catalog, so they cannot drift. docs/en/missions.md is GENERATED from this file by
+# tools/missions_build.py (make missions); `make missions-check` validates it.
+#
+#   work:    static  = reading and analysis, no phone needed (level 1)
+#            survey  = a read-only run on a phone (level 2)
+#            write   = writes to the phone's hardware (level 3): never open to contributors, only after the maintainer agrees
+#   state:   open | in-progress | blocked | closed          (the state of the WORK, not of the knowledge)
+#   outcome: confirmed | refuted | inconclusive              (required when closed; a refuted hypothesis or a documented
+#                                                            negative result closes a mission as well as a discovery)
+missions:
+  - question: S5L-CLK-Q1
+    title: "Which object implements the clock-gate call?"
+    work: static
+    needs:
+      - "The AppleS5L8900X kernel extension, extracted from your own copy of the 4.3.5 firmware (tools/iop_analysis/extract_kext.py)"
+      - "A disassembler for 32-bit Thumb, and the catalog entry open next to it"
+    expected: "The class of the object the clkG function object stores at +0x18, and the code of its slot 0x380, with addresses; or a documented reason it cannot be found."
+    state: open
+
+  - question: MT-BOOT-Q1
+    title: "Where does the touch controller's firmware come from?"
+    work: static
+    needs:
+      - "The AppleMultitouchSPI kernel extension, extracted from your own copy of the firmware"
+      - "A disassembler for 32-bit Thumb"
+    expected: "The body of the bootload method (class slot 0x378) and the property or file that carries the firmware, or evidence that none is read at that point."
+    state: open
+
+  - question: MT-CHECK-Q1
+    title: "Does the touch driver class used by this model send the CHECK packet?"
+    work: static
+    needs:
+      - "The AppleMultitouchSPI kernel extension, extracted from your own copy of the firmware"
+    expected: "The call chain from the N1 driver class to the routine at 0x8056e4e8, or a proof that it is not reached."
+    state: open
+
+  - question: ARM7M-STARTCPU-Q4
+    title: "Which class receives the coprocessor start call?"
+    work: static
+    needs:
+      - "The AppleARM7M and IOP_s5l8920x_firmware kernel extensions, extracted from your own copy of the firmware"
+      - "Some practice following virtual calls through ARM class tables"
+    expected: "Whether the receiver of the call at 0x80713686 is an instance of the concrete firmware class, with the class table that shows it."
+    state: open
+
+  - question: EMBIOP-SEQ-Q1
+    title: "What do the object-slot calls of the coprocessor start sequence do?"
+    work: static
+    needs:
+      - "The EmbeddedIOP kernel extension and the kernelcache classes it calls (IOMemoryDescriptor, IOBufferMemoryDescriptor)"
+    expected: "The meaning of the slots used in the start sequence (+0x50, +0x4c, +0x98, +0x5c), read from the class tables, with addresses."
+    state: open
+
+  - question: IBSS-GPIO-Q1
+    title: "Who else configures the pads in the boot stage?"
+    work: static
+    needs:
+      - "The decrypted iBSS 4.3.5 for the n88ap model (not stored in this repository: obtained from your own copy of the firmware and the phone, see the boot chain page)"
+      - "A disassembler for 32-bit Thumb"
+    expected: "The loop that applies the pad table at start and every other caller of the pad configuration routine, with the pins they set."
+    state: open
+
+  - question: IBSS-GPIO-Q2
+    title: "What is port 0x2e in the boot stage's pad routine?"
+    work: static
+    needs:
+      - "The decrypted iBSS 4.3.5 for the n88ap model (see the previous mission for how it is obtained)"
+    expected: "The function at 0x84007cf8 and what the special port 0x2e drives."
+    state: open
+
+  - question: IBSS-TAB-Q2
+    title: "What are pins 08.06 and 11.02 for?"
+    work: static
+    needs:
+      - "The decrypted iBSS 4.3.5 for the n88ap model (see the previous missions)"
+    expected: "The readers of the platform pin list at 0x84017ac8 and the function of the two pins that are not yet matched."
+    state: open
+
+  - question: S5L-CLK-Q2
+    title: "Do the clock mask registers mirror the gate words?"
+    work: survey
+    needs:
+      - "An iPhone 3GS in DFU mode and the project's toolchain (tools/go.sh)"
+      - "The read-only payload trace_gate_survey.bin (STAGE 47)"
+    expected: "The values at offsets 0x40 to 0x74 and the 52 gate words, compared bit by bit, with your board revision noted."
+    state: blocked
+    blocked_by:
+      - "The STAGE 47 payload is built but has not been run yet; the maintainer runs it first, then opens this mission."

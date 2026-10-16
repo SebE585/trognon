@@ -60,6 +60,7 @@ nav:
       - 6. Support by chip: en/06-chips.md
       - 7. Modular code layout: en/07-code-layout.md
       - 8. Evidence: en/08-evidence.md
+      - Missions: en/missions.md
   - Français:
       - Présentation: fr/README.md
       - 1. Chaîne de démarrage: fr/01-boot-chain.md

@@ -192,3 +192,14 @@
 .md-typeset .kmap-complete { background: #356548; }
 .md-typeset .kmap-partial { background: #b07a1a; }
 .md-typeset .kmap-none { background: #6b7068; }
+
+/* Missions */
+.mission-level, .mission-state { display: inline-block; padding: 0 .5em; border-radius: 3px; font-size: .68rem; font-weight: 700; border: 1px solid currentColor; margin-right: .3rem; }
+.mission-level-1 { color: var(--md-accent-fg-color); }
+.mission-level-2 { color: #8a6410; }
+.mission-level-3 { color: #a23220; }
+.mission-state-open { color: var(--md-accent-fg-color); }
+.mission-state-blocked, .mission-state-in-progress { color: #8a6410; }
+.mission-state-closed { color: var(--md-default-fg-color--light); }
+[data-md-color-scheme="slate"] .mission-level-2, [data-md-color-scheme="slate"] .mission-state-blocked, [data-md-color-scheme="slate"] .mission-state-in-progress { color: #e0b650; }
+[data-md-color-scheme="slate"] .mission-level-3 { color: #f09a8c; }

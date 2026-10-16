@@ -1,0 +1,47 @@
+name: Report an observation
+description: Share something you observed or concluded, with the method and its limits, so it can be reviewed and added to the catalog.
+title: "Observation: "
+labels: ["observation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A good report separates what you **observed** from what you **conclude**. Negative and inconclusive results are welcome.
+  - type: input
+    id: mission
+    attributes:
+      label: Related mission or catalog question id, if any
+      placeholder: S5L-CLK-Q1
+  - type: textarea
+    id: looked
+    attributes:
+      label: What did you look for?
+    validations:
+      required: true
+  - type: textarea
+    id: conditions
+    attributes:
+      label: With which sources, versions or conditions?
+      description: Firmware version, tool versions, board revision, how you ran it.
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What did you observe?
+      description: Facts only. Link an evidence bundle (the folder under evidence/ with its manifest and nonce) for anything seen on a phone.
+    validations:
+      required: true
+  - type: textarea
+    id: concluded
+    attributes:
+      label: What do you conclude, and what remains uncertain?
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Ground rules
+      options:
+        - label: This report contains no Apple firmware, keys or extracted binaries.
+          required: true

@@ -1,0 +1,47 @@
+name: Take a mission
+description: Tell us you are working on an open question from the Missions page, so nobody does it twice by accident.
+title: "Mission: "
+labels: ["mission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Missions are open questions of the decompilation catalog, listed on the [Missions page](https://sebe585.github.io/trognon/en/missions/).
+        A refuted hypothesis or a well-documented negative result closes a mission as well as a discovery.
+  - type: input
+    id: mission
+    attributes:
+      label: Mission (a question id from the Missions page)
+      placeholder: S5L-CLK-Q1
+    validations:
+      required: true
+  - type: dropdown
+    id: level
+    attributes:
+      label: Kind of work
+      description: Level 3 (writes to the phone's hardware) is never open to contributors; ask first if you think a mission needs it.
+      options:
+        - "Level 1: static analysis, no phone"
+        - "Level 2: a read-only run on a phone"
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: What will you try, and with which sources or versions?
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Phone model and board revision, if you use one
+      placeholder: "none, or e.g. iPhone 3GS, revision as printed on the board"
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Ground rules
+      options:
+        - label: I will not put Apple firmware, keys or extracted binaries in this repository.
+          required: true
+        - label: I understand that any step writing to a phone's hardware needs the maintainer's written agreement first.
+          required: true
