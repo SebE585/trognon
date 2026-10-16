@@ -9,16 +9,16 @@ entry_code_address: null
 review:
   status: not_reviewed
   reviewed_ranges: []
-  unresolved:
+  resolved:
     - id: EMBIOP-Q1
-      text: "Which function calls startCPU, and at which of the numbered source lines (EmbeddedIOP.cpp 99-241 in start(); 479 'IOP failed to start')."
-      proof_needed: "find the virtual call through the slot holding startCPU (AppleARM7M table, offset +0x34c of the IOSlaveCPU object) inside this kext"
+      by: "the start-IOP function 0x80767af0 calls the provider's slot +0x34c with the firmware driver (EMBIOP-SEQ-005); called from two sites (0x80767b94, 0x80768502) found by r2 cross-references"
+  unresolved:
     - id: EMBIOP-Q2
-      text: "What _prepareFirmwareImage() changes in the image before startCPU: the strings name heap base and size offsets, message channel size, panic buffer; the actual writes were not read."
-      proof_needed: "disassemble _prepareFirmwareImage and _iopLocateFirmwareVariableWithProperty"
+      text: "What each field written into the image means, and which firmware code reads it (writes themselves are in start_sequence.yaml, EMBIOP-SEQ-003)."
+      proof_needed: "EMBIOP-SEQ-Q6"
     - id: EMBIOP-Q3
-      text: "What the 'startup ping' at EmbeddedIOP.cpp:221 sends and expects."
-      proof_needed: "disassemble the function containing the line-221 REQUIRE; link it to sendIOPCommand and the IOP-side ping handler"
+      text: "The IOP-side answer to the startup ping (the host side is in start_sequence.yaml, EMBIOP-SEQ-004)."
+      proof_needed: "EMBIOP-SEQ-Q3"
 
 claims:
   - id: EMBIOP-001

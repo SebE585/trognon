@@ -18,8 +18,13 @@ review:
         and who calls this method. The decoding is confirmed by the bytes (cmp r1,r0; it lo; mov.w r1,-1: an unsigned
         comparison, replacement when r1 < r0, as ARM defines LO). What is odd is the behaviour: for iop-version 1
         the result is replaced by -1 when the offset is BELOW the size, which is not an ordinary range check.
-        The condition is not to be inverted to fit a presumed name.
-      proof_needed: "find the callers through the table slot at 0x807143f8 and read how they use the result"
+        The condition is not to be inverted to fit a presumed name. Host side (EMBIOP-SEQ-006): slot +0x35c of
+        AppleARM7M's table at 0x8071409c is this method (verified: the word at 0x8071409c+0x35c is 0x80713021), and
+        EmbeddedIOP calls that slot on its provider with the slot-+0x98 result of each IOP-visible allocation. So
+        the argument is, by its use, a physical address and the result an address in the IOP's view. Reading of
+        the numbers, unverified: 0x40000000 would be the RAM base, and -1 would mark an address inside the window
+        [0, size) where the IOP sees the firmware image.
+      proof_needed: "read how EmbeddedIOP treats a -1 result of the slot +0x35c call"
 
 claims:
   - id: ARM7M-ADDR-001

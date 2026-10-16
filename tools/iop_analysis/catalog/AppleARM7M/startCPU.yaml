@@ -29,14 +29,21 @@ review:
         bodies are not read (see ARM7M-STARTCPU-Q7).
     - id: ARM7M-STARTCPU-Q3
       by: "re-verified by direct disassembly: ARM7M-STARTCPU-002 corrected, not merely confirmed"
+    - id: ARM7M-STARTCPU-Q15
+      by: >
+        a caller was found: EmbeddedIOP's start-IOP function 0x80767af0 calls the provider's slot +0x34c with the
+        firmware driver (EMBIOP-SEQ-005), after _prepareFirmwareImage has edited the image (EMBIOP-SEQ-003). Found
+        by following the prelinked personalities and the strings; other callers of the same slot are not excluded.
   unresolved:
     - id: ARM7M-STARTCPU-Q4
       text: >
         Indirect call at 0x80713686, firmware-object vtable slot +0x34c (arg: the IOSlaveFirmware). Returns the
         object used as `md` in the next two calls. Target identified under a condition: if the receiver is an
         instance of IOP_s5l8920x_firmware, the target is the getter of IOP-GETMD-001 (a memory descriptor
-        over the 110592-byte image). The receiver's class is not established.
-      proof_needed: "the producer of the IOSlaveFirmware object handed to startCPU (EMBIOP-Q1, EMBIOP-Q2)"
+        over the 110592-byte image). The receiver is OSDynamicCast(IOSlaveFirmware, waitForService(nameMatching(IOPFirmwareName)))
+        (EMBIOP-SEQ-001), a service named "IOPFirmware" for the IOP role; that this service is an instance of
+        IOP_s5l8920x_firmware is likely (the name is among that kext's strings) and not shown.
+      proof_needed: "EMBIOP-SEQ-Q5"
     - id: ARM7M-STARTCPU-Q5
       text: >
         Indirect call at 0x80713694, md vtable slot +0x98, args (offset=0, &segLength). Result stored at this+0x88
@@ -109,17 +116,6 @@ review:
         static: how the IOP firmware uses a register holding this value. A readback of +0x118 would show
         storage only, not the register's role. Any statement that the host sees the firmware at zero must
         keep open an alias or translation between the two views.
-    - id: ARM7M-STARTCPU-Q15
-      text: >
-        Which code calls startCPU: not identified. The only reference to 0x80713665 found by the searches run
-        (a scan of AppleARM7M.kext.bin for the pointer; a scan of the kernelcache for loads at the slot's offset
-        was too noisy to use) is one data word at 0x807143e8 (ARM7M-STARTCPU-006); that is compatible with a virtual
-        call and does not show that every call goes through it. Candidate caller: the EmbeddedIOP kext
-        (EMBIOP-Q1), the concrete IOSlaveProcessor subclass found by its strings. The buffer is described by the
-        memory descriptor of IOP-GETMD-001; what copies or patches its contents is EMBIOP-Q2.
-      proof_needed: >
-        read EmbeddedIOP's start path to the virtual call through the startCPU slot, then follow the provenance
-        of its receiver object (the offset alone can designate different methods in different classes)
 
 claims:
   - id: ARM7M-STARTCPU-001

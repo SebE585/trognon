@@ -63,6 +63,7 @@ iop-coverage: iop-coverage-test
 
 iop-coverage-test:
 	python3 -m unittest tools.iop_analysis.test_gen_coverage -v
+	python3 -m unittest tools.iop_analysis.test_extract_kext -v
 
 # Build the site and run structural checks mkdocs --strict does not cover (external audit,
 # 2026-10-16): currently, exactly one <h1> per page. Run this, not a bare `mkdocs build`,

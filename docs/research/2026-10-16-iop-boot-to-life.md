@@ -107,6 +107,48 @@ What this changes:
   confirmed by the bytes; the purpose is open (`ARM7M-ADDR-Q1`), pending its
   callers.
 
+## Start-up sequence as read in EmbeddedIOP
+
+Read on 2026-10-16 from `EmbeddedIOP.kext.bin` (SHA-256 in its
+`tool_coverage.json`): `_prepareFirmwareImage`, the start-IOP function, the
+variable-locating helper, an address translator, and the middle of `start()`.
+Catalog: `EmbeddedIOP/start_sequence.yaml` (`EMBIOP-SEQ-001`–`006`). Each
+transition below carries its proof or its unknown.
+
+| # | Transition | Proof | Unknown |
+|---|---|---|---|
+| 1 | `start()` runs `_prepareFirmwareImage` (call at `0x8076835a`) | disassembly, `EMBIOP-SEQ-004` | what precedes it in `start()` (`EMBIOP-SEQ-Q4`) |
+| 2 | Find the firmware driver: cast to `IOSlaveFirmware` of the service named by the property `IOPFirmwareName` (`"IOPFirmware"` for the `IOP` personality, provider class `IOSlaveCPU`) | disassembly + prelinked plist, `EMBIOP-SEQ-001` | that this service is an `IOP_s5l8920x_firmware` instance (`EMBIOP-SEQ-Q5`); likely, by name |
+| 3 | Take the image as the firmware descriptor (base constant `0x80481000`) and compute pointers into it as base + numeric property of the firmware driver | disassembly, `EMBIOP-SEQ-002` | the property values, hence the offsets (`EMBIOP-SEQ-Q6`) |
+| 4 | Allocate host buffers visible to the IOP: a heap (size from `HeapRequired`), optionally a page table, a control buffer, a message buffer (size `MessageChannelSize << 7`) | disassembly + REQUIRE strings for the allocation call, `EMBIOP-SEQ-003`/`-004` | exact slot semantics (`EMBIOP-SEQ-Q1`) |
+| 5 | **Write into the image**: `config[4] = 0` then `\|= 1` unless a flag is set; `config[0xc]`; heap base and size variables; page-table-base variable; `config[8]` = message buffer address | disassembly, `EMBIOP-SEQ-003` | what each field means to the IOP code (`EMBIOP-SEQ-Q6`) |
+| 6 | Create the control and message endpoints and those of a table | disassembly (middle of `start()`) | what each endpoint is (`EMBIOP-SEQ-Q4`) |
+| 7 | Start: descriptor slot `+0x5c` (1, 0, length), one external call, then provider slot `+0x34c` with the firmware driver. The provider is `AppleARM7M`, whose table at `0x8071409c` has `startCPU` at `+0x34c` | disassembly, `EMBIOP-SEQ-005`, `ARM7M-STARTCPU-006` | the descriptor step and the external call (`EMBIOP-SEQ-Q1`, `-Q2`) |
+| 8 | Inside `startCPU`: register sequence of window 0, last write `+0x100 <- 1` | `ARM7M-STARTCPU-002`, `-005` | bit meanings, `+0x118` (`ARM7M-STARTCPU-Q13`, `-Q14`) |
+| 9 | Check: control message with command word `0x6e6f7020` (ASCII `nop `), timeout 5000 ms, failure logged as "startup ping failed" | disassembly of the call site, `EMBIOP-SEQ-004` | the body of the sender and the IOP-side handler (`EMBIOP-SEQ-Q3`) |
+
+What this fixes for the open items:
+
+- **`ARM7M-STARTCPU-Q15`** (caller and buffer producer): a caller is found
+  (step 7), and the buffer is prepared in place in steps 3 to 5. Other
+  callers of the same slot are not excluded.
+- **`ARM7M-STARTCPU-Q4`**: the receiver is the firmware driver of step 2. It
+  stays conditional on step 2's class.
+- **IOP address view**: the translator (`EMBIOP-SEQ-006`) maps IOP addresses
+  below the image length to the image, which fits an image seen from address
+  0. The provider's slot `+0x35c` is the `AppleARM7M` method of
+  `ARM7M-ADDR-001`, called with the physical address of each allocation, so
+  that method converts a physical address to the IOP's view. The reading of
+  its `-1` case as a collision with the image window is a hypothesis.
+- **Preconditions for T2**: the driver edits the image before the start (step
+  5) and allocates a heap, a message buffer and endpoints the image expects.
+  A bare start with the unmodified image would test something the driver never
+  does. A faithful T2 needs the property values (`EMBIOP-SEQ-Q6`) first.
+- **Proof of life**: the driver's own check is a control `nop` (step 9), a
+  response by IOP code to a host message once the handler is found
+  (`EMBIOP-SEQ-Q3`). It is a different message from the SDIO ping of the
+  architecture report; the two should not be conflated.
+
 **Correction**: an earlier version of these notes placed the pointer table
 holding `startCPU` at `0x807153e8`. The kext's file offset 0x1000 maps to
 virtual address `0x80713000`, so the table is at `0x807143e8`; the earlier

@@ -1,0 +1,118 @@
+binary: EmbeddedIOP.kext.bin
+binary_sha256: f7b66532a429ac56751a609fcd4caa19fe0b1c00e7aa2065b18cda610ff5b113
+function_name_apple: null
+function_name_assigned: "EmbeddedIOP start-up path: _prepareFirmwareImage, start-IOP, start() middle, address translator"
+decode_mode: thumb
+subsystem: iop_host_driver
+entry_code_address: "0x80767cb4"
+
+review:
+  # partial: four functions read in full or nearly, start() read only from 0x80768330 to 0x80768540.
+  status: partial
+  reviewed_ranges:
+    - ["0x80767cb4", "0x80768064"]   # _prepareFirmwareImage (name from the PRETTY_FUNCTION string at its REQUIRE sites)
+    - ["0x80767c28", "0x80767c96"]   # locate-variable helper (_iopLocateFirmwareVariableWithProperty)
+    - ["0x80767af0", "0x80767b74"]   # start-IOP, calls the provider slot +0x34c
+    - ["0x80767094", "0x80767132"]   # IOP-address translator
+    - ["0x80767158", "0x80767178"]   # control-message wrapper, head only
+    - ["0x80768330", "0x80768540"]   # middle of start()
+  constant_ranges:
+    - ["0x80768064", "0x80768140"]
+  unresolved:
+    - id: EMBIOP-SEQ-Q1
+      text: >
+        Meaning of the object-slot calls used throughout: slot +0x50 and +0x4c of the objects returned by
+        allocateVisibleMemory (used here as an address getter and as 'inner descriptor'), +0x98 on a descriptor
+        (physical-segment getter by its use: its result is passed to the provider slot +0x35c), +0x5c on the
+        firmware descriptor (called with 1, 0, length right before the start; a cache or coherence step is a
+        guess), +0x354 (allocateVisibleMemory by the REQUIRE strings).
+      proof_needed: "read the slots in the kernelcache classes (IOMemoryDescriptor, IOBufferMemoryDescriptor) and EmbeddedIOP's own table"
+    - id: EMBIOP-SEQ-Q2
+      text: "External call 0x8006cc28 made between the descriptor step and the start call, with no visible argument; role unknown."
+      proof_needed: "kernel symbol or body of 0x8006cc28"
+    - id: EMBIOP-SEQ-Q3
+      text: >
+        The IOP-side answer to the startup ping. The host sends a control message whose command word is the
+        constant 0x6e6f7020 (ASCII 'nop ') with a 5000 ms timeout through 0x80767158 and logs "startup ping failed"
+        on a non-zero result. Which routine of the IOP firmware answers a control NOP was not located, and the body
+        of 0x80767158 beyond its head was not read.
+      proof_needed: "read 0x80767158 and the control-message path; find the control-message handler in fwFirmwareImage.bin"
+    - id: EMBIOP-SEQ-Q4
+      text: "start() before 0x80768330 (boot-arg style settings such as 'jtag') and after 0x80768540 (user client); the endpoint table at 0x8076bf90 and what each endpoint is."
+      proof_needed: "continue the disassembly of start() at both ends"
+    - id: EMBIOP-SEQ-Q5
+      text: >
+        Whether the service that matches the name given by IOPFirmwareName is an instance of IOP_s5l8920x_firmware.
+        The IOP personality of EmbeddedIOP asks for "IOPFirmware", and the string "IOPFirmware" is present in the
+        firmware kext's strings; the code that sets the service name was not read.
+      proof_needed: "find where IOP_s5l8920x_firmware sets its name, or read the registry on a device"
+    - id: EMBIOP-SEQ-Q6
+      text: >
+        Where the located variables sit in the image (offsets given by the ConfigurationOffset, HeapBaseOffset,
+        HeapSizeOffset, PageTableBase, PageTableSize and Panic* properties of the firmware kext) and which
+        firmware code reads them. Property values were not read from the kext's data.
+      proof_needed: "read the property table of the firmware kext (its __data and __const) and match offsets in fwFirmwareImage.bin"
+
+claims:
+  - id: EMBIOP-SEQ-001
+    text: >
+      _prepareFirmwareImage stores at this+0xcc the result of casting to IOSlaveFirmware the service found with
+      waitForService(nameMatching(name)), where name is the string property IOPFirmwareName of the driver
+      (REQUIRE sites for source lines 297 and 299). In the prelinked plist EmbeddedIOP has two personalities, both
+      with provider class IOSlaveCPU and a role property: IOP with IOPFirmwareName "IOPFirmware", and AE2 with
+      "AE2Firmware". This is the object later passed to the provider's slot +0x34c.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#start-up-sequence-as-read-in-embeddediop"
+  - id: EMBIOP-SEQ-002
+    text: >
+      The firmware kext's slot +0x350 returns the constant 0x80481000 (the image base) and its slot +0x34c the
+      descriptor of IOP-GETMD-001. The helper at 0x80767c28 returns slot+0x350 plus a numeric property of the
+      firmware driver (or 0 if the property is absent or 0xffffffff): a pointer into the kernelcache's own copy of
+      the image.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#start-up-sequence-as-read-in-embeddediop"
+  - id: EMBIOP-SEQ-003
+    text: >
+      Through such pointers _prepareFirmwareImage performs these writes into the image: config[4] = 0 (config being
+      the location of the property ConfigurationOffset); the heap-base variable receives the value of slot +0x50 of
+      a buffer obtained with this->slot+0x354(0x100, heapRequired, 4), the heap-size variable the length of that
+      buffer's descriptor; when the PageTableBase and PageTableSize properties are both non-zero, a second buffer
+      is allocated and its address is written at the page-table-base variable; then config[4] |= 1 if the byte
+      this+0xb5 is zero, and config[0xc] = this+0xb8. start() later writes config[8] = slot +0x50 of the message
+      buffer (size MessageChannelSize << 7, alignment 0x40). These are edits of the image in memory before the
+      start; the semantics of each field are not read.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#start-up-sequence-as-read-in-embeddediop"
+  - id: EMBIOP-SEQ-004
+    text: >
+      Order inside start() as read: _prepareFirmwareImage (call at 0x8076835a); allocation of a 0x40-byte control
+      buffer and a control endpoint; allocation of the message buffer and a message endpoint; creation of the
+      endpoints listed in a table at 0x8076bf90; the call of the start-IOP function 0x80767af0 (at 0x80768502);
+      then a control message with command word 0x6e6f7020 ('nop ') and timeout 5000 ms (call at 0x80768526), whose
+      non-zero result logs "startup ping failed" (source line 221).
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#start-up-sequence-as-read-in-embeddediop"
+  - id: EMBIOP-SEQ-005
+    text: >
+      The start-IOP function 0x80767af0 does nothing if the byte this+0x7c is set. Otherwise it obtains the
+      firmware descriptor (this+0xcc, slot +0x34c), calls the descriptor's slot +0x5c with (1, 0, length), calls the
+      external function 0x8006cc28, then calls this+0x50 (the provider) slot +0x34c with this+0xcc as argument and
+      logs "IOP failed to start" (line 479) if the result is non-zero. It then sets this+0x7c. The provider class
+      is IOSlaveCPU by the personality and AppleARM7M derives from it; slot +0x34c of the table at 0x8071409c of
+      AppleARM7M holds the startCPU pointer 0x80713665.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#start-up-sequence-as-read-in-embeddediop"
+  - id: EMBIOP-SEQ-006
+    text: >
+      The translator at 0x80767094 maps an address of the IOP's own view to a host pointer: below the length of the
+      firmware descriptor it returns slot+0x350 (the image base) plus the address, which fits an image seen by the
+      IOP from address 0; otherwise it walks a list of allocations (this+0xc4) and uses the provider's slot +0x35c on
+      each allocation's slot-+0x98 result.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-iop-boot-to-life.md#start-up-sequence-as-read-in-embeddediop"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "offsets, constants and control flow; no code reproduced"
