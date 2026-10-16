@@ -209,7 +209,7 @@ decoded), the reset line (level `0`, polarity unknown). Each of these takes a wr
 |---|---|---|
 | Power | `function-power_ldo` through the PMU (`pmu,d1755`, I2C `0x74`) | the PMU **acknowledges its address** on `i2c0` (bus scan, `20261016T152515Z`). Static reading: LDO index 11, enable = bit `0x40` of PMU register `0x11`; not observed on the device, nothing written |
 | Clock enable | `function-clock_enable` through the PMU, pin 0 | device tree and a partial reading of the PMU GPIO code; bit meanings of registers `0x50`..`0x57` not decoded |
-| Reset | GPIO `14.01` | level read `0` once; polarity not established; the personality has a `reset-deassert-high-z` flag whose effect was not read |
+| Reset | GPIO `14.01` | level read `0` once; the descriptor bytes read as an active-low line asserted by default, consistent with that read (`SOC-GPIOFN-003`); the `reset-deassert-high-z` flag's effect was not read |
 | Chip select | GPIO `13.00` (`function-enable_cs`) plus the SPI controller's own select | level read `0` once; role not established |
 | SPI controller | `spi1` at CPU address `0x82100000` (`reg 0x2100000` plus the `0x80000000` offset of `arm-io`) | clock gate `0x16` reads `0` (off) in STAGE 37; with the gate set to `0xF` for a moment (STAGE 38) its idle registers read without a stall (SETUP `0x8`, PIN `0x3`, CLKDIV `1`, others `0`), then the gate was restored |
 | Attention | interrupt `0xb4` on the GPIO interrupt controller | not read, the controller is treated as dangerous |
@@ -315,6 +315,30 @@ traced path):
   switch the clock through the function object with a value, which supports the "set with a value" path
   of the PMU fiches; that this call reaches the PMU GPIO routine `0x8075bb8c` is not traced.
 
+## The SoC GPIO function and the levels of the touch lines (static, 2026-10-16)
+
+Catalog: `AppleS5L8900X/gpio_function_apply_0x8045b1f0.yaml` (`SOC-GPIOFN-*`). The class that handles
+the SoC's own `function-*` GPIO properties reads the same four descriptor bytes as the PMU class, with
+partly different roles. For a value it sets the pin level to `(polarity byte XOR 1) XOR value`: a
+polarity byte of `1` means level = value, `0` means level = NOT value. By default, when the type byte is
+`1`, it sets the level `polarity XOR initial XOR 1`, where the initial value is byte `+0xe`.
+
+Applied to the touch node's lines, whose flags words are `0x10001` (bytes `01 00 01 00`) and `0x101`
+(bytes `01 01 00 00`):
+
+| Property | Pin | Bytes | Polarity | Initial value | Default level | Level for logical 1 |
+|---|---|---|---|---|---|---|
+| `function-reset` | 14.01 | `01 00 01 00` | 0 (inverted) | 1 | 0 | 0 |
+| `function-spi_cs0` (of `spi1`) | 13.00 | `01 00 01 00` | 0 (inverted) | 1 | 0 | 0 |
+| `function-enable_cs` (touch node) | 13.00 | `01 01 00 00` | 1 | 0 | 0 | 1 |
+
+So by this reading the reset line is asserted at level `0`, and the chip-select is asserted at level `0`
+when driven through `function-spi_cs0` (call with `1` at the start of a transfer, `0` at the end). The two
+levels read in STAGE 33 were both `0`, which is what the default levels above predict; that is a
+consistency between a reading and two reads, not a test of the polarity. Nothing was driven. The
+controller methods that set and read a pin level (slots `0x394`, `0x398`, `0x39c`) were not read, and the
+meaning of the bytes `+0xe` and `+0xf` is taken from this one routine.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values
@@ -326,7 +350,7 @@ come from the readings above; none of the write semantics was ever exercised on 
 | W2 (done, STAGE 38) | read only | `spi1` CONTROL, SETUP, STATUS, PIN, CLKDIVIDER, SPCNT, SPIDD at `0x82100000` (STAGE 37, second half) | not read | none needed | the reset state of the controller | none beyond W1 |
 | W3 | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (rebuilt as `(old & 0x19) | 0x02`; equal to `old | 0x02` only for this old value) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
 | W4 | touch LDO | PMU register `0x11`, `0xBE` to `0xFE` (set bit `0x40`), read-modify-write | `0xBE` | write `0xBE` | nothing visible alone except the read-back and possibly the controller's behaviour on SPI | powers a rail; if the index-to-rail reading is wrong, a different rail is switched |
-| W5 | reset line | SoC GPIO `14.01` released to high impedance, then the driver's delay (`0xf`, unit unknown) | level `0` | drive low again | a change on SPI/attention if the controller starts | the polarity and the unit of the delay are unknown |
+| W5 | reset line | SoC GPIO `14.01` released (logical 0, which the descriptor reads as level 1, or high impedance as the personality's flag suggests), then the driver's delay (`0xf`, unit unknown) | level `0` (asserted by the reading) | drive low again | a change on SPI/attention if the controller starts | the polarity rests on a code reading; the unit of the delay is unknown |
 | W6 | first SPI exchange | `spi1` registers, chip select `13.00`; if the `reg` reading above holds, word size 8 and a period of about 124 ns | n/a | n/a | any answer | requires the controller's register layout confirmed on this chip (CLKDIVIDER and PIN undecoded), the `reg` inference confirmed, and the bootloader protocol |
 
 The order that keeps the risk lowest is W1 and then W2, and stopping to read the result before

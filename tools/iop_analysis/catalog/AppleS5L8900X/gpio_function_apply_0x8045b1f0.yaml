@@ -1,0 +1,65 @@
+binary: AppleS5L8900X.kext.bin
+binary_sha256: 5439f665a7531f36c0c869fd16e7a33e361e4f72232130fe5055b86a38985175
+function_name_apple: null
+function_name_assigned: "SoC GPIO function apply (set, get and default application)"
+decode_mode: thumb
+subsystem: soc_gpio
+entry_code_address: "0x8045b1f0"
+thumb_entry_pointer: "0x8045b1f1"
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x8045b1f0", "0x8045b2b2"]
+  constant_ranges:
+    - ["0x8045b2b4", "0x8045b2b8"]
+  unresolved:
+    - id: SOC-GPIOFN-Q1
+      text: "The controller methods at slots 0x394, 0x398 and 0x39c of the object at this+0x18: from their use they read as set-direction, set-level and get-level of a pin, but their bodies were not read."
+      proof_needed: "disassemble the three slots of the GPIO controller class"
+    - id: SOC-GPIOFN-Q2
+      text: "The jump table at 0x8045b20c for an explicit type 0 to 3 (cases at 0x8045b216, 0x8045b21a, 0x8045b220, 0x8045b226) was only skimmed: it selects the value passed to slot 0x394 from a constant 0 or 1, from the type byte +0xc or from byte +0xf."
+      proof_needed: "decode the four bytes of the table and follow each case"
+    - id: SOC-GPIOFN-Q3
+      text: "That the descriptor bytes of this SoC class have the same roles as in the PMU class (byte +0xd polarity) is read from this code only; the byte +0xe is an initial value here and a function number in the PMU class."
+      proof_needed: "none beyond this fiche; kept as a caution"
+
+claims:
+  - id: SOC-GPIOFN-001
+    text: >
+      The descriptor (pointer at this+0x1c) holds the pin word at offset 8 and bytes at offsets 0xc to 0xf.
+      With a value pointer given, the function calls slot 0x398 of the controller with (pin word, level) where
+      level = (byte +0xd XOR 1) XOR value, so a polarity byte of 1 gives level = value (active high) and a
+      polarity byte of 0 gives level = NOT value (active low). With an output pointer it calls slot 0x39c
+      and stores the level XOR (byte +0xd XOR 1).
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-soc-gpio-function-and-the-levels-of-the-touch-lines-static-2026-10-16"
+  - id: SOC-GPIOFN-002
+    text: >
+      Default application (no value, no output pointer, no explicit type): if the type byte +0xc is 1, it
+      calls slot 0x398 with level = byte +0xd XOR byte +0xe XOR 1, i.e. the level of an initial logical value
+      byte +0xe under the same polarity rule; otherwise it calls slot 0x394 with the pin word only.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-soc-gpio-function-and-the-levels-of-the-touch-lines-static-2026-10-16"
+  - id: SOC-GPIOFN-003
+    text: >
+      Applied to the touch lines: function-reset (pin 14.01, flags 0x10001: bytes 01 00 01 00) has polarity 0
+      and initial value 1, so a default level of 0 and, for a logical value 1, a level of 0, i.e. an
+      active-low line asserted by default; function-spi_cs0 (13.00, flags 0x10001) has the same bytes and so the
+      same rule; function-enable_cs of the touch node (13.00, flags 0x101: bytes 01 01 00 00) has polarity 1 and
+      initial value 0, i.e. a default level of 0 as well. The levels read in STAGE 33 for 14.01 and 13.00 were
+      both 0, consistent with these defaults; this is a consistency between a code reading and two reads, not a
+      test of the polarity.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-soc-gpio-function-and-the-levels-of-the-touch-lines-static-2026-10-16"
+
+hardware_tests:
+  - name: trace_touch_gpio (STAGE 33), levels of 14.01 and 13.00
+    claim_tested: "SOC-GPIOFN-003: default levels of the reset and chip-select lines"
+    execution_status: executed
+    result: "Both registers read 0x212, level 0; consistent with the defaults computed above. The polarity itself was not exercised."
+    evidence: "evidence/20261016T150631Z-trace_touch_gpio/"
+
+publication:
+  status: approved
+  notes: "descriptor byte roles and the level formula"
