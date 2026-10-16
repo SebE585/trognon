@@ -3,6 +3,7 @@
 *.swp
 *~
 *.o
+__pycache__/
 /trognon
 /tests/test_device_db
 /tests/test_serial

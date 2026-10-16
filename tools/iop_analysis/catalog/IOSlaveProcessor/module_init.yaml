@@ -17,8 +17,10 @@ review:
     - ["0x8039951c", "0x80399532"]    # IOSlaveEndpoint ctor call
     - ["0x8039956c", "0x80399582"]    # IOSlaveProcessor ctor call
   unresolved:
-    - "the six tiny 'alloc' functions (0x80399a44 etc., 14 bytes each) not individually read, assumed to be generic OSObject::new-style allocators from their call position -- not verified"
-    - "0x80399848/0x803998c0/0x803998d8/0x80399900 (seen in the function list, not examined) -- role unknown"
+    - id: IOSLAVE-INIT-Q1
+      text: "the six tiny 'alloc' functions (0x80399a44 etc., 14 bytes each) not individually read, assumed to be generic OSObject::new-style allocators from their call position -- not verified"
+    - id: IOSLAVE-INIT-Q2
+      text: "0x80399848/0x803998c0/0x803998d8/0x80399900 (seen in the function list, not examined) -- role unknown"
 
 claims:
   - id: IOSLAVE-INIT-001

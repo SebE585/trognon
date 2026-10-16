@@ -58,8 +58,11 @@ evidence-index:
 # Regenerate the IOP decompilation-coverage table from tools/iop_analysis/catalog/ (pilot,
 # 2026-10-16). Never needs the analysed binaries or r2 -- the catalog's own tool_coverage.json
 # files cache that, produced once locally.
-iop-coverage:
+iop-coverage: iop-coverage-test
 	python3 tools/iop_analysis/gen_coverage.py
+
+iop-coverage-test:
+	python3 -m unittest tools.iop_analysis.test_gen_coverage -v
 
 # Build the site and run structural checks mkdocs --strict does not cover (external audit,
 # 2026-10-16): currently, exactly one <h1> per page. Run this, not a bare `mkdocs build`,

@@ -12,8 +12,10 @@ review:
   reviewed_ranges:
     - ["0x80713510", "0x80713558"]
   unresolved:
-    - "C++ method name/selector -- only reachable via a vtable slot referenced from 0x807143f0, no string names it"
-    - "exact register semantics at +0x18 (enable/select/something else) -- only offset, width and the two written values are established"
+    - id: ARM7M-VIC-Q1
+      text: "C++ method name/selector -- only reachable via a vtable slot referenced from 0x807143f0, no string names it"
+    - id: ARM7M-VIC-Q2
+      text: "exact register semantics at +0x18 (enable/select/something else) -- only offset, width and the two written values are established"
 
 claims:
   - id: ARM7M-VIC-001

@@ -11,9 +11,12 @@ review:
   reviewed_ranges:
     - ["0x80713190", "0x8071326c"]
   unresolved:
-    - "exact function entry/prologue address"
-    - "steps corresponding to REQUIRE lines 70, 71, 74, 78, 92 (lock alloc, iop-version read, provider cast) -- only line numbers known, not disassembled"
-    - "code after 0x8071326c (function-device_reset resolution, optional JTAG enable) not traced"
+    - id: ARM7M-START-Q1
+      text: "exact function entry/prologue address"
+    - id: ARM7M-START-Q2
+      text: "steps corresponding to REQUIRE lines 70, 71, 74, 78, 92 (lock alloc, iop-version read, provider cast) -- only line numbers known, not disassembled"
+    - id: ARM7M-START-Q3
+      text: "code after 0x8071326c (function-device_reset resolution, optional JTAG enable) not traced"
 
 claims:
   - id: ARM7M-START-001

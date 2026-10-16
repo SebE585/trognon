@@ -12,9 +12,12 @@ review:
   reviewed_ranges:
     - ["0x80713664", "0x807136c4"]
   unresolved:
-    - "full body past ~0x807136c4 not traced tonight"
-    - "role of this+0x7c/0x80/0x84/0x88 touched early in this function -- plausibly _arm7mLock (a lock object, same external call 0x800670b0 seen in two other functions), not confirmed by name"
-    - "the fuller startCPU trace (base+0x100/0x110/0x114/0x118 writes) already exists in the research report, not re-verified here -- see evidence link"
+    - id: ARM7M-STARTCPU-Q1
+      text: "full body past ~0x807136c4 not traced tonight"
+    - id: ARM7M-STARTCPU-Q2
+      text: "role of this+0x7c/0x80/0x84/0x88 touched early in this function -- plausibly _arm7mLock (a lock object, same external call 0x800670b0 seen in two other functions), not confirmed by name"
+    - id: ARM7M-STARTCPU-Q3
+      text: "the fuller startCPU trace (base+0x100/0x110/0x114/0x118 writes) already exists in the research report, not re-verified here -- see evidence link"
 
 claims:
   - id: ARM7M-STARTCPU-001

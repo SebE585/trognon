@@ -49,6 +49,31 @@ note), not against an unknown true total. Read it as "fiches in this
 catalog versus a tool-detected candidate pool," not "percent of the
 firmware understood."
 
+review.status, defined precisely (2026-10-16, per review -- these two were
+being used inconsistently before this was written down):
+  - not_reviewed: no bytes of this function have been read.
+  - partial: some bytes read, but control flow has NOT been traced to
+    every exit/return -- there are still un-read instructions inside the
+    function's own body (a branch not followed, a tail past the point
+    where reading stopped).
+  - complete: every instruction from entry to every exit/return has been
+    read and disassembled. This is a claim about REVIEW COVERAGE of the
+    body, not about understanding: a `complete` fiche can and often does
+    still carry open questions in `unresolved` about what the code means
+    (register semantics, a method's real name, hardware behavior) --
+    `vic_enable_0x80713510.yaml` is `complete` with two such open
+    questions, by design, not an inconsistency.
+
+Stable ids, for a future cross-reference/RAG use (per review, 2026-10-16):
+claims already had their own `<FICHE>-NNN` id; `review.unresolved[]`
+entries now carry a parallel `<FICHE>-Q<N>` id instead of being bare
+strings, so a later fiche or correction can say "resolves ARM7M-START-Q1"
+without depending on wording or addresses staying the same. Both id
+spaces are validated for uniqueness across the WHOLE catalog below, not
+just per file. `claims[].evidence` itself is still a path(+anchor), not
+a separate stable id -- giving evidence its own id registry, decoupled
+from file paths, is a larger schema change, not done tonight.
+
 No confidence score is computed or published. Evidence and open questions
 only -- see this project's own DEVICE/SOURCE/HYPOTHESIS discipline.
 
@@ -119,6 +144,17 @@ def hex_to_int(h):
     return int(h, 16)
 
 
+def union_bytes(ranges):
+    spans = sorted((hex_to_int(a), hex_to_int(b)) for a, b in ranges)
+    merged = []
+    for s, e in spans:
+        if merged and s <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+        else:
+            merged.append((s, e))
+    return sum(e - s for s, e in merged)
+
+
 def validate(binaries):
     """Fail loudly before generating anything, rather than publish a table built on an
     inconsistent catalog. Checked, in order: SHA-256 agreement between each fiche and its
@@ -126,13 +162,15 @@ def validate(binaries):
     known status enums; unique claim ids across the WHOLE catalog, not just per file."""
     errors = []
     seen_claim_ids = {}
+    seen_question_ids = {}
 
     for sub, data in binaries.items():
         tool = data["tool"]
         text_base = hex_to_int(tool["text_section_base"])
         text_end = text_base + tool["text_section_bytes"]
 
-        for r in tool.get("recognized_ranges", []):
+        recognized_ranges = tool.get("recognized_ranges", [])
+        for r in recognized_ranges:
             s, e = hex_to_int(r[0]), hex_to_int(r[1])
             if not (s < e):
                 errors.append(f"{sub}/tool_coverage.json: recognized_range {r} has start >= end")
@@ -140,6 +178,26 @@ def validate(binaries):
                 errors.append(
                     f"{sub}/tool_coverage.json: recognized_range {r} falls outside its own "
                     f"declared __text section [{hex(text_base)}, {hex(text_end)})"
+                )
+
+        # Cache self-consistency (per review, 2026-10-16): recompute the stored totals from the
+        # cache's own recognized_ranges and refuse any divergence, instead of trusting
+        # auto_recognized_bytes/auto_recognized_functions as hand-entered numbers that could
+        # silently drift from the ranges they are supposed to summarise.
+        if recognized_ranges:
+            recomputed_bytes = union_bytes(recognized_ranges)
+            if recomputed_bytes != tool.get("auto_recognized_bytes"):
+                errors.append(
+                    f"{sub}/tool_coverage.json: auto_recognized_bytes "
+                    f"({tool.get('auto_recognized_bytes')}) does not match the union of its own "
+                    f"recognized_ranges ({recomputed_bytes}) -- the cache has drifted from its "
+                    f"own evidence"
+                )
+            if len(recognized_ranges) != tool.get("auto_recognized_functions"):
+                errors.append(
+                    f"{sub}/tool_coverage.json: auto_recognized_functions "
+                    f"({tool.get('auto_recognized_functions')}) does not match the number of "
+                    f"entries in its own recognized_ranges ({len(recognized_ranges)})"
                 )
 
         for fiche in data["fiches"]:
@@ -154,6 +212,19 @@ def validate(binaries):
             rstatus = fiche.get("review", {}).get("status")
             if rstatus not in REVIEW_STATUSES:
                 errors.append(f"{path}: review.status {rstatus!r} not in {sorted(REVIEW_STATUSES)}")
+
+            for q in fiche.get("review", {}).get("unresolved", []):
+                if not isinstance(q, dict) or "id" not in q:
+                    errors.append(
+                        f"{path}: an open question in review.unresolved has no id -- "
+                        f"use {{id: <FICHE>-Q<N>, text: ...}}, not a bare string"
+                    )
+                    continue
+                qid = q["id"]
+                if qid in seen_question_ids:
+                    errors.append(f"{path}: duplicate open-question id {qid!r} (already used in {seen_question_ids[qid]})")
+                else:
+                    seen_question_ids[qid] = path
 
             for rng in fiche.get("review", {}).get("reviewed_ranges", []):
                 s, e = hex_to_int(rng[0]), hex_to_int(rng[1])
@@ -193,17 +264,6 @@ def validate(binaries):
 
     if errors:
         raise CatalogError("\n  - " + "\n  - ".join(errors))
-
-
-def union_bytes(ranges):
-    spans = sorted((hex_to_int(a), hex_to_int(b)) for a, b in ranges)
-    merged = []
-    for s, e in spans:
-        if merged and s <= merged[-1][1]:
-            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
-        else:
-            merged.append((s, e))
-    return sum(e - s for s, e in merged)
 
 
 def evidence_link(evidence, from_dir="docs/research"):

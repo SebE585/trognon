@@ -37,6 +37,28 @@ full reasoning (ties to Article L122-6-1 on decompilation for
 interoperability, covered in
 [`docs/research/2026-10-13-legal-frame.md`](../../docs/research/2026-10-13-legal-frame.md)).
 
+`review.status` means, precisely (this was being used inconsistently
+before it was written down): `partial` = some bytes of the function were
+read but control flow has NOT been traced to every exit; `complete` =
+every instruction from entry to every exit/return was read -- a claim
+about review *coverage*, not about *understanding*. A `complete` fiche
+can and often does still carry open questions in `review.unresolved`
+about what the code means (register semantics, a method's real name) --
+that is normal, not a contradiction.
+
+Both `claims[]` and `review.unresolved[]` entries carry their own stable
+id (`<FICHE>-NNN` / `<FICHE>-Q<N>`), validated for uniqueness across the
+whole catalog, so a later correction can reference one without depending
+on wording or an address staying the same.
+
+`gen_coverage.py` ships regression tests
+(`python3 -m unittest tools.iop_analysis.test_gen_coverage`, run in CI
+on every push) against a disposable scratch catalog, covering: SHA-256
+mismatch, an out-of-section range, overlapping ranges counted once (not
+double-counted), a `tool_coverage.json` cache that has drifted from its
+own `recognized_ranges`, and a hardware test left `planned` correctly
+excluded from the executed count.
+
 ## What the firmware is
 
 A ~0x1b000-byte raw ARM32 binary (no Mach-O header of its own — it is a
