@@ -59,6 +59,28 @@ de puces, en réutilisant ce qui se reporte.* Colour code: <span class="tag tag-
 
 [Support by chip](en/06-chips.md), [Par puce](fr/06-chips.md), [Modular code](en/07-code-layout.md), [Code modulaire](fr/07-code-layout.md)
 
+## By intent / Par intention de lecture
+
+The numbered pages below stay in one order; this just groups the same links by what you
+are trying to do. *Les pages numérotées ci-dessous gardent un seul ordre ; ceci ne fait
+que regrouper les mêmes liens par ce que vous essayez de faire.*
+
+- **Understand the project** (*Comprendre le projet*): this page, then
+  [1. Boot chain](en/01-boot-chain.md) / [FR](fr/01-boot-chain.md).
+- **Reproduce a specific test** (*Reproduire un test précis*):
+  [2. Exception console](en/02-exception-console.md) / [FR](fr/02-exception-console.md),
+  [3. Hardware map](en/03-hardware-map.md) / [FR](fr/03-hardware-map.md), then
+  [8. Evidence](en/08-evidence.md) / [FR](fr/08-evidence.md) for the exact command and commit.
+- **Look up one fact** (*Chercher une preuve précise*):
+  [SoC memory map](spec/soc-s5l8920.md) for a base address, otherwise
+  [8. Evidence](en/08-evidence.md) / [FR](fr/08-evidence.md) by bundle.
+- **Contribute code or a chip** (*Contribuer du code ou une puce*):
+  [6. Support by chip](en/06-chips.md) / [FR](fr/06-chips.md), then
+  [7. Modular code](en/07-code-layout.md) / [FR](fr/07-code-layout.md).
+- **Follow the open research** (*Suivre la recherche en cours*):
+  [Research index](research/index.md), [4. Mods](en/04-mods.md) / [FR](fr/04-mods.md),
+  [5. Field notes](en/05-field-notes.md) / [FR](fr/05-field-notes.md).
+
 ## Read it / Le lire
 
 <div class="grid cards" markdown>
