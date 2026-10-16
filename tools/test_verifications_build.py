@@ -118,7 +118,7 @@ class AuditPageTests(unittest.TestCase):
         text = vb.render([row(by="maintainer")], ["B1"], {"B1": "abc123"})
         self.assertIn("<your GitHub handle>", text)
         self.assertIn("A real example, as an illustration", text)
-        self.assertIn("blob/<commit from manifest.json>", text)
+        self.assertIn("this is the code at that commit](", text)
 
     def test_the_page_explains_what_a_bundle_does_not_show(self):
         text = vb.render([row(by="maintainer")], ["B1"], {"B1": "abc123"})

@@ -42,7 +42,7 @@ It prints one row. A different compiler can produce different bytes: if yours do
 
 ### Audit a claim
 
-You need a browser and a text editor, no compiler. Pick one DEVICE claim of the [hardware map](03-hardware-map.md), quote it exactly, open the bundle it cites, and say whether the bundle shows what the claim says, no less and no more. The payload source is one link away: `https://github.com/SebE585/trognon/blob/<commit from manifest.json>/tools/payloads/<file>`. Write the row by hand.
+You need a browser and a text editor, no compiler. Pick one DEVICE claim of the [hardware map](03-hardware-map.md), quote it exactly, open the bundle it cites, and say whether the bundle shows what the claim says, no less and no more. The `commit` line of its `manifest.json` names the version of the code that ran: open the payload source at that commit by replacing `main` with it in the GitHub address of `tools/payloads/trace.c`. For the example below, [this is the code at that commit](https://github.com/SebE585/trognon/blob/f5d53bb24bf30d3f6f2b2821eb7c6cd2efd8c719/tools/payloads/trace.c). Write the row by hand.
 
 **A draft to fill in.** Replace every `<...>`; `inconclusive` is a normal result when the bundle does not settle the claim.
 

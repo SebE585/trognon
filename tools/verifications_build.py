@@ -120,6 +120,16 @@ def row_md(r):
         r["bundle"], REPO, r["bundle"], r["kind"], r["result"], (r.get("commit") or "-")[:10], where, r["by"], text)
 
 
+def source_link(rows):
+    """Clickable link to the payload source at the commit of the example bundle's manifest."""
+    ex = next((r for r in rows if r.get("kind") == "claim-audit"), None)
+    try:
+        commit = json.loads((EVIDENCE / ex["bundle"] / "manifest.json").read_text())["git"]["commit"]
+    except Exception:
+        return REPO + "/tree/main/tools/payloads"
+    return "%s/blob/%s/tools/payloads/trace.c" % (REPO, commit)
+
+
 def audit_draft():
     return ["```yaml", "- bundle: <bundle folder name>", "  kind: claim-audit", "  date: <YYYY-MM-DD>", "  by: <your GitHub handle>",
             "  claim: <the claim, quoted exactly>", "  page: <URL of the page that makes it>", "  result: <match | mismatch | inconclusive>",
@@ -165,8 +175,9 @@ def render(rows, all_bundles, recorded_commit):
              "It prints one row. A different compiler can produce different bytes: if yours does, that is exactly the result to submit.", "",
              "### Audit a claim", "",
              "You need a browser and a text editor, no compiler. Pick one DEVICE claim of the [hardware map](03-hardware-map.md), quote it exactly, open the bundle "
-             "it cites, and say whether the bundle shows what the claim says, no less and no more. The payload source is one link away: "
-             "`https://github.com/SebE585/trognon/blob/<commit from manifest.json>/tools/payloads/<file>`. Write the row by hand.", "",
+             "it cites, and say whether the bundle shows what the claim says, no less and no more. The `commit` line of its `manifest.json` names the version of the code that ran: "
+             "open the payload source at that commit by replacing `main` with it in the GitHub address of `tools/payloads/trace.c`. "
+             "For the example below, [this is the code at that commit](%s). Write the row by hand." % source_link(rows), "",
              "**A draft to fill in.** Replace every `<...>`; `inconclusive` is a normal result when the bundle does not settle the claim.", ""] + audit_draft() + [
              "", "**A real example, as an illustration.** One row from the maintainer, with the checks that person actually did "
              "(read the files, read the source at the commit, rebuilt the payload). Do not copy its identity or its operations: describe your own.", ""] + audit_example(rows) + [
