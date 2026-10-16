@@ -32,7 +32,7 @@
 #define STAGE 0
 #endif
 
-#if STAGE == 29 || STAGE == 31 || STAGE == 34 || STAGE == 35 || STAGE == 36 || STAGE == 39 || STAGE == 40
+#if STAGE == 29 || STAGE == 31 || STAGE == 34 || STAGE == 35 || STAGE == 36 || STAGE == 39 || STAGE == 40 || STAGE == 41
 /* Accelerometer probe over bit-banged i2c0 (decoded 2026-10-16 from the device tree, see
  * soc/s5l8920.h for the full chain). This is the FIRST bit-bang on these two pins: STAGE 29
  * reads their idle level with both held as inputs (no write at all) before doing anything
@@ -90,7 +90,7 @@ static u32 i2c_rbyte(volatile u32 *scl, volatile u32 *sda) {
 	i2c_wbit(scl, sda, 1);   /* master NACK: single-byte read, no more wanted */
 	return byte;
 }
-#if STAGE == 39 || STAGE == 40
+#if STAGE == 39 || STAGE == 40 || STAGE == 41
 /* PMU (i2c0 0x74) one-byte register read and write. Read: write the register number, repeated start,
  * read one byte (same sequence as STAGE 36). Write: START, address+write, register number, data byte, STOP;
  * returns 1 only if all three bytes were acknowledged. */
@@ -1344,6 +1344,54 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	}
 	fb_clean();
 #endif
+#if STAGE == 41
+	/* CONTROL for STAGE 40: release the touch reset line with NO supply applied. The only write is the touch
+	 * reset GPIO register (14.01, 0x83000284): 0x212 -> 0x210 (released to input), then back to 0x212. The clock
+	 * gate, the PMU registers and every other GPIO are only READ (PMU through I2C reads, whose only writes are the
+	 * register-number byte and the bus pins). GUARD: nothing is written unless the PMU registers read 0xBE and 0x11
+	 * (supplies in the state of STAGE 36), the clock gate reads 0 and the reset register reads 0x212. The reset
+	 * register is read right after the release and again 15 ms later. If it reads 1 here too, a pull-up holds
+	 * the line independently of the controller. */
+	at(4, 116, 0x00F0C040); puts_("STEP 41 RESET CONTROL\n");
+	volatile u32 *gp41  = (volatile u32 *)SOC_GPIO_BASE;
+	volatile u32 *scl41 = &gp41[SOC_I2C0_SCL_IDX];
+	volatile u32 *sda41 = &gp41[SOC_I2C0_SDA_IDX];
+	volatile u32 *rst41 = &gp41[SOC_TOUCH_RESET_IDX];
+	volatile u32 *gate41 = (volatile u32 *)(SOC_CLOCK_GATE_BASE + 4 * SOC_SPI1_GATE_DT);
+	i2c_release(scl41); i2c_release(sda41); i2c_delay(20);
+	u32 scl_idle = i2c_level(scl41), sda_idle = i2c_level(sda41);
+	u32 ok11 = 0, ok50 = 0;
+	u32 p11_0 = 0, p50_0 = 0;
+	if (scl_idle && sda_idle) {
+		p11_0 = pmu_read(scl41, sda41, 0x11, &ok11);
+		p50_0 = pmu_read(scl41, sda41, 0x50, &ok50);
+	}
+	u32 g_0 = *gate41, rst_0 = *rst41;
+	u32 go = (ok11 && ok50 && p11_0 == 0xBE && p50_0 == 0x11 && g_0 == 0 && rst_0 == 0x212) ? 1 : 0;
+	kv("P11", p11_0); kv("P50", p50_0); kv("GATE", g_0); kv("RST", rst_0); kv("GUARD", go);
+	result_hex("p11_before", p11_0); result_hex("p50_before", p50_0); result_hex("gate_before", g_0);
+	result_hex("rst_before", rst_0); result_hex("guard_ok", go);
+	if (go) {
+		i2c_release(rst41);                                                    /* the only change */
+		u32 rst_a = *rst41;
+		i2c_delay(15000);
+		u32 rst_b = *rst41;
+		kv("RST rel0", rst_a); kv("RST rel15", rst_b);
+		result_hex("rst_rel_now", rst_a); result_hex("rst_rel_15ms", rst_b);
+		i2c_low(rst41);                                                        /* restore: driven low */
+		i2c_delay(2000);
+		u32 rst_e = *rst41, g_e = *gate41;
+		u32 okr;
+		u32 p11_e = pmu_read(scl41, sda41, 0x11, &okr);
+		u32 p50_e = pmu_read(scl41, sda41, 0x50, &okr);
+		kv("RST end", rst_e); kv("GATE end", g_e); kv("P11 end", p11_e); kv("P50 end", p50_e);
+		result_hex("rst_end", rst_e); result_hex("gate_end", g_e);
+		result_hex("p11_end", p11_e); result_hex("p50_end", p50_e);
+	} else {
+		puts_("GUARD FAILED, NOTHING WRITTEN\n");
+	}
+	fb_clean();
+#endif
 #if STAGE == 31
 	/* Accelerometer axes: first real write to this device (CTRL_REG1, power it up and enable
 	 * X/Y/Z at +-2g/100Hz), then read the three 8-bit signed axis registers. Same safety pattern
@@ -1664,6 +1712,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "pmu-w34-1", 1);
 #elif STAGE == 40
 	ENV_SET("trognon", "touch-power-dry-1", 1);
+#elif STAGE == 41
+	ENV_SET("trognon", "touch-rst-ctl-1", 1);
 #elif STAGE == 5
 	ENV_SET("trognon", "regs-1", 1);
 #elif STAGE == 6

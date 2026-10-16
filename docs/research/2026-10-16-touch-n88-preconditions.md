@@ -480,6 +480,17 @@ A cheap control separates the two readings of the high level: release the reset 
 reads high, there is a pull-up independent of the controller and this observation carries no information about the controller; if
 it reads low, the high level above came with the supplies, which would be a first sign of the controller itself.
 
+## Control for the reset reading, prepared (STAGE 41, not run)
+
+`STAGE 41` (`trace_touch_rst_ctl.bin`, built, **not run**) releases the touch reset line with **no supply applied**. Its only write
+is the reset GPIO register (`0x83000284`): `0x212` to `0x210`, read right after and 15 ms later, then back to `0x212`. The
+clock gate and the PMU registers are only read (the PMU reads send the register-number byte, as before). Guard: nothing is
+written unless the PMU registers read `0xBE` and `0x11`, the gate reads `0` and the reset register reads `0x212`. The disassembly
+shows no store to the clock gate and no PMU write (the PMU write helper is unused in this stage, which the compiler reports as a
+warning), and the only GPIO stores are the usual I2C pin drive and one release and one restore of the reset register. Reading: if
+the register reads `0x211` here too, a pull-up holds the line without the controller, and the STAGE 40 reading says nothing about the
+controller; if it reads `0x210`, the high level of STAGE 40 appeared only with the supplies on.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values
