@@ -1,5 +1,9 @@
 # Trognon
 
+[![CI](https://github.com/SebE585/trognon/actions/workflows/ci.yml/badge.svg)](https://github.com/SebE585/trognon/actions/workflows/ci.yml)
+[![Docs](https://github.com/SebE585/trognon/actions/workflows/pages.yml/badge.svg)](https://github.com/SebE585/trognon/actions/workflows/pages.yml)
+[![License: mixed](https://img.shields.io/badge/license-GPL--2.0--only%20%2F%20MIT%20%2F%20CC--BY--SA--4.0-blue)](LICENSE)
+
 Documentation site: **[sebe585.github.io/trognon](https://sebe585.github.io/trognon/)**. English and French, with diagrams and an evidence level on every claim.
 
 STATUT: ACTIF, 2026-10-15 (first code running on an iPhone 3GS: on-screen console and exception handlers; see Documentation)

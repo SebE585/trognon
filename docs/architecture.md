@@ -46,6 +46,18 @@ Le framework C (`libtrognon` + CLI) se limite à :
 +-----------------------------------------+
 ```
 
+```mermaid
+flowchart TB
+    L4["4. Ce que l'utilisateur construit<br/><i>hors scope Trognon : chacun le sien</i><br/>Linux, BSD, mini-OS, bare-metal"]
+    L3["3. Charge utile de démarrage<br/><b>trognon-boot</b><br/>pongoOS / m1n1 / noyau, upload USB une fois l'appareil débridé"]
+    L2["2. Orchestration de la mise en DFU<br/><b>trognon-unlock</b><br/>appelle ipwndfu / gaster / checkm8-a5, outils TIERS non réimplémentés ici"]
+    L1["1. Identification + base des appareils<br/><b>libtrognon</b><br/>USB probe lecture seule + table statique SoC / modèle"]
+    L4 --> L3 --> L2 --> L1
+```
+
+Même contenu que le schéma ASCII ci-dessus, gardé comme repère texte brut pour une lecture
+hors navigateur (diff, terminal).
+
 ## Pourquoi le C
 
 - C'est le langage des outils existants qu'on orchestre (libusb, pongoOS,
