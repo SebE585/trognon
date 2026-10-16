@@ -297,9 +297,34 @@ between the ping and hardware activation is wrong as stated.
 
 Table index 3 (**real opcode 4**) calls a function that references the
 `sdiodrv_resetSDHC` string — this, not the ping, is the opcode that
-actually touches hardware. Opcodes 2, 3, 5, 6 and 7 each call a different,
-not-yet-identified function (no directly linked debug string found in the
-time available this session). The host driver's own opcode numbering
+actually touches hardware. The other five were disassembled too, each
+guarded by the same pattern seen in the ping handler (read `[message+0]`,
+the device's "configured" state; bail with a generic `0x401` error if it
+is zero — not opcode-specific, the same guard in all seven):
+
+- **Opcode 2** (`fcn.00001a58`): allocates a 16-byte buffer and stores it
+  at `[dev+4]` — opens a resource.
+- **Opcode 3** (`fcn.00001a24`): frees exactly that same field — the
+  mirror of opcode 2, a clean open/close pair.
+- **Opcode 5** (`fcn.0000192c`): a compound dispatcher checking the
+  message's `+4`, `+8`, `+0x10` and `+0xc` fields in turn, one distinct
+  sub-call per field, stopping at the first failure — matches the
+  `setClockRate`/`setBusWidth`/`setBusSpeedMode` family named in the
+  firmware's own debug strings; likely "set bus parameters" as a bundle.
+- **Opcode 6** (`fcn.0000190c`): a thin tail-call (a jump, not a call) into
+  `fcn.000067f0` with two pointers (the message, and message+8) — a
+  signature consistent with sending an SD command (index/argument in,
+  response out), not yet confirmed further.
+- **Opcode 7** (`fcn.000018bc`): passes four distinct sub-pointers
+  (message+8, +0x18, +0x28, +0x34→+0x38) into `fcn.00006898` — a signature
+  consistent with a data transfer (buffer, block size, block count,
+  direction), not yet confirmed further.
+
+None of `fcn.00006580`, `fcn.000063d0`, `fcn.0000638c`, `fcn.000067f0` or
+`fcn.00006898` — the functions that would hold the real MMIO register
+accesses — were disassembled this session; that is the next concrete step
+for actually recovering the addresses the IOP itself uses. The host
+driver's own opcode numbering
 (`sendIOPCommand`'s special handling of "opcode 0", noted above as a
 plausible ping match) has not been reconciled with this IOP-side numbering
 — whether the host's opcode byte maps 1:1 to the IOP's, or through some
@@ -315,12 +340,12 @@ flowchart TD
 
     SW -- "opcode 0, or &gt; 7<br/>(default)" --> ERR["log 'unrecognised<br/>sdio opcode'"]
     SW -- "opcode 1<br/>(table[0])" --> C0
-    SW -- "opcode 2<br/>(table[1])" --> C1["fcn.00001a58<br/>(not identified)"]
-    SW -- "opcode 3<br/>(table[2])" --> C2["fcn.00001a24<br/>(not identified)"]
+    SW -- "opcode 2<br/>(table[1])" --> C1["fcn.00001a58<br/>allocate a 0x10-byte buffer,<br/>store at [dev+4]"]
+    SW -- "opcode 3<br/>(table[2])" --> C2["fcn.00001a24<br/>free [dev+4]<br/>(mirrors opcode 2)"]
     SW -- "opcode 4<br/>(table[3])" --> C3["fcn.000019c4<br/>-> sdiodrv_resetSDHC<br/><b>touches hardware</b>"]
-    SW -- "opcode 5<br/>(table[4])" --> C4["fcn.0000192c<br/>(not identified)"]
-    SW -- "opcode 6<br/>(table[5])" --> C5["fcn.0000190c<br/>(not identified)"]
-    SW -- "opcode 7<br/>(table[6])" --> C6["fcn.000018bc<br/>(not identified)"]
+    SW -- "opcode 5<br/>(table[4])" --> C4["fcn.0000192c<br/>set bus params (clock,<br/>width, speed mode) --<br/>one sub-call per field"]
+    SW -- "opcode 6<br/>(table[5])" --> C5["fcn.0000190c<br/>tail-call to fcn.000067f0<br/>(likely: send SD command)"]
+    SW -- "opcode 7<br/>(table[6])" --> C6["fcn.000018bc<br/>-> fcn.00006898, 4 sub-ptrs<br/>(likely: data transfer)"]
 
     C0["<b>the PING</b><br/>log 'Connection established'<br/>write status = 0 (success)<br/><b>no register touched</b>"]
 
@@ -364,6 +389,38 @@ side (a separate class, not yet located or disassembled). Sending only the
 ping, as the architecture doc first assumed might be enough, is now known
 to be insufficient on its own. Not attempted this session; this is a
 deliberate stopping point, not an unfinished attempt.
+
+### The transport, partially traced: a generic IOKit queue, and a second kext worth its own look
+
+Step 3 of the plan (rebuild both ends of the transport) was started on the
+host side. `sendIOPCommand`'s real send (`this+0x24`'s vtable `+0x84`,
+left unlocated in the previous section) is not something `AppleIOPSDIO`
+constructs itself: disassembling its `init()` function shows it obtained by
+calling a factory method (vtable offset `0x350`) on the `IOSlaveProcessor`
+*provider* object (`this+0x20`), passing the literal string `"sdio"` as an
+argument. Whatever class that factory returns is defined entirely inside a
+**separate, generic kext**, `com.apple.driver.IOSlaveProcessor`
+(`0x80398000`, 0x3000 bytes, SHA-256
+`abff4df9877f8c83a899de4f2308bca80f556478790b982d1823d39fd366a0c9`), not
+inside `AppleIOPSDIO` at all — which is exactly why no "channel" class name
+string exists in the SDIO kext's own strings.
+
+That kext's own strings name five classes: `IOSlaveProcessor`,
+`IOSlaveEndpoint`, `IOSlaveMemory`, `IOSlaveMemoryBuffer`, `IOSlaveCPU`,
+`IOSlaveFirmware`. `IOSlaveEndpoint` is the strongest candidate for the
+command channel (the factory call's purpose and the name both point the
+same way), but the exact vtable slot was not pinned down this session — a
+scan for code pointers inside this kext's own `__const` found only a short,
+6-entry run, too short to reach byte offset `0x350` on its own; the
+rest of `IOSlaveProcessor`'s vtable is almost certainly inherited `IOService`
+slots living in the main kernel, not in this small kext, which is
+consistent with but does not prove the `IOSlaveEndpoint` identification.
+
+The other two names, `IOSlaveCPU` and `IOSlaveFirmware`, are a direct hit
+on the *other* open question from "known gaps" above (how
+`IOP_s5l8920x_firmware`'s bytes are loaded, verified, and started) — they
+were not disassembled this session, but they are now a named, concrete
+target rather than an unlocated one.
 
 ### Two different goals, often conflated: commanding it vs. programming it
 
