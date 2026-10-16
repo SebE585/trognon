@@ -1,0 +1,38 @@
+binary: AppleS5L8900X.kext.bin
+binary_sha256: 5439f665a7531f36c0c869fd16e7a33e361e4f72232130fe5055b86a38985175
+function_name_apple: null
+function_name_assigned: "SPI transfer start (head: register programming)"
+decode_mode: thumb
+subsystem: spi_controller
+entry_code_address: "0x8045cb54"
+thumb_entry_pointer: "0x8045cb55"
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x8045cb54", "0x8045cd58"]
+  unresolved:
+    - id: SPI-XFER-Q1
+      text: "Everything after 0x8045cd58: the data path (TX and RX FIFO accesses, the interrupt handler), the wait, and the end of the transfer. The data registers (0x10 and 0x20 in the OpeniBoot header) were not seen yet."
+      proof_needed: "continue the disassembly and the interrupt-handler method"
+    - id: SPI-XFER-Q2
+      text: "What the value this+0xac (0x40000f for version 1), written to STATUS (0x08) before a transfer, does: it reads as a mask of status or interrupt bits cleared or enabled."
+      proof_needed: "the OpeniBoot or kernel use of STATUS writes; a test"
+
+claims:
+  - id: SPI-XFER-001
+    text: >
+      Before moving data, the function writes: CLKDIVIDER (0x30) with this+0xd8, SPIDD (0x38) with this+0xdc, STATUS
+      (0x08) with this+0xac, SETUP (0x04) with this+0xd0, and CONTROL (0x00) with this+0xcc; it later writes SPCNT (0x34)
+      with the transfer length (split into two parts when the length exceeds this+0xfc) and, for spi-version 1, register
+      0x4c with one of those parts. For a transfer with receive data, SETUP is rewritten with bit 0x40 set. The head of
+      the function also rejects a transfer when both a first and a second buffer object (this+0xb0 and 0xb4) are in
+      use with the error 0xe00002d4.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "register numbers and sources of their values"

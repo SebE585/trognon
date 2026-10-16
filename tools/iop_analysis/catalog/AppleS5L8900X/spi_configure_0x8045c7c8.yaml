@@ -1,0 +1,52 @@
+binary: AppleS5L8900X.kext.bin
+binary_sha256: 5439f665a7531f36c0c869fd16e7a33e361e4f72232130fe5055b86a38985175
+function_name_apple: null
+function_name_assigned: "SPI device configuration (builds SETUP, CLKDIVIDER and the delay fields from a setting)"
+decode_mode: thumb
+subsystem: spi_controller
+entry_code_address: "0x8045c7c8"
+thumb_entry_pointer: "0x8045c7c9"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8045c7c8", "0x8045c8e8"]
+  constant_ranges:
+    - ["0x8045c8e8", "0x8045c8f8"]
+  unresolved:
+    - id: SPI-CONF-Q1
+      text: "Where the setting structure (r1) is built from: the same open question as SPI-VALID-Q1. Also the helper at 0x8045c64c (called through a literal) that divides a 64-bit value; read here as an unsigned division by the 64-bit divisor 1e9 or 1000-scale constants, not opened."
+      proof_needed: "the caller and the helper's body"
+    - id: SPI-CONF-Q2
+      text: "Meaning of the setting byte at offset 0xa (zero adds the version-dependent bit this+0xa4, 0x2000 for version 1) and of the field at offset 0x10 (used only to derive this+0xf0 and this+0xc8, which look like wait times)."
+      proof_needed: "the readers of this+0xf0 and this+0xc8 (the transfer function waits on them)"
+
+claims:
+  - id: SPI-CONF-001
+    text: >
+      Builds the SETUP value in this+0xd0 from the setting fields: it starts from this+0xa0 (0x4000 for
+      spi-version 1) OR 0x18; the byte at offset 8, if non-zero, makes it 0x1c instead of 0x18; the byte
+      at offset 9, if non-zero, adds 0x02; the byte at offset 0xa, if zero, adds this+0xa4; the byte at
+      offset 0xb (word size) is mapped 8 to 0, 16 to 1, 32 to 2 and shifted left by this+0x9c (15 for
+      version 1) into the value; this+0xec receives 1 << that field. It also stores this+0x84[cs] at
+      this+0xe8 (the chip-select function of the setting's chip select).
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+  - id: SPI-CONF-002
+    text: >
+      CLKDIVIDER value (this+0xd8) = ceiling of (period at offset 4 times the 64-bit value this+0xc0)
+      divided by 1,000,000,000, with a minimum of 2 for spi-version 0 when the result is 0 or 1. The
+      value for the SPIDD register (this+0xdc) is the ceiling of (the field at offset 0xc times the
+      64-bit value this+0xb8) divided by 1,000,000,000. this+0xf0 is the field at offset 0x10, plus
+      0x3e7, divided by 1000, divided by 64; this+0xc8 adds the same quantity computed from
+      (period times word size). The arithmetic reads as: the period and delays are nanoseconds and the two
+      64-bit values are frequencies in Hz (this+0xc0 'nclk' for the divider, this+0xb8 'pclk' for the delay);
+      the frequency reading of the clock values is an assumption, not shown.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "field offsets, constants and arithmetic"

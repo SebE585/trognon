@@ -252,18 +252,36 @@ search key, because the bundle identifier is a prefix of three kexts). Read in c
   which is GPIO `13.00` for chip select 0 here), a non-zero period whose product with `nclk` is at most
   2048 * 10^9, and a word size of 8, 16 or 32 bits.
 
-The offsets in that routine (word 0, word 1, byte at offset `0xb`) match the first words of the touch
-node's `reg` property, `0x0 0x7c 0x8010000 0x1388 0x2710 0 0 0`: chip select `0`, a period of `0x7c` =
-124, and a word size of `8` in the top byte of `0x8010000`. **This is an inference from matching
-offsets**, not from a traced call chain (`SPI-VALID-Q1`). If it holds, and if `nclk` is a frequency in
-Hz and the period is in nanoseconds, the touch controller's SPI clock period would be 124 ns, about
-8 MHz, and `0x1388` = 5000 and `0x2710` = 10000 would be two delays of 5 and 10 microseconds, which is
-the 5 and 10 of the iDroid driver's setting (there with a slower clock). All three readings rest on
-unverified units.
+Reading further into the controller class (catalog `SPI-CONF-*`, `SPI-REG-*`, `SPI-XFER-*`) decodes
+the setting structure and the registers it feeds. In the configuration routine, the structure is read
+as: word 0 chip select; word 1 a period; byte 8 a polarity-like flag; byte 9 a phase-like flag;
+byte `0xa` another flag; byte `0xb` the word size (8, 16 or 32); word 3 a delay; word 4 another delay.
+It builds the SETUP value from them (a base `0x4000` or the like per `spi-version`, master bits
+`0x18`, flag bits, and the word size shifted by 15 for version 1, the same shift OpeniBoot's header
+gives), CLKDIVIDER as the ceiling of (period times `nclk`) over 10^9, and SPIDD as the ceiling of
+(delay times `pclk`) over 10^9. That arithmetic reads as a period and delays in **nanoseconds** and two
+clock values in **hertz**; the Hz reading of the clock values is an assumption.
 
-Not found in the region read: the code that programs CLKDIVIDER (`0x30`) and PIN (`0x0C`). The idle
-values read in STAGE 38 (CLKDIVIDER `1`, PIN `3`, SETUP `8`) therefore remain undecoded
-(`SPI-START-Q3`).
+STATUS and PIN are also decoded in the code: for `spi-version` 1 the TX FIFO count is
+`(STATUS >> 6) & 0x1f` with a depth of 16, and the RX count is `(STATUS >> 11) & 0x1f`; bit 1 of PIN is
+the software chip-select level (a flag clears it, so it is active low). The idle values read in STAGE 38
+(STATUS `0`, PIN `3`) are compatible with that: empty FIFOs and a chip select left high. The register
+offsets of OpeniBoot's header (`0x00`, `0x04`, `0x08`, `0x0C`, `0x30`, `0x34`, `0x38`) are the ones the
+kernel code uses, plus `0x4c` for version 1.
+
+The offsets in the validation routine (word 0, word 1, byte at offset `0xb`) match the first words
+of the touch node's `reg` property, `0x0 0x7c 0x8010000 0x1388 0x2710 0 0 0`: chip select `0`, a period
+of `0x7c` = 124, a word size of `8` and the flag bytes `00 00 01` in `0x8010000`, and two delays, 5000 and
+10000. **The link from the property to the structure is still an inference from matching offsets**, not
+a traced call chain (`SPI-VALID-Q1`, `SPI-CONF-Q1`). Under that inference, with the units above, the
+touch controller would be addressed with a period of 124 ns (about 8 MHz if `nclk` is the divided
+clock), 8-bit words, and delays of 5 and 10 microseconds, the 5 and 10 of the iDroid driver's setting
+(there with a slower clock). The SETUP value the driver would build for it is `0x4018` (base `0x4000`,
+master `0x18`, no flag bit, word size field 0), later ORed with `0x40` for a receive; that is a
+computation from the inference, not an observed value.
+
+Not yet read: the data path (the TX and RX FIFO accesses and the interrupt handler) and the register
+at `0x4c`.
 
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 

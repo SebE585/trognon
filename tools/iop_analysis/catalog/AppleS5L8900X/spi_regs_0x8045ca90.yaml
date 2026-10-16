@@ -1,0 +1,57 @@
+binary: AppleS5L8900X.kext.bin
+binary_sha256: 5439f665a7531f36c0c869fd16e7a33e361e4f72232130fe5055b86a38985175
+function_name_apple: null
+function_name_assigned: "SPI register helpers (PIN chip-select bit, STATUS FIFO fields, register read and write)"
+decode_mode: thumb
+subsystem: spi_controller
+entry_code_address: "0x8045ca90"
+thumb_entry_pointer: "0x8045ca91"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8045ca90", "0x8045cb3c"]
+  unresolved:
+    - id: SPI-REG-Q1
+      text: "Bit 0 of PIN (read 0x3 at idle, bit 1 being the chip-select level by SPI-REG-003) and the meaning of the flag argument of the chip-select routine (assert or level)."
+      proof_needed: "the callers of 0x8045ca90 and a test that moves the chip select"
+
+claims:
+  - id: SPI-REG-001
+    text: >
+      Two virtual methods (slots 0x3a0 and 0x3a4 of the controller) are one-line register accessors:
+      read32(offset) loads the word at the base kept at this+0x7c plus the offset, and write32(offset, value)
+      stores a word there. They are used throughout the controller with the offsets of the OpeniBoot header
+      (0x00, 0x04, 0x08, 0x0c, 0x30, 0x34, 0x38) and one more, 0x4c, for spi-version 1.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+  - id: SPI-REG-002
+    text: >
+      STATUS field accessors (small functions at 0x8045cabc, 0x8045cad4, 0x8045caf4, 0x8045cb0c): for spi-version 0
+      the TX FIFO count is (STATUS >> 4) & 0xf with free space 8 minus it, and the RX count is
+      (STATUS >> 8) & 0xf; for spi-version 1 the TX count is (STATUS >> 6) & 0x1f with free space 0x10 minus it,
+      and the RX count is (STATUS >> 11) & 0x1f. So the FIFO depth is 8 for version 0 and 16 for version 1,
+      which is the constant stored at this+0xa8 by start (SPI-START-001).
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+  - id: SPI-REG-003
+    text: >
+      The routine at 0x8045ca90 reads PIN (0x0c), clears its bit 1 (0x02) when its flag argument is non-zero and
+      sets it when the flag is zero, and writes it back. Bit 1 of PIN is therefore the software chip-select
+      level, low when the flag is non-zero. The idle read of 0x3 has bit 1 set, which is a chip select
+      released high if chip select is active low.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+
+hardware_tests:
+  - name: trace_spi1_gate (STAGE 38), PIN, STATUS, CLKDIVIDER at idle
+    claim_tested: "SPI-REG-002 and SPI-REG-003: the idle values are compatible with these fields"
+    execution_status: executed
+    result: >
+      STATUS 0 (empty FIFOs), PIN 0x3 (bit 1 set), CLKDIVIDER 1. Compatible with the layouts above; nothing
+      was transferred and no field was changed.
+    evidence: "evidence/20261016T165854Z-trace_spi1_gate/"
+
+publication:
+  status: approved
+  notes: "offsets and bit fields"
