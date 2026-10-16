@@ -45,7 +45,7 @@ not known.
 
 ## Touch path
 
-**Update, same day**: the driver family and the firmware question are answered in more detail, from the kernelcache, in [Touch controller preconditions](2026-10-16-touch-n88-preconditions.md): the 3GS uses the `N1` variant, not the Zephyr family the earlier notes borrowed from older devices, and the driver's strings describe a firmware bootload. The table below keeps its original wording; read it with that page.
+**Update, same day**: the driver family and the firmware question are answered in more detail, from the kernelcache, in [Touch controller preconditions](2026-10-16-touch-n88-preconditions.md): this phone's kernelcache names the `N1` software personality, which replaces the Zephyr driver the earlier notes borrowed from older devices as the one to analyse (it does not prove a different hardware family), and the driver's strings name a firmware bootload path whose use here is still open. The table below keeps its original wording; read it with that page.
 
 Controller node: `/device-tree/arm-io/spi1/multi-touch`, compatible
 `multi-touch,n88`. Decoded properties (project convention for `function-*`

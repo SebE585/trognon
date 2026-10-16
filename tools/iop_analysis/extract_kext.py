@@ -79,7 +79,13 @@ def objects(d):
                         ok = False
                         break
                     if cmd == 1:
-                        if size < 40:
+                        # LC_SEGMENT is 56 bytes (cmd, cmdsize, 16-byte name, 8 words) followed
+                        # by nsects 68-byte section records, all inside the command.
+                        if size < 56:
+                            ok = False
+                            break
+                        nsects = struct.unpack_from("<I", d, off + 48)[0]
+                        if size < 56 + 68 * nsects:
                             ok = False
                             break
                         va, _, fo, fs = struct.unpack_from("<4I", d, off + 24)

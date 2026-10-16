@@ -16,9 +16,9 @@ inline render.
 | Timer block | Tick rate confirmed at 24 MHz | Timer interrupt not proven; IRQ-ack offsets and sequence not validated on this SoC | [Timer block](#timer-block-timer_base-0xbf100000-device-2026-10-15) |
 | NAND | Chip ID read on CE0/CE1 | CE2-CE15, bus 1, and any page access | [NAND](#nand-h2fmi0_base-0x81200000-device-2026-10-15) |
 | Buttons | All 5 buttons mapped by GPIO difference | Mapping found by observed difference, not by name | [Buttons](#buttons-same-gpio-base-as-above-device-2026-10-15) |
-| Accelerometer | Identifier read; powered up with a verified write; all three axes read with both signs or a known direction: +X right edge, +Y top, +Z out of the screen, about 56 counts per g, offsets near +1.5 / -6 / +3 counts | Exact chip model, axis directions, scale and calibration | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
+| Accelerometer | Identifier read; powered up with a verified write; axes read in seven positions; directions and a scale (56 counts per g on two axes) come out of them, the Y direction conditional on one stated position | Chip model (LIS331DL or LIS302DL), calibrated offsets, angular accuracy | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
 | Wi-Fi/SDIO | Base address and GPIO lines confirmed; SDHCI layout confirmed in the IOP's own firmware | Which register window the IOP's SDHCI driver actually uses, and why CPU-side writes don't stick | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-mixed-devicehypothesis-2026-10-1516) |
-| Magnetometer | A device at `0x1e` returns the AK8973's documented reset state in 12 registers; `0x1f` is silent; no gyroscope on `i2c0` | A measurement (needs EEPROM-derived setup), the role of `0x1f` | [Magnetometer](#magnetometer-i2c0-address-0x1e-device-2026-10-16) |
+| Magnetometer | A device at `0x1e` gives 12 register readings compatible with an AK8973's documented reset state; `0x1f` is silent; the `i2c0` scan found no additional responder | A measurement (needs EEPROM-derived setup), the role of `0x1f` | [Magnetometer](#magnetometer-i2c0-address-0x1e-device-2026-10-16) |
 | Touch controller | Reset and chip-select GPIO levels read (one run) | Polarity, power and clock via the PMU, SPI transaction, any response | [Bluetooth](#bluetooth-uart3-reset-1506-wake-1602-device-2026-10-16) |
 
 **Reading the tags**: **DEVICE** means observed on this real phone (a read, or a write
@@ -191,555 +191,94 @@ close to 3 minutes) killed the USB control endpoint afterwards; a host-side USB 
 
 *The accelerometer reports motion/orientation over a two-wire I2C bus.*
 
-**Status**: DEVICE, first try, exact chip model still open. Everything below came from this
-device's own decrypted device tree, then a real bit-banged I2C transaction over GPIO.
+**Current state**: the identifier was read over a real I2C transaction; the part was powered up
+with a verified write (`CTRL_REG1` read back `0x47`); the three axes were read in seven
+positions, each pair of runs identical or one count apart. A first set of axis directions and a
+scale come out of those readings. What is **not** established: which of the two compatible-string
+chips (LIS331DL or LIS302DL) is on the board, calibrated offsets, any angular accuracy, and the
+sign of Y beyond the interpretation of one stated position (below). Earlier versions of this
+section are summarised at its end.
 
-**What's confirmed**: the device tree names a bus (`i2c0`, `compatible = "i2c,s5l8920x",
-"iic,soft"`: software, bit-banged, not a dedicated hardware controller) with SDA/SCL on
-GPIO `04.01`/`04.00`, and an accelerometer on it (`compatible =
+**What's confirmed (bus and identifier)**: the device tree names a bus (`i2c0`, `compatible =
+"i2c,s5l8920x","iic,soft"`: software, bit-banged, not a dedicated hardware controller) with
+SDA/SCL on GPIO `04.01`/`04.00`, and an accelerometer on it (`compatible =
 "accelerometer,lis331dl","accelerometer,lis302dl"`) at I2C address `0x1d`. A full I2C
-transaction (START, address+write, register `0x0F`, repeated START, address+read, one
-byte, STOP) got a real answer: all three software ACK flags read `1` (each slave-address
-and register byte was acknowledged by the device), and the byte read back was `0x3B`. That
-is the documented `WHO_AM_I` value for the LIS331DL — but ST's LIS302DL datasheet (table 16)
-also lists `0x3B` as a valid value for some revisions of that part, so the read confirms a
-working transaction and an identifier consistent with both compatible strings in the device
-tree, not which of the two chips is actually on the board.
+transaction (START, address+write, register `0x0F`, repeated START, address+read, one byte,
+STOP) got a real answer: all three software ACK flags read `1`, and the byte read back was
+`0x3B`. That is the documented `WHO_AM_I` value for the LIS331DL, but ST's LIS302DL datasheet
+(table 16) also lists `0x3B` for some revisions of that part, so the read confirms a working
+transaction and an identifier consistent with both compatible strings, not which chip it is.
 
 | Item | Value | Status |
 |---|---|---|
 | Bus | `i2c0`, SDA `04.01`, SCL `04.00` | device tree gives the name/pins; DEVICE: both read idle-high before the transaction |
 | I2C address | `0x1d` | device tree `reg` property |
 | `WHO_AM_I` (register `0x0F`) | `0x3B` | DEVICE: full I2C read, all three software ACK flags `1` |
+| `CTRL_REG1` after the write | `0x47` | DEVICE: read back (power-down bit cleared, X/Y/Z enabled, other bits at their reset state; the default +-2 g range assumed) |
+| `STATUS_REG` | `0xFF` in every run | DEVICE: not interpreted |
 
-**What remains hypothesis**: which of the two compatible-string chips (LIS331DL vs LIS302DL)
-is actually present, reading actual axis data (the three accelerations), and the
-`orientation` device-tree property's exact meaning. A compass (AKM8973S, address `0x1e`)
-and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, device tree
-only, not probed at all yet — two device-tree nodes do not by themselves prove two separate
-physical chips.
+**Axis readings** (signed 8-bit counts, one sample per run; the positions are as stated by the
+person holding the phone and were not independently verified):
 
-**Axis data (DEVICE, 2026-10-16, one run, phone not moved)**: `STAGE 31` powers the part up
-(first write to this device: `CTRL_REG1`), reads it back, then reads the status and the three
-axis bytes. The write landed (`CTRL_REG1` read back `0x47`: power-down bit cleared, X/Y/Z
-enabled, other bits at their reset state, the default ±2 g range assumed), every ACK flag was
-`1`, and the nonce was confirmed. Raw values: status `0xFF`, X `0x0B` (+11), Y `0xF7` (-9),
-Z `0x3A` (+58), signed 8-bit.
-
-| Item | Value | Status |
-|---|---|---|
-| `CTRL_REG1` after the write | `0x47` | DEVICE: read back, not assumed |
-| `STATUS_REG` | `0xFF` | DEVICE: all data-available and overrun bits set; not interpreted further |
-| X, Y, Z (signed counts) | +11, -9, +58 | DEVICE: one sample each |
-| Magnitude | about 59 counts | arithmetic on the three bytes |
-
-With the datasheet's nominal 18 mg per count at ±2 g (a datasheet figure, not measured here)
-that is about 1.07 g, with Z dominant: consistent with gravity on one axis, which says the
-chip is alive and the data is plausible. It does **not** say which physical face is up, the
-axis signs, or that the scale is right: one still sample cannot separate those.
-
-**Second run, phone moved (DEVICE, same day, bundle `20261016T150844Z-trace_accel_axes`)**: the
-same payload, the same register readback (`0x47`), after the phone was moved to another
-orientation (not recorded precisely: held by hand, which face was up was not noted).
-
-| Run | X | Y | Z | Dominant axis | Magnitude (counts) |
+| Runs | Position (as stated by the person holding the phone) | X | Y | Z | Bundles |
 |---|---|---|---|---|---|
-| 1, as first held | +11 | -9 | +58 | Z | about 59 |
-| 2, after moving it | +19 | +47 | +8 | Y | about 51 |
-| 3 and 4, phone resting, two consecutive runs | +2 | -16 | +59 | Z | about 61 (both) |
-| 5 and 6, flat, screen up (stated by the person holding it), two runs | +3 | -6 | +59 | Z | about 59 (both) |
-| 7 and 8, flat, screen against the table (stated), two runs | +2 | -6 | -53 | Z | about 53 (both) |
-| 9 and 10, on the left edge (stated; taken as portrait, screen facing the person), two runs | +57, +58 | -7, -6 | +6 | X | about 57 to 58 |
-| 11 and 12, on the right edge (stated; the rounded sides are why the bottom and top edges were not used: the cable is in the way), two runs | -55, -54 | -6, -7 | -5, -4 | X | about 54 to 55 |
-| 13 and 14, on the top edge (stated; taken as the top end of the phone on the table, the cable end up), two runs | +3, +4 | -60, -61 | +11 | Y | about 61 |
-
-The dominant axis moved from Z to Y with the phone, which is what a gravity vector does and
-what a stuck or constant output would not do. Runs 3 and 4 (bundles `20261016T150944Z` and
-`20261016T150947Z`, phone left resting, which face was up not recorded) returned exactly the
-same three bytes, so the readout is repeatable at rest at this resolution. Z dominant again
-with Y at -16 counts means a slight tilt or a different resting position from run 1.
-
-Taken together, the magnitude at rest is about 60 counts (59 and 61 in the two resting
-positions), and the 51 of run 2 is the outlier, taken while the phone was being moved; that
-is the likeliest cause and was not tested. At the nominal 18 mg per count, 60 counts is
-about 1.1 g, a little above 1 g: the scale or the offsets may differ from the datasheet's
-typical values, and nothing here measures them.
-
-What this still does not give: the direction of each axis relative to the case, the actual
-scale and offsets, or any calibration. No axis-to-face mapping is claimed.
-
-**Z axis, both signs (runs 5 to 8, bundles `20261016T151058Z`, `20261016T151101Z`,
-`20261016T151159Z`, `20261016T151202Z`; the faces are as stated by the person holding the
-phone)**: flat screen up Z read +59, screen against the table Z read -53, each identical
-twice. The sign flips with the face, so the Z axis measures along the screen normal and
-+Z points out of the screen (the sign follows the usual convention that a resting
-accelerometer reports +1 g along the axis pointing up; the flip itself is the observation).
-
-Two points on one axis give a first estimate, with the caveat that the table was assumed
-level and that each value is a single 8-bit count (an error of about one count):
-
-- scale: (59 - (-53)) / 2 = 56 counts per g, i.e. about 17.9 mg per count, which agrees with
-  the datasheet's nominal 18 mg per count at the +-2 g range;
-- Z offset: (59 + (-53)) / 2 = +3 counts.
-
-X and Y barely changed between the two faces (+3, -6 then +2, -6). If the table was level,
-that points to offsets of about +2 to +3 counts on X and -6 on Y rather than to tilt, which
-would have changed sign on flipping. This is a reading of four numbers, not a calibration.
-The earlier "a little above 1 g" at rest is explained by these offsets, not by a different
-scale.
-
-**X axis (runs 9 and 10, bundles `20261016T151312Z`, `20261016T151315Z`)**: on its left
-edge, X read +57 and +58 (one count apart between the two runs), Y -7 and -6, Z +6. "Left
-edge" was said by the person holding it, and is taken here as portrait with the screen
-facing them. With the left edge down, the up direction is toward the right edge, so under the
-same convention as for Z, **+X points toward the right edge**. Subtracting the roughly +2.5
-count X offset estimated above leaves about 55 counts, which agrees with the 56 counts per
-g from the Z axis. Y stays near its -6 offset and Z near +3 plus a small remainder, as
-expected for an edge position.
-
-**X axis, both signs (runs 11 and 12, bundles `20261016T151438Z`, `20261016T151441Z`)**: on
-the right edge X read -55 and -54. With +57.5 on the left edge (mean of runs 9 and 10) and
--54.5 on the right edge (mean of runs 11 and 12), the X axis gives 56.0 counts per g
-(half the span) and an offset of +1.5 counts. That is the same 56 counts per g as the Z axis,
-from an independent pair of positions, and it fixes the sign: **+X points toward the right
-edge**, under the convention already stated for Z. Z read +6 on the left edge and -4.5 on
-the right, which is a lean of about 5 counts (0.09 g) either way, plausible on rounded edges.
-
-**Y axis (runs 13 and 14, bundles `20261016T151540Z`, `20261016T151542Z`)**: on the top
-edge, Y read -60 and -61, X +3 and +4, Z +11. "Top edge" was said by the person holding it;
-it is taken as the top end of the phone on the table, which puts the cable end up (this is
-why that edge was possible after all). With the top end down, the up direction is toward
-the bottom, so under the same convention as for X and Z, **+Y points toward the top of the
-phone**. Net of the roughly -6 count offset seen on every flat or edge position, the Y span is
-about 54 to 55 counts, close to the 56 counts per g of the other two axes; the remaining
-gap is within one or two counts and a small lean (Z reads +11).
-
-**Frame**: +X toward the right edge, +Y toward the top, +Z out of the screen, for a phone
-held upright with the screen facing the person. That triple is right-handed, which is a
-consistency check on the Y reading (a left-handed result would have pointed at a mistake
-in the stated positions or the convention), not a proof of it.
-
-**What this does not give**: calibrated offsets (X about +1.5, Y about -6, Z about +3 counts,
-each assuming a level table, within about one count), a temperature or time stability, or
-any filtering. It is enough to compute a tilt angle to a few degrees.
-
-**What remains hypothesis**: which of the two compatible-string chips (LIS331DL vs LIS302DL)
-is actually present, reading actual axis data (the three accelerations), and the
-`orientation` device-tree property's exact meaning. A compass (AKM8973S, address `0x1e`)
-and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, device tree
-only, not probed at all yet — two device-tree nodes do not by themselves prove two separate
-physical chips.
-
-**Axis data (DEVICE, 2026-10-16, one run, phone not moved)**: `STAGE 31` powers the part up
-(first write to this device: `CTRL_REG1`), reads it back, then reads the status and the three
-axis bytes. The write landed (`CTRL_REG1` read back `0x47`: power-down bit cleared, X/Y/Z
-enabled, other bits at their reset state, the default ±2 g range assumed), every ACK flag was
-`1`, and the nonce was confirmed. Raw values: status `0xFF`, X `0x0B` (+11), Y `0xF7` (-9),
-Z `0x3A` (+58), signed 8-bit.
-
-| Item | Value | Status |
-|---|---|---|
-| `CTRL_REG1` after the write | `0x47` | DEVICE: read back, not assumed |
-| `STATUS_REG` | `0xFF` | DEVICE: all data-available and overrun bits set; not interpreted further |
-| X, Y, Z (signed counts) | +11, -9, +58 | DEVICE: one sample each |
-| Magnitude | about 59 counts | arithmetic on the three bytes |
-
-With the datasheet's nominal 18 mg per count at ±2 g (a datasheet figure, not measured here)
-that is about 1.07 g, with Z dominant: consistent with gravity on one axis, which says the
-chip is alive and the data is plausible. It does **not** say which physical face is up, the
-axis signs, or that the scale is right: one still sample cannot separate those.
-
-**Second run, phone moved (DEVICE, same day, bundle `20261016T150844Z-trace_accel_axes`)**: the
-same payload, the same register readback (`0x47`), after the phone was moved to another
-orientation (not recorded precisely: held by hand, which face was up was not noted).
-
-| Run | X | Y | Z | Dominant axis | Magnitude (counts) |
-|---|---|---|---|---|---|
-| 1, as first held | +11 | -9 | +58 | Z | about 59 |
-| 2, after moving it | +19 | +47 | +8 | Y | about 51 |
-| 3 and 4, phone resting, two consecutive runs | +2 | -16 | +59 | Z | about 61 (both) |
-| 5 and 6, flat, screen up (stated by the person holding it), two runs | +3 | -6 | +59 | Z | about 59 (both) |
-| 7 and 8, flat, screen against the table (stated), two runs | +2 | -6 | -53 | Z | about 53 (both) |
-| 9 and 10, on the left edge (stated; taken as portrait, screen facing the person), two runs | +57, +58 | -7, -6 | +6 | X | about 57 to 58 |
-| 11 and 12, on the right edge (stated; the rounded sides are why the bottom and top edges were not used: the cable is in the way), two runs | -55, -54 | -6, -7 | -5, -4 | X | about 54 to 55 |
-| 13 and 14, on the top edge (stated; taken as the top end of the phone on the table, the cable end up), two runs | +3, +4 | -60, -61 | +11 | Y | about 61 |
-
-The dominant axis moved from Z to Y with the phone, which is what a gravity vector does and
-what a stuck or constant output would not do. Runs 3 and 4 (bundles `20261016T150944Z` and
-`20261016T150947Z`, phone left resting, which face was up not recorded) returned exactly the
-same three bytes, so the readout is repeatable at rest at this resolution. Z dominant again
-with Y at -16 counts means a slight tilt or a different resting position from run 1.
-
-Taken together, the magnitude at rest is about 60 counts (59 and 61 in the two resting
-positions), and the 51 of run 2 is the outlier, taken while the phone was being moved; that
-is the likeliest cause and was not tested. At the nominal 18 mg per count, 60 counts is
-about 1.1 g, a little above 1 g: the scale or the offsets may differ from the datasheet's
-typical values, and nothing here measures them.
-
-What this still does not give: the direction of each axis relative to the case, the actual
-scale and offsets, or any calibration. No axis-to-face mapping is claimed.
-
-**Z axis, both signs (runs 5 to 8, bundles `20261016T151058Z`, `20261016T151101Z`,
-`20261016T151159Z`, `20261016T151202Z`; the faces are as stated by the person holding the
-phone)**: flat screen up Z read +59, screen against the table Z read -53, each identical
-twice. The sign flips with the face, so the Z axis measures along the screen normal and
-+Z points out of the screen (the sign follows the usual convention that a resting
-accelerometer reports +1 g along the axis pointing up; the flip itself is the observation).
-
-Two points on one axis give a first estimate, with the caveat that the table was assumed
-level and that each value is a single 8-bit count (an error of about one count):
-
-- scale: (59 - (-53)) / 2 = 56 counts per g, i.e. about 17.9 mg per count, which agrees with
-  the datasheet's nominal 18 mg per count at the +-2 g range;
-- Z offset: (59 + (-53)) / 2 = +3 counts.
-
-X and Y barely changed between the two faces (+3, -6 then +2, -6). If the table was level,
-that points to offsets of about +2 to +3 counts on X and -6 on Y rather than to tilt, which
-would have changed sign on flipping. This is a reading of four numbers, not a calibration.
-The earlier "a little above 1 g" at rest is explained by these offsets, not by a different
-scale.
-
-**X axis (runs 9 and 10, bundles `20261016T151312Z`, `20261016T151315Z`)**: on its left
-edge, X read +57 and +58 (one count apart between the two runs), Y -7 and -6, Z +6. "Left
-edge" was said by the person holding it, and is taken here as portrait with the screen
-facing them. With the left edge down, the up direction is toward the right edge, so under the
-same convention as for Z, **+X points toward the right edge**. Subtracting the roughly +2.5
-count X offset estimated above leaves about 55 counts, which agrees with the 56 counts per
-g from the Z axis. Y stays near its -6 offset and Z near +3 plus a small remainder, as
-expected for an edge position.
-
-**X axis, both signs (runs 11 and 12, bundles `20261016T151438Z`, `20261016T151441Z`)**: on
-the right edge X read -55 and -54. With +57.5 on the left edge (mean of runs 9 and 10) and
--54.5 on the right edge (mean of runs 11 and 12), the X axis gives 56.0 counts per g
-(half the span) and an offset of +1.5 counts. That is the same 56 counts per g as the Z axis,
-from an independent pair of positions, and it fixes the sign: **+X points toward the right
-edge**, under the convention already stated for Z. Z read +6 on the left edge and -4.5 on
-the right, which is a lean of about 5 counts (0.09 g) either way, plausible on rounded edges.
-
-**What is left for the Y axis**: the bottom edge and the top edge cannot be used (rounded
-sides and the cable). A usable alternative is flat, screen up, with the top end raised by a
-known amount (a book under it): the sign of Y then says whether +Y points toward the top.
-Y has so far read about -6 in every position that was not tilted along it, which is its
-offset (about -6.5 counts if the table was level), not a direction.
-
-**What remains hypothesis**: which of the two compatible-string chips (LIS331DL vs LIS302DL)
-is actually present, reading actual axis data (the three accelerations), and the
-`orientation` device-tree property's exact meaning. A compass (AKM8973S, address `0x1e`)
-and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, device tree
-only, not probed at all yet — two device-tree nodes do not by themselves prove two separate
-physical chips.
-
-**Axis data (DEVICE, 2026-10-16, one run, phone not moved)**: `STAGE 31` powers the part up
-(first write to this device: `CTRL_REG1`), reads it back, then reads the status and the three
-axis bytes. The write landed (`CTRL_REG1` read back `0x47`: power-down bit cleared, X/Y/Z
-enabled, other bits at their reset state, the default ±2 g range assumed), every ACK flag was
-`1`, and the nonce was confirmed. Raw values: status `0xFF`, X `0x0B` (+11), Y `0xF7` (-9),
-Z `0x3A` (+58), signed 8-bit.
-
-| Item | Value | Status |
-|---|---|---|
-| `CTRL_REG1` after the write | `0x47` | DEVICE: read back, not assumed |
-| `STATUS_REG` | `0xFF` | DEVICE: all data-available and overrun bits set; not interpreted further |
-| X, Y, Z (signed counts) | +11, -9, +58 | DEVICE: one sample each |
-| Magnitude | about 59 counts | arithmetic on the three bytes |
-
-With the datasheet's nominal 18 mg per count at ±2 g (a datasheet figure, not measured here)
-that is about 1.07 g, with Z dominant: consistent with gravity on one axis, which says the
-chip is alive and the data is plausible. It does **not** say which physical face is up, the
-axis signs, or that the scale is right: one still sample cannot separate those.
-
-**Second run, phone moved (DEVICE, same day, bundle `20261016T150844Z-trace_accel_axes`)**: the
-same payload, the same register readback (`0x47`), after the phone was moved to another
-orientation (not recorded precisely: held by hand, which face was up was not noted).
-
-| Run | X | Y | Z | Dominant axis | Magnitude (counts) |
-|---|---|---|---|---|---|
-| 1, as first held | +11 | -9 | +58 | Z | about 59 |
-| 2, after moving it | +19 | +47 | +8 | Y | about 51 |
-| 3 and 4, phone resting, two consecutive runs | +2 | -16 | +59 | Z | about 61 (both) |
-| 5 and 6, flat, screen up (stated by the person holding it), two runs | +3 | -6 | +59 | Z | about 59 (both) |
-| 7 and 8, flat, screen against the table (stated), two runs | +2 | -6 | -53 | Z | about 53 (both) |
-| 9 and 10, on the left edge (stated; taken as portrait, screen facing the person), two runs | +57, +58 | -7, -6 | +6 | X | about 57 to 58 |
-| 11 and 12, on the right edge (stated; the rounded sides are why the bottom and top edges were not used: the cable is in the way), two runs | -55, -54 | -6, -7 | -5, -4 | X | about 54 to 55 |
-
-The dominant axis moved from Z to Y with the phone, which is what a gravity vector does and
-what a stuck or constant output would not do. Runs 3 and 4 (bundles `20261016T150944Z` and
-`20261016T150947Z`, phone left resting, which face was up not recorded) returned exactly the
-same three bytes, so the readout is repeatable at rest at this resolution. Z dominant again
-with Y at -16 counts means a slight tilt or a different resting position from run 1.
-
-Taken together, the magnitude at rest is about 60 counts (59 and 61 in the two resting
-positions), and the 51 of run 2 is the outlier, taken while the phone was being moved; that
-is the likeliest cause and was not tested. At the nominal 18 mg per count, 60 counts is
-about 1.1 g, a little above 1 g: the scale or the offsets may differ from the datasheet's
-typical values, and nothing here measures them.
-
-What this still does not give: the direction of each axis relative to the case, the actual
-scale and offsets, or any calibration. No axis-to-face mapping is claimed.
-
-**Z axis, both signs (runs 5 to 8, bundles `20261016T151058Z`, `20261016T151101Z`,
-`20261016T151159Z`, `20261016T151202Z`; the faces are as stated by the person holding the
-phone)**: flat screen up Z read +59, screen against the table Z read -53, each identical
-twice. The sign flips with the face, so the Z axis measures along the screen normal and
-+Z points out of the screen (the sign follows the usual convention that a resting
-accelerometer reports +1 g along the axis pointing up; the flip itself is the observation).
-
-Two points on one axis give a first estimate, with the caveat that the table was assumed
-level and that each value is a single 8-bit count (an error of about one count):
-
-- scale: (59 - (-53)) / 2 = 56 counts per g, i.e. about 17.9 mg per count, which agrees with
-  the datasheet's nominal 18 mg per count at the +-2 g range;
-- Z offset: (59 + (-53)) / 2 = +3 counts.
-
-X and Y barely changed between the two faces (+3, -6 then +2, -6). If the table was level,
-that points to offsets of about +2 to +3 counts on X and -6 on Y rather than to tilt, which
-would have changed sign on flipping. This is a reading of four numbers, not a calibration.
-The earlier "a little above 1 g" at rest is explained by these offsets, not by a different
-scale.
-
-**X axis (runs 9 and 10, bundles `20261016T151312Z`, `20261016T151315Z`)**: on its left
-edge, X read +57 and +58 (one count apart between the two runs), Y -7 and -6, Z +6. "Left
-edge" was said by the person holding it, and is taken here as portrait with the screen
-facing them. With the left edge down, the up direction is toward the right edge, so under the
-same convention as for Z, **+X points toward the right edge**. Subtracting the roughly +2.5
-count X offset estimated above leaves about 55 counts, which agrees with the 56 counts per
-g from the Z axis. Y stays near its -6 offset and Z near +3 plus a small remainder, as
-expected for an edge position.
-
-**Next observation**: the bottom edge (or the top edge) on the table, still, two runs, for
-the direction of Y. That is the last axis.
-
-**What remains hypothesis**: which of the two compatible-string chips (LIS331DL vs LIS302DL)
-is actually present, reading actual axis data (the three accelerations), and the
-`orientation` device-tree property's exact meaning. A compass (AKM8973S, address `0x1e`)
-and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, device tree
-only, not probed at all yet — two device-tree nodes do not by themselves prove two separate
-physical chips.
-
-**Axis data (DEVICE, 2026-10-16, one run, phone not moved)**: `STAGE 31` powers the part up
-(first write to this device: `CTRL_REG1`), reads it back, then reads the status and the three
-axis bytes. The write landed (`CTRL_REG1` read back `0x47`: power-down bit cleared, X/Y/Z
-enabled, other bits at their reset state, the default ±2 g range assumed), every ACK flag was
-`1`, and the nonce was confirmed. Raw values: status `0xFF`, X `0x0B` (+11), Y `0xF7` (-9),
-Z `0x3A` (+58), signed 8-bit.
-
-| Item | Value | Status |
-|---|---|---|
-| `CTRL_REG1` after the write | `0x47` | DEVICE: read back, not assumed |
-| `STATUS_REG` | `0xFF` | DEVICE: all data-available and overrun bits set; not interpreted further |
-| X, Y, Z (signed counts) | +11, -9, +58 | DEVICE: one sample each |
-| Magnitude | about 59 counts | arithmetic on the three bytes |
-
-With the datasheet's nominal 18 mg per count at ±2 g (a datasheet figure, not measured here)
-that is about 1.07 g, with Z dominant: consistent with gravity on one axis, which says the
-chip is alive and the data is plausible. It does **not** say which physical face is up, the
-axis signs, or that the scale is right: one still sample cannot separate those.
-
-**Second run, phone moved (DEVICE, same day, bundle `20261016T150844Z-trace_accel_axes`)**: the
-same payload, the same register readback (`0x47`), after the phone was moved to another
-orientation (not recorded precisely: held by hand, which face was up was not noted).
-
-| Run | X | Y | Z | Dominant axis | Magnitude (counts) |
-|---|---|---|---|---|---|
-| 1, as first held | +11 | -9 | +58 | Z | about 59 |
-| 2, after moving it | +19 | +47 | +8 | Y | about 51 |
-| 3 and 4, phone resting, two consecutive runs | +2 | -16 | +59 | Z | about 61 (both) |
-| 5 and 6, flat, screen up (stated by the person holding it), two runs | +3 | -6 | +59 | Z | about 59 (both) |
-| 7 and 8, flat, screen against the table (stated), two runs | +2 | -6 | -53 | Z | about 53 (both) |
-| 9 and 10, on the left edge (stated; taken as portrait, screen facing the person), two runs | +57, +58 | -7, -6 | +6 | X | about 57 to 58 |
-
-The dominant axis moved from Z to Y with the phone, which is what a gravity vector does and
-what a stuck or constant output would not do. Runs 3 and 4 (bundles `20261016T150944Z` and
-`20261016T150947Z`, phone left resting, which face was up not recorded) returned exactly the
-same three bytes, so the readout is repeatable at rest at this resolution. Z dominant again
-with Y at -16 counts means a slight tilt or a different resting position from run 1.
-
-Taken together, the magnitude at rest is about 60 counts (59 and 61 in the two resting
-positions), and the 51 of run 2 is the outlier, taken while the phone was being moved; that
-is the likeliest cause and was not tested. At the nominal 18 mg per count, 60 counts is
-about 1.1 g, a little above 1 g: the scale or the offsets may differ from the datasheet's
-typical values, and nothing here measures them.
-
-What this still does not give: the direction of each axis relative to the case, the actual
-scale and offsets, or any calibration. No axis-to-face mapping is claimed.
-
-**Z axis, both signs (runs 5 to 8, bundles `20261016T151058Z`, `20261016T151101Z`,
-`20261016T151159Z`, `20261016T151202Z`; the faces are as stated by the person holding the
-phone)**: flat screen up Z read +59, screen against the table Z read -53, each identical
-twice. The sign flips with the face, so the Z axis measures along the screen normal and
-+Z points out of the screen (the sign follows the usual convention that a resting
-accelerometer reports +1 g along the axis pointing up; the flip itself is the observation).
-
-Two points on one axis give a first estimate, with the caveat that the table was assumed
-level and that each value is a single 8-bit count (an error of about one count):
-
-- scale: (59 - (-53)) / 2 = 56 counts per g, i.e. about 17.9 mg per count, which agrees with
-  the datasheet's nominal 18 mg per count at the +-2 g range;
-- Z offset: (59 + (-53)) / 2 = +3 counts.
-
-X and Y barely changed between the two faces (+3, -6 then +2, -6). If the table was level,
-that points to offsets of about +2 to +3 counts on X and -6 on Y rather than to tilt, which
-would have changed sign on flipping. This is a reading of four numbers, not a calibration.
-The earlier "a little above 1 g" at rest is explained by these offsets, not by a different
-scale.
-
-**Next observation**: each edge in turn, still, two runs each, for the directions of X and
-Y.
-
-**What remains hypothesis**: which of the two compatible-string chips (LIS331DL vs LIS302DL)
-is actually present, reading actual axis data (the three accelerations), and the
-`orientation` device-tree property's exact meaning. A compass (AKM8973S, address `0x1e`)
-and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, device tree
-only, not probed at all yet — two device-tree nodes do not by themselves prove two separate
-physical chips.
-
-**Axis data (DEVICE, 2026-10-16, one run, phone not moved)**: `STAGE 31` powers the part up
-(first write to this device: `CTRL_REG1`), reads it back, then reads the status and the three
-axis bytes. The write landed (`CTRL_REG1` read back `0x47`: power-down bit cleared, X/Y/Z
-enabled, other bits at their reset state, the default ±2 g range assumed), every ACK flag was
-`1`, and the nonce was confirmed. Raw values: status `0xFF`, X `0x0B` (+11), Y `0xF7` (-9),
-Z `0x3A` (+58), signed 8-bit.
-
-| Item | Value | Status |
-|---|---|---|
-| `CTRL_REG1` after the write | `0x47` | DEVICE: read back, not assumed |
-| `STATUS_REG` | `0xFF` | DEVICE: all data-available and overrun bits set; not interpreted further |
-| X, Y, Z (signed counts) | +11, -9, +58 | DEVICE: one sample each |
-| Magnitude | about 59 counts | arithmetic on the three bytes |
-
-With the datasheet's nominal 18 mg per count at ±2 g (a datasheet figure, not measured here)
-that is about 1.07 g, with Z dominant: consistent with gravity on one axis, which says the
-chip is alive and the data is plausible. It does **not** say which physical face is up, the
-axis signs, or that the scale is right: one still sample cannot separate those.
-
-**Second run, phone moved (DEVICE, same day, bundle `20261016T150844Z-trace_accel_axes`)**: the
-same payload, the same register readback (`0x47`), after the phone was moved to another
-orientation (not recorded precisely: held by hand, which face was up was not noted).
-
-| Run | X | Y | Z | Dominant axis | Magnitude (counts) |
-|---|---|---|---|---|---|
-| 1, as first held | +11 | -9 | +58 | Z | about 59 |
-| 2, after moving it | +19 | +47 | +8 | Y | about 51 |
-| 3 and 4, phone resting, two consecutive runs | +2 | -16 | +59 | Z | about 61 (both) |
-| 5 and 6, flat, screen up (stated by the person holding it), two runs | +3 | -6 | +59 | Z | about 59 (both) |
-| 7 and 8, flat, screen against the table (stated), two runs | +2 | -6 | -53 | Z | about 53 (both) |
-
-The dominant axis moved from Z to Y with the phone, which is what a gravity vector does and
-what a stuck or constant output would not do. Runs 3 and 4 (bundles `20261016T150944Z` and
-`20261016T150947Z`, phone left resting, which face was up not recorded) returned exactly the
-same three bytes, so the readout is repeatable at rest at this resolution. Z dominant again
-with Y at -16 counts means a slight tilt or a different resting position from run 1.
-
-Taken together, the magnitude at rest is about 60 counts (59 and 61 in the two resting
-positions), and the 51 of run 2 is the outlier, taken while the phone was being moved; that
-is the likeliest cause and was not tested. At the nominal 18 mg per count, 60 counts is
-about 1.1 g, a little above 1 g: the scale or the offsets may differ from the datasheet's
-typical values, and nothing here measures them.
-
-What this still does not give: the direction of each axis relative to the case, the actual
-scale and offsets, or any calibration. No axis-to-face mapping is claimed.
-
-**Axis direction, first piece (runs 5 and 6, bundles `20261016T151058Z`, `20261016T151101Z`)**:
-flat with the screen up, Z read +59 and X, Y read +3 and -6, identically twice. If the part
-follows the usual convention for a static accelerometer (it reports +1 g along the axis that
-points up), then +Z points out of the screen. That convention was not checked here: the
-direct test is the same measurement screen down, where Z should read about -59. X and Y
-directions are still open.
-
-**Next observation**: screen down, then each edge in turn, still, two runs each.
-
-**What remains hypothesis**: which of the two compatible-string chips (LIS331DL vs LIS302DL)
-is actually present, reading actual axis data (the three accelerations), and the
-`orientation` device-tree property's exact meaning. A compass (AKM8973S, address `0x1e`)
-and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, device tree
-only, not probed at all yet — two device-tree nodes do not by themselves prove two separate
-physical chips.
-
-**Axis data (DEVICE, 2026-10-16, one run, phone not moved)**: `STAGE 31` powers the part up
-(first write to this device: `CTRL_REG1`), reads it back, then reads the status and the three
-axis bytes. The write landed (`CTRL_REG1` read back `0x47`: power-down bit cleared, X/Y/Z
-enabled, other bits at their reset state, the default ±2 g range assumed), every ACK flag was
-`1`, and the nonce was confirmed. Raw values: status `0xFF`, X `0x0B` (+11), Y `0xF7` (-9),
-Z `0x3A` (+58), signed 8-bit.
-
-| Item | Value | Status |
-|---|---|---|
-| `CTRL_REG1` after the write | `0x47` | DEVICE: read back, not assumed |
-| `STATUS_REG` | `0xFF` | DEVICE: all data-available and overrun bits set; not interpreted further |
-| X, Y, Z (signed counts) | +11, -9, +58 | DEVICE: one sample each |
-| Magnitude | about 59 counts | arithmetic on the three bytes |
-
-With the datasheet's nominal 18 mg per count at ±2 g (a datasheet figure, not measured here)
-that is about 1.07 g, with Z dominant: consistent with gravity on one axis, which says the
-chip is alive and the data is plausible. It does **not** say which physical face is up, the
-axis signs, or that the scale is right: one still sample cannot separate those.
-
-**Second run, phone moved (DEVICE, same day, bundle `20261016T150844Z-trace_accel_axes`)**: the
-same payload, the same register readback (`0x47`), after the phone was moved to another
-orientation (not recorded precisely: held by hand, which face was up was not noted).
-
-| Run | X | Y | Z | Dominant axis | Magnitude (counts) |
-|---|---|---|---|---|---|
-| 1, as first held | +11 | -9 | +58 | Z | about 59 |
-| 2, after moving it | +19 | +47 | +8 | Y | about 51 |
-| 3 and 4, phone resting, two consecutive runs | +2 | -16 | +59 | Z | about 61 (both) |
-| 5 and 6, flat, screen up (stated by the person holding it), two runs | +3 | -6 | +59 | Z | about 59 (both) |
-
-The dominant axis moved from Z to Y with the phone, which is what a gravity vector does and
-what a stuck or constant output would not do. Runs 3 and 4 (bundles `20261016T150944Z` and
-`20261016T150947Z`, phone left resting, which face was up not recorded) returned exactly the
-same three bytes, so the readout is repeatable at rest at this resolution. Z dominant again
-with Y at -16 counts means a slight tilt or a different resting position from run 1.
-
-Taken together, the magnitude at rest is about 60 counts (59 and 61 in the two resting
-positions), and the 51 of run 2 is the outlier, taken while the phone was being moved; that
-is the likeliest cause and was not tested. At the nominal 18 mg per count, 60 counts is
-about 1.1 g, a little above 1 g: the scale or the offsets may differ from the datasheet's
-typical values, and nothing here measures them.
-
-What this still does not give: the direction of each axis relative to the case, the actual
-scale and offsets, or any calibration. No axis-to-face mapping is claimed.
-
-**Next observation**: hold the phone still in known positions (flat face up, flat face down,
-on each edge), several samples each, to get the axis directions and a scale estimate.
-
-**What remains hypothesis**: which of the two compatible-string chips (LIS331DL vs LIS302DL)
-is actually present, reading actual axis data (the three accelerations), and the
-`orientation` device-tree property's exact meaning. A compass (AKM8973S, address `0x1e`)
-and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, device tree
-only, not probed at all yet — two device-tree nodes do not by themselves prove two separate
-physical chips.
-
-**Axis data (DEVICE, 2026-10-16, one run, phone not moved)**: `STAGE 31` powers the part up
-(first write to this device: `CTRL_REG1`), reads it back, then reads the status and the three
-axis bytes. The write landed (`CTRL_REG1` read back `0x47`: power-down bit cleared, X/Y/Z
-enabled, other bits at their reset state, the default ±2 g range assumed), every ACK flag was
-`1`, and the nonce was confirmed. Raw values: status `0xFF`, X `0x0B` (+11), Y `0xF7` (-9),
-Z `0x3A` (+58), signed 8-bit.
-
-| Item | Value | Status |
-|---|---|---|
-| `CTRL_REG1` after the write | `0x47` | DEVICE: read back, not assumed |
-| `STATUS_REG` | `0xFF` | DEVICE: all data-available and overrun bits set; not interpreted further |
-| X, Y, Z (signed counts) | +11, -9, +58 | DEVICE: one sample each |
-| Magnitude | about 59 counts | arithmetic on the three bytes |
-
-With the datasheet's nominal 18 mg per count at ±2 g (a datasheet figure, not measured here)
-that is about 1.07 g, with Z dominant: consistent with gravity on one axis, which says the
-chip is alive and the data is plausible. It does **not** say which physical face is up, the
-axis signs, or that the scale is right: one still sample cannot separate those.
-
-**Next observation**: repeat with the phone held in a different, known orientation and check
-that the dominant axis moves accordingly. Until then this is "plausible gravity vector", not
-a calibrated sensor.
-
-**How to reproduce**: build with `make trace_accel_i2c.bin` (see `tools/payloads/`, STAGE
-29), then run it on a device in DFU with `tools/go.sh tools/payloads/trace_accel_i2c.bin`. The axes
-run is `make trace_accel_axes.bin` (STAGE 31), run the same way.
-On that run it reads the bus idle level first and only attempts the transaction if it looks
-plausibly pulled-up, so a mis-wired guess cannot look like a silent success.
-
-**Links to evidence**: [evidence bundle `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c) and [`20261016T150615Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150615Z-trace_accel_axes) and [`20261016T150844Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150844Z-trace_accel_axes), plus `20261016T150944Z` and `20261016T150947Z` in the same directory, indexed on the [evidence page](08-evidence.md).
+| 1 | as first held; face not recorded | +11 | -9 | +58 | `20261016T150615Z` |
+| 2 | after moving the phone by hand | +19 | +47 | +8 | `20261016T150844Z` |
+| 3, 4 | resting, face not recorded | +2 | -16 | +59 | `20261016T150944Z`, `20261016T150947Z` |
+| 5, 6 | flat, screen up (stated) | +3 | -6 | +59 | `20261016T151058Z`, `20261016T151101Z` |
+| 7, 8 | flat, screen against the table (stated) | +2 | -6 | -53 | `20261016T151159Z`, `20261016T151202Z` |
+| 9, 10 | left edge down (stated; portrait, screen facing the person assumed) | +57 / +58 | -7 / -6 | +6 | `20261016T151312Z`, `20261016T151315Z` |
+| 11, 12 | right edge down (stated) | -55 / -54 | -6 / -7 | -5 / -4 | `20261016T151438Z`, `20261016T151441Z` |
+| 13, 14 | top end down (stated; cable end up assumed) | +3 / +4 | -60 / -61 | +11 | `20261016T151540Z`, `20261016T151542Z` |
+
+**What the readings show**
+
+- **Z**: +59 screen up and -53 screen down, identical twice each. The sign follows the face, so
+  Z measures along the screen normal. Under the usual convention (a resting accelerometer
+  reports +1 g along the axis pointing up), +Z points out of the screen.
+- **X**: +57.5 on the left edge and -54.5 on the right edge (means of two runs each), so +X
+  points toward the right edge under the same convention.
+- **Y**: about -60 with the top end down. With that position taken as stated, the up direction is
+  toward the bottom, so +Y points toward the top. This one direction rests on the interpretation
+  of "top edge"; the data alone do not tell top from bottom.
+- **Frame**: +X toward the right edge, +Y toward the top, +Z out of the screen, phone upright with
+  the screen facing the person. That triple is right-handed, a consistency check on Y and not a
+  proof of it.
+- **Scale**: Z gives (59 - (-53)) / 2 = 56 counts per g and X gives (57.5 + 54.5) / 2 = 56
+  counts per g, from independent pairs of positions: about 17.9 mg per count, which agrees with
+  the datasheet's nominal 18 mg per count at +-2 g. Y has a single position.
+- **Offsets**: about +3 counts on Z, +1.5 on X, and about -6 on Y (Y read -6 in every position
+  that did not load it). These assume a level table and carry about one count of error.
+- **Repeatability**: runs 3 and 4, 5 and 6, 7 and 8 returned identical bytes. The magnitude of
+  run 2 (about 51 counts against 59 to 61 elsewhere) is the outlier; it was taken while the phone
+  was being moved, which is the likeliest cause and was not tested.
+
+**What this does not give**: the chip model; calibrated offsets; a temperature or time
+stability; any filtering; and any measured angular error. The readings support first tilt
+estimates whose precision is still to be characterised. The sensor is read once per run.
+
+**How to reproduce**: build with `make trace_accel_i2c.bin` (STAGE 29) for the identifier and
+`make trace_accel_axes.bin` (STAGE 31) for the axes (see `tools/payloads/`), and run each on a
+device in DFU with `tools/go.sh`. Every STAGE 31 run was confirmed by its nonce.
+
+**Links to evidence**: [`20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c)
+(identifier) and the `trace_accel_axes` bundles named in the table, all under
+[`evidence/`](https://github.com/SebE585/trognon/tree/main/evidence), indexed on the
+[evidence page](08-evidence.md).
+
+**History of this section** (superseded statements, kept for the record):
+
+- First version: identifier only; the axes, the chip model and the `orientation` property were
+  listed as open.
+- After one still run: "plausible gravity vector, not a calibrated sensor"; no axis-to-face
+  mapping claimed.
+- After the second run (phone moved): the dominant axis moved from Z to Y; scale and
+  axis directions still open.
+- After flat screen up and screen down: Z flips sign; a first scale of 56 counts per g.
+- After the left and right edges: X direction and a second, independent 56 counts per g.
+- After the top edge: Y direction (conditional) and the right-handed frame. An earlier line saying
+  the readings were "enough to compute a tilt angle to a few degrees" was removed: no angular
+  error was measured.
 
 ## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (mixed DEVICE/HYPOTHESIS, 2026-10-15/16)
 
@@ -837,13 +376,13 @@ pattern as the Wi-Fi reset/wake read (STAGE 15): plain reads, no write, no UART 
 
 *The magnetometer measures the magnetic field, from which a compass heading can be computed.*
 
-**Status**: a device at `0x1e` returns exactly the AK8973's documented reset state. No measurement yet.
+**Status**: a device at `0x1e` gives readings compatible with an AK8973's documented reset state. No measurement yet.
 
 **What's confirmed (first probe, STAGE 34)**: the device tree has two nodes on `i2c0`, `compass` (address `0x1e`, with an
 interrupt) and `compass1` (`0x1f`, no interrupt), both `compass,akm8973s`. A read-only probe
 on the same bit-banged bus as the accelerometer tried four addresses with two minimal
 transactions each (address + write then stop; if acknowledged, address + read, one byte,
-stop), writing no register:
+stop), sending no data byte to any device register:
 
 | Address | Role in the run | Acknowledged (write / read) | Byte read |
 |---|---|---|---|
@@ -878,21 +417,24 @@ reads at `0x1e`, all three transactions acknowledged for each of the 12 register
 | MS1 `0xE0` | `0x03` | `0x03` (power-down) |
 | HXDA..HZDA `0xE1`..`0xE3`, HXGA..HZGA `0xE4`..`0xE6` | `0x00` each | `0x00` each |
 
-All twelve match the AK8973's documented state after reset. Since the chip has no ID register,
-this identifies it by reset state: strong consistency with an AK8973 (the `0x03` in MS1 in
-particular), not an identifier. The chip is in power-down, so the data registers hold nothing
-yet; a measurement needs a mode write and the per-chip setup from the EEPROM, not attempted.
+All twelve readings are compatible with the AK8973's expected state after reset. Since the chip
+has no ID register, this is a consistency check and not an identification: other parts could
+return the same bytes, even if `0x03` in MS1 is a specific value. The datasheet's table was read
+once, from a copy of a preliminary document, and was not cross-checked against a second source.
+The chip appears to be in power-down, so the data registers hold nothing yet; a measurement needs
+a mode write and the per-chip setup from the EEPROM, not attempted.
 
-**Bus scan (same run)**: address-only transactions (nothing written) over `0x08`..`0x77` on
+**Bus scan (same run)**: address-only transactions (no data byte sent to any device) over `0x08`..`0x77` on
 `i2c0` were acknowledged at `0x1d` (accelerometer), `0x1e` (magnetometer), `0x39` (the `mikey`
 node) and `0x74` (the `pmu` node), and nowhere else. Not acknowledged although the device tree
 lists them: `0x1f` (`compass1`), `0x4a` (`audio0`, a CS42L61 codec) and `0x29` (`tethered`);
-a powered-down or held-in-reset part does not answer, so silence is not absence. In particular
-**no device answered at the usual gyroscope addresses (`0x68`, `0x69`) or anywhere else
-unexpected, and the device tree names no gyroscope on any bus** (`i2c0`, `i2c2`, `spi0` to
-`spi2`). The only other sensor node is an ambient-light sensor (`als`, TSL2561 at `0x49`) on
-`i2c2`, not scanned. So this phone, as far as the tree and `i2c0` show, has an accelerometer
-and a magnetometer and no gyroscope.
+a powered-down or held-in-reset part does not answer, so silence is not absence. Under these
+conditions the scan detected **no additional responder**, including at `0x68` and `0x69`, the
+addresses a common gyroscope would use; that is an observation about what answered, not a proof
+that no gyroscope exists on this bus. The device tree names no gyroscope node on any bus it
+describes (`i2c0`, `i2c2`, `spi0` to `spi2`), and the phone's model is not known to have one;
+neither point is a measurement either. `i2c2` (an ambient-light sensor node, TSL2561 at `0x49`)
+was not scanned.
 
 **How to reproduce**: build with `make trace_compass_i2c.bin` (STAGE 34) and `make trace_i2c_scan.bin`
 (STAGE 35, see `tools/payloads/`), run each on a device in DFU with `tools/go.sh`.

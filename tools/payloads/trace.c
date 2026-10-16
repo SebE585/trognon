@@ -944,8 +944,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	fb_clean();
 #endif
 #if STAGE == 33
-	/* Touch controller reset (14.01) and chip-select enable (13.00), READ-ONLY. Nothing is
-	 * configured and nothing is written: each GPIO register is read once, and both the raw
+	/* Touch controller reset (14.01) and chip-select enable (13.00), READ-ONLY. The pins'
+	 * configuration is not changed and no value is written to them: each GPIO register is read once, and both the raw
 	 * word and its bit 0 are reported. The Bluetooth reset line, already read on the device
 	 * (STAGE 30: level 1), is read in the same run as a control, so a run that reads it
 	 * differently is flagged as not comparable. A level says nothing about polarity (active
@@ -968,7 +968,7 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	fb_clean();
 #endif
 #if STAGE == 34
-	/* Magnetometer presence probe over the same bit-banged i2c0, no register written. For each of
+	/* Magnetometer presence probe over the same bit-banged i2c0, no data byte written to any device register. For each of
 	 * four addresses it makes two minimal transactions: (A) START, address+write, STOP, which only
 	 * asks "does anything acknowledge this address"; (B) only if A was acknowledged, START,
 	 * address+read, ONE byte, STOP -- a current-address read, so the chip's register pointer is
@@ -1018,13 +1018,14 @@ __attribute__((section(".text.start"))) void payload_main(void)
 #endif
 #if STAGE == 35
 	/* (1) Address scan of i2c0 (7-bit addresses 0x08..0x77): for each, START, address+write, STOP,
-	 * recording only whether anything acknowledged. No data byte is sent, so nothing is written to
-	 * any device. Answers "what is on this bus" without assuming the device tree is complete (a
-	 * gyroscope would show up here even without a node). (2) Random reads of the AK8973's
+	 * recording only whether anything acknowledged. No data byte is sent to any device. Shows what
+	 * answers on this bus without assuming the device tree is complete; a part that is unpowered
+	 * or held in reset does not answer, so silence is not absence. (2) Random reads of the AK8973's
 	 * read-only registers at 0x1e (datasheet MS0561-E-01: ST 0xC0, TMPS 0xC1, H1X/H1Y/H1Z
 	 * 0xC2..0xC4) and of MS1 0xE0, whose reset value is 0x03 (power-down). The AK8973 has no ID
-	 * register, so this is identification by reset state, not by an identifier. Nothing is written
-	 * except the register-address byte of each random read. */
+	 * register, so this is a consistency check by reset state, not an identification. No data byte is
+	 * written to any device register; the register-address byte of each random read is sent, and the
+	 * I2C routines drive the two bus pins (GPIO) to produce the transactions. */
 	at(4, 116, 0x00F0C040); puts_("STEP 35 I2C SCAN\n");
 	volatile u32 *gp35  = (volatile u32 *)SOC_GPIO_BASE;
 	volatile u32 *scl35 = &gp35[SOC_I2C0_SCL_IDX];

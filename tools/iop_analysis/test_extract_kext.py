@@ -15,10 +15,10 @@ ek = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ek)
 
 
-def macho(segment_fileoff, segment_filesize, cmdsize=56, ncmds=1, sizeofcmds=None):
+def macho(segment_fileoff, segment_filesize, cmdsize=56, ncmds=1, sizeofcmds=None, nsects=0):
     """A minimal ARM MH_OBJECT with one LC_SEGMENT."""
     seg = struct.pack("<II16sIIIIIIII", 1, cmdsize, b"", 0x80000000, 0x1000,
-                      segment_fileoff, segment_filesize, 7, 7, 0, 0)
+                      segment_fileoff, segment_filesize, 7, 7, nsects, 0)
     seg = seg[:cmdsize].ljust(cmdsize, b"\0")
     if sizeofcmds is None:
         sizeofcmds = len(seg)
@@ -60,6 +60,16 @@ class TestMachoBounds(unittest.TestCase):
 
     def test_too_small_command_size_is_skipped(self):
         blob = macho(0x40, 0x10, cmdsize=4).ljust(0x60, b"\0")
+        self.assertEqual(list(ek.objects(blob)), [])
+
+    def test_segment_command_shorter_than_its_structure_is_skipped(self):
+        # 40 bytes is below the 56 the LC_SEGMENT structure needs; the fields read at +48 would
+        # lie beyond the command (regression found by review, 2026-10-16).
+        blob = macho(0x40, 0x10, cmdsize=40).ljust(0x60, b"\0")
+        self.assertEqual(list(ek.objects(blob)), [])
+
+    def test_declared_sections_that_do_not_fit_are_skipped(self):
+        blob = macho(0x40, 0x10, cmdsize=56, nsects=3).ljust(0x60, b"\0")
         self.assertEqual(list(ek.objects(blob)), [])
 
     def test_header_cut_short_is_skipped(self):

@@ -21,6 +21,13 @@ for a in "$@"; do
     want_dir=0
   elif [ "$a" = "--evidence" ]; then
     want_dir=1
+  else
+    case "$a" in
+      --evidence=*)   # the form argparse also accepts
+        v="${a#--evidence=}"
+        case "$v" in /*) ;; *) v="$(pwd)/$v" ;; esac
+        a="--evidence=$v" ;;
+    esac
   fi
   ARGS="$ARGS $(printf '%s' "$a" | sed "s/'/'\\\\''/g; s/^/'/; s/\$/'/")"
 done
