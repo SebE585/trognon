@@ -3,6 +3,8 @@
 Une affirmation étiquetée **DEVICE** ne vaut que par l'exécution qui la porte. Cette page relie chacune à un **dossier de preuve**
 que toute personne ayant un 3GS peut régénérer, et dit clairement quelles affirmations n'en ont pas encore.
 
+--8<-- "docs/snippets/build-commit.fr.md"
+
 ## Ce que contient un dossier
 
 Chaque exécution de `tools/send.sh` ou `tools/go.sh` écrit un répertoire sous [`evidence/`](https://github.com/SebE585/trognon/tree/main/evidence) :

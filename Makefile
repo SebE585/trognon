@@ -58,8 +58,11 @@ evidence-index:
 # Build the site and run structural checks mkdocs --strict does not cover (external audit,
 # 2026-10-16): currently, exactly one <h1> per page. Run this, not a bare `mkdocs build`,
 # before trusting a docs change is safe to publish.
-docs-build:
+docs-build: evidence-index
+	python3 tools/write_build_commit.py
 	mkdocs build --strict
 
 docs-check: docs-build
 	python3 -I tools/check_headings.py
+	git diff --exit-code -- docs/snippets/evidence-table.en.md docs/snippets/evidence-table.fr.md || \
+	  { echo "docs-check: evidence-table.{en,fr}.md are stale -- run 'make evidence-index' and commit the result"; exit 1; }

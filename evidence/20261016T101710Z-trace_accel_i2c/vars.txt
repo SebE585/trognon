@@ -1,0 +1,6 @@
+scl_idle=00000001
+sda_idle=00000001
+ack_addrw=00000001
+ack_reg=00000001
+ack_addrr=00000001
+who_am_i=0000003B

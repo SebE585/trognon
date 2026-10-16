@@ -1,0 +1,36 @@
+{
+  "payload": "trace_accel_i2c.bin",
+  "sha256": "c4e990dbf7b987308fbd74d5068f99cc448da8e215ca2ffcab8acc22a40e96e2",
+  "bytes": 3612,
+  "soc": "s5l8920",
+  "nonce_sent": "DB8D88CE",
+  "nonce_read": "DB8D88CE",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "accel-i2c-1"
+  },
+  "variables": {
+    "scl_idle": "00000001",
+    "sda_idle": "00000001",
+    "ack_addrw": "00000001",
+    "ack_reg": "00000001",
+    "ack_addrr": "00000001",
+    "who_am_i": "0000003B"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "f5d53bb24bf30d3f6f2b2821eb7c6cd2efd8c719",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T101710Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_accel_i2c.bin --evidence <repo>/tools/../evidence --vars scl_idle,sda_idle,ack_addrw,ack_reg,ack_addrr,who_am_i",
+  "screen_rows": 13
+}

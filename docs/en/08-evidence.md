@@ -3,6 +3,8 @@
 A claim tagged **DEVICE** is only as good as the run behind it. This page ties each one to an **evidence bundle**
 that anyone with a 3GS can regenerate, and says plainly which claims have no bundle yet.
 
+--8<-- "docs/snippets/build-commit.en.md"
+
 ## What a bundle contains
 
 Each run of `tools/send.sh` or `tools/go.sh` writes a directory under [`evidence/`](https://github.com/SebE585/trognon/tree/main/evidence):
