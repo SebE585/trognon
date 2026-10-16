@@ -1,0 +1,17 @@
+p11_before=000000BE
+p50_before=00000011
+gate_before=00000000
+rst_before=00000212
+cs_before=00000212
+guard_ok=00000001
+w4_ack=00000001
+p11_on=000000FE
+rst_pre=00000212
+rst_rel_now=00000210
+rst_rel_15ms=00000211
+cs_rel_15ms=00000212
+r11_ack=00000001
+rst_end=00000212
+gate_end=00000000
+p11_end=000000BE
+p50_end=00000011

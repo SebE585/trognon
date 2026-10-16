@@ -503,19 +503,29 @@ reading that the register bits written do power part of the touch domain; it is 
 A narrower run would apply only the LDO (PMU `0x11`) and then release the reset, to see whether the LDO alone raises the line. That
 isolates the supply that is plausibly responsible and needs no SPI traffic.
 
-## LDO-only run, prepared (STAGE 42, not run)
+## LDO-only run, done (STAGE 42, bundle `20261016T173946Z-trace_touch_ldo`)
 
-`STAGE 42` (`trace_touch_ldo.bin`, built, **not run**) applies **only the touch LDO** and then releases the reset, to see which of
-the three supplies of STAGE 40 raised the line. Writes: PMU `0x11` `0xBE` to `0xFE` (and back), and the reset GPIO register
-(`0x83000284`) `0x212` to `0x210` (and back). The clock gate and PMU `0x50` are not written. Sequence: guard (PMU `0x11` reads `0xBE`,
-`0x50` reads `0x11`, the gate reads `0`, the reset register reads `0x212`), LDO on, wait 20 ms, release the reset, read at once and
-after 15 ms (the reset and chip-select registers), restore the reset then the LDO, read everything back. The disassembly shows no
-store to the clock gate, the source has two PMU writes both to register `0x11`, and the only GPIO helper calls are the I2C pins plus
-one release and one restore of `0x83000284`. No SPI byte is sent.
+With the explicit go of the person holding the phone, `STAGE 42` ran (nonce confirmed, guard passed): PMU `0x11` `0xBE` to `0xFE`, 20 ms,
+the touch reset register `0x83000284` `0x212` to `0x210`, read at once and after 15 ms, then reset and LDO restored. The clock gate and PMU
+`0x50` were not written and stayed `0x0` and `0x11`. Everything ended as found and the phone was still in Recovery mode.
 
-Reading: if the line reads `0x211` with the LDO alone, the LDO's rail is enough (a pull-up to that rail, or the controller); if it
-reads `0x210`, the clock enable or the SPI clock gate matters, or the LDO needs longer than 20 ms. A reading between the two is noted as
-it is.
+| Reset register `0x83000284`, line released | Supplies | Value | Level |
+|---|---|---|---|
+| at once | none (STAGE 41) | `0x210` | 0 |
+| 15 ms later | none (STAGE 41) | `0x210` | 0 |
+| at once | **LDO only** (STAGE 42) | `0x210` | **0** |
+| 15 ms later | **LDO only** (STAGE 42) | `0x211` | **1** |
+| about 35 ms after power-up | LDO, PMU `0x50` and clock gate (STAGE 40) | `0x211` | 1 |
+
+What it shows: the LDO alone is enough for the line to go high once released, with neither the PMU clock enable nor the SPI clock gate; and it
+**does not go high at once**, but within 15 ms (low at the first read, high at the second). The chip-select register stayed `0x212`
+(driven low, untouched). A line that rises over milliseconds after release fits a controller finishing its own power-on or reset sequence, and
+it also fits a pull-up working against a large capacitance; this run cannot tell them apart, and the first read came microseconds after the
+release, so "not at once" says only that the rise takes more than that. It is still not an exchange with the controller: nothing was sent, and
+the reading is one line at two instants.
+
+What would sharpen it: several reads between 0 and 15 ms and beyond (the rise time), and the same with the LDO on for longer or shorter before the
+release. Both stay read-only apart from the reset and the LDO already used.
 
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 

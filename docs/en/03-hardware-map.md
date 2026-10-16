@@ -492,7 +492,8 @@ the PMU access and the SPI controller, before any transaction.
   `0x211`). A pull-up on the board and the controller itself would give the same reading, so this is not yet an
   observation of the controller. A control released the same line with no supply and it read low, so the high
   level came with the supplies (a pull-up to the touch rail, or the controller): the line is connected to something
-  that the sequence powers.
+  that the sequence powers. With the touch LDO alone (no clock enable, no SPI clock) the released line read low at
+  once and high 15 ms later.
 - No transaction with the controller itself has been made.
 
 **How to reproduce**: build with `make trace_touch_gpio.bin` (see `tools/payloads/`, STAGE

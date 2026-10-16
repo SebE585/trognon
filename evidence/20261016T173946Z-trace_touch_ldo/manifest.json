@@ -1,0 +1,47 @@
+{
+  "payload": "trace_touch_ldo.bin",
+  "sha256": "3be45d51f8a914a4dbbfae55fdb403a9dcfc33f402a51666aec87ac5047670d6",
+  "bytes": 4308,
+  "soc": "s5l8920",
+  "nonce_sent": "C6824AAD",
+  "nonce_read": "C6824AAD",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "touch-ldo-only-1"
+  },
+  "variables": {
+    "p11_before": "000000BE",
+    "p50_before": "00000011",
+    "gate_before": "00000000",
+    "rst_before": "00000212",
+    "cs_before": "00000212",
+    "guard_ok": "00000001",
+    "w4_ack": "00000001",
+    "p11_on": "000000FE",
+    "rst_pre": "00000212",
+    "rst_rel_now": "00000210",
+    "rst_rel_15ms": "00000211",
+    "cs_rel_15ms": "00000212",
+    "r11_ack": "00000001",
+    "rst_end": "00000212",
+    "gate_end": "00000000",
+    "p11_end": "000000BE",
+    "p50_end": "00000011"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "e956c3268dafd94de649584984de4d90683c4d40",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T173946Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_touch_ldo.bin --evidence <repo>/evidence --vars p11_before,p50_before,gate_before,rst_before,cs_before,guard_ok,w4_ack,p11_on,rst_pre,rst_rel_now,rst_rel_15ms,cs_rel_15ms,r11_ack,rst_end,gate_end,p11_end,p50_end",
+  "screen_rows": 20
+}
