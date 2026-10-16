@@ -636,6 +636,28 @@ from the main CPU to inspect this register window directly is now known
 (`0x86300000`, size `0x1000`) — a real, reproducible target for a
 Trognon payload, independent of reconstructing the message transport.
 
+### First dynamic result (2026-10-16): the window reads zero, no fault
+
+Ran it: `tools/payloads/trace.c` stage 26 (`trace_iop_regs`), a read-only
+dump of `+0x000`/`+0x100`/`+0x110`/`+0x114`/`+0x118` relative to
+`0x86300000`, sent via `tools/go.sh` to the 3GS already in pwned DFU.
+Nonce-confirmed execution (the harness's own proof that this exact
+binary ran this exact time, not a stale result):
+
+```
+tools/go.sh tools/payloads/trace_iop_regs.bin --vars iop000,iop100,iop110,iop114,iop118
+```
+
+All five offsets read `0x00000000`, with **no data abort** — the window
+is reachable from the main CPU (no MMU fault), but its content is inert.
+Consistent with the hypothesis that `AppleARM7M::startCPU` never runs
+under Trognon's own tethered DFU/iBSS path (which skips the normal iOS
+boot where it would execute) — not, by itself, proof of that; zero could
+also mean "mapped but never written for an unrelated reason." Evidence
+bundle: `evidence/20261016T093436Z-trace_iop_regs/` (payload SHA-256
+`ac28b3f7cb024a3581bff0fc418bf8511b75e54c11d278d0275c5e53e6d4d5b1`,
+nonce `401E6B27`).
+
 ### Host side, traced further: `this+0x20` is found by waiting for a `role="IOP"` service, not a simple cast
 
 Continued static analysis of `vtable+0x84` (the real send, per

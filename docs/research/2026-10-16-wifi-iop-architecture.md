@@ -153,7 +153,16 @@ than scattered through the narrative under different wording:
    *would* do while executing. Nothing here establishes that it is
    actually executing — as opposed to merely being present as a loaded,
    inert binary — at the point Trognon's own payloads run and probe the
-   SDHC registers.
+   SDHC registers. **First dynamic data point (2026-10-16)**: a
+   read-only payload (`tools/payloads/trace.c` stage 26) read
+   `AppleARM7M`'s own register window (`0x86300000`, see "The missing
+   producer") directly from the main CPU — nonce-confirmed execution,
+   evidence bundle `evidence/20261016T093436Z-trace_iop_regs/`. All five
+   offsets checked (`+0x000`/`+0x100`/`+0x110`/`+0x114`/`+0x118`) read
+   `0x00000000`, with no data abort. The window is reachable, but inert
+   — consistent with `AppleARM7M::startCPU` never running under this
+   tethered path (which skips the normal iOS boot where it would
+   execute), not proof of it.
 4. **What is actually zeroed, and when, in the IOP's own memory?**
    Several findings below describe a location as "should be zero" based
    on the raw firmware *file's* contents, assuming standard
