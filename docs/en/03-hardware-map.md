@@ -19,7 +19,7 @@ inline render.
 | Accelerometer | Identifier read; powered up with a verified write; axes read in seven positions; directions and a scale (56 counts per g on two axes) come out of them, the Y direction conditional on one stated position | Chip model (LIS331DL or LIS302DL), calibrated offsets, angular accuracy | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
 | Wi-Fi/SDIO | Base address and GPIO lines confirmed; SDHCI layout confirmed in the IOP's own firmware | Which register window the IOP's SDHCI driver actually uses, and why CPU-side writes don't stick | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-mixed-devicehypothesis-2026-10-1516) |
 | Magnetometer | A device at `0x1e` gives 12 register readings compatible with an AK8973's documented reset state; `0x1f` is silent; the `i2c0` scan found no additional responder | A measurement (needs EEPROM-derived setup), the role of `0x1f` | [Magnetometer](#magnetometer-i2c0-address-0x1e-device-for-presence-2026-10-16) |
-| Touch controller | Reset and chip-select GPIO levels read; PMU registers read (touch LDO bit clear); `spi1` clock gate written and restored, its idle registers read | Polarity, powering the controller, any SPI transaction, any response | [Touch controller](#touch-controller-spi1-device-for-two-gpio-levels-2026-10-16) |
+| Touch controller | Reset and chip-select GPIO levels read; PMU registers read, and the two registers read as the touch LDO enable and clock enable written and restored; `spi1` clock gate written and restored, its idle registers read | Polarity, powering the controller, any SPI transaction, any response | [Touch controller](#touch-controller-spi1-device-for-two-gpio-levels-2026-10-16) |
 
 **Reading the tags**: **DEVICE** means observed on this real phone (a read, or a write
 with its result read back) — never assume a DEVICE tag on one line of a section means
@@ -483,8 +483,12 @@ the PMU access and the SPI controller, before any transaction.
   took), the idle registers were read (SETUP `0x8`, PIN `0x3`, CLKDIVIDER `1`, the others `0`), and
   the gate was written back to `0` (STAGE 38). The register layout is OpeniBoot's for the family and
   was not confirmed on this chip.
-- No transaction with the controller itself has been made, and its power, reset and clock-enable
-  lines have not been driven.
+- Two PMU registers were written and restored (STAGE 39): `0x11` from `0xBE` to `0xFE` (bit `0x40`, the touch
+  LDO's enable by a static reading of the PMU driver) and `0x50` from `0x11` to `0x13` (PMU GPIO 0, the touch
+  clock enable by the same reading). The PMU accepted both and held them for 20 ms; no electrical effect was
+  observed, and both were put back.
+- No transaction with the controller itself has been made, its reset line has not been driven, and the SPI
+  clock was left off.
 
 **How to reproduce**: build with `make trace_touch_gpio.bin` (see `tools/payloads/`, STAGE
 33), run it on a device in DFU with `tools/go.sh tools/payloads/trace_touch_gpio.bin`. Plain

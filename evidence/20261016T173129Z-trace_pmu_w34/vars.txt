@@ -1,0 +1,15 @@
+scl_idle=00000001
+sda_idle=00000001
+p11_before=000000BE
+p50_before=00000011
+guard_ok=00000001
+w4_ack=00000001
+p11_after_w4=000000FE
+w3_ack=00000001
+p50_after_w3=00000013
+p11_after_wait=000000FE
+p50_after_wait=00000013
+r50_ack=00000001
+r11_ack=00000001
+p11_restored=000000BE
+p50_restored=00000011

@@ -54,6 +54,16 @@ hardware_tests:
       polarity or electrical state is concluded from it, and the layout was not tested by changing the register.
     evidence: "evidence/20261016T164348Z-trace_pmu_read/"
 
+  - name: trace_pmu_w34 (STAGE 39), write of register 0x50
+    claim_tested: "PMU-GPIOFN-001 and PMU-GPIOAPPLY-002: the byte rebuilt as (old & 0x19) | 0x02 for pin 0"
+    execution_status: executed
+    result: >
+      Register 0x50 read 0x11 and was written 0x13 (= (0x11 & 0x19) | 0x02), acknowledged, read back 0x13, still
+      0x13 20 ms later, then written back 0x11 and read 0x11. This tests that the PMU takes the rebuilt byte; it
+      does not test the polarity, the pin's electrical state or what the pin gates, and not that the touch driver
+      writes this value (only that this is what the code computes).
+    evidence: "evidence/20261016T173129Z-trace_pmu_w34/"
+
 publication:
   status: approved
   notes: "register layout as read in code"

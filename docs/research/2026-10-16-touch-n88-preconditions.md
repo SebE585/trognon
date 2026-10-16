@@ -407,6 +407,22 @@ about 20 ms and then restored; the clock-enable pin may gate something else; a P
 behave as read could leave a rail changed, which a return to DFU resets. The guard stops the run if the
 registers do not read as in STAGE 36.
 
+## W3 and W4 done (STAGE 39, bundle `20261016T173129Z-trace_pmu_w34`)
+
+With the explicit go of the person holding the phone, the payload prepared above ran (nonce confirmed), under
+its guard, and made its four PMU writes:
+
+| Register | Before | Written | Read back | 20 ms later | Restored and read |
+|---|---|---|---|---|---|
+| `0x11` | `0xBE` | `0xFE` (W4, bit `0x40`) | `0xFE` | `0xFE` | `0xBE` |
+| `0x50` | `0x11` | `0x13` (W3, `(0x11 & 0x19) | 0x02`) | `0x13` | `0x13` | `0x11` |
+
+All writes were acknowledged, the guard passed, and the phone was still reachable in Recovery mode afterwards.
+What it shows: the PMU accepts both writes and keeps them for at least 20 ms, and the values it holds are
+exactly the ones the static reading computed. What it does not show: that the touch controller was powered or
+clocked (nothing was connected to it, and the SPI clock stayed off), that bit `0x40` of `0x11` is its supply
+or `0x50` its clock enable, or any electrical effect. Both registers were left as found.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values
@@ -416,8 +432,8 @@ come from the readings above; none of the write semantics was ever exercised on 
 |---|---|---|---|---|---|---|
 | W1 (done, STAGE 38) | `spi1` clock gate | `0xBF100078 + 4 * 0x16` = `0xBF1000D0`, `0` to `0xF` (the pattern read on enabled gates) | `0` | write `0` | whether the gate takes the write (the only earlier gate-write test, STAGE 23, was uninformative: both gates already read `0xF`), then the idle registers of `spi1` become readable | enabling the clock of a block in an unknown state; the numbering of gates is the device tree's, not tested |
 | W2 (done, STAGE 38) | read only | `spi1` CONTROL, SETUP, STATUS, PIN, CLKDIVIDER, SPCNT, SPIDD at `0x82100000` (STAGE 37, second half) | not read | none needed | the reset state of the controller | none beyond W1 |
-| W3 | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (rebuilt as `(old & 0x19) | 0x02`; equal to `old | 0x02` only for this old value) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
-| W4 | touch LDO | PMU register `0x11`, `0xBE` to `0xFE` (set bit `0x40`), read-modify-write | `0xBE` | write `0xBE` | nothing visible alone except the read-back and possibly the controller's behaviour on SPI | powers a rail; if the index-to-rail reading is wrong, a different rail is switched |
+| W3 (done, STAGE 39) | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (rebuilt as `(old & 0x19) | 0x02`; equal to `old | 0x02` only for this old value) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
+| W4 (done, STAGE 39) | touch LDO | PMU register `0x11`, `0xBE` to `0xFE` (set bit `0x40`), read-modify-write | `0xBE` | write `0xBE` | nothing visible alone except the read-back and possibly the controller's behaviour on SPI | powers a rail; if the index-to-rail reading is wrong, a different rail is switched |
 | W5 | reset line | SoC GPIO `14.01` released (logical 0, which the descriptor reads as level 1, or high impedance as the personality's flag suggests), then the driver's delay (`0xf`, unit unknown) | level `0` (asserted by the reading) | drive low again | a change on SPI/attention if the controller starts | the polarity rests on a code reading; the unit of the delay is unknown |
 | W6 | first SPI exchange | the CHECK packet `05 00 00 06` (reply first byte `0xD0` = bootloader), `spi1` registers, chip select `13.00`; if the `reg` reading above holds, word size 8 and a period of about 124 ns | n/a | n/a | any answer | requires the controller's register layout confirmed on this chip (CLKDIVIDER and PIN undecoded), the `reg` inference confirmed, and the bootloader protocol |
 

@@ -1,0 +1,45 @@
+{
+  "payload": "trace_pmu_w34.bin",
+  "sha256": "efae2089242fefe06ee091a45a638e95bc4f3e6972bd48b6c2c8ab4ea300207b",
+  "bytes": 4156,
+  "soc": "s5l8920",
+  "nonce_sent": "2BE54D73",
+  "nonce_read": "2BE54D73",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "pmu-w34-1"
+  },
+  "variables": {
+    "scl_idle": "00000001",
+    "sda_idle": "00000001",
+    "p11_before": "000000BE",
+    "p50_before": "00000011",
+    "guard_ok": "00000001",
+    "w4_ack": "00000001",
+    "p11_after_w4": "000000FE",
+    "w3_ack": "00000001",
+    "p50_after_w3": "00000013",
+    "p11_after_wait": "000000FE",
+    "p50_after_wait": "00000013",
+    "r50_ack": "00000001",
+    "r11_ack": "00000001",
+    "p11_restored": "000000BE",
+    "p50_restored": "00000011"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "59d51e8c57a01fb7a139d7c077a69a5dad3809c2",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T173129Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_pmu_w34.bin --evidence <repo>/evidence --vars scl_idle,sda_idle,p11_before,p50_before,guard_ok,w4_ack,p11_after_w4,w3_ack,p50_after_w3,p11_after_wait,p50_after_wait,r50_ack,r11_ack,p11_restored,p50_restored",
+  "screen_rows": 14
+}

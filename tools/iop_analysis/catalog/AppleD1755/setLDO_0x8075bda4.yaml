@@ -69,6 +69,16 @@ hardware_tests:
       verified by switching anything.
     evidence: "evidence/20261016T164348Z-trace_pmu_read/"
 
+  - name: trace_pmu_w34 (STAGE 39), write of bit 0x40 of register 0x11
+    claim_tested: "PMU-LDO-004: the enable update (new = old | mask) on register 0x11 for entry 11"
+    execution_status: executed
+    result: >
+      With the explicit go of the person holding the phone: 0x11 read 0xBE, was written 0xFE (acknowledged), read
+      back 0xFE, still 0xFE 20 ms later, then written back 0xBE and read 0xBE. The PMU accepts and keeps the
+      write. Nothing was observed about the rail itself: whether bit 0x40 is the touch controller's supply was
+      not tested, and no consumer was exercised.
+    evidence: "evidence/20261016T173129Z-trace_pmu_w34/"
+
 publication:
   status: approved
   notes: "register numbers, masks and control flow, no code reproduced"
