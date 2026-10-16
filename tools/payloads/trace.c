@@ -1121,11 +1121,25 @@ __attribute__((section(".text.start"))) void payload_main(void)
 #endif
 #if STAGE == 32
 	/* Second IOP register window, SOC_IOP_VIC_BASE = 0xBF300000 (see soc/s5l8920.h): decoded
-	 * tonight from the "iop" device tree node's own "reg" property (a second address/size pair,
-	 * not previously noticed), cross-checked against AppleARM7M::start()'s own
-	 * "_vicRegisterMap" field name. Read-only, no write, no layout assumed (unlike VIC0/1/2's
-	 * dump, this window's role is a naming hypothesis, not confirmed) -- same plain sequential
-	 * dump pattern as the early SDIO reads (STAGE 17/18), first 8 words. */
+	 * from the "iop" device tree node's own "reg" property (a second address/size pair),
+	 * cross-checked against AppleARM7M::start()'s own "_vicRegisterMap" field name. Read-only,
+	 * no write -- but "read-only" is not the same claim as "no effect": some hardware registers
+	 * clear-on-read or otherwise change state just by being read, and this window's real
+	 * behaviour is unknown. This is a BLIND sweep (first 8 words, +0x00 to +0x1C), NOT informed
+	 * by the driver's own accessed offsets: a targeted search for startCPU's accesses to this
+	 * specific field (distinct from the already-documented _arm7mRegisterMap/index-0 offsets
+	 * +0x100/+0x110/+0x114/+0x118) found startCPU's real entry point (0x80713665 in
+	 * AppleARM7M.kext.bin, confirmed via its own "segLength >= md->getLength()" / line-155
+	 * REQUIRE string, not the pure-virtual-call stub at 0x80713e80) but did not resolve to
+	 * confirmed index-1-specific offsets before running out of session time -- see
+	 * tools/iop_analysis/appleARM7M_notes.md. Interpret the result against four outcomes, not
+	 * two: all-zero (like index 0); a stable, structured-looking value (re-run at least once,
+	 * same pattern as tools/tick_rate.py's two-separate-invocations convention, to tell "stable"
+	 * from "coincidence"); a value that changes between runs (suggests something live, not proof
+	 * of IOP firmware execution either way); or a data abort / USB link drop (informative on its
+	 * own, same as the GPIOIC incident). None of these four outcomes, including a recognisable
+	 * VIC-like register pattern, would by itself prove the IOP core is executing its firmware --
+	 * only that this specific window answers reads differently from index 0. */
 	at(4, 116, 0x00F0C040); puts_("STEP 32 IOP VIC?\n");
 	volatile u32 *iopvic = (volatile u32 *)SOC_IOP_VIC_BASE;
 	u32 y32 = 134;

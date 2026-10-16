@@ -113,6 +113,43 @@ kext) — n'ouvre pas de nouvelle piste, ferme plutôt une direction
 r2 -e asm.bits=16 -c 'aaa; pdf @ 0x80399594' /tmp/trognon_dt/IOSlaveProcessor.kext.bin
 ```
 
+### `startCPU`'s entry point, located but not fully traced (2026-10-16, soir, suite)
+
+Suite à une relecture externe demandant les offsets réellement accédés par
+le pilote sur la seconde fenêtre (`_vicRegisterMap`, index 1) avant de
+sonder à l'aveugle : recherche faite, **pas aboutie ce soir**.
+
+- **Trouvé** : l'adresse d'entrée réelle de `startCPU` —
+  **`0x80713665`** dans `AppleARM7M.kext.bin`, Thumb — confirmée en
+  suivant la référence à la chaîne `"segLength >= md->getLength()"` /
+  `AppleARM7M.cpp:155`, qui n'apparaît que dans le vrai corps de la
+  fonction (distincte du stub d'appel virtuel pur à `0x80713e80`, qui ne
+  fait que charger l'adresse de la chaîne de signature sans y faire
+  grand-chose d'autre). Le rapport de recherche dit déjà avoir localisé et
+  désassemblé `startCPU` mais ne donne pas cette adresse d'entrée
+  précise — c'est l'ajout réel de cette recherche.
+- **Pas trouvé ce soir** : quels offsets de `this` (ou d'un pointeur mis
+  en cache depuis `_vicRegisterMap`) `startCPU` lit ou écrit
+  spécifiquement. Les premières instructions tracées après l'entrée
+  touchent `this+0x7c`/`+0x80`/`+0x84`/`+0x88` — des offsets différents de
+  ceux déjà confirmés pour `_arm7mRegisterMap` (`this+0x58`,
+  `+0x100`/`+0x110`/`+0x114`/`+0x118` relatifs à la fenêtre elle-même) —
+  mais leur rôle exact (longueur du firmware ? un accesseur sur
+  `IOSlaveFirmware` ? vraiment liés à la seconde fenêtre ou à autre
+  chose ?) n'a pas été établi avant la fin de la session.
+- **Conséquence pratique** : le payload `trace_iop_vic.bin` (STAGE 32)
+  reste un **balayage à l'aveugle** des 8 premiers mots, explicitement
+  documenté comme tel dans son propre commentaire — pas informé par les
+  accès réels du pilote, faute d'avoir terminé cette trace. À ne pas
+  présenter comme « ce que le pilote lit » tant que ce travail n'est pas
+  terminé.
+
+**Prochaine étape concrète pour clore ce point** : continuer le
+désassemblage à partir de `0x80713665` (voir `pd` sur cette adresse) pour
+identifier lesquels, parmi `this+0x7c/0x80/0x84/0x88`, correspondent
+réellement à `_vicRegisterMap`/son adresse virtuelle mise en cache, puis
+lesquels de ces champs sont effectivement lus/écrits à travers lui.
+
 ## Prochaine couche (pas encore écrite)
 
 Ce fichier et le rapport de recherche sont des notes d'analyse — la
