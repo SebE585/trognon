@@ -162,7 +162,22 @@ than scattered through the narrative under different wording:
    `0x00000000`, with no data abort. The window is reachable, but inert
    — consistent with `AppleARM7M::startCPU` never running under this
    tethered path (which skips the normal iOS boot where it would
-   execute), not proof of it.
+   execute), not proof of it. **Followed up (2026-10-16)**: checked
+   whether the zero could be explained by a mapping problem or a missing
+   prerequisite rather than a genuinely idle core. The device tree's
+   `arm-io` parent node has a real `ranges` property (`+0x80000000` only
+   for child addresses below `0x40000000`, identity above — not a
+   universal "set the high bit" rule) that confirms the translation to
+   `0x86300000`; a second payload (stage 27) read the live MMU descriptor
+   directly and confirmed an identity-mapped, Strongly-Ordered (no
+   caching) section with full access — ruling out a translation error or
+   a stale cache line. Re-read `AppleARM7M::start()` in full and found no
+   clock-enable or reset-deassert call anywhere in it; a third payload
+   (stage 28) read the device tree's own clock-gate for this block
+   directly and found it already enabled (`0xF`), independent of this
+   driver ever running. **No missing prerequisite was found**; the zero
+   most likely reflects a core that has genuinely never been started
+   under this path, not a configuration artifact.
 4. **What is actually zeroed, and when, in the IOP's own memory?**
    Several findings below describe a location as "should be zero" based
    on the raw firmware *file's* contents, assuming standard

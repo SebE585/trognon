@@ -616,7 +616,11 @@ The real hardware sequence `startCPU` performs through this window:
    individually resolved) is open.
 4. `base+0x114 = ` the firmware length, rounded up to the next power of
    two from `0x1000`, then either negated-and-masked with `0x3ffff000`
-   or used directly, depending on a mode ivar (`this+0x64`).
+   or used directly, depending on a mode ivar (`this+0x64`). **Resolved
+   (2026-10-16)**: `this+0x64` is not a runtime condition — it is the
+   device tree's own `"iop-version"` property value, read via
+   `getBytesNoCopy`-then-dereference inside `start()`. On this device
+   `iop-version = 1`, so the negate-and-mask branch is always taken.
 5. At the very end, after a few more provider/VIC-related virtual calls:
    `base+0x100 = 1` (a second, different control write — the "go" signal
    after "reset"/"configure") immediately followed by `this+0x80 = 1`
@@ -657,6 +661,53 @@ also mean "mapped but never written for an unrelated reason." Evidence
 bundle: `evidence/20261016T093436Z-trace_iop_regs/` (payload SHA-256
 `ac28b3f7cb024a3581bff0fc418bf8511b75e54c11d278d0275c5e53e6d4d5b1`,
 nonce `401E6B27`).
+
+### `iop_probe` steps 1-2 (2026-10-16): mapping and clock both check out; no missing prerequisite found
+
+Per a reviewer's plan to close the mapping question and extract
+`start()`'s own prerequisites *before* touching the register window's
+control bits again — read-only throughout, no write attempted.
+
+**Step 1, mapping.** Checked statically first: the device tree's
+`/device-tree/arm-io` (the `iop` node's own parent) has a real `ranges`
+property, `(0x0 → 0x80000000, size 0x40000000)` then `(0x40000000 →
+0x40000000, size 0x40000000)` — i.e. "add `0x80000000`" only for child
+addresses below `0x40000000`, identity above. Both this project's
+addresses (`0x06300000`, `0x3f300000`) fall in the first range, so
+`0x86300000`/`0xbf300000` are confirmed by the real rule, not by
+treating "set the high bit" as universal. Then checked the CPU's own
+side: a new stage (`trace_iop_probe_mmu`, stage 27) reads the live L1
+MMU descriptor for `SOC_IOP_REG_BASE` via `TTBR0`. Nonce-confirmed
+result: identity section (`VA = PA = 0x86300000`), domain 0 (matches the
+already-documented `DACR`), memory type Strongly-Ordered
+(`TEX=0,C=0,B=0` — no caching, no buffering), `AP=3` (full access).
+**Closes the mapping question**: the earlier all-zero read was not a
+translation error, a stale cache line, or a silent permission failure.
+
+**Step 2, `start()`'s prerequisites.** Re-read `AppleARM7M::start()` in
+full, start to end (it finishes with a `registerService()`-shaped call).
+**No clock-enable call and no reset-deassert call anywhere in it** — the
+`"function-device_reset"` reference found earlier in this kext turned
+out to be past `start()`'s own end, i.e. inside `stop()` (asserting
+reset when stopping, not deasserting it when starting). Checked the
+live clock gate anyway (`trace_iop_clkgate`, stage 28): the device
+tree's own `clock-gates = 0x27` for the `iop` node reads `0x0000000F`
+on the device — the same "fully enabled" pattern used elsewhere in this
+project, already on independently of this driver ever running.
+
+**Resolved along the way**: `startCPU`'s mode ivar (`this+0x64`) is the
+device tree's own `"iop-version"` property value (read via
+`getBytesNoCopy`-then-dereference inside `start()`), not a runtime
+condition — `iop-version = 1` on this device, so the negate-and-mask
+branch for `base+0x114` is always taken here.
+
+**Where this leaves things**: mapping correct, memory type correct,
+clock already enabled. No missing prerequisite was found that would
+explain the all-zero read from the previous step — it most likely
+reflects the real idle state of a core that has never been started
+under this tethered path, not a configuration artifact. Evidence:
+`evidence/20261016T094340Z-trace_iop_probe_mmu/`,
+`evidence/20261016T094945Z-trace_iop_clkgate/`.
 
 ### Host side, traced further: `this+0x20` is found by waiting for a `role="IOP"` service, not a simple cast
 
