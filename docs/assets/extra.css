@@ -1,35 +1,61 @@
-/* Palette: titanium and amber, light and dark. The evidence tags below keep their own colours. */
+/* Palette: a collector's manual. Ivory paper, graphite text, deep green; the evidence tags keep their own colours. */
 :root, [data-md-color-scheme="default"] {
-  --md-primary-fg-color: #1e293b;
-  --md-primary-fg-color--light: #334155;
-  --md-primary-fg-color--dark: #0f172a;
-  --md-accent-fg-color: #b45309;
-  --md-typeset-a-color: #b45309;
-  --md-code-bg-color: #f1f5f9;
-  --tr-btn-bg: #b45309;
+  --md-default-bg-color: #F6F5F0;
+  --md-default-fg-color: #202522;
+  --md-default-fg-color--light: rgba(32, 37, 34, .66);
+  --md-default-fg-color--lighter: rgba(32, 37, 34, .38);
+  --md-default-fg-color--lightest: #DDDCD4;
+  --md-primary-fg-color: #F6F5F0;
+  --md-primary-fg-color--light: #EFEEE7;
+  --md-primary-fg-color--dark: #E7E6DE;
+  --md-primary-bg-color: #202522;
+  --md-primary-bg-color--light: rgba(32, 37, 34, .7);
+  --md-accent-fg-color: #356548;
+  --md-typeset-a-color: #356548;
+  --md-code-bg-color: #EFEEE7;
+  --md-typeset-table-color: #DDDCD4;
+  --tr-btn-bg: #356548;
   --tr-btn-fg: #ffffff;
+  --tr-surface: #FFFFFF;
+  --tr-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Charter, "Source Serif Pro", Georgia, serif;
 }
 [data-md-color-scheme="slate"] {
-  --md-default-bg-color: #0f172a;
-  --md-default-bg-color--light: #1e293b;
-  --md-default-bg-color--lighter: #273449;
-  --md-code-bg-color: #172033;
-  --md-primary-fg-color: #1e293b;
-  --md-primary-fg-color--light: #334155;
-  --md-primary-fg-color--dark: #0b1220;
-  --md-accent-fg-color: #f59e0b;
-  --md-typeset-a-color: #fbbf24;
-  --tr-btn-bg: #f59e0b;
-  --tr-btn-fg: #0f172a;
+  --md-default-bg-color: #171a18;
+  --md-default-bg-color--light: #1f2421;
+  --md-default-bg-color--lighter: #272d29;
+  --md-default-fg-color: #e8e7e0;
+  --md-default-fg-color--light: rgba(232, 231, 224, .72);
+  --md-default-fg-color--lighter: rgba(232, 231, 224, .4);
+  --md-default-fg-color--lightest: rgba(232, 231, 224, .12);
+  --md-primary-fg-color: #1f2421;
+  --md-primary-fg-color--light: #272d29;
+  --md-primary-fg-color--dark: #171a18;
+  --md-primary-bg-color: #e8e7e0;
+  --md-primary-bg-color--light: rgba(232, 231, 224, .72);
+  --md-accent-fg-color: #8fcfa3;
+  --md-typeset-a-color: #8fcfa3;
+  --md-code-bg-color: #1f2421;
+  --tr-btn-bg: #8fcfa3;
+  --tr-btn-fg: #171a18;
+  --tr-surface: #1f2421;
 }
 
-/* Typography: the default headings are very thin; make them readable, and keep lines short. */
+/* Header and tabs: paper, not a coloured bar. */
+.md-header, .md-tabs { box-shadow: none; }
+.md-header { border-bottom: 1px solid var(--md-default-fg-color--lightest); }
+.md-tabs { border-bottom: 1px solid var(--md-default-fg-color--lightest); }
+.md-search__form { background-color: var(--tr-surface); border: 1px solid var(--md-default-fg-color--lightest); box-shadow: none; }
+.md-search__input, .md-search__input::placeholder, .md-search__icon { color: var(--md-default-fg-color--light); }
+.md-header__button.md-logo img { height: 1.6rem; }
+
+/* Typography: serif for the titles, sans for the text, mono only for technical data. */
 .md-typeset { font-size: .82rem; line-height: 1.7; }
-.md-typeset h1, .md-typeset h2, .md-typeset h3, .md-typeset h4 { font-weight: 650; letter-spacing: -.01em; color: var(--md-default-fg-color); }
-.md-typeset h1 { font-size: 2.1em; margin-bottom: .8em; }
+.md-typeset h1, .md-typeset h2, .md-typeset h3, .md-typeset h4 { font-family: var(--tr-serif); font-weight: 600; letter-spacing: -.005em; color: var(--md-default-fg-color); }
+.md-typeset h1 { font-size: 2.3em; margin-bottom: .7em; }
 .md-typeset h2 { margin-top: 2.2em; padding-bottom: .3em; border-bottom: 1px solid var(--md-default-fg-color--lightest); }
 .md-typeset p, .md-typeset li { max-width: 78ch; }
 .md-typeset table p, .md-typeset .grid.cards p { max-width: none; }
+.md-typeset a { text-decoration-thickness: 1px; text-underline-offset: 2px; }
 
 /* Buttons: filled accent for the primary one, outlined for the others, readable in both modes. */
 .md-typeset .md-button { color: var(--md-accent-fg-color); border: 2px solid var(--md-accent-fg-color); border-radius: 6px; font-weight: 600; }
@@ -39,11 +65,9 @@
 
 /* Cards and admonitions: a thin border, rounded, a soft hover. */
 .md-typeset .grid.cards > ul > li, .md-typeset .admonition {
-  border: 1px solid var(--md-default-fg-color--lightest); border-radius: 8px;
+  border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; background-color: var(--tr-surface);
 }
-.md-typeset .grid.cards > ul > li:hover { border-color: var(--md-accent-fg-color); box-shadow: 0 2px 10px rgba(0,0,0,.12); }
-[data-md-color-scheme="slate"] .md-typeset .grid.cards > ul > li { background-color: rgba(30, 41, 59, 0.5); border-color: rgba(255,255,255,.08); }
-[data-md-color-scheme="slate"] .md-typeset .admonition { border-color: rgba(255,255,255,.08); }
+.md-typeset .grid.cards > ul > li:hover { border-color: var(--md-accent-fg-color); box-shadow: 0 1px 6px rgba(0,0,0,.08); }
 
 /* Material's default table is display:inline-block, which lets a wide table's
    preferred (max-content) width leak into its ancestors on narrow screens and
@@ -85,3 +109,23 @@
 .tl-meta { font-size:.85em; opacity:.85; } .tl-state { font-size:.8em; margin-top:.2rem; }
 [data-md-color-scheme="slate"] .tl-item.tl-a, [data-md-color-scheme="slate"] .tl-item.tl-b, [data-md-color-scheme="slate"] .tl-item.tl-c { color:#8DB84A; }
 @media (max-width:40em) { .tl-item { flex-direction:column; gap:.2rem; } .tl-year { flex:none; } }
+
+/* Home: hero with a phone frame */
+.home-hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 2.5rem; align-items: center; padding: 1.5rem 0 1rem; }
+.home-hero h1 { font-size: 3.2rem; margin: 0 0 .4rem; }
+.home-hero__text p { font-size: 1.05rem; max-width: 34rem; }
+.home-hero figure.phone { margin: 0; text-align: center; }
+.home-hero figure.phone img {
+  display: block; margin: 0 auto; width: min(100%, 240px); height: auto;
+  border: 10px solid #0b1220; border-radius: 28px; background: #000;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.home-hero figcaption { font-size: .72rem; margin-top: .8rem; color: var(--md-default-fg-color--light); max-width: 20rem; margin-left: auto; margin-right: auto; }
+@media (max-width: 44rem) { .home-hero { grid-template-columns: 1fr; } .home-hero h1 { font-size: 2.4rem; } }
+
+/* Dark mode: the theme overrides the link colour variable, so set the colour itself; lighten the phone frame. */
+[data-md-color-scheme="slate"] .md-typeset a { color: #8fcfa3; }
+[data-md-color-scheme="slate"] .md-typeset a:hover { color: #b6e3c4; }
+[data-md-color-scheme="slate"] .md-typeset .md-button { color: #8fcfa3; }
+[data-md-color-scheme="slate"] .md-typeset .md-button--primary { color: #171a18; }
+[data-md-color-scheme="slate"] .home-hero figure.phone img { border-color: #3a423d; }
