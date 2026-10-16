@@ -1,0 +1,32 @@
+{
+  "payload": "trace_bt_gpio.bin",
+  "sha256": "7db981c596a0206a6867ac445d449223a25386ce1ffdfd78d8663e0dd62ce5eb",
+  "bytes": 3004,
+  "soc": "s5l8920",
+  "nonce_sent": "3630562E",
+  "nonce_read": "3630562E",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "bt-gpio-1"
+  },
+  "variables": {
+    "bt_reset": "00000001",
+    "bt_wake": "00000000"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "781ef201e4664f2a61451ba94d2ec19588a70341",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T124101Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_bt_gpio.bin --evidence <repo>/tools/../evidence --vars bt_reset,bt_wake",
+  "screen_rows": 9
+}

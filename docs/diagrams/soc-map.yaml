@@ -18,7 +18,7 @@ nodes:
   - { id: compass, label: "Compass (2 DT nodes)", subtitle: "AKM8973S, not probed",     group: io,   style: service }
   - { id: sdio,   label: "Wi-Fi/SDIO",        subtitle: "0x80000000, mixed",            group: io,   style: accent }
   - { id: iop,    label: "IOP coprocessor",   subtitle: "0x86300000, state under iBSS open", group: io, style: service }
-  - { id: bt,     label: "Bluetooth (UART3)", subtitle: "n88, GPIO 15.06/16.02",        group: io,   style: service }
+  - { id: bt,     label: "Bluetooth (UART3)", subtitle: "n88, GPIO 15.06/16.02, DEVICE", group: io,   style: stage }
 edges:
   - { from: cpu,   to: gpio }
   - { from: cpu,   to: vic }

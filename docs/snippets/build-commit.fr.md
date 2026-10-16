@@ -1,1 +1,1 @@
-Construit depuis le commit [`e569374`](https://github.com/SebE585/trognon/commit/e569374) (uncommitted changes present).
+Construit depuis le commit [`781ef20`](https://github.com/SebE585/trognon/commit/781ef20) (uncommitted changes present).

@@ -45,6 +45,7 @@ est déterministe avec la même chaîne d'outils), puis lire `screen.txt` face �
 | Mapping GPIO des boutons, 376 broches lues, zéro bruit | `trace_buttons` | avec dossier |
 | Identifiant NAND, CE0/CE1 seulement (Toshiba) | `trace_nand`, `trace_nand_sweep` x2 | avec dossier |
 | GPIO reset/réveil Wi-Fi lues à `0` | `trace_wifi_gpio` | avec dossier |
+| GPIO reset/réveil Bluetooth lues : reset `1`, réveil `0` | `trace_bt_gpio` | avec dossier |
 | GPIO reset Wi-Fi basculée bas/haut, relue à `1` | `trace_wifi_reset` | avec dossier |
 | Dump des registres SDIO, deux hypothèses de clock-gate, tout à zéro | `trace_sdio_dump`, `trace_sdio_dump_b` | avec dossier |
 | Tentative `CMD0` SDIO, ne quitte jamais « pas prêt » | `trace_sdio_cmd0` | avec dossier |

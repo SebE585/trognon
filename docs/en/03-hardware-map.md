@@ -222,3 +222,30 @@ chain of evidence and what is confirmed versus still a hypothesis. That report's
 analysis finds NAND the dominant subsystem by debug-string count in the IOP's firmware image —
 a scoped, string-count observation, not a claim that the coprocessor was designed for NAND or
 that Wi-Fi is secondary to it; no evidence either way on original design intent exists.
+
+## Bluetooth, UART3, reset `15.06` / wake `16.02` (DEVICE, 2026-10-16)
+
+**Status**: DEVICE, read-only GPIO levels. No UART traffic attempted yet.
+
+**What's confirmed**: the device tree names a `bluetooth` node under `uart3`
+(`compatible = "bluetooth,n88"`, `product-id = 0x1294`, `vendor-id = 0x5ac`,
+`transport-speed = 0x2dc6c0` — 3,000,000 baud, `coex = 1`): this confirms the transport is
+UART, not SDIO, and that this device tree expects Wi-Fi/Bluetooth coexistence signalling.
+Reading the reset (`15.06`) and wake (`16.02`) lines, decoded the same `8*port+pin` way as
+the already-proven Wi-Fi reset/wake pair, gave a real result: reset reads `1` (released, not
+held low), wake reads `0`.
+
+| Item | Value | Status |
+|---|---|---|
+| Transport | UART3, 3,000,000 baud | device tree `transport-speed`, not yet exercised |
+| Reset GPIO (`function-bt_reset`) | `15.06` | device tree gives the name/pin (same physical line as the baseband node's own `function-bt_reset`); DEVICE: read `1` |
+| Wake GPIO (`function-bt_wake`) | `16.02` | device tree gives the name/pin; DEVICE: read `0` |
+
+**What remains hypothesis**: everything about the UART link itself — whether the chip
+answers at all, any HCI handshake, whether toggling reset or wake changes anything. This is
+a read-only GPIO level check, nothing more.
+
+**How to reproduce**: `make trace_bt_gpio.bin` (see `tools/payloads/`, STAGE 30). Same
+pattern as the Wi-Fi reset/wake read (STAGE 15): plain reads, no write, no UART touched.
+
+**Links to evidence**: [evidence bundle `20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio), indexed on the [evidence page](08-evidence.md).

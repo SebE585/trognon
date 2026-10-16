@@ -232,3 +232,31 @@ dans le firmware de l'IOP, le NAND comme sous-système dominant en nombre de cha
 une observation de comptage, circonscrite, pas une affirmation que le coprocesseur aurait été
 conçu pour le NAND ni que le Wi-Fi y serait secondaire : aucune preuve dans un sens ou l'autre
 sur l'intention de conception d'origine.
+
+## Bluetooth, UART3, reset `15.06` / réveil `16.02` (DEVICE, 2026-10-16)
+
+**Statut** : DEVICE, niveaux GPIO en lecture seule. Aucun trafic UART tenté pour l'instant.
+
+**Ce qui est confirmé** : le device tree nomme un nœud `bluetooth` sous `uart3`
+(`compatible = "bluetooth,n88"`, `product-id = 0x1294`, `vendor-id = 0x5ac`,
+`transport-speed = 0x2dc6c0` — 3 000 000 bauds, `coex = 1`) : ceci confirme que le transport
+est UART, pas SDIO, et que ce device tree prévoit une signalisation de coexistence
+Wi-Fi/Bluetooth. La lecture des lignes de reset (`15.06`) et de réveil (`16.02`), décodées de
+la même façon `8*port+pin` que la paire reset/réveil Wi-Fi déjà prouvée, a donné un vrai
+résultat : reset lit `1` (relâché, pas maintenu bas), réveil lit `0`.
+
+| Élément | Valeur | Statut |
+|---|---|---|
+| Transport | UART3, 3 000 000 bauds | `transport-speed` du device tree, pas encore exercé |
+| GPIO de reset (`function-bt_reset`) | `15.06` | le device tree donne le nom/la broche (même ligne physique que le `function-bt_reset` du nœud baseband) ; DEVICE : lue à `1` |
+| GPIO de réveil (`function-bt_wake`) | `16.02` | le device tree donne le nom/la broche ; DEVICE : lue à `0` |
+
+**Ce qui reste hypothèse** : tout ce qui concerne la liaison UART elle-même — si la puce
+répond, toute négociation HCI, si basculer reset ou réveil change quelque chose. C'est une
+simple lecture de niveaux GPIO, rien de plus.
+
+**Comment reproduire** : `make trace_bt_gpio.bin` (voir `tools/payloads/`, STAGE 30). Même
+schéma que la lecture reset/réveil Wi-Fi (STAGE 15) : lectures seules, aucune écriture,
+aucun accès à l'UART.
+
+**Liens vers les preuves** : [dossier de preuve `20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio), indexé sur la [page Preuves](08-evidence.md).

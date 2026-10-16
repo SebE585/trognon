@@ -1,1 +1,1 @@
-Built from commit [`e569374`](https://github.com/SebE585/trognon/commit/e569374) (uncommitted changes present).
+Built from commit [`781ef20`](https://github.com/SebE585/trognon/commit/781ef20) (uncommitted changes present).

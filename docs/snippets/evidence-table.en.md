@@ -25,3 +25,4 @@
 | [`20261016T094340Z-trace_iop_probe_mmu`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T094340Z-trace_iop_probe_mmu) | `trace_iop_probe_mmu.bin` | `d4cb00307983` | `fe54e9e6` (dirty tree) | confirmed | 15 |
 | [`20261016T094945Z-trace_iop_clkgate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T094945Z-trace_iop_clkgate) | `trace_iop_clkgate.bin` | `71d286f0ff6e` | `fe54e9e6` (dirty tree) | confirmed | 8 |
 | [`20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c) | `trace_accel_i2c.bin` | `c4e990dbf7b9` | `f5d53bb2` | confirmed | 13 |
+| [`20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio) | `trace_bt_gpio.bin` | `7db981c596a0` | `781ef201` | confirmed | 9 |
