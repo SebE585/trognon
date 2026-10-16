@@ -1,5 +1,10 @@
 # 3. Carte matérielle : ce qui est vérifié
 
+Les adresses de base seules, sans récit, sont tenues dans la
+[carte mémoire du SoC](../spec/soc-s5l8920.md) (en anglais, référence technique) — à
+consulter pour une recherche rapide d'adresse ; cette page-ci porte le raisonnement et les
+preuves pour chacune.
+
 Les adresses de registres viennent d'OpenIBoot (`plat-s5l8920`). Elles restent **SOURCE** tant
 qu'elles ne sont pas lues sur le téléphone. Cette page liste ce qu'on a vérifié. La plupart des
 entrées sont de simples lectures, chaque chargement étant armé comme un data abort attendu : un

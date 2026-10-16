@@ -76,6 +76,8 @@ nav:
       - Touch, Wi-Fi, NAND recon: research/2026-10-15-touch-wifi-nand-recon.md
       - OS port comparison: research/2026-10-15-os-port-comparison.md
       - Wi-Fi/IOP architecture: research/2026-10-16-wifi-iop-architecture.md
+  - Reference:
+      - SoC memory map (S5L8920): spec/soc-s5l8920.md
   - Notes:
       - Architecture (working notes, FR): architecture.md
       - Upstream tools: upstream-tools.md

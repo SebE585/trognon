@@ -1,5 +1,9 @@
 # 3. Hardware map: what is verified
 
+Base addresses alone, with no narrative, are kept in the stabilised
+[SoC memory map](../spec/soc-s5l8920.md) — look there for a quick address lookup; this
+page is where the reasoning and the evidence for each one live.
+
 Register addresses come from OpenIBoot (`plat-s5l8920`). They are **SOURCE** until read
 on the phone. This page lists what we checked. Most entries are plain reads, each one
 armed as an expected data abort so an unmapped register prints `ABORT` instead of
