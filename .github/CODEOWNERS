@@ -1,0 +1,9 @@
+# Who reviews what. A pull request touching a path below needs a review from its owner before it can be merged.
+# The catalog, the missions and the evidence are where claims are decided, so they are reviewed by the maintainer.
+*                                       @SebE585
+/tools/iop_analysis/catalog/            @SebE585
+/tools/iop_analysis/missions.yaml       @SebE585
+/evidence/                              @SebE585
+/docs/journey-src/                      @SebE585
+/.github/                               @SebE585
+/Makefile                               @SebE585
