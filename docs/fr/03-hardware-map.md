@@ -1,9 +1,12 @@
 # 3. Carte matérielle : ce qui est vérifié
 
 Les adresses de registres viennent d'OpenIBoot (`plat-s5l8920`). Elles restent **SOURCE** tant
-qu'elles ne sont pas lues sur le téléphone. Cette page liste ce qu'on a vérifié. Les lectures sont
-en lecture seule ; chaque chargement est armé comme un data abort attendu : un registre non mappé
-affiche `ABORT` au lieu de réinitialiser le téléphone.
+qu'elles ne sont pas lues sur le téléphone. Cette page liste ce qu'on a vérifié. La plupart des
+entrées sont de simples lectures, chaque chargement étant armé comme un data abort attendu : un
+registre non mappé affiche `ABORT` au lieu de réinitialiser le téléphone — mais pas toutes :
+quelques sections écrivent délibérément sur le matériel (bascule GPIO, interruption logicielle,
+commande d'identifiant NAND) et le disent explicitement à chaque fois. « Pas d'écriture
+persistante » (rien d'enregistré en flash) n'est pas la même affirmation que « aucune écriture ».
 
 ## CPU et MMU (DEVICE)
 
@@ -85,13 +88,14 @@ Les registres du timer sont la partie la moins comprise d'OpenIBoot (son propre 
 - Les mots `STATE` des timers 0 à 3 semblent structurés (ce n'est probablement pas qu'un bit de démarrage) ; on ne les décode pas.
 - Le mur de `0x0000000F` sur les timers 4 et 6 n'est pas expliqué : il ressemble aux registres de clock gate (`0xF`
   partout), donc ces registres sont peut-être des alias ou non implémentés. Ne pas les interpréter.
-- `IRQSTAT` et `IRQLATCH` (`+0x10000`, `+0xF8`) n'ont pas été lus : ils peuvent s'effacer à la lecture.
 - **Une interruption de timer n'est pas prouvée.** La ligne 6 de VIC0 (la ligne timer d'OpeniBoot) peut être
   prise par notre gestionnaire, mais la source n'est pas la nôtre : avec le timer 5 jamais démarré, l'interruption est
   quand même arrivée 127 ticks (5 microsecondes) après l'activation de la ligne, parce qu'elle était déjà levée.
-  `IRQSTAT` (`+0x10000`) lit `0xFFFFFF81` avant, pendant et après, quoi qu'on fasse : ce n'est pas un registre de
-  statut de timer, et la séquence d'acquittement copiée d'OpeniBoot (`IRQSTAT`, `IRQLATCH`) n'efface rien. Le gestionnaire
-  de timer d'OpeniBoot pour cette puce est commenté. Tenir ces deux décalages pour faux tant qu'ils ne sont pas prouvés.
+  `IRQSTAT` (`+0x10000`) *a bien été lu* dans le cadre de ce test : il lit `0xFFFFFF81` avant, pendant et après, quoi
+  qu'on fasse : ce n'est pas un registre de statut de timer, et la séquence d'acquittement copiée d'OpeniBoot
+  (`IRQSTAT`, `IRQLATCH`) n'efface rien. `IRQLATCH` (`+0xF8`) n'a lui été qu'écrit, dans cette même séquence
+  d'acquittement, jamais lu isolément pour voir ce qu'il contient. Le gestionnaire de timer d'OpeniBoot pour cette
+  puce est commenté. Tenir les deux décalages pour faux tant qu'ils ne sont pas prouvés.
 - Outil de mesure : `make trace_ticks.bin` et `tools/tick_rate.py`. Il publie le compteur dans une variable
   d'environnement lue par `getenv`, donc sans photo. Deux échantillons dans deux invocations séparées : un
   processus ne peut pas garder l'appareil à travers une pause (la deuxième connexion échoue).
@@ -141,18 +145,21 @@ appareil (IPSW du propriétaire, jamais redistribués), pas du code source.
 
 | Élément | Valeur | Statut |
 |---|---|---|
-| Adresse de base, taille | `0x80000000`, `0x1000` | DEVICE (propriété `reg` du device tree) |
-| `compatible` | `"sdio,s5l8920x"` | DEVICE |
-| `clock-gates` | `0x10` | DEVICE (device tree) ; l'activer seul n'a fait répondre aucun registre |
-| `interrupts` | `0x22` | DEVICE |
-| GPIO de reset (`gpio_baseband_wlan_reset`) | `16.5` | DEVICE ; lue à `0`, puis basculée bas 12 ms / haut 150 ms, relue à `1` — écriture confirmée |
-| GPIO de réveil (`gpio_sdio_device_wake`) | `14.4` | DEVICE ; lue à `0` |
-| Tout registre du bloc (`CTRL`, `CMD`, capacités...) | lit `0`, les écritures ne tiennent pas | DEVICE, confirmé plusieurs fois (clock-gate activé, séquence d'init complète façon SDHCI, écriture brute puis relecture) |
+| Adresse de base, taille | `0x80000000`, `0x1000` | vient du device tree déchiffré propre à cet appareil (IPSW du propriétaire), pas une lecture de registre |
+| `compatible` | `"sdio,s5l8920x"` | device tree, même réserve |
+| `clock-gates` | `0x10` | valeur du device tree ; DEVICE : l'activer seul n'a fait répondre aucun registre |
+| `interrupts` | `0x22` | device tree, même réserve |
+| GPIO de reset (`gpio_baseband_wlan_reset`) | `16.5` | le device tree donne le nom/la broche ; DEVICE : lue à `0`, puis basculée bas 12 ms / haut 150 ms, relue à `1` — écriture confirmée |
+| GPIO de réveil (`gpio_sdio_device_wake`) | `14.4` | le device tree donne le nom/la broche ; DEVICE : lue à `0` |
+| Tout registre du bloc (disposition SDHCI standard : argument, commande, réponse, present-state, software-reset, statut/activation des interruptions) | lit `0`, les écritures ne tiennent pas | DEVICE, confirmé plusieurs fois (clock-gate activé, séquence d'init complète façon SDHCI, écriture brute puis relecture) |
 
 **Pourquoi les écritures ne tiennent pas** : un second processeur ARM embarqué (l'« IOP »
 d'Apple) possède ce bloc directement et fait tourner son propre système temps réel ; le CPU
 principal ne fait que poster des messages dans un canal de commande partagé. C'est l'explication
 la plus probable, pas encore pleinement prouvée — voir le
 [rapport sur l'architecture Wi-Fi/IOP](../research/2026-10-16-wifi-iop-architecture.md) pour la
-chaîne de preuve complète, ce qui est établi contre ce qui reste hypothèse, et pourquoi le NAND
-(pas le Wi-Fi) est très probablement la vraie raison d'être de ce coprocesseur.
+chaîne de preuve complète et ce qui est établi contre ce qui reste hypothèse. Ce rapport trouve,
+dans le firmware de l'IOP, le NAND comme sous-système dominant en nombre de chaînes de debug —
+une observation de comptage, circonscrite, pas une affirmation que le coprocesseur aurait été
+conçu pour le NAND ni que le Wi-Fi y serait secondaire : aucune preuve dans un sens ou l'autre
+sur l'intention de conception d'origine.

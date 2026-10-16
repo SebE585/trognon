@@ -1,9 +1,12 @@
 # 3. Hardware map: what is verified
 
 Register addresses come from OpenIBoot (`plat-s5l8920`). They are **SOURCE** until read
-on the phone. This page lists what we checked. Reads are read-only; every load is
+on the phone. This page lists what we checked. Most entries are plain reads, each one
 armed as an expected data abort so an unmapped register prints `ABORT` instead of
-resetting the phone.
+resetting the phone — but not all: a few sections deliberately write to the hardware
+(a GPIO toggle, a software-triggered interrupt, a NAND chip-ID command) and say so
+explicitly where they occur. "No persistent write" (nothing stored to flash) is not the
+same claim as "no write at all".
 
 ## CPU and MMU (DEVICE)
 
@@ -85,13 +88,14 @@ Timer registers are the least understood part of OpenIBoot (its own comment says
 - The `STATE` words of timers 0 to 3 look structured (they are probably not just a start bit); we do not decode them.
 - The wall of `0x0000000F` on timer 4 and 6 is not explained: it resembles the clock-gate registers (`0xF`
   everywhere), so those registers may be aliased or not implemented. Do not interpret them.
-- `IRQSTAT` and `IRQLATCH` (`+0x10000`, `+0xF8`) were not read: they may be read-to-clear.
 - **A timer interrupt is not proven.** Line 6 of VIC0 (the timer line in OpeniBoot) can be taken by our
   handler, but the source is not ours: with timer 5 never started, the interrupt still arrived 127 ticks
-  (5 microseconds) after we enabled the line, because it was already asserted. `IRQSTAT` (`+0x10000`) reads
-  `0xFFFFFF81` before, during and after, whatever we do, so it is not a timer status register, and the
-  acknowledge sequence copied from OpeniBoot (`IRQSTAT`, `IRQLATCH`) clears nothing. OpeniBoot's own timer
-  handler for this SoC is commented out. Treat these two offsets as wrong until proven otherwise.
+  (5 microseconds) after we enabled the line, because it was already asserted. `IRQSTAT` (`+0x10000`) *was*
+  read as part of this test — it reads `0xFFFFFF81` before, during and after, whatever we do, so it is not
+  a timer status register, and the acknowledge sequence copied from OpeniBoot (`IRQSTAT`, `IRQLATCH`) clears
+  nothing. `IRQLATCH` (`+0xF8`) itself was only ever written as part of that same acknowledge sequence, never
+  read in isolation to see what it holds. OpeniBoot's own timer handler for this SoC is commented out. Treat
+  both offsets as wrong until proven otherwise.
 - Measurement tool: `make trace_ticks.bin` plus `tools/tick_rate.py`. It publishes the counter through an
   environment variable read with `getenv`, so no photo is needed. Two samples taken in two separate
   invocations: one process cannot hold the device across a pause (the second acquire fails).
@@ -138,17 +142,19 @@ below the address itself came from this device's own decrypted device tree and k
 
 | Item | Value | Status |
 |---|---|---|
-| Base address, size | `0x80000000`, `0x1000` | DEVICE (device tree's own `reg` property) |
-| `compatible` | `"sdio,s5l8920x"` | DEVICE |
-| `clock-gates` | `0x10` | DEVICE (device tree); enabling it alone did not make any register respond |
-| `interrupts` | `0x22` | DEVICE |
-| Reset GPIO (`gpio_baseband_wlan_reset`) | `16.5` | DEVICE; read at `0`, then toggled low 12 ms / high 150 ms, read back `1` — confirmed write |
-| Wake GPIO (`gpio_sdio_device_wake`) | `14.4` | DEVICE; read at `0` |
-| Any register in the block (`CTRL`, `CMD`, capabilities, ...) | reads `0`, writes do not stick | DEVICE, repeatedly confirmed (clock-gate on, full SDHCI-style init sequence, raw write-then-readback) |
+| Base address, size | `0x80000000`, `0x1000` | from this device's own decrypted device tree (owner's IPSW), not a register read |
+| `compatible` | `"sdio,s5l8920x"` | device tree, same caveat |
+| `clock-gates` | `0x10` | device tree value; DEVICE: enabling it alone did not make any register respond |
+| `interrupts` | `0x22` | device tree, same caveat |
+| Reset GPIO (`gpio_baseband_wlan_reset`) | `16.5` | device tree gives the name/pin; DEVICE: read at `0`, then toggled low 12 ms / high 150 ms, read back `1` — confirmed write |
+| Wake GPIO (`gpio_sdio_device_wake`) | `14.4` | device tree gives the name/pin; DEVICE: read at `0` |
+| Any register in the block (standard SDHCI layout: argument, command, response, present-state, software-reset, interrupt status/enable) | reads `0`, writes do not stick | DEVICE, repeatedly confirmed (clock-gate on, full SDHCI-style init sequence, raw write-then-readback) |
 
 **Why writes don't stick**: a second, embedded ARM processor (Apple's "IOP") owns this block
 directly and runs its own real-time OS; the application CPU only posts messages to it over a
 shared command channel. This is the leading explanation, not yet a fully proven one — see the
 [Wi-Fi/IOP architecture report](../research/2026-10-16-wifi-iop-architecture.md) for the full
-chain of evidence, what is confirmed versus still a hypothesis, and why NAND (not Wi-Fi) is
-almost certainly this coprocessor's real reason to exist.
+chain of evidence and what is confirmed versus still a hypothesis. That report's own firmware
+analysis finds NAND the dominant subsystem by debug-string count in the IOP's firmware image —
+a scoped, string-count observation, not a claim that the coprocessor was designed for NAND or
+that Wi-Fi is secondary to it; no evidence either way on original design intent exists.
