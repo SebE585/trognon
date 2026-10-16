@@ -1,0 +1,45 @@
+{
+  "payload": "trace_accel_axes.bin",
+  "sha256": "85d3344802418f3fb50952016777cd14600f6a30866558d93692953d697880f1",
+  "bytes": 4184,
+  "soc": "s5l8920",
+  "nonce_sent": "EF5AEE7B",
+  "nonce_read": "EF5AEE7B",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "accel-axes-1"
+  },
+  "variables": {
+    "scl_idle": "00000001",
+    "sda_idle": "00000001",
+    "who_am_i": "0000003B",
+    "ack_who": "00000001",
+    "ack_ctrl_w": "00000001",
+    "ack_ctrl_v": "00000001",
+    "ctrl1_rb": "00000047",
+    "ack_status": "00000001",
+    "status": "000000FF",
+    "ack_x": "00000001",
+    "out_x": "00000004",
+    "ack_y": "00000001",
+    "out_y": "000000C3",
+    "ack_z": "00000001",
+    "out_z": "0000000B"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "f7a7bfa7612d055b9ea8778ff0458aaf80c066b6",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T151542Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_accel_axes.bin --evidence <repo>/evidence --vars scl_idle,sda_idle,who_am_i,ack_who,ack_ctrl_w,ack_ctrl_v,ctrl1_rb,ack_status,status,ack_x,out_x,ack_y,out_y,ack_z,out_z",
+  "screen_rows": 13
+}

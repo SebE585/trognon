@@ -39,3 +39,5 @@
 | [`20261016T151315Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151315Z-trace_accel_axes) | `trace_accel_axes.bin` | `85d334480241` | `a53e0ef3` | confirmed | 13 |
 | [`20261016T151438Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151438Z-trace_accel_axes) | `trace_accel_axes.bin` | `85d334480241` | `4de27be5` | confirmed | 13 |
 | [`20261016T151441Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151441Z-trace_accel_axes) | `trace_accel_axes.bin` | `85d334480241` | `4de27be5` | confirmed | 13 |
+| [`20261016T151540Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151540Z-trace_accel_axes) | `trace_accel_axes.bin` | `85d334480241` | `f7a7bfa7` | confirmed | 13 |
+| [`20261016T151542Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151542Z-trace_accel_axes) | `trace_accel_axes.bin` | `85d334480241` | `f7a7bfa7` | confirmed | 13 |
