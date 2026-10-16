@@ -1,5 +1,7 @@
 # 3. Hardware map: what is verified
 
+![SoC map: what each block answers](../img/soc-map.svg)
+
 Base addresses alone, with no narrative, are kept in the stabilised
 [SoC memory map](../spec/soc-s5l8920.md) — look there for a quick address lookup; this
 page is where the reasoning and the evidence for each one live.

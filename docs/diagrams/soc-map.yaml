@@ -1,0 +1,35 @@
+charte: trognon
+title: "S5L8920 map: what each block answers (see 03-hardware-map.md)"
+direction: right
+groups:
+  - { id: core, label: "CPU core", style: pipeline }
+  - { id: io,   label: "arm-io peripherals", style: zone }
+nodes:
+  - { id: cpu,    label: "CPU/MMU",           subtitle: "Cortex-A8, DEVICE",            group: core, style: stage }
+  - { id: gpio,   label: "GPIO",              subtitle: "0x83000000, DEVICE",           group: io,   style: stage }
+  - { id: vic,    label: "VIC0/1/2",          subtitle: "0xBF2x0000, DEVICE",           group: io,   style: stage }
+  - { id: clcd,   label: "Display CLCD",      subtitle: "0x85400000, DEVICE",           group: io,   style: stage }
+  - { id: timer,  label: "Timer / tick",      subtitle: "0xBF100000, DEVICE",           group: io,   style: stage }
+  - { id: tirq,   label: "Timer IRQ",         subtitle: "not proven",                   group: io,   style: muted }
+  - { id: nand,   label: "NAND (H2FMI0)",     subtitle: "0x81200000, DEVICE",           group: io,   style: stage }
+  - { id: buttons, label: "Buttons",          subtitle: "via GPIO, DEVICE",             group: io,   style: stage }
+  - { id: i2c0,   label: "i2c0 (soft)",       subtitle: "GPIO 04.00/04.01, DEVICE",     group: io,   style: stage }
+  - { id: accel,  label: "Accelerometer",     subtitle: "LIS331DL 0x1d, DEVICE",        group: io,   style: stage }
+  - { id: compass, label: "Compass x2",       subtitle: "AKM8973S, not probed",         group: io,   style: service }
+  - { id: sdio,   label: "Wi-Fi/SDIO",        subtitle: "0x80000000, mixed",            group: io,   style: accent }
+  - { id: iop,    label: "IOP coprocessor",   subtitle: "0x86300000, HYPOTHESIS",       group: io,   style: muted }
+  - { id: bt,     label: "Bluetooth (UART3)", subtitle: "n88, GPIO 15.06/16.02",        group: io,   style: service }
+edges:
+  - { from: cpu,   to: gpio }
+  - { from: cpu,   to: vic }
+  - { from: cpu,   to: clcd }
+  - { from: cpu,   to: timer }
+  - { from: timer, to: tirq,  style: dead }
+  - { from: cpu,   to: nand }
+  - { from: gpio,  to: buttons, style: tap }
+  - { from: gpio,  to: i2c0,  style: tap }
+  - { from: i2c0,  to: accel }
+  - { from: i2c0,  to: compass, style: dead }
+  - { from: cpu,   to: sdio }
+  - { from: sdio,  to: iop,  style: dead }
+  - { from: gpio,  to: bt,  style: tap }

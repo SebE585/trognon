@@ -1,5 +1,7 @@
 # 3. Carte matérielle : ce qui est vérifié
 
+![Carte du SoC : ce que répond chaque bloc](../img/soc-map.svg)
+
 Les adresses de base seules, sans récit, sont tenues dans la
 [carte mémoire du SoC](../spec/soc-s5l8920.md) (en anglais, référence technique) — à
 consulter pour une recherche rapide d'adresse ; cette page-ci porte le raisonnement et les
