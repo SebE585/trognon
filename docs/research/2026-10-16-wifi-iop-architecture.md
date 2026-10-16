@@ -163,10 +163,17 @@ than scattered through the narrative under different wording:
 6. **The IOP firmware's own load path**: who copies its bytes, to what
    address, whether anything verifies them (signature, hash, a
    memory-protection boundary), and what write releases the IOP's reset.
-   Not traced. This is question (1) from a different angle, and is the
-   most direct remaining research target — both for the SDHC-base
-   question and for whether Trognon could ever load its own code onto
-   the IOP (see "Two different goals" below).
+   Partially traced: the concrete driver is `AppleARM7M`
+   (`role = "IOP"`), and its `startCPU(IOSlaveFirmware*)` method reads
+   the firmware's raw bytes and length and writes a real hardware
+   address (`0x86300000`, matching the firmware's own hardcoded value)
+   into a companion structure — but what actually copies the bytes,
+   where the `ConfigurationOffset`/`HeapBaseOffset` values get consumed,
+   and what releases the reset remain unread. This is question (1) from
+   a different angle, and is the most direct remaining research
+   target — both for the SDHC-base question and for whether Trognon
+   could ever load its own code onto the IOP (see "Two different goals"
+   below).
 7. **The exact wire format of the host/IOP message struct.** Only the
    outer shape (opcode byte, pending flag, a vaddr/paddr pair) is known;
    the full byte-for-byte layout `sendIOPCommand`'s `cmd` argument uses
@@ -547,29 +554,67 @@ message-passing path checked above, which would explain why none of them
 ever write anything real: the real write would happen before any of that
 code runs, as part of loading the firmware itself.
 
-**Not yet found**: which code performs this patch. Checked the full
-decompressed kernelcache (10 MB), not just the two kexts already
-extracted: the string `"ConfigurationOffset"` and the literal address of
-its own string both appear exactly once more, a few hundred bytes from
-where the wrapper's own `{key, value}` table already was — the
-kernelcache's prelinked copy of the *same* `IOP_s5l8920x_firmware`
-wrapper, not a separate consumer. `IOSlaveProcessor.kext`'s own `__text`
-(small enough to read in full, ~3 KB) contains only generic IOKit
-boilerplate — metaclass registration, a generic allocate-and-`init`
-factory — and no call that reads a property by one of these names. No
-other plausible loader name (`IOEmbeddedIOP`, `startIOP`, `bootIOP`,
-`releaseReset`, and similar guesses) was found as a string anywhere in
-the kernelcache either. **This means the actual consumer reads these
-properties generically** (iterating a dictionary's existing keys rather
-than looking each one up by a literal string baked into its own code),
-which is exactly the kind of code a literal-string or literal-address
-search cannot find. Locating it requires either a slower, fuller
-disassembly of the kernel's own `__TEXT` (not attempted this session —
-the file is large enough that `radare2`'s full analysis did not
-complete in reasonable time) or dynamic tracing on real hardware.
-Finding it, and checking what it actually writes at these two offsets,
-remains the single most direct remaining step, and the one most likely
-to also answer "Open questions" #4 and #6 at the same time.
+**Found: `AppleARM7M`, the concrete IOP-management driver, and its
+`startCPU(IOSlaveFirmware*)` method.** Rather than searching the whole
+kernel by string, checked the `__PRELINK_INFO` plist's own IOKit matching
+(as suggested): `AppleARM7M`'s personality has `IOProviderClass =
+AppleARMIODevice`, **`role = "IOP"`**, `IONameMatch = "iop,s5l8920x"` —
+matched directly against the IOP's own device-tree node, parallel to how
+`AppleIOPSDIO` matches `"sdio,s5l8920x"`. Extracted it
+(`_PrelinkExecutableLoadAddr = 0x80712000`, SHA-256
+`f286d9fb9b05f3802dbe2bccef2a4e329bcddd41ee85748d7fadc0789a7fa2e1`). Its
+own strings confirm the role: `mapDeviceMemoryWithIndex(0)`/`(1)`
+(`_arm7mRegisterMap`/`_vicRegisterMap`), `function-device_reset`,
+`arm7m-enable-jtag`, `iop-version`, and `"virtual IOReturn
+AppleARM7M::startCPU(IOSlaveFirmware*)"`.
+
+Located and disassembled `startCPU` (reached only through a vtable slot,
+not a direct call — `radare2`'s automatic function detection missed it;
+found instead via a literal-pool byte search for its own error-string's
+address). It takes the `IOSlaveFirmware*` argument, calls its vtable
+`+0x34c` for a memory descriptor, then that descriptor's `+0x98`
+(stores the raw firmware bytes pointer) and `+0x84` (validates its
+length), rounds the length up to the next power of two from `0x1000`,
+and writes three fields into a companion structure
+(`this+0x58`): the firmware pointer, a size-derived mask, and —
+**the literal `0x86300000`**. That is the exact same hardware address
+found hardcoded in the IOP firmware's own generic log function
+(`fcn.000074d4`) — not a coincidence, a real host-side confirmation of
+the same peripheral address the firmware itself uses. `this+0x58` is
+very plausibly the argument structure handed to whatever kernel
+primitive actually maps memory for and starts the second ARM core —
+this is "Open questions" #6's load-path code, now located and partially
+read.
+
+**Checked, and still not found**: the numeric values `0xf0a0`, `0xf0a4`,
+`0xa000`, `0x1a460` do not appear as literals in `AppleARM7M.kext`
+either, and neither does the string `"ConfigurationOffset"` or
+`"getProperty"`. The property-dictionary values must be consumed through
+the same opaque vtable call on the `IOSlaveFirmware` object — a generic
+accessor whose real implementation was not found in any of the three
+kexts checked (`AppleIOPSDIO`, `IOSlaveProcessor`, `AppleARM7M`). It is
+plausibly compiled directly into the kernel's own platform-expert/
+IOResources support rather than a separate kext — reaching it would need
+either a slower, targeted disassembly of specific kernel functions
+(not attempted this session) or dynamic tracing on real hardware, now
+narrowed to a precise question: which function copies the IOP image and
+what configuration address does it associate with it, inside
+`startCPU`'s own call chain.
+
+**A related structural finding, not just an absence**: searched
+`AppleIOPSDIO.kext` exhaustively for `sendIOPCommand`'s own address
+stored as a function pointer anywhere (not just a direct call) — none
+found. The one call site sends a hardcoded opcode of `1` from inside a
+function that only logs itself as `runIOPCommandSyncGated` under an
+error condition; the only other notable string in the kext is
+`"setPowerStateGated"`, a power-management callback, with no
+`externalMethod`/`IOUserClient`-style dispatcher found either. This
+driver, as extracted, may genuinely only ever ping the IOP as part of
+power-state bring-up and never issue the higher opcodes (reset,
+bus-params, send-command, perform-DMA) from the host side at all — those
+may be driven by the IOP's own internal logic, or by a separate path
+(`AppleBCMWLAN`, the actual Wi-Fi chip driver layered above this one,
+not extracted) outside this kext.
 
 A weaker, secondary lead, not yet connected to any of the above: the
 task table's fourth, highest-priority entry, `"iop"` (`0xafc`), is a

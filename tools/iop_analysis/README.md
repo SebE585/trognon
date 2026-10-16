@@ -307,6 +307,93 @@ ping) exactly. No off-by-one, no translation layer; the "opcode 0" claim
 was an early, unverified guess that stuck around across several
 revisions instead of being checked directly against the disassembly.
 
+### Found: AppleARM7M::startCPU(IOSlaveFirmware*), the real IOP-management driver
+
+Per the reviewer's step-1 guidance (identify the concrete provider via
+IOKit matching rather than the generic classes), checked the
+`__PRELINK_INFO` plist properly (XML, regex-extracted per entry) for
+`AppleARM7M`'s own `IOKitPersonalities`: `IOProviderClass =
+AppleARMIODevice`, **`role = "IOP"`**, `IONameMatch = "iop,s5l8920x"` —
+this is the concrete driver matched directly against the IOP's own
+device-tree node (parallel to `AppleIOPSDIO` matching
+`"sdio,s5l8920x"`). Extracted it from the kernelcache
+(`_PrelinkExecutableLoadAddr = 0x80712000`, size `0x3000`, SHA-256
+`f286d9fb9b05f3802dbe2bccef2a4e329bcddd41ee85748d7fadc0789a7fa2e1`).
+
+Its own strings confirm the role precisely: `mapDeviceMemoryWithIndex(0)`
+(`_arm7mRegisterMap`) and `mapDeviceMemoryWithIndex(1)`
+(`_vicRegisterMap`), `function-device_reset`, `arm7m-enable-jtag`,
+`iop-version`, and — the real target — `"virtual IOReturn
+AppleARM7M::startCPU(IOSlaveFirmware*)"`.
+
+Located and disassembled `startCPU` (r2's automatic function detection
+missed it, reached only via vtable dispatch, not a direct `bl` — found
+instead by a literal-pool byte search for its own error-log string's
+address, then linear disassembly from there). It:
+
+1. Takes the `IOSlaveFirmware*` argument, calls its vtable `+0x34c` (a
+   memory-descriptor accessor), then that descriptor's `+0x98`
+   (`getBytesNoCopy`-shaped: stores the raw firmware bytes pointer at
+   `this+0x88`) and `+0x84` (`getLength`-shaped: validates it against a
+   computed segment size, `"segLength >= md->getLength()"`).
+2. Rounds the length up to the next power of two starting from `0x1000`,
+   stores it at `this+0x8c`.
+3. Writes that size (negated and masked with `0x3ffff000`, or the size
+   directly, depending on a mode flag at `this+0x64`) into
+   `[this+0x58]+0x114`.
+4. **Writes the literal `0x86300000` into `[this+0x58]+0x118`** — the
+   exact same hardware address found hardcoded in the IOP firmware's own
+   generic log function (`fcn.000074d4`/`0x74e8`, see the main
+   architecture report's earlier methodology note). Not a coincidence: a
+   real, host-side confirmation of the same peripheral address the
+   firmware itself uses.
+5. Writes `[this+0x88]` (the firmware bytes pointer) into
+   `[this+0x58]+0x110`.
+
+`[this+0x58]` is very plausibly the actual argument structure handed to
+whatever kernel primitive maps memory for and starts the second ARM
+core — this is the load-path code "Open questions" #6 asked for, now
+located and partially read.
+
+**Checked and still not found**: `0xf0a0`/`0xf0a4`/`0xa000`/`0x1a460`
+(the `ConfigurationOffset`/`HeapBaseOffset`/`HeapSizeOffset`/
+`MessageChannelSize` values) do **not** appear as literals anywhere in
+`AppleARM7M.kext` either, and neither does the string
+`"ConfigurationOffset"` or `"getProperty"`. The property-dictionary
+values must be consumed through the same opaque vtable call on the
+`IOSlaveFirmware` object (`+0x34c` or a neighbouring slot not yet
+individually identified) — a generic accessor whose real implementation
+was not found in any of the three kexts checked so far
+(`AppleIOPSDIO`, `IOSlaveProcessor`, `AppleARM7M`). It is very plausibly
+compiled directly into the kernel's own platform-expert/IOResources
+support rather than any separate kext.
+
+### A real structural finding for "is this the only host entry point?"
+
+Checked directly, per the reviewer's concern that the single known
+`sendIOPCommand` caller sending only the ping might not be the whole
+picture: searched `AppleIOPSDIO.kext` exhaustively for `sendIOPCommand`'s
+own address stored as a function pointer anywhere (a vtable slot, not
+just a direct `bl`) — none found, with or without the Thumb bit set.
+`sendIOPCommand` really does have exactly one call site in this kext.
+
+That one call site is inside a function that logs itself as
+`runIOPCommandSyncGated` under a specific error condition — a
+generically-named wrapper, but the opcode it passes is a hardcoded `1`,
+not a forwarded parameter. The *only* other interesting string in this
+whole kext is `"setPowerStateGated"` — a power-management callback, not
+a generic command dispatcher, and no `externalMethod`/`IOUserClient`-style
+entry point was found either. **This is a real structural finding, not
+just an absence**: as extracted, this driver may genuinely only ever
+ping the IOP (as part of power-state bring-up) and never issue the
+higher-numbered opcodes (reset, bus-params, sendCommand, performDMA)
+from the host side at all — those may be driven entirely by the IOP's
+own internal logic, or by a separate path (e.g. `AppleBCMWLAN`, the
+actual Wi-Fi chip driver sitting above this one) not present in this
+kext. Confirming this needs either checking `AppleBCMWLAN.kext` (not
+extracted) or accepting that this specific kext slice's outbound command
+surface is limited to the ping.
+
 ### ConfigurationOffset's consumer: checked the full kernelcache, still not found
 
 Searched the entire decompressed kernelcache (10 MB, not just
