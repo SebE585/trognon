@@ -78,7 +78,7 @@ project-check:
 project-sync:
 	python3 -I tools/project_sync.py --apply
 
-# A dated, public-only export of the documentation (for an LLM test, a notebook or a retrieval index). Written to build/corpus/ (not committed).
+# A dated, public-only export of the documentation (for review, a notebook or a retrieval index). Written to build/corpus/ (not committed).
 corpus:
 	python3 -I tools/export_corpus.py
 

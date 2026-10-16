@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export the public documentation as a dated corpus, for an LLM test, a notebook or a retrieval index.
+"""Export the public documentation as a dated corpus, for review, a notebook or a retrieval index.
 
     python3 -I tools/export_corpus.py              # write build/corpus/*.md and a claims file (English)
     python3 -I tools/export_corpus.py --lang fr    # add the French pages
