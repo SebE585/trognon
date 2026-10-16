@@ -107,5 +107,36 @@ class StructureTests(unittest.TestCase):
         self.assertNotIn("*)", text)
 
 
+class AccessibilityTests(unittest.TestCase):
+    def test_scenes_hide_the_documentation_footer(self):
+        self.assertIn("  - footer", jb.front_matter("T", "t.yaml"))
+
+    def test_a_map_tile_has_a_symbol_and_an_accessible_name(self):
+        entries = {"B": [{"_file": "f.yaml", "function_name_apple": "A::f()", "review": {"status": "partial", "unresolved": [{"id": "Q"}]}, "claims": []}]}
+        text = jb.knowledge_map("en", entries, {"B": "grimoire-b"})
+        self.assertIn("[◐1](grimoire-b.md)", text)
+        self.assertIn('aria-label="A::f(), partly reviewed, 1 open question(s)"', text)
+
+    def test_every_review_state_has_a_distinct_symbol(self):
+        out = {}
+        for status in ("complete", "partial", None):
+            e = {"B": [{"_file": "f.yaml", "function_name_apple": "x", "review": {"status": status, "unresolved": []}, "claims": []}]}
+            out[status] = jb.knowledge_map("en", e, {"B": "g"})
+        self.assertIn("✓0", out["complete"])
+        self.assertIn("◐0", out["partial"])
+        self.assertIn("○0", out[None])
+
+    def test_a_binary_page_lists_the_missions_that_concern_it(self):
+        node = {"binary": "B", "blurb": "", "fiches": [{"_file": "f.yaml", "function_name_apple": "x", "claims": [],
+                "review": {"status": "partial", "unresolved": [{"id": "S5L-CLK-Q1", "text": "t"}]}}]}
+        self.assertIn("Missions on this binary", jb.grimoire_body(node, "en"))
+        self.assertIn("../../en/missions.md", jb.grimoire_body(node, "fr"))
+
+    def test_a_binary_with_no_mission_has_no_missions_section(self):
+        node = {"binary": "B", "blurb": "", "fiches": [{"_file": "f.yaml", "function_name_apple": "x", "claims": [],
+                "review": {"status": "partial", "unresolved": [{"id": "NO-MISSION", "text": "t"}]}}]}
+        self.assertNotIn("Missions on this binary", jb.grimoire_body(node, "en"))
+
+
 if __name__ == "__main__":
     unittest.main()

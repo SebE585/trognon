@@ -14,7 +14,7 @@ nodes:
     visual: black
     text: |
       You find an iPhone 3GS in a drawer. Its screen is black. You would like your own code to put something on it, and
-      nothing written to the phone.
+      nothing written to the phone's storage.
 
       This is a guided path through what Trognon has actually observed on a phone like this one. Each step says how sure
       we are, and the last ones are the places where our knowledge stops. You can leave at any time for the
@@ -172,7 +172,7 @@ nodes:
     title: "Touch: the controller has not answered"
     tag: HYPOTHESIS
     know: |
-      The reset and chip-select lines read as outputs driven low. The supply and clock enables were written and restored.
+      The reset and chip-select lines read as outputs driven low. Two PMU registers, read in the driver's code as the touch supply and clock enables, were written and restored.
       With the supply on, the released reset line reads high; with no supply it reads low. The SPI block's idle registers were
       read and its clock was already on. A transfer test with no peripheral, using the kernel driver's recipe, moved no counter.
     guess: |

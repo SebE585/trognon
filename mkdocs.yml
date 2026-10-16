@@ -49,7 +49,6 @@ markdown_extensions:
         - { name: mermaid, class: mermaid, format: !!python/name:pymdownx.superfences.fence_code_format }
 nav:
   - Home: index.md
-  - Adventure: en/journey/start.md
   - English:
       - Overview: en/README.md
       - 1. Boot chain: en/01-boot-chain.md
@@ -61,6 +60,7 @@ nav:
       - 7. Modular code layout: en/07-code-layout.md
       - 8. Evidence: en/08-evidence.md
       - Missions: en/missions.md
+      - Guided path: en/journey/start.md
   - Français:
       - Présentation: fr/README.md
       - 1. Chaîne de démarrage: fr/01-boot-chain.md

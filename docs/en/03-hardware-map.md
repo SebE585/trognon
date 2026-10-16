@@ -622,7 +622,7 @@ It turns the contact of a finger into data sent to the processor, over an SPI bu
 - **Observed on the phone** <span class="tag tag-device">DEVICE</span>
 
     - The reset and chip-select lines read as outputs driven low.
-    - PMU registers read at I2C address `0x74`; the touch supply and clock enables written and restored.
+    - PMU registers read at I2C address `0x74`; two of them, read in the driver's code as the touch supply and clock enables, written and restored (that reading is static analysis, not an electrical measurement).
     - Reset released with the supplies on reads high; with no supply, low.
     - `spi1` idle registers read; its clock gate was already on.
     - A transfer self-test with no peripheral moved no counter.
@@ -647,7 +647,7 @@ The detail, the registers and the evidence follow.
 
 **Status**: the reset and chip-select levels, the PMU registers, the supply enable and the release of the reset line have been observed or exercised on the phone (details below); the SPI controller's idle registers were read and a transfer self-test was run with no peripheral. **No byte has been exchanged with the touch controller**, and nothing yet shows that it is present, powered by this sequence or answering.
 
-**What's confirmed**: the device tree has `/device-tree/arm-io/spi1/multi-touch`
+**First recording (STAGE 33; later observations below supersede it where they differ)**: the device tree has `/device-tree/arm-io/spi1/multi-touch`
 (`compatible = "multi-touch,n88"`) with a reset line, a chip-select enable line, an
 interrupt, a power function and a clock-enable function (`tools/dt_dump.py`). The pin
 words use the notation of the other sections (port and pin are both hexadecimal digits of
@@ -659,7 +659,7 @@ Bluetooth reset line read in the same run as a control (it read `1`, as before).
 | Reset (`function-reset`) | pin word `0x1401` (14.01) | device tree gives the pin; DEVICE: register `0x00000212`, level `0` |
 | Chip-select enable (`function-enable_cs`) | pin word `0x1300` (13.00) | device tree gives the pin; DEVICE: register `0x00000212`, level `0` |
 | Control: Bluetooth reset (15.06) | register `0x00000213`, level `1` | DEVICE: same as the earlier run |
-| Power, clock enable | through the PMU (`pmu,d1755`) | device tree only, PMU never probed |
+| Power, clock enable | through the PMU (`pmu,d1755`) | at this first recording: device tree only. Since STAGE 36 the PMU registers have been read, and since STAGE 39 two of them written and restored (see below); that they are a touch supply and clock enable is a static reading of the PMU driver (SOURCE) |
 | Attention line | interrupt `0xb4` on the GPIO interrupt controller | not read: that controller is treated as dangerous |
 
 The three registers differ only in bit 0. The project's own I2C routines (STAGE 29 and 31, which worked on
@@ -668,7 +668,7 @@ as a pin set as an output and driven low, and `0x213` as an output driven high. 
 the layout those routines rely on, not a direct test on these pins, and it says nothing about polarity or
 about what the lines are connected to.
 
-**What remains hypothesis**: everything else. A level of `0` gives neither the polarity nor
+**What remained hypothesis at that point**: everything else. A level of `0` gives neither the polarity nor
 who drives the pin; it does not show that the controller is powered, clocked, out of reset
 or present. Power and clock sit behind the PMU, so the next preconditions to establish are
 the PMU access and the SPI controller, before any transaction.

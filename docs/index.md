@@ -12,7 +12,7 @@ hide:
 # Trognon
 
 **A phone left in a drawer, running code we wrote.** Open reverse engineering of the iPhone 3GS,
-documented to the register, with every claim tied to a run you can repeat.
+documented to the register, with every claim marked by how we know it: observed on the phone, read in code, or guessed.
 
 [Understand the project](en/01-boot-chain.md){ .md-button .md-button--primary }
 [Explore the hardware](en/03-hardware-map.md){ .md-button }
@@ -38,7 +38,7 @@ Everything here was observed on a real iPhone 3GS (S5L8920, Cortex-A8); each ite
 
 - **Our code runs from DFU**
 
-    Nothing is written to the phone.
+    The boot chain writes nothing to the phone's storage.
 
     <span class="tag tag-device">DEVICE</span> [Boot chain](en/01-boot-chain.md){ .card-link }
 

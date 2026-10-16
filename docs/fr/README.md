@@ -9,7 +9,7 @@ title: Trognon (français)
 # Trognon
 
 **Un téléphone oublié dans un tiroir, qui exécute du code que nous avons écrit.** Rétro-ingénierie ouverte de
-l'iPhone 3GS, documentée jusqu'au registre, chaque affirmation étant liée à une exécution reproductible.
+l'iPhone 3GS, documentée jusqu'au registre, chaque affirmation étant marquée selon la façon dont nous la connaissons : observée sur le téléphone, lue dans le code, ou supposée.
 
 [Comprendre le projet](01-boot-chain.md){ .md-button .md-button--primary }
 [Explorer le matériel](03-hardware-map.md){ .md-button }
@@ -36,7 +36,7 @@ les [Preuves](08-evidence.md) relient chaque affirmation à une exécution.
 
 - **Notre code s'exécute depuis le DFU**
 
-    Rien n'est écrit dans le téléphone.
+    La chaîne de démarrage n'écrit rien dans le stockage du téléphone.
 
     <span class="tag tag-device">DEVICE</span> [Chaîne de démarrage](01-boot-chain.md){ .card-link }
 

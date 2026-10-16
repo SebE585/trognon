@@ -49,10 +49,13 @@ I18N = {
         "g_meta": "Review: %s · %d claim%s · %d open question%s", "g_entry": "Entry `%s` · ", "g_open": "Open", "g_full": "Full entry",
         "km_title": "Map of what we know",
         "km_intro": "One tile per entry. The colour is the review state; the number is how many questions remain open on it.",
-        "km_legend": "Legend: green, reviewed; amber, partly reviewed; grey, not reviewed.",
+        "km_legend": "Legend: ✓ reviewed (green), ◐ partly reviewed (amber), ○ not reviewed (grey); the number is the open questions.",
         "km_total": "%d entries, %d claims, %d open questions.",
         "km_row": "**%s** · %d entr%s · %d claim%s · %d open question%s",
         "back_grimoire": "Back to the Grimoire.", "kernel_side": "The kernel's side: %s (the Grimoire).",
+        "g_missions_hub": "**Want to help?** Each open question can be a mission you take: see the [missions](../missions.md).",
+        "g_missions_head": "Missions on this binary", "g_missions_all": "All missions and how to take one",
+        "rv_complete": "reviewed", "rv_partial": "partly reviewed", "rv_none": "not reviewed", "q_open": "open question(s)",
         "start_button": "Start the journey", "map_cols": ("Step", "How sure", "Reached by"), "map_start": "the start",
         "idx_intro": "A guided path through what Trognon has observed on a real iPhone 3GS. Two or three choices at each step, an honest statement of how sure we are, and at the end the places where our knowledge stops. If you already know what you want, go straight to the [reference manual](../README.md) or the [research notes](../../research/index.md).",
         "idx_map": "Map of the journey",
@@ -74,10 +77,13 @@ I18N = {
         "g_meta": "Relecture : %s · %d affirmation%s · %d question%s ouverte%s", "g_entry": "Entrée `%s` · ", "g_open": "Ouverte", "g_full": "Fiche complète",
         "km_title": "Carte de ce que nous savons",
         "km_intro": "Une tuile par entrée. La couleur est l'état de relecture ; le nombre est celui des questions qui restent ouvertes.",
-        "km_legend": "Légende : vert, relue ; ambre, relue en partie ; gris, non relue.",
+        "km_legend": "Légende : ✓ relue (vert), ◐ relue en partie (ambre), ○ non relue (gris) ; le nombre est celui des questions ouvertes.",
         "km_total": "%d entrées, %d affirmations, %d questions ouvertes.",
         "km_row": "**%s** · %d entrée%s · %d affirmation%s · %d question%s ouverte%s",
         "back_grimoire": "Retour au Grimoire.", "kernel_side": "Côté noyau : %s (le Grimoire).",
+        "g_missions_hub": "**Envie d'aider ?** Chaque question ouverte peut devenir une mission : voir les [missions](../../en/missions.md) (en anglais).",
+        "g_missions_head": "Missions sur ce binaire", "g_missions_all": "Toutes les missions et comment en prendre une (en anglais)",
+        "rv_complete": "relue", "rv_partial": "relue en partie", "rv_none": "non relue", "q_open": "question(s) ouverte(s)",
         "start_button": "Commencer le parcours", "map_cols": ("Étape", "Certitude", "Atteinte par"), "map_start": "le début",
         "idx_intro": "Un parcours guidé à travers ce que Trognon a observé sur un vrai iPhone 3GS. Deux ou trois choix à chaque étape, un état honnête de notre certitude, et à la fin les endroits où notre connaissance s'arrête. Si vous savez déjà ce que vous cherchez, allez directement au [manuel de référence](../README.md) ou aux [notes de recherche](../../research/index.md).",
         "idx_map": "Carte du parcours",
@@ -237,6 +243,14 @@ def catalog_items():
 
 
 ITEMS = {}
+MISSIONS_FILE = ROOT / "tools" / "iop_analysis" / "missions.yaml"
+
+
+def missions_by_question():
+    """{question id: (title, state)} for the framed missions."""
+    if not MISSIONS_FILE.is_file():
+        return {}
+    return {m["question"]: (m["title"], m["state"]) for m in yaml.safe_load(MISSIONS_FILE.read_text()).get("missions", [])}
 
 
 # ---- the notebook ------------------------------------------------------------------------------------------------------
@@ -307,8 +321,12 @@ def knowledge_map(lang, entries, ids):
         tiles = []
         for y in fiches:
             q = len((y.get("review") or {}).get("unresolved") or [])
+            status = (y.get("review") or {}).get("status")
+            word = T(lang, {"complete": "rv_complete", "partial": "rv_partial"}.get(status, "rv_none"))
+            symbol = {"complete": "✓", "partial": "◐"}.get(status, "○")
             title = fiche_title(y).replace('"', "'").replace("*", "&#42;").replace("_", "&#95;")  # markdown-safe attribute
-            tiles.append('[%d](%s.md){ .kmap-tile .%s title="%s" }' % (q, ids[b], review_class((y.get("review") or {}).get("status")), title))
+            label = "%s, %s, %d %s" % (title, word, q, T(lang, "q_open"))
+            tiles.append('[%s%d](%s.md){ .kmap-tile .%s title="%s" aria-label="%s" }' % (symbol, q, ids[b], review_class(status), label, label))
         out += [" ".join(tiles), ""]
     out += ["</div>", "", T(lang, "km_total") % tuple(tot), ""]
     return "\n".join(out)
@@ -340,6 +358,13 @@ def grimoire_body(n, lang):
         if open_q:
             out.append("")
         out += ["[%s](%s%s/%s)" % (T(lang, "g_full"), GITHUB_CATALOG, n["binary"], y["_file"]), ""]
+    framed = missions_by_question()
+    mine = [(q["id"], framed[q["id"]]) for y in n["fiches"] for q in (y.get("review") or {}).get("unresolved") or [] if q["id"] in framed]
+    if mine:
+        page = "../missions.md" if lang == "en" else "../../en/missions.md"
+        out += ["## %s" % T(lang, "g_missions_head"), ""]
+        out += ["- %s (`%s`, %s)" % (title, qid, state) for qid, (title, state) in mine]
+        out += ["", "[%s](%s)" % (T(lang, "g_missions_all"), page), ""]
     return "\n".join(out)
 
 
@@ -517,7 +542,7 @@ def tag_html(tag):
 
 
 def front_matter(title, src):
-    return ["---", "title: %s" % json.dumps(title), "hide:", "  - navigation", "  - toc", "---", "", GENERATED.format(src=src)]
+    return ["---", "title: %s" % json.dumps(title), "hide:", "  - navigation", "  - toc", "  - footer", "---", "", GENERATED.format(src=src)]
 
 
 def page_for(g, n, route, nodes):
@@ -541,7 +566,7 @@ def page_for(g, n, route, nodes):
     else:
         lines += [n["text"].strip(), ""]
     if n["kind"] == "grimoire-hub":
-        lines += [knowledge_map(lang, n["_entries"], n["_ids"]), ""]
+        lines += [T(lang, "g_missions_hub"), "", knowledge_map(lang, n["_entries"], n["_ids"]), ""]
     fig = n.get("figure")
     if fig:
         lines += ["![%s](../../%s)" % (fig["alt"], fig["src"]), "", "*%s*" % fig["caption"], ""]

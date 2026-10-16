@@ -203,3 +203,6 @@
 .mission-state-closed { color: var(--md-default-fg-color--light); }
 [data-md-color-scheme="slate"] .mission-level-2, [data-md-color-scheme="slate"] .mission-state-blocked, [data-md-color-scheme="slate"] .mission-state-in-progress { color: #e0b650; }
 [data-md-color-scheme="slate"] .mission-level-3 { color: #f09a8c; }
+
+/* Map tiles: the state is also a symbol, never colour alone */
+.md-typeset .kmap-none { opacity: .85; }
