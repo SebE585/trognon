@@ -228,6 +228,10 @@
 /* Bestiary: the life bar is text, so it reads without colour or an image */
 .md-typeset .bestiary-bar { font-family: var(--md-code-font-family); font-size: 1.1rem; letter-spacing: .08em; margin: .2rem 0; color: var(--md-accent-fg-color); }
 
+/* The code to find: found digits and ? slots, as text */
+.md-typeset .bestiary-code { font-size: .95rem; margin: .2rem 0 .6rem; }
+.md-typeset .bestiary-code code { padding: .1rem .5rem; }
+
 /* A real capture of the phone's screen (portrait 320x480): smaller than the schematic, with a thin frame */
 .md-typeset .journey-screen img.journey-capture { width: 9rem; max-width: 100%; border: 2px solid var(--md-default-fg-color--lighter); border-radius: 6px; }
 @media (min-width: 60em) { .journey-screen { clear: right; } }

@@ -32,12 +32,15 @@ TXT = {
         "title": "Bestiary", "lead": "Blocks of the phone we have not finished understanding, shown as creatures to face.",
         "intro": ("Each creature is a block of the phone. Its **fronts** are the precise points the [hardware map](03-hardware-map.md) still lists as open. "
                   "The life bar is computed from them and nothing else: a front only goes down when a proof is attached to it. "
-                  "Nobody, the maintainer included, can lower a bar by writing a sentence."),
+                  "Nobody, the maintainer included, can lower a bar by writing a sentence. In the spirit of a barcode card, a creature is also a **code to find**: "
+                  "each front is one slot of it, shown as `?` until a proof reveals it."),
         "rules_h": "How a front goes down", "rules": [
             "**Open**: nothing established. The bar is full for this front.",
             "**Wounded**: read in the firmware or in code (SOURCE), not yet seen working on the phone. Half a point of life is gone.",
             "**Down**: observed on the real phone (DEVICE), with an evidence folder you can open and rebuild. The point is gone.",
             "A creature is **defeated** when every front is down. It is called *unspotted* while it is not even in the hardware map."],
+        "code": "Code", "found": "found", "slots": "slots", "digit": "Digit", "in_bundle": "read in",
+        "code_note": "A creature is a code to find. Each front is one slot of it, shown as ? until a proof reveals it.",
         "life": "Life", "of": "of", "points": "points left", "state": {"open": "Open", "wounded": "Wounded: read in code", "down": "Down: seen on the phone"},
         "status": {"unspotted": "Unspotted", "intact": "Intact", "wounded": "Wounded", "defeated": "Defeated"},
         "map": "Its place in the hardware map", "attack": "Attack it", "none": "No mission yet for this front.",
@@ -50,12 +53,15 @@ TXT = {
         "title": "Bestiaire", "lead": "Les blocs du téléphone que nous n'avons pas fini de comprendre, présentés comme des créatures à affronter.",
         "intro": ("Chaque créature est un bloc du téléphone. Ses **fronts** sont les points précis que la [carte matérielle](03-hardware-map.md) donne encore pour ouverts. "
                   "La barre de vie se calcule à partir d'eux et de rien d'autre : un front ne tombe que si une preuve lui est attachée. "
-                  "Personne, mainteneur compris, ne peut baisser une barre en écrivant une phrase."),
+                  "Personne, mainteneur compris, ne peut baisser une barre en écrivant une phrase. À la manière d'une carte à code-barres, une créature est aussi un **code à trouver** : "
+                  "chaque front en est un emplacement, affiché `?` tant qu'une preuve ne le révèle pas."),
         "rules_h": "Comment un front tombe", "rules": [
             "**Ouvert** : rien d'établi. La barre est pleine pour ce front.",
             "**Blessé** : lu dans le firmware ou dans du code (SOURCE), pas encore vu fonctionner sur le téléphone. Un demi-point de vie est parti.",
             "**À terre** : observé sur le vrai téléphone (DEVICE), avec un dossier de preuve que vous pouvez ouvrir et reconstruire. Le point est parti.",
             "Une créature est **vaincue** quand tous ses fronts sont à terre. Elle est dite *non repérée* tant qu'elle n'est même pas dans la carte matérielle."],
+        "code": "Code", "found": "trouvés", "slots": "emplacements", "digit": "Chiffre", "in_bundle": "lu dans",
+        "code_note": "Une créature est un code à trouver. Chaque front en est un emplacement, affiché ? tant qu'une preuve ne le révèle pas.",
         "life": "Vie", "of": "sur", "points": "points restants", "state": {"open": "Ouvert", "wounded": "Blessé : lu dans le code", "down": "À terre : vu sur le téléphone"},
         "status": {"unspotted": "Non repérée", "intact": "Intacte", "wounded": "Blessée", "defeated": "Vaincue"},
         "map": "Sa place dans la carte matérielle", "attack": "L'attaquer", "none": "Pas encore de mission pour ce front.",
@@ -100,6 +106,20 @@ def bar(left, total):
     return "▰" * filled + "▱" * (SEGMENTS - filled)
 
 
+def _bundle_text(bundle):
+    parts = []
+    for name in ("screen.txt", "vars.txt"):
+        f = ROOT / "evidence" / bundle / name
+        if f.is_file():
+            parts.append(" ".join(f.read_text().split()))
+    return " ".join(parts)
+
+
+def code_strip(creature):
+    """One slot per front: the revealed digit, a check mark for a front that is down without one, a ? otherwise."""
+    return [f["digit"]["value"] if f.get("digit") else ("✓" if f["state"] == "down" else "?") for f in creature["fronts"]]
+
+
 def check(data, titles=None, bundles=None):
     errors = []
     titles = mission_titles() if titles is None else titles
@@ -132,6 +152,14 @@ def check(data, titles=None, bundles=None):
                         errors.append("%s: evidence bundle %r does not exist" % (where, b))
             elif f.get("evidence"):
                 errors.append("%s: only a front that is down carries evidence" % where)
+            d = f.get("digit")
+            if d:
+                if f.get("state") != "down":
+                    errors.append("%s: only a front that is down reveals a digit" % where)
+                elif not (d.get("value") and d.get("proof") and (d.get("label") or {}).get("en") and (d.get("label") or {}).get("fr")):
+                    errors.append("%s: a digit needs value, proof and a label in both languages" % where)
+                elif not any(d["proof"].lower() in _bundle_text(b).lower() for b in f.get("evidence", [])):
+                    errors.append("%s: the proof line %r is in none of the front's bundles (screen.txt or vars.txt)" % (where, d["proof"]))
             if f.get("state") == "wounded":
                 if not f.get("ref"):
                     errors.append("%s: a wounded front names the page of docs/ that holds the reading (ref)" % where)
@@ -160,9 +188,14 @@ def render(data, lang, titles=None, fr_anchors=None):
         st = status(c)
         lines += ["## %s" % c["name"][lang], "", "*%s* · **%s**" % (c["block"][lang], t["status"][st]), "",
                   '<p class="bestiary-bar" role="img" aria-label="%s%s%d %s %d %s">%s</p>' % (t["life"], col, left, t["of"], total, t["points"], bar(left, total)),
-                  "", "%s%s%d %s %d" % (t["life"], col, left, t["of"], total), ""]
+                  "", "%s%s%d %s %d" % (t["life"], col, left, t["of"], total), "",
+                  '<p class="bestiary-code" role="img" aria-label="%s%s%d %s %d %s">%s</p>' % (
+                      t["code"], col, sum(1 for f in c["fronts"] if f["state"] == "down"), t["of"], len(c["fronts"]), t["slots"] + " " + t["found"],
+                      " &nbsp;·&nbsp; ".join("<code>%s</code>" % v for v in code_strip(c))), ""]
         for f in c["fronts"]:
             line = "- **%s.** %s" % (t["state"][f["state"]], f["text"][lang])
+            if f.get("digit"):
+                line += " %s%s<code>%s</code> (%s)." % (t["digit"], col, f["digit"]["value"], f["digit"]["label"][lang])
             if f["state"] == "down":
                 line += " " + t["proof"] + col + ", ".join("[`%s`](%s/tree/main/evidence/%s)" % (b, REPO, b) for b in f["evidence"]) + "."
             if f["state"] == "wounded":

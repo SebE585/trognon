@@ -68,6 +68,29 @@ class ProofTests(unittest.TestCase):
         self.assertTrue(any("both languages" in e for e in bb.check({"creatures": [bad]}, titles=TITLES, bundles={B})))
 
 
+class DigitTests(unittest.TestCase):
+    def d(self, **kw):
+        d = {"label": {"en": "l", "fr": "l"}, "value": "3B", "proof": "who_am_i=0000003B"}
+        d.update(kw)
+        return d
+
+    def test_a_digit_is_accepted_when_its_proof_line_is_in_the_bundle(self):
+        b = "20261016T101710Z-trace_accel_i2c"
+        self.assertEqual(bb.check({"creatures": [creature(front("down", evidence=[b], digit=self.d()))]}, titles=TITLES, bundles={b}), [])
+
+    def test_a_digit_without_its_proof_in_the_bundle_is_refused(self):
+        b = "20261016T101710Z-trace_accel_i2c"
+        e = bb.check({"creatures": [creature(front("down", evidence=[b], digit=self.d(proof="who_am_i=DEADBEEF")))]}, titles=TITLES, bundles={b})
+        self.assertTrue(any("in none of the front's bundles" in x for x in e))
+
+    def test_only_a_front_that_is_down_reveals_a_digit(self):
+        self.assertTrue(any("only a front that is down reveals" in x for x in errs(front("open", digit=self.d()))))
+
+    def test_the_strip_shows_digits_checks_and_question_marks(self):
+        c = creature(front("down", digit={"value": "3B"}), front("down"), front("wounded", ref="x"), front("open"))
+        self.assertEqual(bb.code_strip(c), ["3B", "✓", "?", "?"])
+
+
 class RenderTests(unittest.TestCase):
     def data(self):
         return {"creatures": [creature(front("down", evidence=[B]), front("open", missions=["M-1"]), front("open"))]}

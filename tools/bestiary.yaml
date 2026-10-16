@@ -8,6 +8,9 @@
 #   down     observed on the real phone (DEVICE): needs `evidence`, the bundle(s) under evidence/
 # `missions` lists mission ids of tools/iop_analysis/missions.yaml that attack the front (titles come from there). `section` is an anchor of
 # docs/en/03-hardware-map.md; a block that is not in the hardware map yet has none and is shown as unspotted.
+# A front that is down may also reveal a DIGIT of the creature's code: {label, value, proof}. `proof` is a line that must appear, as is, in the
+# screen.txt or vars.txt of one of the front's bundles, so a digit cannot be shown without being in the evidence. A front without a digit
+# still counts as down; its slot of the code shows a check mark.
 # Wording rule: a front says what is established or not, at the strength of its proof. Nothing here is a claim of its own.
 creatures:
   - id: wifi
@@ -18,6 +21,7 @@ creatures:
       - state: down
         text: { en: "The base address and the GPIO lines of the Wi-Fi block.", fr: "L'adresse de base et les lignes GPIO du bloc Wi-Fi." }
         evidence: [20261015T174633Z-trace_wifi_reset]
+        digit: { label: { en: "The level of the reset line after it is released", fr: "Le niveau de la ligne de reset une fois relâchée" }, value: "1", proof: "RELEASED 00000001" }
       - state: wounded
         text: { en: "How the coprocessor is started: its start-up sequence, read in the firmware but never run by us.", fr: "Comment le coprocesseur démarre : sa séquence, lue dans le firmware mais jamais exécutée par nous." }
         ref: research/2026-10-16-wifi-iop-architecture.md
@@ -36,6 +40,7 @@ creatures:
       - state: down
         text: { en: "The levels of its reset and chip-select lines, and the power registers that look like its supply and clock enables.", fr: "Les niveaux de ses lignes de reset et de sélection, et les registres d'alimentation qui ressemblent à ses commandes de tension et d'horloge." }
         evidence: [20261016T150631Z-trace_touch_gpio, 20261016T173946Z-trace_touch_ldo]
+        digit: { label: { en: "The raw register of its reset line", fr: "Le registre brut de sa ligne de reset" }, value: "0x212", proof: "RST_14.1 raw 00000212" }
       - state: open
         text: { en: "Where its firmware comes from.", fr: "D'où vient son firmware." }
         missions: [MT-BOOT-Q1, MT-CHECK-Q1]
@@ -52,6 +57,7 @@ creatures:
       - state: down
         text: { en: "The levels of its reset and wake lines.", fr: "Les niveaux de ses lignes de reset et de réveil." }
         evidence: [20261016T124101Z-trace_bt_gpio]
+        digit: { label: { en: "The level of its wake line", fr: "Le niveau de sa ligne de réveil" }, value: "0", proof: "bt_wake=00000000" }
       - state: open
         text: { en: "Which chip it is: it is known only from the device tree.", fr: "Quelle puce c'est : on ne la connaît que par le device tree." }
       - state: open
@@ -72,6 +78,7 @@ creatures:
       - state: down
         text: { en: "The chip identifier on the first two chip-enable lines.", fr: "L'identifiant de la puce sur les deux premières lignes de sélection." }
         evidence: [20261015T171033Z-trace_nand]
+        digit: { label: { en: "The chip identifier, first chip", fr: "L'identifiant de la puce, première puce" }, value: "98 DE 95 32 7A 54", proof: "CHIPID 98 DE 95 32 7A 54" }
       - state: open
         text: { en: "The other chip-enable lines, the second bus, and any page access.", fr: "Les autres lignes de sélection, le second bus, et tout accès à une page." }
 
@@ -83,6 +90,7 @@ creatures:
       - state: down
         text: { en: "Its identifier, and axis readings in seven positions (about 56 counts per g on two axes).", fr: "Son identifiant, et des lectures d'axes dans sept positions (environ 56 comptes par g sur deux axes)." }
         evidence: [20261016T101710Z-trace_accel_i2c, 20261016T150615Z-trace_accel_axes]
+        digit: { label: { en: "The identifier byte", fr: "L'octet d'identifiant" }, value: "0x3B", proof: "who_am_i=0000003B" }
       - state: open
         text: { en: "Which of the two compatible chips it is.", fr: "Laquelle des deux puces compatibles c'est." }
       - state: open
@@ -96,6 +104,7 @@ creatures:
       - state: down
         text: { en: "A device at 0x1e whose register readings are compatible with a known chip's documented reset state.", fr: "Un composant en 0x1e dont les lectures de registres sont compatibles avec l'état de reset documenté d'une puce connue." }
         evidence: [20261016T151941Z-trace_compass_i2c]
+        digit: { label: { en: "The address that answers", fr: "L'adresse qui répond" }, value: "0x1E", proof: "aw_1e 00000001" }
       - state: open
         text: { en: "A measurement, which needs a set-up taken from the chip's own memory.", fr: "Une mesure, qui demande une configuration tirée de la mémoire propre de la puce." }
       - state: open

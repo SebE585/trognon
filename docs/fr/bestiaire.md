@@ -10,7 +10,7 @@ source: tools/bestiary.yaml
 
 Les blocs du téléphone que nous n'avons pas fini de comprendre, présentés comme des créatures à affronter.
 
-Chaque créature est un bloc du téléphone. Ses **fronts** sont les points précis que la [carte matérielle](03-hardware-map.md) donne encore pour ouverts. La barre de vie se calcule à partir d'eux et de rien d'autre : un front ne tombe que si une preuve lui est attachée. Personne, mainteneur compris, ne peut baisser une barre en écrivant une phrase.
+Chaque créature est un bloc du téléphone. Ses **fronts** sont les points précis que la [carte matérielle](03-hardware-map.md) donne encore pour ouverts. La barre de vie se calcule à partir d'eux et de rien d'autre : un front ne tombe que si une preuve lui est attachée. Personne, mainteneur compris, ne peut baisser une barre en écrivant une phrase. À la manière d'une carte à code-barres, une créature est aussi un **code à trouver** : chaque front en est un emplacement, affiché `?` tant qu'une preuve ne le révèle pas.
 
 ## Comment un front tombe
 
@@ -27,7 +27,9 @@ Chaque créature est un bloc du téléphone. Ses **fronts** sont les points pré
 
 Vie : 5 sur 8
 
-- **À terre : vu sur le téléphone.** L'adresse de base et les lignes GPIO du bloc Wi-Fi. Preuve : [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset).
+<p class="bestiary-code" role="img" aria-label="Code : 1 sur 4 emplacements trouvés"><code>1</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
+
+- **À terre : vu sur le téléphone.** L'adresse de base et les lignes GPIO du bloc Wi-Fi. Chiffre : <code>1</code> (Le niveau de la ligne de reset une fois relâchée). Preuve : [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset).
 - **Blessé : lu dans le code.** Comment le coprocesseur démarre : sa séquence, lue dans le firmware mais jamais exécutée par nous. Lecture : [`research/2026-10-16-wifi-iop-architecture.md`](../research/2026-10-16-wifi-iop-architecture.md).
     - L'attaquer : [Which class receives the coprocessor start call?](../en/missions.md) (sans téléphone) · [What do the object-slot calls of the coprocessor start sequence do?](../en/missions.md) (sans téléphone)
 - **Ouvert.** Quelle horloge physique alimente le coprocesseur.
@@ -45,7 +47,9 @@ Sa place dans la carte matérielle : [Wi-Fi et son coprocesseur](03-hardware-map
 
 Vie : 6 sur 8
 
-- **À terre : vu sur le téléphone.** Les niveaux de ses lignes de reset et de sélection, et les registres d'alimentation qui ressemblent à ses commandes de tension et d'horloge. Preuve : [`20261016T150631Z-trace_touch_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150631Z-trace_touch_gpio), [`20261016T173946Z-trace_touch_ldo`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173946Z-trace_touch_ldo).
+<p class="bestiary-code" role="img" aria-label="Code : 1 sur 4 emplacements trouvés"><code>0x212</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
+
+- **À terre : vu sur le téléphone.** Les niveaux de ses lignes de reset et de sélection, et les registres d'alimentation qui ressemblent à ses commandes de tension et d'horloge. Chiffre : <code>0x212</code> (Le registre brut de sa ligne de reset). Preuve : [`20261016T150631Z-trace_touch_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150631Z-trace_touch_gpio), [`20261016T173946Z-trace_touch_ldo`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173946Z-trace_touch_ldo).
 - **Ouvert.** D'où vient son firmware.
     - L'attaquer : [Where does the touch controller's firmware come from?](../en/missions.md) (sans téléphone) · [Does the touch driver class used by this model send the CHECK packet?](../en/missions.md) (sans téléphone)
 - **Ouvert.** La polarité de ses lignes, et sa mise sous tension.
@@ -63,7 +67,9 @@ Sa place dans la carte matérielle : [Contrôleur tactile](03-hardware-map.md)
 
 Vie : 4 sur 6
 
-- **À terre : vu sur le téléphone.** Les niveaux de ses lignes de reset et de réveil. Preuve : [`20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio).
+<p class="bestiary-code" role="img" aria-label="Code : 1 sur 3 emplacements trouvés"><code>0</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
+
+- **À terre : vu sur le téléphone.** Les niveaux de ses lignes de reset et de réveil. Chiffre : <code>0</code> (Le niveau de sa ligne de réveil). Preuve : [`20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio).
 - **Ouvert.** Quelle puce c'est : on ne la connaît que par le device tree.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 - **Ouvert.** Sa liaison avec le processeur (un UART, d'après le device tree) et tout échange dessus.
@@ -79,6 +85,8 @@ Sa place dans la carte matérielle : [Bluetooth](03-hardware-map.md#bluetooth)
 
 Vie : 2 sur 2
 
+<p class="bestiary-code" role="img" aria-label="Code : 0 sur 1 emplacements trouvés"><code>?</code></p>
+
 - **Ouvert.** Tout : il n'est pas encore dans la carte matérielle. Trouver quel bloc le porte, s'il y en a un, est la première question.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 
@@ -90,7 +98,9 @@ Vie : 2 sur 2
 
 Vie : 2 sur 4
 
-- **À terre : vu sur le téléphone.** L'identifiant de la puce sur les deux premières lignes de sélection. Preuve : [`20261015T171033Z-trace_nand`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171033Z-trace_nand).
+<p class="bestiary-code" role="img" aria-label="Code : 1 sur 2 emplacements trouvés"><code>98 DE 95 32 7A 54</code> &nbsp;·&nbsp; <code>?</code></p>
+
+- **À terre : vu sur le téléphone.** L'identifiant de la puce sur les deux premières lignes de sélection. Chiffre : <code>98 DE 95 32 7A 54</code> (L'identifiant de la puce, première puce). Preuve : [`20261015T171033Z-trace_nand`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171033Z-trace_nand).
 - **Ouvert.** Les autres lignes de sélection, le second bus, et tout accès à une page.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 
@@ -104,7 +114,9 @@ Sa place dans la carte matérielle : [Mémoire NAND](03-hardware-map.md#nand)
 
 Vie : 4 sur 6
 
-- **À terre : vu sur le téléphone.** Son identifiant, et des lectures d'axes dans sept positions (environ 56 comptes par g sur deux axes). Preuve : [`20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), [`20261016T150615Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150615Z-trace_accel_axes).
+<p class="bestiary-code" role="img" aria-label="Code : 1 sur 3 emplacements trouvés"><code>0x3B</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
+
+- **À terre : vu sur le téléphone.** Son identifiant, et des lectures d'axes dans sept positions (environ 56 comptes par g sur deux axes). Chiffre : <code>0x3B</code> (L'octet d'identifiant). Preuve : [`20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), [`20261016T150615Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150615Z-trace_accel_axes).
 - **Ouvert.** Laquelle des deux puces compatibles c'est.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 - **Ouvert.** Les décalages calibrés et toute précision angulaire.
@@ -120,7 +132,9 @@ Sa place dans la carte matérielle : [Accéléromètre](03-hardware-map.md)
 
 Vie : 4 sur 6
 
-- **À terre : vu sur le téléphone.** Un composant en 0x1e dont les lectures de registres sont compatibles avec l'état de reset documenté d'une puce connue. Preuve : [`20261016T151941Z-trace_compass_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151941Z-trace_compass_i2c).
+<p class="bestiary-code" role="img" aria-label="Code : 1 sur 3 emplacements trouvés"><code>0x1E</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
+
+- **À terre : vu sur le téléphone.** Un composant en 0x1e dont les lectures de registres sont compatibles avec l'état de reset documenté d'une puce connue. Chiffre : <code>0x1E</code> (L'adresse qui répond). Preuve : [`20261016T151941Z-trace_compass_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151941Z-trace_compass_i2c).
 - **Ouvert.** Une mesure, qui demande une configuration tirée de la mémoire propre de la puce.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 - **Ouvert.** Le rôle de l'adresse silencieuse 0x1f.
