@@ -1,0 +1,43 @@
+binary: AppleMultitouchSPI.kext.bin
+binary_sha256: b3db0be99e245d76cdcd4ca2199a6a04e469af161e927ab661cfbee7fc0dbb77
+function_name_apple: null
+function_name_assigned: "bootloader check (CHECK packet)"
+decode_mode: thumb
+subsystem: touch_protocol
+entry_code_address: "0x8056e4e8"
+thumb_entry_pointer: "0x8056e4e9"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8056e4e8", "0x8056e5c0"]
+  constant_ranges:
+    - ["0x8056e5c0", "0x8056e5d8"]
+  unresolved:
+    - id: MT-CHECK-Q1
+      text: "Whether the N1 class used for the n88 node calls this routine: it sits in the shared kext, and the N1 personality matches a class of the same kext, but the call chain from AppleMultitouchN1SPI was not traced."
+      proof_needed: "follow the callers of 0x8056e4e8 (the bootload path) from the N1 class"
+    - id: MT-CHECK-Q2
+      text: "The exact shape of the exchange: the routine passes the 4-byte transmit buffer and a 4-byte receive buffer to the transfer routine at 0x8056cbd8 together with small constants (1, 3 and 0) whose meaning was not read, after a call to slot 0x368 of the SPI device object."
+      proof_needed: "disassemble 0x8056cbd8 and slot 0x368 of the SPI device class"
+    - id: MT-CHECK-Q3
+      text: "The checksum or framing of the 4 bytes (05 00 00 06): the last byte may be a checksum of the first three plus one, unverified."
+      proof_needed: "other packets of the driver and the frame checksum routine"
+
+claims:
+  - id: MT-CHECK-001
+    text: >
+      Builds a four-byte packet on the stack with the bytes 05 00 00 06 (offsets 0 to 3), logs "Sending CHECK
+      packet, to see if device is in bootloader", and sends it through the SPI device object at this+0x54 with a
+      four-byte receive buffer. On a non-zero status it logs "status: Error 0x%08X sending CHECK". Otherwise, if
+      the first received byte is 0xD0 it logs "Driver IS in bootloader" and returns 1, else it logs "Driver is NOT
+      in bootloader". The routine takes a retry count: when the answer is not 0xD0 and the count is non-zero it
+      waits through an external sleep and calls itself through a virtual slot (0x358) with the count minus one.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-touch-drivers-protocol-static-2026-10-16"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "packet bytes, one response byte and control flow"

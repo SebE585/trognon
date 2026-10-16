@@ -347,6 +347,33 @@ consistency between a reading and two reads, not a test of the polarity. Nothing
 controller methods that set and read a pin level (slots `0x394`, `0x398`, `0x39c`) were not read, and the
 meaning of the bytes `+0xe` and `+0xf` is taken from this one routine.
 
+## The touch driver's protocol (static, 2026-10-16)
+
+Catalog: `AppleMultitouchSPI/` (`MT-CHECK-*`, `MT-BOOT-*`). Read from the kext that holds the N1 class, in code
+that was not run. Its call chain from the N1 class was not traced (`MT-CHECK-Q1`).
+
+- **A bootloader check that needs no firmware.** One routine builds the four bytes `05 00 00 06`, sends them
+  to the SPI device with a four-byte receive buffer, and treats a first received byte of **`0xD0`** as "device
+  is in its bootloader"; any other value is "not in bootloader", with a retry count and a short wait between
+  tries. The last byte may be a checksum of the first three plus one; that is a guess.
+- **A firmware check by a report request.** A second routine asks for report `0xD3` (named SENSORINFO by the
+  iDroid driver) with a four-byte buffer and takes success as "firmware is running".
+- **The bootload flow.** A timer handler tries a bootload method up to three times when no firmware is
+  flagged, then tests whether firmware runs anyway, and otherwise gives up with "No firmware running, and
+  couldn't load any". After a successful bootload it caches the device properties (family ID, sensor rows
+  and columns, region descriptors, surface size, the interface version).
+- **Not found.** The body of the bootload method: the packet format, the source of the firmware and its
+  size (`MT-BOOT-Q1`). The strings suggest a property named "A-Speed Firmware" and a "preconstructed" packet
+  type; the origin of that property (supplied from user space, or embedded) was not established.
+
+What this changes for a first observation. If the controller powers up in its bootloader, a single
+four-byte exchange, `05 00 00 06` out and four bytes back, would answer whether the first byte is `0xD0`. That
+needs no firmware and no further protocol knowledge, and is attributable to the controller: the answer
+is a chosen byte from a defined request. It does not need the bootload packets, and a reply that is not
+`0xD0` (for instance firmware already running, or a controller that is not powered) would also be
+informative only if the power, clock, reset and chip-select preconditions were met. The shape of the
+exchange (how the transfer routine frames it, `MT-CHECK-Q2`) was not read, and nothing was sent.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values
@@ -359,7 +386,7 @@ come from the readings above; none of the write semantics was ever exercised on 
 | W3 | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (rebuilt as `(old & 0x19) | 0x02`; equal to `old | 0x02` only for this old value) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
 | W4 | touch LDO | PMU register `0x11`, `0xBE` to `0xFE` (set bit `0x40`), read-modify-write | `0xBE` | write `0xBE` | nothing visible alone except the read-back and possibly the controller's behaviour on SPI | powers a rail; if the index-to-rail reading is wrong, a different rail is switched |
 | W5 | reset line | SoC GPIO `14.01` released (logical 0, which the descriptor reads as level 1, or high impedance as the personality's flag suggests), then the driver's delay (`0xf`, unit unknown) | level `0` (asserted by the reading) | drive low again | a change on SPI/attention if the controller starts | the polarity rests on a code reading; the unit of the delay is unknown |
-| W6 | first SPI exchange | `spi1` registers, chip select `13.00`; if the `reg` reading above holds, word size 8 and a period of about 124 ns | n/a | n/a | any answer | requires the controller's register layout confirmed on this chip (CLKDIVIDER and PIN undecoded), the `reg` inference confirmed, and the bootloader protocol |
+| W6 | first SPI exchange | the CHECK packet `05 00 00 06` (reply first byte `0xD0` = bootloader), `spi1` registers, chip select `13.00`; if the `reg` reading above holds, word size 8 and a period of about 124 ns | n/a | n/a | any answer | requires the controller's register layout confirmed on this chip (CLKDIVIDER and PIN undecoded), the `reg` inference confirmed, and the bootloader protocol |
 
 The order that keeps the risk lowest is W1 and then W2, and stopping to read the result before
 anything touches the PMU. The PMU writes (W3, W4) follow the driver's apparent order of power first
