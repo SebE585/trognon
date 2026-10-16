@@ -1,9 +1,10 @@
 # 3. Hardware map: what is verified
 
-![SoC map: what each block answers](../img/soc-map.svg)
+![The S5L8920 at a glance: what answers on the phone](../img/soc-overview.svg)
 
-[Open the diagram full-size](../img/soc-map.svg) — addresses and subtitles are small in an
-inline render.
+*Figure 1 — What answers on the phone. Solid lines: the block was exercised from the CPU. Faint dashed lines: not exercised, or known only from the device tree.*
+
+[Open the detailed map](../img/soc-map.svg) with addresses (small in an inline render).
 
 ## At a glance
 
@@ -394,6 +395,10 @@ device in DFU with `tools/go.sh`. Every STAGE 31 run was confirmed by its nonce.
 
 Base `0x80000000` (`SDIO0_BASE`) · mixed **DEVICE** / **HYPOTHESIS** · 2026-10-15/16
 
+![Wi-Fi and the coprocessor: what is confirmed](../img/wifi-path.svg)
+
+*Figure 2 — Wi-Fi and the coprocessor. The reset and wake levels were read; the SDIO block does not take writes from the CPU; neither the coprocessor nor the Wi-Fi module has been reached. Dashed lines were not exercised.*
+
 *SDIO is the bus protocol most embedded Wi-Fi chips use; on this SoC it may be mediated by a
 second, embedded processor rather than driven directly.*
 
@@ -559,11 +564,15 @@ was not scanned.
 
 ## Touch controller
 
-`spi1` · **DEVICE** for two GPIO levels · 2026-10-16
+`spi1` · **DEVICE** for GPIO levels, PMU registers, the supply enable and the reset line; no SPI exchange yet · 2026-10-16
+
+![Touch controller: who talks to whom](../img/touch-path.svg)
+
+*Figure 3 — The touch controller and what reaches it. The reset and chip-select levels, the power-supply enable and the PMU registers were exercised from the CPU; the clock and data pads of `spi1` are not identified, and no byte has been exchanged. Dashed lines were not exercised.*
 
 *The touch panel is read by a dedicated controller on an SPI bus.*
 
-**Status**: two pin levels read once. Nothing about the controller itself.
+**Status**: the reset and chip-select levels, the PMU registers, the supply enable and the release of the reset line have been observed or exercised on the phone (details below); the SPI controller's idle registers were read and a transfer self-test was run with no peripheral. **No byte has been exchanged with the touch controller**, and nothing yet shows that it is present, powered by this sequence or answering.
 
 **What's confirmed**: the device tree has `/device-tree/arm-io/spi1/multi-touch`
 (`compatible = "multi-touch,n88"`) with a reset line, a chip-select enable line, an
@@ -613,6 +622,7 @@ the PMU access and the SPI controller, before any transaction.
   level came with the supplies (a pull-up to the touch rail, or the controller): the line is connected to something
   that the sequence powers. With the touch LDO alone (no clock enable, no SPI clock) the released line read low at
   once and high 15 ms later.
+- A transfer self-test of the `spi1` controller with no peripheral (STAGE 45, the kernel driver's recipe: divider, setup, four bytes into the transmit register, start) moved no status counter and received no byte; every register was put back. The cause is not established. A second self-test with OpeniBoot's recipe is built and not run.
 - No transaction with the controller itself has been made.
 
 **How to reproduce**: build with `make trace_touch_gpio.bin` (see `tools/payloads/`, STAGE

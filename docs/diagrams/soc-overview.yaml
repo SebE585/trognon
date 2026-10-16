@@ -1,0 +1,26 @@
+charte: trognon
+title: "S5L8920 at a glance: what answers on the phone"
+direction: right
+groups:
+  - { id: core,  label: "CPU", style: pipeline }
+  - { id: works, label: "Observed on the device", style: zone }
+  - { id: part,  label: "Partly observed", style: zone }
+nodes:
+  - { id: cpu,   label: "CPU and MMU",   subtitle: "Cortex-A8",                         group: core,  style: stage }
+  - { id: disp,  label: "Display",       subtitle: "draws, visible fill",               group: works, style: stage }
+  - { id: gpio,  label: "GPIO, buttons", subtitle: "376 pads read, 5 buttons",          group: works, style: stage }
+  - { id: tick,  label: "Timer, IRQ",    subtitle: "24 MHz tick, software IRQ",         group: works, style: stage }
+  - { id: accel, label: "Accelerometer", subtitle: "i2c0, axes read",                   group: works, style: stage }
+  - { id: nand,  label: "NAND",          subtitle: "chip ID only",                      group: works, style: stage }
+  - { id: touch, label: "Touch",         subtitle: "GPIO and power seen, no SPI byte",  group: part,  style: accent }
+  - { id: wifi,  label: "Wi-Fi and IOP", subtitle: "GPIO seen, coprocessor not running", group: part, style: accent }
+  - { id: mag,   label: "Magnetometer",  subtitle: "present, no measurement",           group: part,  style: service }
+edges:
+  - { from: cpu, to: disp }
+  - { from: cpu, to: gpio }
+  - { from: cpu, to: tick }
+  - { from: cpu, to: accel }
+  - { from: cpu, to: nand }
+  - { from: cpu, to: touch, style: dead }
+  - { from: cpu, to: wifi,  style: dead }
+  - { from: cpu, to: mag,   style: dead }

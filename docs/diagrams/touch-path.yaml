@@ -1,0 +1,24 @@
+charte: trognon
+title: "Touch controller: who talks to whom"
+direction: down
+groups:
+  - { id: soc,  label: "S5L8920", style: zone }
+  - { id: board, label: "Board", style: zone }
+nodes:
+  - { id: cpu,   label: "CPU",            subtitle: "runs our payload",                     group: soc,   style: stage }
+  - { id: spi,   label: "spi1",           subtitle: "0x82100000, registers read",           group: soc,   style: stage }
+  - { id: gpio,  label: "GPIO",           subtitle: "reset 14.01, chip select 13.00",       group: soc,   style: stage }
+  - { id: i2c,   label: "i2c0",           subtitle: "bit-banged",                           group: soc,   style: stage }
+  - { id: pmu,   label: "PMU",            subtitle: "i2c address 0x74, registers read",     group: board, style: stage }
+  - { id: ldo,   label: "Touch supply",   subtitle: "LDO, enable bit written and restored", group: board, style: stage }
+  - { id: touch, label: "Touch controller", subtitle: "not answered yet",                   group: board, style: accent }
+edges:
+  - { from: cpu,  to: spi }
+  - { from: cpu,  to: gpio }
+  - { from: cpu,  to: i2c }
+  - { from: i2c,  to: pmu }
+  - { from: pmu,  to: ldo }
+  - { from: ldo,  to: touch, label: "power" }
+  - { from: gpio, to: touch, label: "reset, chip select" }
+  - { from: pmu,  to: touch, style: dead, label: "clock (PMU GPIO 0)" }
+  - { from: spi,  to: touch, style: dead, label: "clock, data: pads unknown" }

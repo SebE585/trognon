@@ -1,0 +1,18 @@
+charte: trognon
+title: "Wi-Fi and the coprocessor: what is confirmed"
+direction: down
+groups:
+  - { id: soc,  label: "S5L8920", style: zone }
+  - { id: ext,  label: "Off chip", style: zone }
+nodes:
+  - { id: cpu,  label: "CPU",            subtitle: "runs our payload",                  group: soc, style: stage }
+  - { id: gpio, label: "GPIO",           subtitle: "Wi-Fi reset and wake read as 0",    group: soc, style: stage }
+  - { id: sdio, label: "SDIO block",     subtitle: "0x80000000, writes do not stick",   group: soc, style: accent }
+  - { id: iop,  label: "IOP coprocessor", subtitle: "0x86300000, state open",           group: soc, style: service }
+  - { id: wifi, label: "Wi-Fi module",   subtitle: "not reached",                       group: ext, style: service }
+edges:
+  - { from: cpu,  to: gpio }
+  - { from: cpu,  to: sdio }
+  - { from: gpio, to: wifi, style: dead, label: "reset, wake (wiring from the device tree)" }
+  - { from: sdio, to: iop,  style: dead, label: "message channel, unconfirmed" }
+  - { from: sdio, to: wifi, style: dead, label: "SDIO bus, not exercised" }
