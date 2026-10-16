@@ -64,5 +64,6 @@ docs-build: evidence-index
 
 docs-check: docs-build
 	python3 -I tools/check_headings.py
+	python3 -I tools/check_internal_links.py
 	git diff --exit-code -- docs/snippets/evidence-table.en.md docs/snippets/evidence-table.fr.md || \
 	  { echo "docs-check: evidence-table.{en,fr}.md are stale -- run 'make evidence-index' and commit the result"; exit 1; }
