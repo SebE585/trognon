@@ -50,13 +50,17 @@ register layout exactly (a one-to-one match against Linux's own
 document spends most of its length on, and it remains open.** Every
 direct producer checked so far — the host driver's message-send path,
 generic queue creation, all seven opcode handlers, the task scheduler's
-first-dispatch chain — turns out not to write it. A lead found and
-confirmed, not merely hypothesized, is that the firmware's own wrapper
-carries a `ConfigurationOffset` property pointing at a location inside
-the firmware image that currently holds the firmware's own "value not
-yet set" sentinel — strong evidence that a host-side loader patches it
-before releasing the IOP from reset, through a mechanism (a specific
-kext) not yet located. See ["The missing producer"](#the-missing-producer-everything-checked-for-the-real-sdhc-base-pointer).
+first-dispatch chain — turns out not to write it. A mechanism found and confirmed, not merely hypothesized, is that the
+firmware's own wrapper carries a property dictionary (`HeapBaseOffset`/
+`HeapSizeOffset`, after correcting an initial key/value misreading — see
+["The missing producer"](#the-missing-producer-everything-checked-for-the-real-sdhc-base-pointer))
+pointing at two locations inside the firmware image that the firmware's
+own boot code dereferences directly to seed its heap allocator, and
+which currently hold the firmware's own "value not set" sentinel —
+confirmed evidence that a host-side loader patches fixed locations
+inside the firmware image before releasing the IOP from reset. Whether
+the same mechanism also supplies the SDHC base pointer is not yet shown;
+so far it is confirmed only for heap setup.
 
 ```mermaid
 flowchart LR
@@ -526,33 +530,65 @@ separately enumerated.** Treat "nobody writes the slot" as checked for
 the mechanisms listed, not as an exhaustive proof covering every
 addressing mode.
 
-**Found and confirmed — the strongest lead so far**: the firmware
-wrapper's own property dictionary (`ConfigurationOffset`, `HeapBaseOffset`,
-`HeapSizeOffset`, `HeapRequired`, `PageTableBase`, `PageTableSize`,
-`MessageChannelSize`) is not just metadata sitting unused. Its `__text`
-section contains real code with a `{key, value}` table feeding the
-dictionary; read directly:
+**The property-dictionary table below was first misread, and a reviewer
+was right to insist on checking it against the wrapper's own consuming
+code rather than trusting the data layout.** The first pass assumed a
+uniform 8-byte `{key_ptr, value_ptr}` stride; the compiler's literal pool
+is not laid out that cleanly — an extra value slot is inserted early for
+a property (`PanicLogBytesMax`) that is actually consumed much later, via
+a register held live across several intervening calls. This shifts every
+property from `ConfigurationOffset` through `PageTableBase` by one slot
+relative to the naive reading. Redone by tracing, for each of the
+wrapper's ~14 `setProperty`-shaped calls, exactly which literal-pool
+address feeds the value register and which key string loads immediately
+before the matching call:
 
-| Key | Value |
+| Key | Value (corrected) |
 |---|---|
-| `ConfigurationOffset` | `0xf0a0` |
-| `HeapBaseOffset` | `0xf0a4` |
-| `HeapSizeOffset` | `0xa000` |
-| `HeapRequired` | `0xffffffff` |
-| `PageTableBase` | `0xffffffff` (no MMU on this IOP) |
-| `PageTableSize` | `8` |
-| `MessageChannelSize` | `0x1a460` |
+| `ConfigurationOffset` | `0xf018` |
+| `HeapBaseOffset` | `0xf0a0` |
+| `HeapSizeOffset` | `0xf0a4` |
+| `HeapRequired` | `0xa000` |
+| `PageTableBase` | `0xffffffff` |
+| `PageTableSize` | `0xffffffff` |
+| `MessageChannelSize` | `0x8` |
 
-These are **offsets into the raw firmware image itself**. Checked
-directly against the firmware file: both `fwFirmwareImage[0xf0a0]` and
-`[0xf0a4]` read `0xffffffff` — the firmware's own "not yet set" sentinel
-pattern, seen at every other genuinely-unconfigured field found so far.
-This is evidence, not proof, that a host-side loader patches these exact
-locations before releasing the IOP from reset — a configuration-injection
-mechanism upstream of, and structurally different from, every
-message-passing path checked above, which would explain why none of them
-ever write anything real: the real write would happen before any of that
-code runs, as part of loading the firmware itself.
+Every value changed except by coincidence. **Do not reuse the previous
+table** from any earlier revision of this document.
+
+`ConfigurationOffset` (`0xf018`) turned out to be a **false lead**:
+every one of its three literal-address references in the firmware (two
+already-examined functions, the task-creation loop and
+`iop_control_task`'s own boot-init dispatcher) uses it purely as a
+pointer-increment loop's upper bound, never dereferenced as data, and the
+raw firmware holds `0x636e6667` there, not a sentinel. As far as this
+firmware's own code shows, this property marks the end of a
+statically-sized boot table, not a host-patched configuration pointer.
+
+**`HeapBaseOffset`/`HeapSizeOffset` (`0xf0a0`/`0xf0a4`) are the real,
+confirmed injection point** — and unlike the first pass, this is now
+backed by finding the actual consumer, not an inference from a sentinel
+pattern. Both addresses are referenced exactly once each in the
+firmware, both inside `fcn.00008254`, called from the firmware's own
+early boot routine (`fcn.0000080c`) at its very first call:
+
+```
+ldr r0, [0x8280]   ; r0 = 0xf0a0 (HeapBaseOffset's own address)
+ldr r1, [0x8284]   ; r1 = 0xf0a4 (HeapSizeOffset's own address)
+ldr r0, [r0]       ; r0 = *(0xf0a0)  -- the actual heap base VALUE
+ldr r1, [r1]       ; r1 = *(0xf0a4)  -- the actual heap size VALUE
+bl fcn.00007794    ; the generic allocator this whole firmware uses everywhere
+```
+
+This is the firmware's own heap-allocator initialisation, seeded directly
+from these two locations. Both currently hold `0xffffffff` in the static
+file — a value that would make the allocator fail immediately if left
+unpatched, exactly the kind of field a host-side loader has to fill in
+before this boot code runs. **This confirms the configuration-injection
+mechanism concretely, for heap setup — not (yet) for anything
+SDHC-related.** Whether `AppleARM7M::startCPU`'s own computed size and
+hardware address (below) end up written into these same two offsets has
+not been confirmed, only shown to be plausible.
 
 **Found: `AppleARM7M`, the concrete IOP-management driver, and its
 `startCPU(IOSlaveFirmware*)` method.** Rather than searching the whole
@@ -586,10 +622,11 @@ primitive actually maps memory for and starts the second ARM core —
 this is "Open questions" #6's load-path code, now located and partially
 read.
 
-**Checked, and still not found**: the numeric values `0xf0a0`, `0xf0a4`,
-`0xa000`, `0x1a460` do not appear as literals in `AppleARM7M.kext`
-either, and neither does the string `"ConfigurationOffset"` or
-`"getProperty"`. The property-dictionary values must be consumed through
+**Checked, and still not found**: the numeric values `0xf018`, `0xf0a0`,
+`0xf0a4`, `0xa000` (the corrected table above) do not appear as literals
+in `AppleARM7M.kext` either, and neither does the string
+`"ConfigurationOffset"`, `"HeapBaseOffset"`, or `"getProperty"`. The
+property-dictionary values must be consumed through
 the same opaque vtable call on the `IOSlaveFirmware` object — a generic
 accessor whose real implementation was not found in any of the three
 kexts checked (`AppleIOPSDIO`, `IOSlaveProcessor`, `AppleARM7M`). It is

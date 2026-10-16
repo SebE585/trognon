@@ -30,18 +30,22 @@ hypothesis: `docs/research/2026-10-16-wifi-iop-architecture.md`.
 
 | Address | Name | Role |
 |---|---|---|
-| `0x1730` | `sdio_message_loop` | blocking receive on queue `"sdio message"`, reads opcode, dispatches via a 7-entry jump table at `0x17c4` (`r3 = opcode - 1`, so **real opcodes are 1-7**, not 0-6 — an off-by-one caught and fixed on 2026-10-16) |
+| `0x1730` | `sdio_message_loop` | blocking receive on queue `"sdio message"`, reads opcode, dispatches via a 7-entry jump table at `0x17c4` (`r3 = opcode - 1`, so **real opcodes are 1-7**, not 0-6) |
 | `0x1844` | `sdio_op1_ping` (**real opcode 1**) | logs `"SDHC: Ping received..."`, writes success status, returns. **No register access at all.** |
-| `0x1a58` | `sdio_op2_alloc` (opcode 2) | allocates a 16-byte buffer, stores it at `[dev+4]` |
-| `0x1a24` | `sdio_op3_free` (opcode 3) | frees `[dev+4]` — mirrors opcode 2 |
-| `0x19c4` | `sdio_op4_reset` (opcode 4) | the one that reaches `sdiodrv_resetSDHC` — see below |
+| `0x1a58` | `sdio_op2_alloc` (opcode 2) | allocates a 16-byte buffer, stores it at `message+0x0c+4` |
+| `0x1a24` | `sdio_op3_free` (opcode 3) | frees `message+0x0c+4` — mirrors opcode 2 |
+| `0x19c4` | `sdio_op4_reset` (opcode 4) | dereferences `base = *(message+0x0c)` and reaches `sdiodrv_resetSDHC` through it — see below |
 | `0x192c` | `sdio_op5_set_bus_params` (opcode 5) | compound dispatcher over message fields `+4/+8/+0x10/+0xc`; matches the `setClockRate`/`setBusWidth`/`setBusSpeedMode` family named in the firmware's own strings |
-| `0x190c` | `sdio_op6_send_command_maybe` (opcode 6) | thin tail-call into `0x67f0` with 2 pointers; **not disassembled further**, name is a guess from signature only |
-| `0x18bc` | `sdio_op7_transfer_data_maybe` (opcode 7) | calls `0x6898` with 4 sub-pointers; **not disassembled further**, name is a guess from signature only |
+| `0x190c` | `sdio_op6` | tail-call into `0x67f0`, confirmed by its own log-tag string to be `sdiodrv_sendCommand`/`sdiodrv_completeCommand` — not a guess |
+| `0x18bc` | `sdio_op7` | calls `0x6898`, confirmed by its own log-tag string to be `sdiodrv_performDMA`/`sdiodrv_transferData` — not a guess |
 
-Every handler starts with the same guard: read `[message+0]` (the device's
-"configured" state), bail with generic error `0x401` if zero. Not
-opcode-specific.
+Every non-ping handler (opcodes 2-7) receives the identical argument pair
+`(message+0x0c, message+0x14)` from the dispatcher, and starts with the
+same guard: dereference `base = *(message+0x0c)` once, bail with generic
+error `0x401` if it is zero (a real pointer, null-checked like any driver
+checks its mapped register window — not a boolean "configured" flag; see
+the correction below, which replaces this framing wherever it appears
+later in this document).
 
 ### MAJOR CORRECTION (2026-10-16, caught by a third review): this IS real SDHCI hardware, one indirection away
 
@@ -122,14 +126,27 @@ becomes a real, dereferenceable local pointer starting from whatever raw
 (physical) address the sender supplied — but it does **not** supply any
 SDIO/SDHC-specific value; it is pure plumbing.
 
-### Checked and ruled out (2026-10-16): the host does not supply `base`
+Separately, `fcn.00000eb0` (the receive call itself) indexes a **fixed
+table at literal address `0x10da4`**: one 32-byte channel-descriptor per
+channel (`channel_id * 0x20`), each holding a ring buffer of 64-byte
+message slots (`index << 6`, masked to 64-byte alignment). This confirms
+`message` itself — the buffer `base = *(message+0x0c)` is read from — is
+ordinary firmware RAM, not an MMIO window and not a raw hardware pointer
+handed in directly by the host.
+
+### Checked and ruled out, for this specific path: `sendIOPCommand`'s transport does not supply `base`
 
 Natural hypothesis: the host CPU knows the real SDHC physical address
 (`0x80000000`, from the device tree) and writes it into the message at
 `+0x0c` before calling `sendIOPCommand`. **Checked directly in the host
 kext (`AppleIOPSDIO.kext`, Thumb-2 code — an earlier plain-ARM disassembly
 of this kext was wrong, redone correctly with `asm.bits=16`) and ruled
-out**:
+out for this specific call path** — not every conceivable host-side
+producer; other command constructors, the channel object's own methods
+(`this+0x24`, not itself disassembled), and pre-boot configuration
+(see "`HeapBaseOffset`/`HeapSizeOffset`" below, which turned out to be
+exactly this kind of mechanism, just for heap setup rather than SDHC)
+remain outside this specific check's scope:
 
 - `sendIOPCommand` (`0x8057c424`) has exactly **one caller** in the kext.
   That caller passes, as the real argument to the underlying `send()` call
@@ -247,54 +264,99 @@ the original real-hardware observation that every SDHC register reads
 blob even starts running, in an earlier IOP boot stage that has not been
 extracted.
 
-### BREAKTHROUGH (2026-10-16): the configuration-injection mechanism, found and confirmed
+### CORRECTED (2026-10-16): the key/value table was misread; redone by tracing the actual consuming code
 
-A reviewer pointed at a lead from the original architecture report that
-had not been followed up: the wrapper kext (`IOP_s5l8920x_firmware`,
-`iop_firmware.bin` — distinct from the raw `fwFirmwareImage.bin` payload)
-carries a property dictionary with keys `ConfigurationOffset`,
-`HeapBaseOffset`, `HeapSizeOffset`, `HeapRequired`, `PageTableBase`,
-`PageTableSize`, `MessageChannelSize`, `PanicString`, `PanicFunction`,
-`PanicLog...`, found earlier but never opened.
+The property-dictionary table below was first read by assuming a uniform
+8-byte `{key_ptr, value_ptr}` stride starting at `0x804801b4`. **That
+assumption was wrong, and a reviewer was right to insist it be checked
+against the code rather than trusted from the data layout alone.** The
+compiler's literal pool is not laid out as clean adjacent pairs: an extra
+value slot (`0x804801dc`, holding `0x804809a8`) is inserted early for a
+value (`PanicLogBytesMax`) that is actually *consumed* much later in the
+function, via a register (`r8`) held live across many intervening calls.
+This shifts every property from `ConfigurationOffset` through
+`PageTableBase` by one slot relative to the naive reading.
 
-Disassembled the wrapper's own `__text` (it has real code, not just
-metadata): a clean array of `{key_string_ptr, value_location_ptr}` pairs
-at `0x804801b4` onward, each value pointer landing inside the wrapper's
-own `__data` section. Read the actual stored values directly:
+Redone by disassembling the wrapper's `__text` in full (`asm.bits=16`)
+and tracing, for every one of the ~14 `setProperty`-shaped calls, which
+literal-pool address feeds `r2` (the value, always dereferenced once)
+and which key string loads into `r1` immediately before the matching
+`blx`. Confirmed, call by call:
 
-| Key | Value |
-|---|---|
-| `ConfigurationOffset` | `0xf0a0` |
-| `HeapBaseOffset` | `0xf0a4` |
-| `HeapSizeOffset` | `0xa000` |
-| `HeapRequired` | `0xffffffff` (not required) |
-| `PageTableBase` | `0xffffffff` (no MMU on this IOP) |
-| `PageTableSize` | `8` |
-| `MessageChannelSize` | `0x1a460` |
+| Key | Value address | Value |
+|---|---|---|
+| `ConfigurationOffset` | `0x80480988` | **`0xf018`** |
+| `HeapBaseOffset` | `0x8048098c` | **`0xf0a0`** |
+| `HeapSizeOffset` | `0x80480990` | **`0xf0a4`** |
+| `HeapRequired` | `0x804809b0` | **`0xa000`** |
+| `PageTableBase` | `0x80480994` | `0xffffffff` |
+| `PageTableSize` | `0x80480998` | **`0xffffffff`** |
+| `MessageChannelSize` | `0x804809b4` | **`0x8`** |
+| `PanicString` | `0x804809a0` | `0x1a464` |
+| `PanicFunction` | `0x804809a4` | `0x12460` |
+| `PanicLogBytesMax` (via `r8`) | `0x804809a8` | `0x1245c` |
 
-**These are offsets *into the raw firmware image* (`fwFirmwareImage.bin`),
-not addresses in some other space.** Checked directly: at file offset
-`0xf0a0` (`ConfigurationOffset`) and `0xf0a4` (`HeapBaseOffset`), the raw
-firmware image holds `0xffffffff` at both — exactly the "-1 = not yet
-configured" sentinel pattern seen everywhere else in this firmware for an
-unset field.
+Every value changed except `PanicString`/`PanicFunction` (which the naive
+reading happened to get right) and `PageTableBase` (which kept the same
+numeric value by coincidence of position). **Do not reuse the old
+table** (`ConfigurationOffset = 0xf0a0`, etc.) from any earlier version
+of this document or its git history — it was wrong.
 
-**This confirms, not just hypothesizes, that the host-side loader patches
-specific, fixed locations inside the firmware image before releasing the
-IOP from reset.** This is the configuration-injection mechanism that was
-missing from every other lead chased so far (host message content,
-generic queue creation, task creation, the scheduler) — none of those
-ever write anything real, because the real write happens *before any of
-that code runs*, as part of loading the firmware itself.
+### `ConfigurationOffset` (`0xf018`) traced: a loop boundary, not a config pointer
 
-**Not yet found**: which kext actually performs this patch. Neither
-`AppleIOPSDIO.kext` nor `IOSlaveProcessor.kext` contain the string
-`"ConfigurationOffset"` anywhere — so a third kext (a generic IOP
-firmware-loader, likely the concrete subclass backing `IOSlaveFirmware`/
-`IOSlaveCPU`) exists and has not been extracted yet. Finding and opening
-it — to see what it actually writes at `fwFirmwareImage+0xf0a0` and
-`+0xf0a4`, and whether that includes or points to the real SDHC base
-address — is now the single most direct remaining step.
+Searched the firmware for every reference to the literal address
+`0xf018`. Exactly three exist, all of them the *same* literal-pool entry
+reused across two already-known functions: the task-creation loop
+(`fcn.0000080c`) and `iop_control_task`'s own two-phase boot-init
+callback loop (`fcn.00000afc`). In both, `0xf018` is loaded into a
+register and used purely as an **upper bound for a pointer-increment
+loop** (`cmp r4, r8; blo ...`) — never dereferenced, never read as data.
+The raw firmware also holds `0x636e6667` at that address (not `0xffffffff`,
+not a sentinel pattern at all). **This name was a red herring**: as far
+as this firmware's own code shows, `ConfigurationOffset` does not point
+at a host-patched configuration struct — it marks the end of a
+statically-sized boot-time table. It does not need the host to write
+anything there at all, consistent with its non-sentinel content.
+
+### `HeapBaseOffset`/`HeapSizeOffset` (`0xf0a0`/`0xf0a4`): the real, confirmed injection point
+
+These are the ones that actually matter, and unlike `ConfigurationOffset`
+this is now **fully confirmed with its real consumer found**, not just a
+sentinel-pattern inference. Searched for literal references to `0xf0a0`
+and `0xf0a4`: exactly one each, both inside `fcn.00008254`, called from
+`fcn.0000080c` (the firmware's own early boot/task-setup routine) at its
+very first call (`0x81c`):
+
+```
+0x0000825c  ldr r0, [0x8280]   ; r0 = 0xf0a0 (HeapBaseOffset's own address)
+0x00008260  ldr r1, [0x8284]   ; r1 = 0xf0a4 (HeapSizeOffset's own address)
+0x00008264  ldr r0, [r0]       ; r0 = *(0xf0a0)  -- the actual heap base VALUE
+0x00008268  ldr r1, [r1]       ; r1 = *(0xf0a4)  -- the actual heap size VALUE
+0x0000826c  bl fcn.00007794    ; the GENERIC ALLOCATOR this whole firmware uses everywhere
+```
+
+**This is the firmware's own heap-allocator initialisation, seeded
+directly from `*(0xf0a0)`/`*(0xf0a4)`.** Both currently hold `0xffffffff`
+in the static file — a value that would make the allocator fail
+immediately if left unpatched, which is exactly the kind of field a
+host-side loader has to fill in before this boot code runs. This
+confirms the configuration-injection mechanism concretely, for heap setup
+specifically — not yet for anything SDHC-related. `fcn.00008254` also
+calls `fcn.00008b14` and `fcn.00009304` right after the allocator setup
+(not yet opened) and tail-calls `fcn.00008098`, which does a second,
+separate `fcn.0000ae40(0x1000, 0x116a0)` call and stores its result at a
+fixed address (`0x116b0`) — plausibly a second, fixed-size pool, not yet
+connected to anything SDIO-specific either.
+
+**Not yet found**: which kext/code patches `fwFirmwareImage+0xf0a0`/
+`+0xf0a4` before boot. Neither `AppleIOPSDIO.kext` nor
+`IOSlaveProcessor.kext` contain these offsets or the string
+`"HeapBaseOffset"` — the patcher remains unlocated (see "ConfigurationOffset's
+consumer" below, which applies equally here). `AppleARM7M::startCPU`
+(found separately, see below) computes a rounded-up size and a hardware
+address (`0x86300000`) into its own companion structure; whether that
+structure's values ultimately get written into these two firmware
+offsets has not been confirmed — a plausible, not yet proven, connection.
 
 ### Host opcode 0 vs IOP opcode 1: resolved, was never actually a mismatch
 
@@ -355,11 +417,12 @@ whatever kernel primitive maps memory for and starts the second ARM
 core — this is the load-path code "Open questions" #6 asked for, now
 located and partially read.
 
-**Checked and still not found**: `0xf0a0`/`0xf0a4`/`0xa000`/`0x1a460`
-(the `ConfigurationOffset`/`HeapBaseOffset`/`HeapSizeOffset`/
-`MessageChannelSize` values) do **not** appear as literals anywhere in
-`AppleARM7M.kext` either, and neither does the string
-`"ConfigurationOffset"` or `"getProperty"`. The property-dictionary
+**Checked and still not found**: `0xf018`/`0xf0a0`/`0xf0a4`/`0xa000`
+(the corrected `ConfigurationOffset`/`HeapBaseOffset`/`HeapSizeOffset`/
+`HeapRequired` values — re-checked with the corrected table above after
+the earlier key/value misreading) do **not** appear as literals anywhere
+in `AppleARM7M.kext` either, and neither does the string
+`"ConfigurationOffset"`, `"HeapBaseOffset"`, or `"getProperty"`. The property-dictionary
 values must be consumed through the same opaque vtable call on the
 `IOSlaveFirmware` object (`+0x34c` or a neighbouring slot not yet
 individually identified) — a generic accessor whose real implementation
@@ -394,7 +457,13 @@ kext. Confirming this needs either checking `AppleBCMWLAN.kext` (not
 extracted) or accepting that this specific kext slice's outbound command
 surface is limited to the ping.
 
-### ConfigurationOffset's consumer: checked the full kernelcache, still not found
+### The host-side patcher (for `HeapBaseOffset`/`HeapSizeOffset`, the real target): checked the full kernelcache, still not found
+
+(Originally searched for `ConfigurationOffset`'s own patcher before that
+property turned out to be a loop boundary, not a host-injection point —
+the search method below applies equally to the real target,
+`HeapBaseOffset`/`HeapSizeOffset`, since neither property's *name* is
+baked into any consumer's own code either way.)
 
 Searched the entire decompressed kernelcache (10 MB, not just
 `AppleIOPSDIO.kext`/`IOSlaveProcessor.kext`) for the literal string
@@ -429,79 +498,6 @@ slots, and the data flow for `base` is more direct (it is consumed right
 where `sdio_op4_reset`/`sdio_op6` dereference `message+0x0c`) than this
 "install"-command path would require. Kept here as a secondary candidate
 only if the boot-stage/split-constant leads above don't pan out.
-
-### Earlier correction (2026-10-16, caught by a second review): "dev" is not a separate struct
-
-Earlier notes called the first argument of opcode handlers 2-7 "dev", as if
-it were a distinct device struct. It is not: the switch's own dispatch code
-passes **`(message+0xc, message+0x14)`** to every one of the six non-ping
-handlers (confirmed identical in all six cases). There is one buffer, not
-two — every `[dev+N]` below really means `[message+0xc+N]`.
-
-### Where that buffer actually comes from (traced, 2026-10-16)
-
-The review asked for this explicitly, rather than accepting the offset-only
-description. `fcn.00000eb0` (the receive call inside the message loop)
-indexes a **fixed table at literal address `0x10da4`**: one 32-byte
-channel-descriptor per channel (`channel_id * 0x20`), each holding a ring
-buffer of 64-byte message slots (`index << 6`, masked to 64-byte alignment).
-**This is RAM, part of the firmware's own static data** — not an MMIO
-window, and not a raw hardware pointer handed in by the host. This rules out
-one specific concern the review raised ("dev could itself be a pointer into
-MMIO space"), though it does not yet rule out that these fields *mirror*
-real hardware state updated elsewhere (see below).
-
-### The reset and sendCommand/performDMA paths, traced
-
-```
-sdio_op4_reset (0x19c4)
- +-- reset_set_bits_0x34_0x36_a (0x6c24)   -- builds a bitmask in [msg+0xc+0x34]/[+0x36]
- +-- reset_set_bits_0x34_0x36_b (0x6d04)   -- same, different bits
- +-- generic_poll_retry_100x (0x64b0)       -- shared by op4/op6/op7; retries up to 100x;
-       |                                       this is also `sdiodrv_resetSDHC` by its own
-       |                                       log-tag string, but it is generic, not
-       |                                       reset-specific code
-       +-- state_set_bits_0x2f (0x6e30)    -- [msg+0xc+0x2f] |= (arg & 7)
-       +-- state_check_bits_0x2f (0x6e44)  -- ([msg+0xc+0x2f] & 7), same struct
-
-sdio_op6 -> sdiodrv_sendCommand (0x67f0, confirmed by its own log-tag string,
-            not a guess anymore) -- reads/writes more fields of the SAME
-            struct: [+0x8], [+0xe], [+0x10], [+0x24], [+0x30], [+0x32].
-            Calls command_inhibited_check (0x6ac8): `[+0x24] & 1`, polled
-            in a classic retry loop -- still the same RAM struct, no
-            literal address.
-sdio_op7 -> sdiodrv_performDMA / sdiodrv_transferData (0x6898, same: named
-            by its own log-tag strings, not guessed) -- same struct again.
-```
-
-**No literal MMIO address found anywhere in any of these paths**, and the
-buffer they all operate on is now proven to live in the firmware's own RAM
-table, not in peripheral address space. Confirmed separately by an
-exhaustive byte-level search of the whole firmware image for `0x80000000`
-(SDIO) and `0x81200000`/`0x81300000` (NAND H2FMI0/1): zero matches anywhere,
-in either the raw firmware or its wrapper kext.
-
-**What this does and does not prove** (the review's point, still open): this
-rules out the buffer itself being a hardware window. It does **not** yet
-prove these fields are pure software bookkeeping rather than a
-software-maintained *mirror* of real hardware state, kept in sync by an
-interrupt handler we have not found. The real register access, if this
-firmware does it anywhere outside an ISR, is most likely in one of the
-sub-calls below, none of which have been opened yet.
-
-### Known struct offsets, corrected (all relative to `message+0xc`)
-
-| Offset from `message` | Meaning |
-|---|---|
-| `+0x00` | opcode byte (dispatched 1-7) |
-| `+0x08` | response/status field — same offset the host's `sendIOPCommand` writes `pending=1` into before sending |
-| `+0xc+0x00` | "configured" flag, checked by every opcode handler |
-| `+0xc+0x04` | allocated buffer pointer (opcode 2 sets it, opcode 3 clears it) |
-| `+0xc+0x08`, `+0xc+0xe`, `+0xc+0x10` | cmd/arg-style fields, read and logged by `sendCommand` |
-| `+0xc+0x24` | a status word, `&1` checked by `command_inhibited_check` — hardware mirror or pure software, not distinguished yet |
-| `+0xc+0x2f` | a one-byte state flag, bits 0-2 |
-| `+0xc+0x30`, `+0xc+0x32` | more fields read by `sendCommand`/`performDMA` |
-| `+0xc+0x34`, `+0xc+0x36` | two 16-bit "desired register" bitmasks built by the reset path |
 
 ### Not disassembled yet (real next targets)
 
