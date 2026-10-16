@@ -331,15 +331,13 @@ reviewer's explicit request: the receive call (`fcn.00000eb0`) resolves
 32-byte channel descriptor per channel, each holding a ring buffer of
 64-byte message slots. That address is RAM, part of the firmware's own
 static data, not an MMIO window and not a raw hardware pointer handed in by
-the host — which answers one of the reviewer's two concerns (that `dev`
-might itself be a pointer into register space) without yet answering the
-other (whether its fields *mirror* real hardware state kept in sync
-elsewhere; see "Known gaps").
+the host.
 
 - **Opcode 2** (`fcn.00001a58`): allocates a 16-byte buffer and stores it
-  at `[dev+4]` — opens a resource.
-- **Opcode 3** (`fcn.00001a24`): frees exactly that same field — the
-  mirror of opcode 2, a clean open/close pair.
+  at `[dev+4]` — opens a resource. It reads and null-checks `[dev+0]` but
+  never writes it (see the correction below — this matters).
+- **Opcode 3** (`fcn.00001a24`): frees exactly that same `[dev+4]` field —
+  the mirror of opcode 2, a clean open/close pair.
 - **Opcode 5** (`fcn.0000192c`): a compound dispatcher checking the
   message's `+4`, `+8`, `+0x10` and `+0xc` fields in turn, one distinct
   sub-call per field, stopping at the first failure — matches the
@@ -348,41 +346,67 @@ elsewhere; see "Known gaps").
 - **Opcode 6** (`fcn.0000190c`): a thin tail-call into `fcn.000067f0`,
   confirmed by its own log-tag strings to be **`sdiodrv_sendCommand`** (and,
   inlined in the same function, `sdiodrv_completeCommand`) — not a guess
-  from signature anymore. Reads and writes several more fields of the same
-  `dev` struct (`+0x8`, `+0xe`, `+0x10`, `+0x24`, `+0x30`, `+0x32`), logged
-  as `cmd`/`arg` in its own error strings. Its `command_inhibited_check`
-  helper (`fcn.00006ac8`, polled in a classic retry loop) reads `[dev+0x24]
-  & 1` — still the same RAM struct, no literal address at this level either.
+  from signature anymore. Its `command_inhibited_check` helper
+  (`fcn.00006ac8`, polled in a classic retry loop) reads `[dev+0x24] & 1`.
 - **Opcode 7** (`fcn.000018bc`): calls `fcn.00006898`, confirmed by its own
   log-tag strings to be **`sdiodrv_performDMA`** / **`sdiodrv_transferData`**
-  — again not a guess. Operates on the same struct.
+  — again not a guess.
 
-`fcn.00006580`, `fcn.000063d0` and `fcn.0000638c` (opcode 5's three
-sub-calls), and `sendCommand`/`performDMA`'s own further sub-calls
-(`0x6c70`, `0x6c90`, `0x6cf0`, `0x6c00`, `0x6f18`, `0x6804`, `0x6d50`,
-`0xa7d8`, `0x8dfc`) were not disassembled this session. The opcode-4 (reset)
-path was followed five function levels deep instead
-(`fcn.000019c4` -> `fcn.00006c24`/`fcn.00006d04` -> the shared polling
-helper `fcn.000064b0` -> `fcn.00006e30`/`fcn.00006e44`), and, like
-`sendCommand`'s own path, **no literal hardware address was found anywhere
-along it** — every function reads or writes a fixed offset of the same
-RAM-based `dev` struct (`[dev+0x2f]`, `[dev+0x34]`, `[dev+0x36]`), building
-up what looks like a desired-register bitmask in software. Combined with
-the struct's now-confirmed RAM origin, this rules out "`dev` is itself an
-MMIO window" as a possibility, but does not yet distinguish pure software
-bookkeeping from a software-maintained mirror of hardware state updated by
-an interrupt handler we have not found — that distinction, and the real
-register access if this firmware performs it anywhere outside an ISR, most
-likely sits in one of the not-yet-disassembled sub-calls listed above. The
-host driver's own opcode numbering (`sendIOPCommand`'s special handling of
-"opcode 0", noted above as a plausible ping match) has not been reconciled
-with this IOP-side numbering — whether the host's opcode byte maps 1:1 to
-the IOP's, or through some other translation, is open; see "Known gaps".
+### Major correction: this is real SDHCI hardware, one pointer indirection away
+
+A third review, reading the GitHub copy of this report, flagged that the
+exact offsets and bit masks quoted above match the *real, standard SDHCI
+register layout* (the same one Linux's own `sdhci.h` uses) far too
+precisely to be a coincidence, and asked the decisive question: does
+`[dev+0x2f]` etc. really use `dev` itself, or a pointer *loaded from* a
+field of `dev`? Re-read instruction by instruction, not re-summarised from
+memory: `sdio_op4_reset` (`0x19c4`) opens with `r4 = [r0]` — it dereferences
+`[dev+0]` **once**, and passes `r4` (not `dev`) into
+`generic_poll_retry_100x`, `reset_set_bits_0x34_0x36_a` and
+`reset_set_bits_0x34_0x36_b`. `sdio_op6`'s wrapper (`0x190c`) does the
+identical `r0 = [r0]` before tail-calling `sdiodrv_sendCommand`. **`[dev+0]`
+is not a "configured" boolean — it is a pointer**, null-checked before use
+exactly like a driver checking its mapped register window, and every access
+quoted below operates through *that* pointer, not through `dev` directly.
+
+With that correction, every offset lines up exactly with real SDHCI:
+
+| Offset from the real base pointer | What we saw | Real SDHCI register |
+|---|---|---|
+| `+0x08` | read/logged as `arg` in `sendCommand` | `SDHCI_ARGUMENT` |
+| `+0x0e` | 16-bit, logged as `cmd` | `SDHCI_COMMAND` |
+| `+0x10` | — | `SDHCI_RESPONSE` (0-3) |
+| `+0x24` | `&1` checked in a retry loop, error string "Command inhibited!" | `SDHCI_PRESENT_STATE`, bit 0 = `CMD_INHIBIT` — exact match |
+| `+0x2f` | byte access, mask `7` | `SDHCI_SOFTWARE_RESET` (bit0=all, bit1=CMD, bit2=DAT — mask 7 = "reset everything") |
+| `+0x30`, `+0x32` | logged as `normalInt`/`errorInt` | `SDHCI_INT_STATUS` (normal/error) |
+| `+0x34`, `+0x36` | bits set by the reset path | `SDHCI_INT_ENABLE` (normal/error) |
+
+This is the standard SDHCI layout, offset for offset, not a pattern-match
+coincidence. It also means the reset path is very plausibly writing a real,
+self-clearing hardware reset register directly (`SOFTWARE_RESET`'s bits
+clear themselves once the reset completes) — the "deferred/background
+worker" theory floated in the previous version of this section may not be
+needed at all; a live hypothesis, not yet proven.
+
+**The real open question now**: not "software or hardware" (hardware,
+convincingly) but **what numeric value is stored at `[dev+0]`, and who
+writes it**. Neither `sdio_op2_alloc` nor any opcode handler disassembled
+so far *sets* this field — every one of them only reads and null-checks it.
+It must be initialised elsewhere, most likely the IOP's own channel-open or
+boot-time init code, not yet located. `fcn.00006580`, `fcn.000063d0` and
+`fcn.0000638c` (opcode 5's three sub-calls), and `sendCommand`/`performDMA`'s
+own further sub-calls (`0x6c70`, `0x6c90`, `0x6cf0`, `0x6c00`, `0x6f18`,
+`0x6804`, `0x6d50`, `0xa7d8`, `0x8dfc`) remain undisassembled and are the
+next candidates — either for finding where that base pointer gets set, or
+for confirming more of the SDHCI mapping above. The host driver's own
+opcode numbering (`sendIOPCommand`'s special handling of "opcode 0", noted
+above as a plausible ping match) has not been reconciled with this IOP-side
+numbering either; see "Known gaps".
 
 All of the above is also stored, reusable, in
-[`tools/iop_analysis/`](../../tools/iop_analysis/) (an r2 naming script plus
-a fuller prose reference), so this call graph does not need re-deriving
-from scratch in a future session.
+[`tools/iop_analysis/`](https://github.com/SebE585/trognon/tree/main/tools/iop_analysis)
+(an r2 naming script plus a fuller prose reference), so this call graph does
+not need re-deriving from scratch in a future session.
 
 ```mermaid
 flowchart TD

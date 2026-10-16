@@ -43,7 +43,51 @@ Every handler starts with the same guard: read `[message+0]` (the device's
 "configured" state), bail with generic error `0x401` if zero. Not
 opcode-specific.
 
-### Correction (2026-10-16, caught by a second review): "dev" is not a separate struct
+### MAJOR CORRECTION (2026-10-16, caught by a third review): this IS real SDHCI hardware, one indirection away
+
+Everything below describing `[dev+0x2f]`, `[dev+0x34]`, `[dev+0x36]`, etc. as
+"software state" was **wrong by one level of pointer indirection**. A third
+review spotted that the exact offsets and bit masks match the *real,
+standard SDHCI register layout* (the same one Linux's own `sdhci.h` uses)
+far too precisely to be coincidence, and asked the decisive question: is
+`[r0+0x2f]` really using `dev` itself, or a pointer *loaded from* a field of
+`dev`? Re-read instruction by instruction (not re-summarised from memory):
+in `sdio_op4_reset` (`0x19c4`), the very first thing it does is
+`r4 = [r0]` — **it dereferences `[dev+0]` once**, and passes **that** value
+(not `dev`) into `generic_poll_retry_100x`, `reset_set_bits_0x34_0x36_a` and
+`reset_set_bits_0x34_0x36_b`. Same in `sdio_op6` (`0x190c`): `r0 = [r0]`
+before tail-calling `sdiodrv_sendCommand`. **`[dev+0]` is not a "configured"
+boolean — it is a pointer, null-checked before use like any driver checks
+its mapped register window, and everything downstream operates through
+*that* pointer.**
+
+With that correction, every offset lines up exactly with real SDHCI:
+
+| Offset from the real base pointer | What we saw | Real SDHCI register (Linux `sdhci.h`) |
+|---|---|---|
+| `+0x08` | read/logged as `arg` in `sendCommand` | `SDHCI_ARGUMENT` |
+| `+0x0e` | 16-bit, logged as `cmd` | `SDHCI_COMMAND` |
+| `+0x10` | `SDHCI_RESPONSE` (0-3) |
+| `+0x24` | `&1` checked in a retry loop, error string "Command inhibited!" | `SDHCI_PRESENT_STATE`, bit 0 = `CMD_INHIBIT` — exact match |
+| `+0x2f` | byte access, mask `7` | `SDHCI_SOFTWARE_RESET` (bit0=all, bit1=CMD, bit2=DAT — mask 7 is exactly "reset everything") |
+| `+0x30`, `+0x32` | read/logged as `normalInt`/`errorInt` | `SDHCI_INT_STATUS` (normal/error) |
+| `+0x34`, `+0x36` | bits set by the reset path | `SDHCI_INT_ENABLE` (normal/error) |
+
+This is not a coincidence pattern-match: it is the standard SDHCI layout,
+offset for offset. **The reset path is very plausibly writing a real
+hardware self-clearing reset register directly** (`SOFTWARE_RESET`'s bits
+clear themselves once the reset completes, which would make the
+"deferred/background worker" theory from the previous version of this
+document unnecessary — a live hypothesis, not yet proven).
+
+**What is now the real open question**: not "is this software or hardware"
+(it is real SDHCI hardware, convincingly) but **what numeric value is
+stored at `[dev+0]`, and who writes it there**. Neither `sdio_op2_alloc`
+nor any opcode handler disassembled so far *sets* this field — every one of
+them only reads and null-checks it. It must be initialised somewhere else
+(most likely the IOP's own channel-open/init code, not yet located).
+
+### Earlier correction (2026-10-16, caught by a second review): "dev" is not a separate struct
 
 Earlier notes called the first argument of opcode handlers 2-7 "dev", as if
 it were a distinct device struct. It is not: the switch's own dispatch code

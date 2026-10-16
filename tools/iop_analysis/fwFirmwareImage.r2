@@ -52,48 +52,55 @@ f sym.command_inhibited_check @ 0x6ac8
 #   0x6c70, 0x6c90, 0x6cf0, 0x6c00, 0x6f18     (sendCommand sub-calls)
 #   0x6804, 0x6d50, 0xa7d8, 0x8dfc             (performDMA sub-calls)
 
-# CORRECTED 2026-10-16 (second review caught this): what earlier notes
-# called "dev" is NOT a separate struct -- for every one of the 6
+# MAJOR CORRECTION 2026-10-16 (third review): this IS real SDHCI hardware,
+# one pointer indirection away -- everything below calling these "software
+# bitmask bookkeeping" was wrong. The offsets/masks match the real,
+# standard SDHCI register layout (Linux sdhci.h) exactly:
+#   +0x08 = SDHCI_ARGUMENT, +0x0e = SDHCI_COMMAND, +0x10 = SDHCI_RESPONSE,
+#   +0x24 = SDHCI_PRESENT_STATE (bit0 = CMD_INHIBIT, matches the
+#           "Command inhibited!" string logged right at that check),
+#   +0x2f = SDHCI_SOFTWARE_RESET (bit0=all,1=CMD,2=DAT -- mask 7 = reset all),
+#   +0x30/+0x32 = SDHCI_INT_STATUS normal/error,
+#   +0x34/+0x36 = SDHCI_INT_ENABLE normal/error.
+# Too exact to be coincidence. The missing piece: re-read instruction by
+# instruction (not from memory) whether [r0+0x2f] etc use "dev" itself or a
+# pointer LOADED FROM dev. Answer: loaded. sdio_op4_reset (0x19c4) does
+# "r4 = [r0]" FIRST (dereferences [dev+0] ONCE) and passes r4 -- not dev --
+# into generic_poll_retry_100x/reset_set_bits_0x34_0x36_a/_b. sdio_op6
+# (0x190c) does the identical "r0 = [r0]" before tail-calling
+# sdiodrv_sendCommand. So [dev+0] is not a "configured" boolean, it is a
+# POINTER -- null-checked like any driver checks its mapped register
+# window -- and everything downstream (all offsets in the earlier note
+# below) operates through THAT pointer, i.e. is very plausibly the real
+# SDHC register window, not a RAM struct.
+#
+# What is now the real open question: not software-vs-hardware (hardware,
+# convincingly) but WHAT VALUE is stored at [dev+0] (= [message+0xc+0]) and
+# WHO WRITES IT. Neither sdio_op2_alloc nor any handler disassembled so far
+# sets this field -- all of them only read/null-check it. Must be
+# initialised elsewhere (IOP channel-open/init code, not yet located).
+#
+# Earlier note (2026-10-16, second review, still true as background): what
+# was called "dev" is not a separate struct -- for every one of the 6
 # non-ping opcode handlers, the dispatcher passes (message+0xc, message+0x14)
 # as arguments (confirmed in the switch's own disassembly, all 6 cases
-# identical). So every "[dev+N]" offset below actually means
-# "[message+0xc+N]"; there is one buffer, not two.
-#
-# dev (= message+0xc) origin, traced (2026-10-16, second review asked for
-# this explicitly): fcn.00000eb0 (the receive call) indexes a FIXED TABLE
-# at literal address 0x10da4, one 32-byte channel-descriptor per channel
-# (channel_id * 0x20), each holding a ring buffer of 64-byte message slots
-# (index<<6, masked to 64-byte alignment). This is RAM, part of the
-# firmware's own static data -- not an MMIO window, and not something the
-# host passes in as a raw hardware pointer. sdiodrv_sendCommand (0x67f0)
-# and the command-inhibited check (0x6ac8) both read/write further fields
-# of this SAME struct ([r5+0x8], [r5+0xe], [r5+0x10], [r5+0x24], [r5+0x30],
-# [r5+0x32]), all still inside this one RAM-based structure -- no literal
-# hardware address found at this level either.
+# identical). "message" itself resolves through a fixed table at literal
+# address 0x10da4 (channel descriptor * 0x20, 64-byte message-slot ring) --
+# that part (the message/channel plumbing) is genuinely RAM. It is
+# [message+0xc+0]'s CONTENTS (a pointer value stored there, not the slot's
+# own address) that the third review now shows is the real hardware base.
 #
 #   [message+0x00] opcode byte (dispatched 1-7, see sdio_message_loop)
 #   [message+0x08] response status field (same offset the host side
 #                sendIOPCommand writes pending=1 into before sending)
-#   [message+0xc+0x00] "configured" flag, checked by every opcode handler
+#   [message+0xc+0x00] the real SDHC hardware base pointer (was wrongly
+#                called "configured flag"); null-checked, never written by
+#                any traced opcode handler
 #   [message+0xc+0x04] allocated buffer pointer (set by op2, cleared by op3)
-#   [message+0xc+0x08], [+0xe], [+0x10] cmd/arg-style fields (read by
-#                sendCommand, logged as "arg"/"cmd" in its own error strings)
-#   [message+0xc+0x24] a status word, &1 checked by command_inhibited_check
-#                -- could be a real cached copy of a hardware status bit,
-#                or pure software state; not distinguished yet (see below)
-#   [message+0xc+0x2f] a one-byte state flag (bits 0-2 read/written by the
-#                generic poll helper)
-#   [message+0xc+0x30], [+0x32] more fields read by sendCommand/performDMA
-#   [message+0xc+0x34], [message+0xc+0x36] two 16-bit "desired register"
-#                bitmasks built by the reset sub-functions
-
-# STILL OPEN (second review, 2026-10-16): the RAM origin of this struct is
-# now proven, which rules out "dev IS an MMIO window" -- but it does NOT
-# yet prove these fields are pure software bookkeeping rather than a
-# software-maintained MIRROR of real hardware state (updated by an
-# interrupt handler we have not found). The real register access, if it
-# exists in this firmware at all outside an ISR, is most likely in one of
-# the not-yet-disassembled sub-calls listed above.
+#                -- this one IS plain RAM bookkeeping, unrelated to the base
+#                pointer above
+#   base+0x08, base+0xe, base+0x10, base+0x24, base+0x2f, base+0x30,
+#   base+0x32, base+0x34, base+0x36 -- see the real-SDHCI mapping above
 
 # Confirmed negative: neither 0x80000000 (SDIO) nor 0x81200000/0x81300000
 # (NAND H2FMI0/1) appear anywhere in this binary as a literal 32-bit word,
