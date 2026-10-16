@@ -25,32 +25,11 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
 ## State of the missions
 
-8 open · 0 in progress · 1 blocked · 0 closed. **68 other open questions of the catalog are not framed as missions yet** (see the [map of what we know](journey/grimoire.md)).
+7 open · 1 in progress · 1 blocked · 0 closed. **68 other open questions of the catalog are not framed as missions yet** (see the [map of what we know](journey/grimoire.md)).
 
 ## Open missions
 
 <div class="grid cards stack" markdown>
-
-- **Which object implements the clock-gate call?**
-
-    <span class="mission-level mission-level-1">Level 1 · static analysis</span> <span class="mission-state mission-state-open">Open</span>
-
-    *The open question* (`S5L-CLK-Q1`): How a device-tree clock-gates number becomes a register: the clkG function object stores the controller (this+0x18) and the gate (this+0x1c) and calls a virtual method at slot 0x380 of the object's class.
-
-    **What it would unlock**: How the device tree's clock-gate numbers become physical clock gates, which is needed to find the clocks of the SDIO block and of the coprocessor.
-
-    **What you need**
-
-    - The AppleS5L8900X kernel extension, extracted from your own copy of the 4.3.5 firmware (tools/iop_analysis/extract_kext.py)
-    - A disassembler for 32-bit Thumb, and the catalog entry open next to it
-
-    **Skills**: Reading 32-bit Thumb, Following virtual calls through class tables
-
-    **A good answer**: The class of the object the clkG function object stores at +0x18, and the code of its slot 0x380, with addresses; or a documented reason it cannot be found.
-
-    **Contributions so far**: none yet
-
-    [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleS5L8900X/clock_controller_gates_0x8045e750.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+S5L-CLK-Q1&mission=S5L-CLK-Q1)
 
 - **Where does the touch controller's firmware come from?**
 
@@ -194,6 +173,33 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
     **Contributions so far**: none yet
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/iBSS_n88ap_4.3.5/peripheral_tables.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+IBSS-TAB-Q2&mission=IBSS-TAB-Q2)
+
+</div>
+
+## In progress
+
+<div class="grid cards stack" markdown>
+
+- **Which object implements the clock-gate call?**
+
+    <span class="mission-level mission-level-1">Level 1 · static analysis</span> <span class="mission-state mission-state-in-progress">In progress</span>
+
+    *The open question* (`S5L-CLK-Q1`): How clkG ultimately changes a hardware clock gate remains open.
+
+    **What it would unlock**: How the device tree's clock-gate numbers become physical clock gates, which is needed to find the clocks of the SDIO block and of the coprocessor.
+
+    **What you need**
+
+    - The AppleS5L8900X kernel extension, extracted from your own copy of the 4.3.5 firmware (tools/iop_analysis/extract_kext.py)
+    - A disassembler for 32-bit Thumb, and the catalog entry open next to it
+
+    **Skills**: Reading 32-bit Thumb, Following virtual calls through class tables
+
+    **A good answer**: The concrete class of the object the clkG function stores at +0x18, and its slot +0x354 implementation, with addresses; or a documented reason it cannot be found. The earlier +0x380 attribution belongs to the ARST object and was refuted by a constructor/table trace.
+
+    **Contributions so far**: none yet
+
+    [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleS5L8900X/clock_controller_gates_0x8045e750.yaml)
 
 </div>
 

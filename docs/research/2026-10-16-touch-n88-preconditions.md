@@ -641,10 +641,13 @@ Catalog: `AppleS5L8900X/clock_controller_gates_0x8045e750.yaml` (`S5L-CLK-*`). A
 - **The device tree is the right one** (`N88AP`, iPhone2,1) and its `clock-gates` numbers run from `0x10` to `0x3b` (`S5L-CLK-003`): `sdio` `0x10`, `flash-controller0` `0x13` and `0x14`, `spi0` to `spi2`
   `0x15` to `0x17`, `uart0` to `uart4` `0x1a` to `0x1e`, `i2c0` `0x20`, `usb-complex` `0x25`, `iop` `0x27`, `i2s0` to `i2s2` `0x39` to `0x3b`. That is more values than the 52 gate words the iBSS handles, and they map to the physical
   indexes by **no constant offset** (SPI `0x15` is `0x09`; the NAND controller `0x13` is `0x26`; `i2c0` `0x20` is `0x13`). The device tree's numbers are therefore identifiers of another kind, and the translation is done somewhere in the kernel.
-- **How the kernel gates a clock** (`S5L-CLK-001`, `-002`): the `arm-io` node carries `function-clock_gate` (a phandle and the four-character code `clkG`); a factory creates a function object for that code which, when called with `on`, calls a virtual method of its provider with the gate
-  number. The controller's `start` reads `clock-gate-defaults` and `clock-gate-suspend` as **64-bit masks** and writes them to registers at offsets **`0x48` and `0x4c`** of the controller block (a warning names `CGCON0`), masking the first with `0x7fcfffff`. So the kernel's interface is a pair of mask registers with one bit per gate number, not the
-  per-gate words the iBSS programs at `0xBF100078 + 4 * i`. The two may be two views of the same hardware; that is not shown (`S5L-CLK-Q2`).
-- **Where it stopped** (`S5L-CLK-Q1`): the provider method the function object calls (slot `0x380`) is, in the controller's own table, a base-class stub that returns 0, so the object that really implements it was not identified.
+- **Clock-function attribution corrected** (`S5L-CLK-004`, `-005`): the factory's `clkG` object uses
+  table `0x804632b8`, whose `+0x50` method calls the object at `this+0x18` through `+0x354`.
+  The earlier `+0x380` path belongs to the factory's `ARST` object, not to `clkG`.
+- **Where it stops** (`S5L-CLK-Q1`): the concrete receiver and its `+0x354` implementation remain open.
+  The code that produces the underlying `this+8` object was not followed. The mask-register observations
+  (`S5L-CLK-002`) do not by themselves establish the per-device gate path.
+
 - **Next, read-only:** STAGE 47 now also reads offsets `0x40` to `0x74` of the block (fault-tolerant) next to the 52 gate words. Comparing the mask registers with the gate words, bit by bit, would show whether bit *n* of the mask is the word at the device tree's number or at another index. It is built and **not run**.
 
 The IOP's clock state is therefore still unknown, and nothing in this project tells which physical gate clocks it.
@@ -684,3 +687,47 @@ In increasing order of risk, each step read-only until the previous one gave a r
    identified, never through the interrupt controller.
 
 Until step 3, nothing can say whether the controller answers at all.
+
+## Mission S5L-CLK-Q1: correcting the function-object attribution
+
+Status as of 2026-10-16. Static analysis only, undertaken in [mission issue 1](https://github.com/SebE585/trognon/issues/1).
+The prior premise that the `clkG` function calls controller slot `+0x380` is refuted. The final hardware
+mapping is **not resolved**, and the mission stays in progress pending review and further tracing.
+
+### Observations and their limits
+
+| Link | Observation in the pinned AppleS5L8900X kext |
+|---|---|
+| Selector to constructor | `0x8045e538` loads `clkG`; the matching branch calls `0x8045e140` at `0x8045e54e` |
+| Constructor to table | Literal at `0x8045e164` is `0x804632b8`, installed at `0x8045e152` |
+| Table to initializer | `table+0x4c` contains Thumb pointer `0x8045dbe1` |
+| Initializer to receiver | `0x8045dbf6` loads `this+8`; the call at `0x8045dbfc` uses kernel symbol `OSMetaClassBase::safeMetaCast` and metaclass `0x80464688`; `0x8045dbfe` stores the result at `this+0x18` |
+| Table to operation | `table+0x50` contains `0x8045da45`; that method loads `this+0x18`, then slot `+0x354`, and calls it |
+| Old path's actual owner | The `ARST` branch calls constructor `0x8045e048`, installing `0x80463200`; its `+0x54` entry is `0x8045da5d`, the routine using `this+0x1c` and slot `+0x380` |
+
+The base initializer reached from `0x8045dbf2` has not been read. A cast with a metaclass does not identify
+the receiver's concrete runtime class or exclude a subclass. No claim is made that `+0x354` is a hardware
+write, nor that merely finding a stub in a candidate class table describes the runtime target.
+
+### Reproduction
+
+Use your own locally extracted iOS 4.3.5 binary. SHA-256:
+`5439f665a7531f36c0c869fd16e7a33e361e4f72232130fe5055b86a38985175`.
+Tools used: radare2 6.2.4 and Python 3.13. The probe below reads Mach-O segment mappings and verifies
+selected table/literal words; it does **not** prove call reachability or dynamic object identity.
+
+```sh
+python3 -I tools/iop_analysis/probe_clock_function_tables.py /tmp/trognon_dt/AppleS5L8900X.kext.bin
+r2 -e asm.bits=16 -qc 'pD 80 @ 0x8045e504; pD 26 @ 0x8045e140; pD 40 @ 0x8045dbe0; pD 16 @ 0x8045da44' /tmp/trognon_dt/AppleS5L8900X.kext.bin
+r2 -e asm.bits=16 -qc 'pD 26 @ 0x8045e048; pD 28 @ 0x8045da5c' /tmp/trognon_dt/AppleS5L8900X.kext.bin
+```
+
+For the cast symbol, decompress the same kernelcache with `extract_kext.py --decompress-only`, then run
+`r2 -qc 'is~safeMetaCast'` on the output: the function symbol is at `0x801aeec0` (Thumb pointer `0x801aeec1`).
+No firmware, extracted code, keys or hardware measurements are included in this contribution.
+
+### Correction history
+
+2026-10-16: the earlier account joined the `clkG` factory branch to a method of the adjacent `ARST`
+function class. Constructor-installed table pointers disprove that link. Following those pointers, rather
+than nearby code or similar field offsets, changes the next research target from `+0x380` to `+0x354`.
