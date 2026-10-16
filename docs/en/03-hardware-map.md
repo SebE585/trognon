@@ -557,8 +557,9 @@ the PMU access and the SPI controller, before any transaction.
 - PMU at `0x74` read over I2C (STAGE 36): register `0x11` is `0xBE`, so bit `0x40`, read in the
   driver's code as the touch LDO's enable, is clear; register `0x50` (the PMU pin that gates the
   touch clock, by the same reading) is `0x11`. Nothing was written to the PMU.
-- `spi1` (CPU `0x82100000`): its clock gate `0x16` read `0`; it was written to `0xF` (the write
-  took), the idle registers were read (SETUP `0x8`, PIN `0x3`, CLKDIVIDER `1`, the others `0`), and
+- `spi1` (CPU `0x82100000`): the idle registers read the same with and without a write to gate register `0x16` (it read `0`, was
+  written to `0xF`, the write took, and was restored); the iBSS's own gate for `spi1`, `0x0a`, was already `0xF`, so the device tree's
+  number is not what clocks it (see the touch preconditions page). The idle registers were read (SETUP `0x8`, PIN `0x3`, CLKDIVIDER `1`, the others `0`), and
   the gate was written back to `0` (STAGE 38). The register layout is OpeniBoot's for the family and
   was not confirmed on this chip.
 - Two PMU registers were written and restored (STAGE 39): `0x11` from `0xBE` to `0xFE` (bit `0x40`, the touch

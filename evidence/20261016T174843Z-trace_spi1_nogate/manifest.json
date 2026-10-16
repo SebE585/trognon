@@ -1,0 +1,40 @@
+{
+  "payload": "trace_spi1_nogate.bin",
+  "sha256": "062e6e31a0ca4dc4597a44d5574285909a0036bd858cc99a43527d40193c9660",
+  "bytes": 3384,
+  "soc": "s5l8920",
+  "nonce_sent": "D0E9C545",
+  "nonce_read": "D0E9C545",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "spi1-nogate-1"
+  },
+  "variables": {
+    "gate_0a": "0000000F",
+    "gate_16": "00000000",
+    "read_done": "00000001",
+    "s_ctrl": "00000000",
+    "s_setup": "00000008",
+    "s_status": "00000000",
+    "s_pin": "00000003",
+    "s_clkdiv": "00000001",
+    "s_cnt": "00000000",
+    "s_idd": "00000000"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "2497ba789e937d8c06b3058f39d5acb7bcb1278d",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T174843Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_spi1_nogate.bin --evidence <repo>/evidence --vars gate_0a,gate_16,read_done,s_ctrl,s_setup,s_status,s_pin,s_clkdiv,s_cnt,s_idd",
+  "screen_rows": 16
+}

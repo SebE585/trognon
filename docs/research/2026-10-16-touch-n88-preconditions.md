@@ -235,9 +235,7 @@ nonce was confirmed and the phone was still reachable in Recovery mode afterward
 
 What it shows: the write to a clock gate takes (0 to `0xF`, and back), which was not known before
 (STAGE 23 had started from gates already at `0xF`); the block answers reads without stalling the
-bus once its clock is on; the device tree's gate number `0x16` does gate a block at `0x82100000`
-or at least a block whose registers are then readable (a gate that clocked a different block
-could not be told apart from this alone, but the reads came from `0x82100000`). Values that are not
+bus once its clock is on; the block at `0x82100000` answers reads. (An earlier version of this sentence attributed that to the device tree's gate `0x16`; see "Correction: which clock-gate numbers are physical", which withdraws it.) Values that are not
 all zero and not all ones are what a live register block returns.
 
 What it does not show: that this register layout is the one of this chip (it comes from OpeniBoot's
@@ -554,6 +552,33 @@ chip select untouched, send four bytes, and watch STATUS (the TX count draining,
 a read-only dump of the GPIO registers, to look for pads whose function bits differ from plain input or output, is cheap and was done before for
 376 pins without incident.
 
+## Correction: which clock-gate numbers are physical
+
+Three sources number the clock gates differently, and this project has used two of them without saying so:
+
+| Block | Device tree `clock-gates` | iBSS table (decrypted, 4.3.5 n88ap) | OpeniBoot `plat-s5l8920` |
+|---|---|---|---|
+| SPI0, SPI1, SPI2 | `0x15`, `0x16`, `0x17` | `0x09`, `0x0a`, `0x0b` (catalog `IBSS-TAB-001`) | `0x09`, `0x0a`, `0x0b` (SPI3, SPI4: `0x0c`, `0x0d`) |
+| I2C0 | `0x20` | `0x13` (`IBSS-TAB-002`) | `0x24` |
+| NAND controller 0 | `0x13`, `0x14` | not read | `0x26` |
+| IOP | `0x27` | not read | not listed |
+
+The iBSS and OpeniBoot agree for SPI; the device tree differs. Observations: gates `0x09` to `0x0D` read `0xF` and `0x15` to `0x17` read
+`0` (STAGE 37), and the `spi1` registers read the same values **with no gate write at all** (STAGE 44, bundle
+`20261016T174843Z-trace_spi1_nogate`: gate `0x0a` = `0xF`, gate `0x16` = `0`, SETUP `0x8`, PIN `0x3`, CLKDIVIDER `1`, the others `0`).
+
+What this corrects:
+
+- The statement in the "W1 and W2 done" section that the device tree's gate `0x16` rendered the block readable is **withdrawn**. STAGE 38
+  showed that a write to a clock-gate register takes (physical register number `0x16`, `0` to `0xF` and back); it did not show that this register
+  gates `spi1`. What physical gate `0x16` controls is unknown.
+- The `spi1` clock was already on (the iBSS's gate `0x0a` read `0xF`), so **no clock-gate write is needed for an SPI exchange** and W1 is
+  unnecessary on that account. STAGES 40 and 42 wrote or did not write gate `0x16`; either way it was not what made `spi1` readable.
+- The reading of the device tree's numbers as physical register indexes is not supported where it was used elsewhere in this project: STAGE 28
+  read gate `0x27` (the device tree's number for the IOP) as `0xF` and concluded the IOP clock was on, and STAGE 23 used the device tree's `0x10` for the
+  SDIO block. The physical gate at those indexes may belong to other blocks (OpeniBoot puts a NAND controller at `0x26`, enabled by iBoot).
+  Those conclusions need review before they are relied on; they are listed as open.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values
@@ -561,7 +586,7 @@ come from the readings above; none of the write semantics was ever exercised on 
 
 | # | Write | Address and value | Current | How to undo | What it can show | Main risk |
 |---|---|---|---|---|---|---|
-| W1 (done, STAGE 38) | `spi1` clock gate | `0xBF100078 + 4 * 0x16` = `0xBF1000D0`, `0` to `0xF` (the pattern read on enabled gates) | `0` | write `0` | whether the gate takes the write (the only earlier gate-write test, STAGE 23, was uninformative: both gates already read `0xF`), then the idle registers of `spi1` become readable | enabling the clock of a block in an unknown state; the numbering of gates is the device tree's, not tested |
+| W1 (done, STAGE 38; **not needed**, see the correction) | gate register `0x16` | `0xBF100078 + 4 * 0x16` = `0xBF1000D0`, `0` to `0xF` (the pattern read on enabled gates) | `0` | write `0` | whether the gate takes the write (the only earlier gate-write test, STAGE 23, was uninformative: both gates already read `0xF`), then the idle registers of `spi1` become readable | enabling the clock of a block in an unknown state; the numbering of gates is the device tree's, not tested |
 | W2 (done, STAGE 38) | read only | `spi1` CONTROL, SETUP, STATUS, PIN, CLKDIVIDER, SPCNT, SPIDD at `0x82100000` (STAGE 37, second half) | not read | none needed | the reset state of the controller | none beyond W1 |
 | W3 (done, STAGE 39) | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (rebuilt as `(old & 0x19) | 0x02`; equal to `old | 0x02` only for this old value) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
 | W4 (done, STAGE 39) | touch LDO | PMU register `0x11`, `0xBE` to `0xFE` (set bit `0x40`), read-modify-write | `0xBE` | write `0xBE` | nothing visible alone except the read-back and possibly the controller's behaviour on SPI | powers a rail; if the index-to-rail reading is wrong, a different rail is switched |

@@ -34,7 +34,7 @@ python3 -I tools/dt_dump.py /tmp/trognon_dt/devicetree_decrypted.bin multi-touch
 | PMU (`pmu,d1755`, on `i2c0`) | unread: node known, never probed | device tree only | touch power (`function-power_ldo`), baseband power (`function-bb_on`), touch clock enable |
 | GPIO interrupt controller (`0x39A00000`) | blocked: read once dropped the USB link | documented as dangerous | touch attention line, baseband interrupt, any interrupt-driven device |
 | SPI controllers (`spi0`–`spi4` nodes) | unread | device tree names only | touch (`spi1`), baseband (`spi,s5l8920x,baseband`) |
-| Clock gates | method acquired, per-block values unread | gate 0x27 read for the IOP (`trace_iop_clkgate`) | every block that needs its clock enabled |
+| Clock gates | register array readable and writable (a write to physical gate `0x16` took); **the numbering is unsettled**: the device tree, the iBSS and OpeniBoot disagree (see the touch preconditions page, "Correction: which clock-gate numbers are physical") | gate 0x27 read for the IOP (`trace_iop_clkgate`), whose attribution to the IOP is now doubtful | every block that needs its clock enabled |
 | Measurement tools (nonce-confirmed payload runs, evidence bundles) | acquired | `tools/run_payload.py`, `evidence/` | all |
 
 The PMU row stands out: the device tree routes the touch controller's power

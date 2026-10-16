@@ -1,0 +1,54 @@
+binary: ibss_decrypted.bin
+binary_sha256: 9bd13fbd99aa8f05ee4e3df7452c6412111f5d9a4369384133e58fe1f1edbac9
+function_name_apple: null
+function_name_assigned: "iBSS peripheral tables (SPI, I2C0, platform pin list): data read, no code"
+decode_mode: thumb
+subsystem: iboot_platform
+entry_code_address: null
+
+review:
+  status: not_reviewed
+  reviewed_ranges: []
+  unresolved:
+    - id: IBSS-TAB-Q1
+      text: "That the gate field of each table entry is the index passed to the clock-gate routine (whose base literal 0xBF100078 is at 0x8400dd3c, 0x8400dd94 and 0x8400e0b4): inferred from the layout, which matches OpenIBoot's SPI structure (base and register addresses, then gate and interrupt), not from reading the routine."
+      proof_needed: "disassemble the routine that uses 0xBF100078 and the one that reads these tables"
+    - id: IBSS-TAB-Q2
+      text: "What the four platform pin ids 0x1605, 0x1506, 0x0806, 0x1102 (at 0x84017ac8) are for: the first two are the WLAN reset and Bluetooth reset pins of the device tree; 08.06 and 11.02 were not matched to a function."
+      proof_needed: "the readers of that list"
+    - id: IBSS-TAB-Q3
+      text: "No table naming the pads of the SPI buses (clock, data out, data in) was found in the places read; the pad function setting at the iBSS stage is therefore still unknown."
+      proof_needed: "find the iBSS routine that configures GPIO pads (calls with pin ids and function words)"
+
+claims:
+  - id: IBSS-TAB-001
+    text: >
+      A table of SPI controllers at 0x84017b50 holds, per bus, the register addresses of the block (0x82000000,
+      0x82100000, 0x82200000 and their offsets 0x04, 0x08, 0x0c, 0x10, 0x20, 0x30, 0x34, 0x38 ... 0x4c), then two
+      words: SPI0 gate 0x09 and interrupt 0x1d, SPI1 gate 0x0a and interrupt 0x1c, SPI2 gate 0x0b and interrupt 0x1b.
+      The interrupt numbers match the device tree (spi1 interrupts 0x1c); the gate numbers do not match the device
+      tree's clock-gates (0x15, 0x16, 0x17).
+    status: source_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#correction-which-clock-gate-numbers-are-physical"
+  - id: IBSS-TAB-002
+    text: >
+      A table at 0x8401905c holds for I2C0 the pin ids 0x400 and 0x401 (the SCL and SDA pads the project drives by bit
+      banging), the word 0x13, and the register addresses 0x83200000, 0x83200008, 0x8320000c ... The device tree's
+      clock-gates for i2c0 is 0x20 and OpenIBoot's header says 0x24.
+    status: source_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#correction-which-clock-gate-numbers-are-physical"
+
+hardware_tests:
+  - name: trace_spi1_nogate (STAGE 44), spi1 registers read with no gate write
+    claim_tested: "IBSS-TAB-001: SPI1's clock gate is the iBSS's 0x0a, already 0xF, not the device tree's 0x16"
+    execution_status: executed
+    result: >
+      Gate 0x0a read 0xF and gate 0x16 read 0; the seven idle registers of spi1 read the same values as in STAGE 38
+      (SETUP 8, PIN 3, CLKDIVIDER 1, the others 0) with no write to any gate. So the block does not depend on
+      gate 0x16 to be readable. This does not prove that 0x0a is what clocks it (it was already on when read), nor
+      what 0x16 gates.
+    evidence: "evidence/20261016T174843Z-trace_spi1_nogate/"
+
+publication:
+  status: approved
+  notes: "table addresses and small integers"

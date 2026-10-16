@@ -1,0 +1,14 @@
+{
+  "binary": "ibss_decrypted.bin",
+  "binary_sha256": "9bd13fbd99aa8f05ee4e3df7452c6412111f5d9a4369384133e58fe1f1edbac9",
+  "date": "2026-10-16",
+  "text_section_bytes": 108736,
+  "text_section_base": "0x84000000",
+  "auto_recognized_bytes": 0,
+  "auto_recognized_functions": 0,
+  "recognized_functions": [],
+  "tool": "none (data tables read with a script)",
+  "tool_version": "n/a",
+  "method": "no automatic function detection was run on this binary; only data tables were read. Virtual address = 0x84000000 + file offset - 0x40 (64-byte IMG3 header).",
+  "note": "The binary is Apple's iBSS 4.3.5 for n88ap, decrypted through the device's own GID key (docs/architecture.md, 2026-10-14) and kept only under /tmp; never committed. Re-derive it with the method of that note."
+}
