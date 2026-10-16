@@ -239,6 +239,25 @@ establish a dialogue, not yet a proven causal chain to the specific symptom:
   part is a plain reading of the firmware's own strings, not an inference —
   a complete small embedded OS, not a thin relay.
 
+### Not "an OS just for Wi-Fi": NAND is the dominant tenant
+
+A full string census of the firmware image (290 strings total) counts the
+driver-specific prefixes directly: **39** for `h2fmi_*` (NAND), **7** for
+the `dma`/`cdma` family, and **6** for `sdiodrv_*` (SDIO/Wi-Fi) — the rest
+is generic OS infrastructure (scheduler, heap, ARM exception handling). An
+explicit search for other peripheral families (`audio`, `usb`, `uart`,
+`i2c`, `spi`, `backlight`, `pmu`, `touch`, `accel`, `baseband`,
+`bluetooth`, `camera`, `lcd`/`display`) found zero matches anywhere in the
+image. As far as this firmware's own debug strings show, it manages
+exactly three subsystems, and Wi-Fi/SDIO is the smallest of the three by a
+wide margin. This reframes the whole architecture: it is not a second
+operating system built *for* Wi-Fi — it is a shared I/O coprocessor whose
+primary reason to exist is almost certainly NAND (latency-sensitive,
+ECC/DMA-heavy, a natural fit for offloading to a dedicated core), with
+SDIO/Wi-Fi riding along on the same already-justified infrastructure
+because it is also a slow, interrupt-driven peripheral well suited to the
+same offload — not because Wi-Fi itself warranted a second processor.
+
 ## What this settles, and what it reopens
 
 What is now established: the S5L8920 has a second embedded processor
@@ -462,6 +481,11 @@ separate escape hatch from it.
 
 ## Not verified
 
+- The "NAND is the dominant tenant" finding is a string census of this one
+  extracted firmware image, not a code-coverage analysis: a subsystem with
+  no descriptive debug strings (silent code paths, or functionality this
+  particular build string-stripped) would not show up in this count. Absence
+  of a string is evidence of absence, not proof of it.
 - The exact wire format of the IOP command/message structure (what each
   byte of the struct pointed to by `sendIOPCommand`'s `cmd` argument means)
   was not reverse-engineered; only its outer shape (opcode byte, pending
