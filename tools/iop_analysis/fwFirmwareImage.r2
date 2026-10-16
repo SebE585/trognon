@@ -136,6 +136,39 @@ f sym.task_iop_control @ 0xafc
 # 0xe848 has no visible arg1-struct field, so some other code must build
 # and pass it) is the most direct remaining way to find this.
 
+# FULL SCHEDULER TRACE (2026-10-16), checked instruction-by-instruction
+# per a reviewer's 3-point bounded test (not accepting "arg1" by name):
+# 1. Stack recount @ 0x1730: push{r4,r5,r7,lr} never touches r0; "mov
+#    r4,r0" @ 0x1740 captures the RAW incoming r0 before anything else
+#    uses r0. ldm r4,{r0,r5} really does dereference the true arg1.
+# 2. First-dispatch found: fcn.00009ff4 ("resume task" trampoline,
+#    installed as the fake initial return addr by fcn.00009fa4 at task
+#    creation) does r3=*(0xf0a8)[current-task TCB ptr]; r0=[r3+0x74];
+#    mov lr,pc; pc=[r3+0x70]. +0x74 traced to its write site
+#    (fcn.00008988: "str r8,[r4,0x74]", r8 = the per-priority
+#    context-slot addr 0xf028+priority*8 computed by the task-creation
+#    loop). CONFIRMS: R0 at first entry = &(0xf028+priority*8) itself.
+# 3. Indexed-write search: grepped every "str _,[reg,0x74]" in the WHOLE
+#    firmware. Only 2 exist: the TCB-init write above (stores the slot
+#    ADDRESS into the TCB, doesn't write THROUGH it), and one more at
+#    0x1be0 inside fcn.00001ac4 -- called from fmi0/fmi1's SHARED entry
+#    (0x1114, i.e. NAND), building a similarly-shaped record
+#    (+0x58/0x5c/0x60/0x64/0x68/0x6c/0x70/0x74, a generic
+#    "register handler+context" idiom feeding the two-phase boot
+#    dispatcher) -- NOT called by sdio's entry at all. No other indexed
+#    write to the 0xf028 range exists anywhere in the firmware.
+#
+# CONCLUSION: the chain from R0-at-entry back to its producer is fully
+# traced from every angle available in this blob, and the value is
+# either static zero or simply never set by anything SDIO-specific.
+# Combined with NAND having a whole parallel per-instance registration
+# mechanism (fcn.00001ac4 + the 0x1b8-byte struct registry) that SDIO's
+# task entry never calls at all, the two remaining explanations are:
+# (a) SDIO support in this exact firmware build is incomplete/not fully
+# wired up (consistent with every real SDHC register reading 0 on
+# hardware), or (b) real init happens in an earlier IOP boot stage not
+# extracted (before this ~0x1b000-byte blob even starts running).
+
 # LOWER-PRIORITY LEAD: iop_control_task (0xafc, priority 0 in the static
 # task table at 0xe848) is a dispatcher for HOST-sent commands on a
 # SEPARATE "iop control" channel (not "sdio message"). Its "inst" (install)

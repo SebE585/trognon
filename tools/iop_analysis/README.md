@@ -196,6 +196,57 @@ task's own `arg1` parameter struct, whose own producer (the real
 task-creation call site — the static task table at `0xe848` has no
 visible field for it) has not yet been located.
 
+### Full scheduler trace (2026-10-16): confirmed instruction-by-instruction, still negative
+
+A reviewer correctly refused to accept "arg1" at face value and asked for
+the exact chain: stack/register recount at entry, the real first-dispatch
+instruction and its R0 value, and a search for *indexed* (not just
+literal) writes to the context-slot table. All three checked, in order:
+
+1. **Stack/register recount at `sdio_message_loop` (`0x1730`)**: `push
+   {r4,r5,r7,lr}` never touches r0; `mov r4,r0` at `0x1740` captures the
+   raw incoming r0 immediately, before anything else uses r0. So `ldm
+   r4,{r0,r5}` genuinely dereferences the task's real first argument —
+   not a mislabelled stack slot.
+2. **The real first dispatch, found and confirmed**: `fcn.00009ff4`
+   (the "resume task" trampoline, itself installed as the fake initial
+   return address by `fcn.00009fa4` at task-creation time) does
+   `r3 = *(0xf0a8)` (the global "current task" TCB pointer) then
+   `r0 = [r3+0x74]; mov lr,pc; pc = [r3+0x70]` — i.e. it loads R0 from
+   the TCB's own `+0x74` field *right before* jumping to the TCB's
+   `+0x70` field (the task's entry point). Traced `+0x74` back to its
+   write site (`fcn.00008988`, task init: `str r8,[r4,0x74]`, where `r8`
+   is the per-priority context-slot address computed by the
+   task-creation loop, `0xf028 + priority*8`). This confirms the
+   original hypothesis instruction-by-instruction, not just by name:
+   **R0 at first entry = the address of the task's own 8-byte slot in
+   the `0xf028` table.**
+3. **Indexed-write search**: grepped every `str ..., [reg, 0x74]` in the
+   whole firmware. Only two exist: the TCB-init write just described
+   (storing the slot *address* into the TCB, not writing *through* it),
+   and one more, at `0x1be0`, inside `fcn.00001ac4` — called from
+   `fmi0`/`fmi1`'s **shared** entry (`0x1114`), i.e. NAND, not SDIO. That
+   function builds a similarly-shaped record (`+0x58`/`0x5c`/`0x60`/
+   `0x64`/`0x68`/`0x6c`/`0x70`/`0x74`) — a generic
+   "register a handler + context" idiom reused by NAND's own init
+   (feeding the two-phase boot dispatcher described above), **not**
+   something SDIO's entry calls at all. No other indexed write to the
+   `0xf028` range exists anywhere.
+
+**Conclusion, now checked from every angle available in this firmware
+blob**: the chain from R0-at-entry back to its producer is fully traced,
+and at every step the value is either zero (the static slot content) or
+simply never set by anything SDIO-specific. This is a genuinely strong
+negative result, not an unexplored gap. Combined with NAND having a whole
+parallel per-instance registration mechanism (`fcn.00001ac4` and the
+0x1b8-byte struct registry) that **SDIO's own task entry never calls at
+all**, the most likely explanations left are: (a) SDIO support in this
+exact firmware build is incomplete/not fully wired up (consistent with
+the original real-hardware observation that every SDHC register reads
+0), or (b) the real initialisation happens before this ~0x1b000-byte
+blob even starts running, in an earlier IOP boot stage that has not been
+extracted.
+
 ### Lower-priority lead (2026-10-16): the "iop control" master task's "install" command
 
 The `"iop"` task (`0xafc`, priority 0) is a dispatcher for commands the
