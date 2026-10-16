@@ -634,20 +634,50 @@ AppleARM7M::startCPU(IOSlaveFirmware*)"`.
 Located and disassembled `startCPU` (reached only through a vtable slot,
 not a direct call — `radare2`'s automatic function detection missed it;
 found instead via a literal-pool byte search for its own error-string's
-address). It takes the `IOSlaveFirmware*` argument, calls its vtable
-`+0x34c` for a memory descriptor, then that descriptor's `+0x98`
-(stores the raw firmware bytes pointer) and `+0x84` (validates its
-length), rounds the length up to the next power of two from `0x1000`,
-and writes three fields into a companion structure
-(`this+0x58`): the firmware pointer, a size-derived mask, and —
-**the literal `0x86300000`**. That is the exact same hardware address
-found hardcoded in the IOP firmware's own generic log function
-(`fcn.000074d4`) — not a coincidence, a real host-side confirmation of
-the same peripheral address the firmware itself uses. `this+0x58` is
-very plausibly the argument structure handed to whatever kernel
-primitive actually maps memory for and starts the second ARM core —
-this is "Open questions" #6's load-path code, now located and partially
-read.
+address), and separately traced `AppleARM7M::start(IOService*)` (the
+larger function that runs first) to identify `this+0x58` precisely
+rather than leaving it as "a companion structure":
+
+```
+r0 = [this+0x50]       ; _provider (AppleARMIODevice)
+bl vtable+0x208         ; mapDeviceMemoryWithIndex(0)
+str r0, [this+0x54]     ; the IOMemoryMap object
+...
+r0 = [this+0x54]
+bl vtable+0x4c          ; getVirtualAddress()
+str r0, [this+0x58]     ; <-- the raw virtual address, cached
+```
+
+**`this+0x58` is `_arm7mRegisterMap`'s raw virtual address — a real,
+mapped hardware register window, not a C++ object** — `startCPU` writes
+directly into it (`+0x100`, `+0x110`, `+0x114`, `+0x118`) with no
+intervening virtual call, consistent with that.
+
+**Cross-confirmed independently, not just asserted from the driver's own
+code**: parsed the `iop,s5l8920x` device-tree node's `reg` property
+directly. It gives two 0x1000-byte regions — index 0 at physical
+`0x06300000` (CPU-visible with the standard high bit set:
+**`0x86300000`**), index 1 at `0x3f300000` (`0xbf300000`). Index 0 is
+the exact same address independently found hardcoded in the IOP
+firmware's own generic log function (`fcn.000074d4`). Two separate
+sources — host driver code and the device tree — now agree; this is as
+solid as static analysis gets without running it.
+
+The hardware sequence `startCPU` performs through this window: writes
+`base+0x100 = 0x10`, re-reads and tests bit 1 (logs an error but
+*continues* if clear — non-fatal, reads as a stale-session sanity check
+rather than a hard precondition), writes `base+0x118 = 0x86300000` (the
+window's own base, written back as data — role not fully resolved),
+`base+0x110 = ` the firmware's raw **host-virtual** bytes pointer (not
+obviously translated to a physical address first — whether that happens
+inside one of two un-individually-resolved provider calls made just
+before is open), `base+0x114 = ` the rounded/masked length, and finally,
+after a few more provider/VIC calls, `base+0x100 = 1` (a second,
+different control write — "go" after "configure") immediately followed
+by marking the CPU object started. No readback step in this function
+confirms the IOP core itself reached a running state; the "started" flag
+is host-side bookkeeping that the sequence completed, not proof of
+execution.
 
 **Checked, and still not found**: the numeric values `0xf018`, `0xf0a0`,
 `0xf0a4`, `0xa000` (the corrected table above) do not appear as literals

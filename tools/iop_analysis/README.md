@@ -560,6 +560,82 @@ narrower and more specific question: does anything write to
 `command_buffer+0x0c` in the host's own code, at buffer-allocation time
 or afterward? Not yet confirmed either way.
 
+### Milestone 1 done: `startCPU`'s hardware sequence, `this+0x58` identified, `0x86300000` cross-confirmed via the device tree
+
+Per the plan to finish the `startCPU` load path before moving to dynamic
+testing: traced `AppleARM7M::start(IOService*)` (the big function at
+`0x807130f0`, not just `startCPU` at `0x80713664`) to find exactly what
+`this+0x58` is.
+
+```
+r0 = [this+0x50]            ; _provider (AppleARMIODevice)
+... bl vtable+0x208         ; mapDeviceMemoryWithIndex(0)
+str r0, [this+0x54]         ; the IOMemoryMap OBJECT -- not yet the raw pointer
+... (same call with index=1, result -> [this+0x5c])
+r0 = [this+0x54]
+... bl vtable+0x4c          ; getVirtualAddress() on the memory map object
+str r0, [this+0x58]         ; <-- the RAW VIRTUAL ADDRESS, cached here
+... (same for the second map -> [this+0x60])
+```
+
+**`this+0x58` = `_arm7mRegisterMap`'s raw virtual address — a real,
+mapped hardware register window, not a C++ object.** `startCPU` writes
+directly into it (`+0x100`, `+0x110`, `+0x114`, `+0x118`) with no
+intervening virtual call, consistent with this.
+
+**Cross-confirmed independently via the device tree**, not just asserted
+from the host driver's own code: the `iop,s5l8920x` node's `reg`
+property (parsed directly, not eyeballed) gives two regions:
+
+| Index | Physical base | Size | CPU-visible (high bit set) |
+|---|---|---|---|
+| 0 (`_arm7mRegisterMap`) | `0x06300000` | `0x1000` | **`0x86300000`** |
+| 1 (`_vicRegisterMap`) | `0x3f300000` | `0x1000` | `0xbf300000` |
+
+**`0x86300000` is index 0's real, device-tree-confirmed physical
+address** — the same value found independently hardcoded in the IOP
+firmware's own generic log function (`fcn.000074d4`). Two separate
+sources (host driver code, device tree) now agree; this is as solid as
+static analysis gets without running it.
+
+The real hardware sequence `startCPU` performs through this window:
+
+1. `base+0x100 = 0x10` (a control/mode write), then re-read and tested
+   for bit 1 — if clear, logs `"ARM7M not stopped for some reason"` but
+   **continues anyway** (non-fatal; reads as a sanity check against a
+   stale previous session, not a hard precondition for this boot).
+2. `base+0x118 = 0x86300000` — the window's own base address, written
+   back into itself as data. Role not fully resolved: plausibly a
+   self-identification/notify field, or an address the IOP's own side
+   needs told to it explicitly rather than assuming it.
+3. `base+0x110 = ` the firmware's raw **host-virtual** bytes pointer
+   (from the `IOSlaveFirmware` object's memory descriptor) — notably
+   not obviously translated to a physical/DMA-coherent address first;
+   whether that translation happens elsewhere (inside one of the two
+   `vtable+0x360`/`+0x364` provider calls made just before, not
+   individually resolved) is open.
+4. `base+0x114 = ` the firmware length, rounded up to the next power of
+   two from `0x1000`, then either negated-and-masked with `0x3ffff000`
+   or used directly, depending on a mode ivar (`this+0x64`).
+5. At the very end, after a few more provider/VIC-related virtual calls:
+   `base+0x100 = 1` (a second, different control write — the "go" signal
+   after "reset"/"configure") immediately followed by `this+0x80 = 1`
+   (marks the CPU object as started) and a provider `registerService`-style
+   call.
+
+**Confirmation mechanism**: `this+0x80` (checked at `startCPU`'s own
+entry, to refuse double-start) is the host's own bookkeeping flag that
+the sequence completed without an early error return — not, by itself,
+proof the IOP is actually executing. No readback step was found in this
+function that verifies the IOP core itself reached a running state
+(e.g. polling a "core alive" bit) — if one exists, it is outside
+`startCPU`'s own body.
+
+**What this gives for a dynamic test**: the physical address to read
+from the main CPU to inspect this register window directly is now known
+(`0x86300000`, size `0x1000`) — a real, reproducible target for a
+Trognon payload, independent of reconstructing the message transport.
+
 ### Lower-priority lead (2026-10-16): the "iop control" master task's "install" command
 
 The `"iop"` task (`0xafc`, priority 0) is a dispatcher for commands the
