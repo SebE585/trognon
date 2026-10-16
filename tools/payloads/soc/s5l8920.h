@@ -96,19 +96,35 @@
  * something else (generic platform-bus matching, or it is simply not needed) accounts for it. */
 #define SOC_CLOCK_GATE_27     (0xBF100078 + 4 * 0x27)
 
-/* i2c0 bus (DEVICE TREE, decoded 2026-10-16, not yet read on the device): soft (bit-banged) I2C,
- * compatible "i2c,s5l8920x","iic,soft". GPIO function codes for SDA/SCL use the same port.pin
- * encoding already confirmed for the Wi-Fi reset/wake lines (high byte = port, low byte = pin,
- * array index = 8*port+pin): function-iic_sda = 0x401 -> 04.01, function-iic_scl = 0x400 -> 04.00.
+/* i2c0 bus (DEVICE TREE, decoded 2026-10-16): soft (bit-banged) I2C, compatible
+ * "i2c,s5l8920x","iic,soft". GPIO function codes for SDA/SCL use the same port.pin encoding
+ * already confirmed for the Wi-Fi reset/wake lines (high byte = port, low byte = pin, array
+ * index = 8*port+pin): function-iic_sda = 0x401 -> 04.01, function-iic_scl = 0x400 -> 04.00.
  * The accelerometer (compatible "accelerometer,lis331dl","accelerometer,lis302dl") sits at I2C
- * address 0x1d on this bus, device tree "reg" property; its WHO_AM_I register (0x0F on both
- * LIS331DL and LIS302DL, datasheet SOURCE, not device tree) should read 0x3B (LIS331DL) or 0x3C
- * (LIS302DL). A compass (AKM8973S, addr 0x1e) and a second compass1 (addr 0x1f, no interrupts
- * property) share the same bus; not probed yet. */
+ * address 0x1d on this bus, device tree "reg" property; WHO_AM_I (register 0x0F) read 0x3B on
+ * the device (DEVICE, 2026-10-16, trace_accel_i2c.bin) -- the documented value for LIS331DL, but
+ * ST's LIS302DL datasheet (table 16) also lists 0x3B for some revisions, so this alone does not
+ * distinguish the two compatible-string candidates. A compass (AKM8973S, addr 0x1e) and a second
+ * compass1 (addr 0x1f, no interrupts property) share the same bus; not probed yet. */
 #define SOC_I2C0_SCL_IDX      (8 * 0x04 + 0x00)
 #define SOC_I2C0_SDA_IDX      (8 * 0x04 + 0x01)
 #define SOC_ACCEL_I2C_ADDR    0x1d
 #define SOC_ACCEL_WHO_AM_I_REG 0x0F
+
+/* Axis registers (SOURCE: ST LIS302DL/LIS331DL datasheet register map, same family, not device
+ * tree). CTRL_REG1 bit layout (LIS302DL datasheet): bit7 DR (0=100Hz,1=400Hz), bit6 PD
+ * (0=power-down,1=active), bit5 FS (0=+-2g,1=+-8g), bits4:3 self-test, bits2:0 Zen/Yen/Xen.
+ * 0x47 = active, 100Hz, +-2g, X/Y/Z all enabled -- the common "power up and read" value used by
+ * reference drivers for this family. Output registers are single signed bytes (8-bit resolution,
+ * not 16-bit like later accelerometers), one per axis. Not yet confirmed identical on LIS331DL;
+ * the two parts are pin/register-compatible per ST's own family documentation but this specific
+ * bit layout has not been cross-checked against a LIS331DL datasheet. */
+#define SOC_ACCEL_CTRL_REG1    0x20
+#define SOC_ACCEL_CTRL1_ACTIVE_XYZ_2G_100HZ 0x47
+#define SOC_ACCEL_STATUS_REG   0x27
+#define SOC_ACCEL_OUT_X        0x29
+#define SOC_ACCEL_OUT_Y        0x2B
+#define SOC_ACCEL_OUT_Z        0x2D
 
 /* Bluetooth (DEVICE TREE, decoded 2026-10-16): compatible "bluetooth,n88", transport is UART3
  * (NOT SDIO -- a different, simpler path than Wi-Fi), transport-speed 0x2dc6c0 (3,000,000 baud).

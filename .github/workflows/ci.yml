@@ -29,7 +29,7 @@ jobs:
       - run: pip install unicorn==2.1.1 pillow==11.0.0
       - name: Build every payload
         working-directory: tools/payloads
-        run: make trace.bin trace_pabt.bin trace_regs.bin trace_vic.bin trace_irq.bin trace_timer.bin trace_ticks.bin trace_tirq.bin trace_accel_i2c.bin trace_bt_gpio.bin
+        run: make trace.bin trace_pabt.bin trace_regs.bin trace_vic.bin trace_irq.bin trace_timer.bin trace_ticks.bin trace_tirq.bin trace_accel_i2c.bin trace_bt_gpio.bin trace_accel_axes.bin
       - name: An unverified chip must be refused
         working-directory: tools/payloads
         run: |
