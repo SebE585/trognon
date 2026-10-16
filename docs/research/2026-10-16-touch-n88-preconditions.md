@@ -423,6 +423,37 @@ exactly the ones the static reading computed. What it does not show: that the to
 clocked (nothing was connected to it, and the SPI clock stayed off), that bit `0x40` of `0x11` is its supply
 or `0x50` its clock enable, or any electrical effect. Both registers were left as found.
 
+## Dry run of the power-up sequence, prepared (STAGE 40, not run)
+
+`tools/payloads/trace.c` `STAGE 40` (`trace_touch_power.bin`, built, **not run**). It makes the four steps of the plan
+that need the three supplies at once, **without sending any packet** to the touch controller, then restores
+everything:
+
+| Step | Write | Value | Restore |
+|---|---|---|---|
+| W1 | `spi1` clock gate `0xBF1000D0` | `0` to `0xF` | write the value read at the start |
+| W4 | PMU `0x11` | `0xBE` to `0xFE` | value read at the start |
+| W3 | PMU `0x50` | `0x11` to `0x13` | value read at the start |
+| settle | wait 20 ms | | |
+| W5 | SoC GPIO `14.01` (touch reset) register at `0x83000284` | `0x212` to `0x210` (released to input, the "high impedance" the personality flag suggests) | back to `0x212` (driven low) |
+| observe | wait 15 ms, then read only: the reset and chip-select registers, SPI1 STATUS, PIN, SETUP, CLKDIVIDER | | |
+| restore | reset GPIO, PMU `0x50`, PMU `0x11`, clock gate (reverse order), then read all four | | |
+
+Guard: nothing is written unless PMU `0x11` reads `0xBE`, PMU `0x50` reads `0x11`, the clock gate reads `0` and the reset GPIO
+register reads `0x212` (the values of STAGES 33, 36 and 37). The disassembly shows two stores to the clock gate (on, restore), the
+four PMU writes through the helper, one `i2c_release` and one `i2c_low` on the reset GPIO address `0x83000284`, and the usual
+I2C pin drive on `0x83000080` and `0x83000084`. No chip-select, SPI data or other GPIO register is written, and no SPI byte is sent.
+
+What it could show: whether the reset line reads high once released (a pull-up exists) or stays low; whether the SPI controller's
+idle registers change once the supplies are on (they should not without a transfer); and that the whole sequence is
+reversible. What it cannot show: that the controller is powered or alive (nothing is exchanged), the polarity, the unit of the
+driver's delay (`0xf`; 15 ms is the iDroid driver's value, and a shorter real delay would only make this one longer), or what
+happens on an actual CHECK.
+
+Risks beyond those of W3 and W4: with the reset released the controller may start its bootloader and drive its attention
+line, an interrupt this project does not read; a floating reset line could pick up noise for 15 ms; the gate and PMU states
+are restored at the end, a return to DFU resets them if the run is interrupted.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values
