@@ -9,7 +9,7 @@ SRC     := src/device_db.c src/serial_parse.c src/usb_probe.c src/chain.c src/cl
 OBJ     := $(SRC:.c=.o)
 BIN     := trognon
 
-.PHONY: all clean test test-sanitize diagrams evidence-index docs-build docs-check journey journey-check missions missions-check
+.PHONY: all clean test test-sanitize diagrams evidence-index docs-build docs-check journey journey-check missions missions-check project-check project-sync
 
 all: $(BIN)
 
@@ -68,7 +68,15 @@ missions:
 
 missions-check:
 	python3 -I tools/test_missions_build.py
+	python3 -I tools/test_project_sync.py
 	python3 -I tools/missions_build.py --check
+
+# The GitHub project board mirrors missions.yaml (needs `gh` with the project scope). project-check reports differences; project-sync writes.
+project-check:
+	python3 -I tools/project_sync.py
+
+project-sync:
+	python3 -I tools/project_sync.py --apply
 
 evidence-index:
 	python3 tools/evidence_index.py

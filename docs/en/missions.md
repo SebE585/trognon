@@ -13,11 +13,15 @@ A mission is an open question of the [decompilation catalog](journey/grimoire.md
 ## How it works
 
 1. Pick a mission below and open its *Take this mission* form, so nobody works on it twice by accident.
-2. Do the work. Level 1 needs no phone. Level 2 is a **read-only** run on a phone, with a payload someone has reviewed. Level 3, which writes to the phone's hardware, is never open to contributors: it only happens after a written description and the maintainer's agreement.
+2. Do the work. Level 1 needs no phone. Level 2 is a run on a phone with a payload that **only reads**: that describes the action, not a guarantee, because a read can have hardware effects, so each level 2 mission lists preconditions that stay in force. Level 3, which writes to the phone's hardware, is never open to contributors: it only happens after a written description and the maintainer's agreement.
 3. Send what you found as a pull request, with the template's checklist: what you looked for, with which sources and versions, what you observed, what you conclude and what stays uncertain. No Apple firmware, keys or extracted binaries in a contribution.
 4. A review decides what the catalog says. A result is recorded with its method and limits, whichever way it points.
 
 See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTING.md).
+
+## What the states mean
+
+**Open**: nobody is on it yet. **In progress**: someone has taken it. **Blocked**: it waits for something named on its card. **Closed**: the expected work is done, reviewed and merged, and the merged contribution is linked. A mission closes because the work is finished, not because a hypothesis was confirmed: its scientific outcome (confirmed, refuted or inconclusive) is shown separately.
 
 ## State of the missions
 
@@ -33,12 +37,18 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
     *The open question* (`S5L-CLK-Q1`): How a device-tree clock-gates number becomes a register: the clkG function object stores the controller (this+0x18) and the gate (this+0x1c) and calls a virtual method at slot 0x380 of the object's class.
 
+    **What it would unlock**: How the device tree's clock-gate numbers become physical clock gates, which is needed to find the clocks of the SDIO block and of the coprocessor.
+
     **What you need**
 
     - The AppleS5L8900X kernel extension, extracted from your own copy of the 4.3.5 firmware (tools/iop_analysis/extract_kext.py)
     - A disassembler for 32-bit Thumb, and the catalog entry open next to it
 
+    **Skills**: Reading 32-bit Thumb, Following virtual calls through class tables
+
     **A good answer**: The class of the object the clkG function object stores at +0x18, and the code of its slot 0x380, with addresses; or a documented reason it cannot be found.
+
+    **Contributions so far**: none yet
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleS5L8900X/clock_controller_gates_0x8045e750.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+S5L-CLK-Q1&mission=S5L-CLK-Q1)
 
@@ -48,12 +58,18 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
     *The open question* (`MT-BOOT-Q1`): Body of the bootload method itself (virtual slot 0x378 of the driver class, called up to three times), which sends the firmware: its packet format, its source and its size were not found; the strings 'PreconstructedBootloadPacketType' and 'A-Speed Firmware' belong to it.
 
+    **What it would unlock**: Whether the touch controller needs firmware loaded before it answers, which decides the next step of the touch work.
+
     **What you need**
 
     - The AppleMultitouchSPI kernel extension, extracted from your own copy of the firmware
     - A disassembler for 32-bit Thumb
 
+    **Skills**: Reading 32-bit Thumb, Following virtual calls through class tables
+
     **A good answer**: The body of the bootload method (class slot 0x378) and the property or file that carries the firmware, or evidence that none is read at that point.
+
+    **Contributions so far**: none yet
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/bootload_flow_0x8056e2c0.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+MT-BOOT-Q1&mission=MT-BOOT-Q1)
 
@@ -63,11 +79,17 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
     *The open question* (`MT-CHECK-Q1`): Whether the N1 class used for the n88 node calls this routine: it sits in the shared kext, and the N1 personality matches a class of the same kext, but the call chain from AppleMultitouchN1SPI was not traced.
 
+    **What it would unlock**: Whether the check packet the project plans to send is the one this model's driver sends.
+
     **What you need**
 
     - The AppleMultitouchSPI kernel extension, extracted from your own copy of the firmware
 
+    **Skills**: Reading 32-bit Thumb, Tracing a call chain across classes
+
     **A good answer**: The call chain from the N1 driver class to the routine at 0x8056e4e8, or a proof that it is not reached.
+
+    **Contributions so far**: none yet
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/check_packet_0x8056e4e8.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+MT-CHECK-Q1&mission=MT-CHECK-Q1)
 
@@ -77,12 +99,18 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
     *The open question* (`ARM7M-STARTCPU-Q4`): Indirect call at 0x80713686, firmware-object vtable slot +0x34c (arg: the IOSlaveFirmware).
 
+    **What it would unlock**: A firm account of what starts the coprocessor, which any attempt to replay its start depends on.
+
     **What you need**
 
     - The AppleARM7M and IOP_s5l8920x_firmware kernel extensions, extracted from your own copy of the firmware
     - Some practice following virtual calls through ARM class tables
 
+    **Skills**: Reading 32-bit Thumb, Following virtual calls through class tables
+
     **A good answer**: Whether the receiver of the call at 0x80713686 is an instance of the concrete firmware class, with the class table that shows it.
+
+    **Contributions so far**: none yet
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleARM7M/startCPU.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+ARM7M-STARTCPU-Q4&mission=ARM7M-STARTCPU-Q4)
 
@@ -92,11 +120,17 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
     *The open question* (`EMBIOP-SEQ-Q1`): Meaning of the object-slot calls used throughout: slot +0x50 and +0x4c of the objects returned by allocateVisibleMemory (used here as an address getter and as 'inner descriptor'), +0x98 on a descriptor (physical-segment getter by its use: its result is passed to the provider slot +0x35c), +0x5c on…
 
+    **What it would unlock**: A readable account of the start sequence, on which any attempt to start the coprocessor depends.
+
     **What you need**
 
     - The EmbeddedIOP kernel extension and the kernelcache classes it calls (IOMemoryDescriptor, IOBufferMemoryDescriptor)
 
+    **Skills**: Reading 32-bit Thumb, Knowing how kernel memory descriptors are used
+
     **A good answer**: The meaning of the slots used in the start sequence (+0x50, +0x4c, +0x98, +0x5c), read from the class tables, with addresses.
+
+    **Contributions so far**: none yet
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/EmbeddedIOP/start_sequence.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+EMBIOP-SEQ-Q1&mission=EMBIOP-SEQ-Q1)
 
@@ -106,12 +140,18 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
     *The open question* (`IBSS-GPIO-Q1`): The loop that applies the whole table at start (near 0x84001330, which steps by 2 up to 0x2e0 = 736 bytes = 368 entries, against 376 pads read here) and the other callers of the routine: only the call sequence around 0x84005240 was read.
 
+    **What it would unlock**: Whether the boot stage configures any pad of the SPI bus, which bears on the missing pad information for the touch controller.
+
     **What you need**
 
     - The decrypted iBSS 4.3.5 for the n88ap model (not stored in this repository: obtained from your own copy of the firmware and the phone, see the boot chain page)
     - A disassembler for 32-bit Thumb
 
+    **Skills**: Reading 32-bit Thumb, Finding all callers of a routine
+
     **A good answer**: The loop that applies the pad table at start and every other caller of the pad configuration routine, with the pins they set.
+
+    **Contributions so far**: none yet
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/iBSS_n88ap_4.3.5/gpio_configure_0x84001354.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+IBSS-GPIO-Q1&mission=IBSS-GPIO-Q1)
 
@@ -121,11 +161,17 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
     *The open question* (`IBSS-GPIO-Q2`): The special case for port 0x2e (a call to 0x84007cf8 with the pin number): not read.
 
+    **What it would unlock**: A complete reading of the boot stage's pad routine.
+
     **What you need**
 
     - The decrypted iBSS 4.3.5 for the n88ap model (see the previous mission for how it is obtained)
 
+    **Skills**: Reading 32-bit Thumb
+
     **A good answer**: The function at 0x84007cf8 and what the special port 0x2e drives.
+
+    **Contributions so far**: none yet
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/iBSS_n88ap_4.3.5/gpio_configure_0x84001354.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+IBSS-GPIO-Q2&mission=IBSS-GPIO-Q2)
 
@@ -135,11 +181,17 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
     *The open question* (`IBSS-TAB-Q2`): What the four platform pin ids 0x1605, 0x1506, 0x0806, 0x1102 (at 0x84017ac8) are for: the first two are the WLAN reset and Bluetooth reset pins of the device tree; 08.06 and 11.02 were not matched to a function.
 
+    **What it would unlock**: Two more pins matched to a function in the phone's pin map.
+
     **What you need**
 
     - The decrypted iBSS 4.3.5 for the n88ap model (see the previous missions)
 
+    **Skills**: Reading 32-bit Thumb, Finding all readers of a table
+
     **A good answer**: The readers of the platform pin list at 0x84017ac8 and the function of the two pins that are not yet matched.
+
+    **Contributions so far**: none yet
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/iBSS_n88ap_4.3.5/peripheral_tables.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+IBSS-TAB-Q2&mission=IBSS-TAB-Q2)
 
@@ -151,16 +203,28 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
 - **Do the clock mask registers mirror the gate words?**
 
-    <span class="mission-level mission-level-2">Level 2 · read-only run on a phone</span> <span class="mission-state mission-state-blocked">Blocked</span>
+    <span class="mission-level mission-level-2">Level 2 · a run that only reads</span> <span class="mission-state mission-state-blocked">Blocked</span>
 
     *The open question* (`S5L-CLK-Q2`): Whether CGCON0 and the following word (offsets 0x48 and 0x4c) are an aggregate view of the same per-gate words the iBSS uses at 0xBF100078 + 4 * i, and how a bit number (the device-tree gate) maps to an array index.
+
+    **What it would unlock**: Whether the clock mask registers mirror the gate words, which would settle how the device tree's numbers map to the physical gates.
 
     **What you need**
 
     - An iPhone 3GS in DFU mode and the project's toolchain (tools/go.sh)
-    - The read-only payload trace_gate_survey.bin (STAGE 47)
+    - The payload trace_gate_survey.bin (STAGE 47), which only reads
+
+    **Skills**: Running the project's toolchain on a phone, Comparing two sets of register values
+
+    **Before you run anything** (these stay in force once the mission is open)
+
+    - Read the payload source first and run it only if you understand what it reads: a read of a hardware block can have effects, and reading the GPIO interrupt controller once dropped the USB link.
+    - The boot is tethered: nothing is written to the phone's storage, and a restart returns it to its previous state.
+    - Note your board revision, so that the result can be compared with other phones.
 
     **A good answer**: The values at offsets 0x40 to 0x74 and the 52 gate words, compared bit by bit, with your board revision noted.
+
+    **Contributions so far**: none yet
 
     **Blocked by**: The STAGE 47 payload is built but has not been run yet; the maintainer runs it first, then opens this mission.
 

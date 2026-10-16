@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "iop_analysis" / "missions.yaml"
 OUT = ROOT / "docs" / "en" / "missions.md"
 REPO = "https://github.com/SebE585/trognon"
-WORK = {"static": (1, "Level 1 · static analysis"), "survey": (2, "Level 2 · read-only run on a phone"),
+WORK = {"static": (1, "Level 1 · static analysis"), "survey": (2, "Level 2 · a run that only reads"),
         "write": (3, "Level 3 · hardware writes, maintainer only")}
 STATES = ("open", "in-progress", "blocked", "closed")
 OUTCOMES = ("confirmed", "refuted", "inconclusive")
@@ -68,6 +68,19 @@ def check(missions, open_q, resolved):
                 errors.append("%s: needs %r" % (q, field))
         if m.get("work") in ("static", "survey") and not m.get("needs"):
             errors.append("%s: needs a list of what is required to take it" % q)
+        if m.get("work") in ("survey", "write") and not m.get("preconditions"):
+            errors.append("%s: a mission that runs on a phone must list its preconditions" % q)
+        if not m.get("unlocks"):
+            errors.append("%s: needs 'unlocks', what answering would make possible" % q)
+        if not m.get("skills"):
+            errors.append("%s: needs 'skills', what it takes" % q)
+        for c in m.get("contributions") or []:
+            if not (c.get("title") and str(c.get("url", "")).startswith("https://github.com/")):
+                errors.append("%s: a contribution needs a title and a GitHub URL" % q)
+        if m.get("state") == "closed" and not str(m.get("integrated_in", "")).startswith("https://github.com/"):
+            errors.append("%s: a closed mission must link the merged contribution (integrated_in)" % q)
+        if m.get("state") != "closed" and m.get("integrated_in"):
+            errors.append("%s: only a closed mission has integrated_in" % q)
         if m.get("state") == "blocked" and not (m.get("blocked_by") or m.get("blocked_until")):
             errors.append("%s: a blocked mission must say what blocks it" % q)
         for dep in m.get("blocked_until", []):
@@ -99,8 +112,16 @@ def card(m, qinfo):
         out += ["    **Outcome:** %s" % m["outcome"], ""]
     if qinfo:
         out += ["    *The open question* (`%s`): %s" % (m["question"], jb.first_sentence(qinfo["text"], 300)), ""]
+    out += ["    **What it would unlock**: %s" % m["unlocks"], ""]
     out += ["    **What you need**", ""] + ["    - %s" % n for n in m.get("needs", [])] + [""]
+    out += ["    **Skills**: %s" % ", ".join(m["skills"]), ""]
+    if m.get("preconditions"):
+        out += ["    **Before you run anything** (these stay in force once the mission is open)", ""] + ["    - %s" % c for c in m["preconditions"]] + [""]
     out += ["    **A good answer**: %s" % m["expected"], ""]
+    contrib = m.get("contributions") or []
+    out += ["    **Contributions so far**: " + (" · ".join("[%s](%s)" % (c["title"], c["url"]) for c in contrib) if contrib else "none yet"), ""]
+    if m.get("integrated_in"):
+        out += ["    **Integrated in**: [%s](%s)" % (m["integrated_in"].rsplit("/", 2)[-2] + " " + m["integrated_in"].rsplit("/", 1)[-1], m["integrated_in"]), ""]
     if m.get("blocked_by") or m.get("blocked_until"):
         why = list(m.get("blocked_by", []))
         if m.get("blocked_until"):
@@ -126,12 +147,17 @@ def render(missions, open_q):
              "a mission can close because a hypothesis was refuted, and a documented negative result counts as much as a discovery.", "",
              "## How it works", "",
              "1. Pick a mission below and open its *Take this mission* form, so nobody works on it twice by accident.",
-             "2. Do the work. Level 1 needs no phone. Level 2 is a **read-only** run on a phone, with a payload someone has reviewed. "
+             "2. Do the work. Level 1 needs no phone. Level 2 is a run on a phone with a payload that **only reads**: that describes the action, "
+             "not a guarantee, because a read can have hardware effects, so each level 2 mission lists preconditions that stay in force. "
              "Level 3, which writes to the phone's hardware, is never open to contributors: it only happens after a written description and the maintainer's agreement.",
              "3. Send what you found as a pull request, with the template's checklist: what you looked for, with which sources and versions, "
              "what you observed, what you conclude and what stays uncertain. No Apple firmware, keys or extracted binaries in a contribution.",
              "4. A review decides what the catalog says. A result is recorded with its method and limits, whichever way it points.", "",
              "See also [CONTRIBUTING](%s/blob/main/CONTRIBUTING.md)." % REPO, "",
+             "## What the states mean", "",
+             "**Open**: nobody is on it yet. **In progress**: someone has taken it. **Blocked**: it waits for something named on its card. "
+             "**Closed**: the expected work is done, reviewed and merged, and the merged contribution is linked. "
+             "A mission closes because the work is finished, not because a hypothesis was confirmed: its scientific outcome (confirmed, refuted or inconclusive) is shown separately.", "",
              "## State of the missions", "",
              "%d open · %d in progress · %d blocked · %d closed. **%d other open questions of the catalog are not framed as missions yet** "
              "(see the [map of what we know](journey/grimoire.md))." % (counts["open"], counts["in-progress"], counts["blocked"], counts["closed"], unclassified), ""]

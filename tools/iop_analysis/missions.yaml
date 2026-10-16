@@ -1,14 +1,23 @@
 # Missions: open questions of the decompilation catalog, framed so that someone else can take one.
 # A mission points at a question id of an approved catalog entry (tools/iop_analysis/catalog/*/*.yaml); the question text and the
 # link to its entry come from the catalog, so they cannot drift. docs/en/missions.md is GENERATED from this file by
-# tools/missions_build.py (make missions); `make missions-check` validates it.
+# tools/missions_build.py (make missions); `make missions-check` validates it. The GitHub project board is a mirror kept in step
+# by tools/project_sync.py (make project-sync); this file is the source of truth.
 #
-#   work:    static  = reading and analysis, no phone needed (level 1)
-#            survey  = a read-only run on a phone (level 2)
+#   work:    describes the ACTION, not a guarantee of safety:
+#            static  = reading and analysis, no phone (level 1)
+#            survey  = a run on a phone with a payload that only reads (level 2). A read can still have hardware effects:
+#                      the hardware map records that reading the GPIO interrupt controller dropped the USB link.
 #            write   = writes to the phone's hardware (level 3): never open to contributors, only after the maintainer agrees
 #   state:   open | in-progress | blocked | closed          (the state of the WORK, not of the knowledge)
-#   outcome: confirmed | refuted | inconclusive              (required when closed; a refuted hypothesis or a documented
-#                                                            negative result closes a mission as well as a discovery)
+#            closed = the expected work is done, reviewed and merged: `integrated_in` links the merged contribution.
+#   outcome: confirmed | refuted | inconclusive              (the scientific result; required when closed, kept apart from the state;
+#                                                            a refuted hypothesis or a documented negative result closes a mission
+#                                                            as well as a discovery)
+#   preconditions: required for survey and write; they stay after a mission is unblocked.
+#   unlocks / skills: what answering would make possible, and what it takes (shown on the page).
+#   contributions: links to merged contributions that moved the mission forward, closed or not.
+project: { owner: SebE585, number: 1 }
 missions:
   - question: S5L-CLK-Q1
     title: "Which object implements the clock-gate call?"
@@ -17,7 +26,10 @@ missions:
       - "The AppleS5L8900X kernel extension, extracted from your own copy of the 4.3.5 firmware (tools/iop_analysis/extract_kext.py)"
       - "A disassembler for 32-bit Thumb, and the catalog entry open next to it"
     expected: "The class of the object the clkG function object stores at +0x18, and the code of its slot 0x380, with addresses; or a documented reason it cannot be found."
+    unlocks: "How the device tree's clock-gate numbers become physical clock gates, which is needed to find the clocks of the SDIO block and of the coprocessor."
+    skills: ["Reading 32-bit Thumb", "Following virtual calls through class tables"]
     state: open
+    contributions: []
 
   - question: MT-BOOT-Q1
     title: "Where does the touch controller's firmware come from?"
@@ -26,7 +38,10 @@ missions:
       - "The AppleMultitouchSPI kernel extension, extracted from your own copy of the firmware"
       - "A disassembler for 32-bit Thumb"
     expected: "The body of the bootload method (class slot 0x378) and the property or file that carries the firmware, or evidence that none is read at that point."
+    unlocks: "Whether the touch controller needs firmware loaded before it answers, which decides the next step of the touch work."
+    skills: ["Reading 32-bit Thumb", "Following virtual calls through class tables"]
     state: open
+    contributions: []
 
   - question: MT-CHECK-Q1
     title: "Does the touch driver class used by this model send the CHECK packet?"
@@ -34,7 +49,10 @@ missions:
     needs:
       - "The AppleMultitouchSPI kernel extension, extracted from your own copy of the firmware"
     expected: "The call chain from the N1 driver class to the routine at 0x8056e4e8, or a proof that it is not reached."
+    unlocks: "Whether the check packet the project plans to send is the one this model's driver sends."
+    skills: ["Reading 32-bit Thumb", "Tracing a call chain across classes"]
     state: open
+    contributions: []
 
   - question: ARM7M-STARTCPU-Q4
     title: "Which class receives the coprocessor start call?"
@@ -43,7 +61,10 @@ missions:
       - "The AppleARM7M and IOP_s5l8920x_firmware kernel extensions, extracted from your own copy of the firmware"
       - "Some practice following virtual calls through ARM class tables"
     expected: "Whether the receiver of the call at 0x80713686 is an instance of the concrete firmware class, with the class table that shows it."
+    unlocks: "A firm account of what starts the coprocessor, which any attempt to replay its start depends on."
+    skills: ["Reading 32-bit Thumb", "Following virtual calls through class tables"]
     state: open
+    contributions: []
 
   - question: EMBIOP-SEQ-Q1
     title: "What do the object-slot calls of the coprocessor start sequence do?"
@@ -51,7 +72,10 @@ missions:
     needs:
       - "The EmbeddedIOP kernel extension and the kernelcache classes it calls (IOMemoryDescriptor, IOBufferMemoryDescriptor)"
     expected: "The meaning of the slots used in the start sequence (+0x50, +0x4c, +0x98, +0x5c), read from the class tables, with addresses."
+    unlocks: "A readable account of the start sequence, on which any attempt to start the coprocessor depends."
+    skills: ["Reading 32-bit Thumb", "Knowing how kernel memory descriptors are used"]
     state: open
+    contributions: []
 
   - question: IBSS-GPIO-Q1
     title: "Who else configures the pads in the boot stage?"
@@ -60,7 +84,10 @@ missions:
       - "The decrypted iBSS 4.3.5 for the n88ap model (not stored in this repository: obtained from your own copy of the firmware and the phone, see the boot chain page)"
       - "A disassembler for 32-bit Thumb"
     expected: "The loop that applies the pad table at start and every other caller of the pad configuration routine, with the pins they set."
+    unlocks: "Whether the boot stage configures any pad of the SPI bus, which bears on the missing pad information for the touch controller."
+    skills: ["Reading 32-bit Thumb", "Finding all callers of a routine"]
     state: open
+    contributions: []
 
   - question: IBSS-GPIO-Q2
     title: "What is port 0x2e in the boot stage's pad routine?"
@@ -68,7 +95,10 @@ missions:
     needs:
       - "The decrypted iBSS 4.3.5 for the n88ap model (see the previous mission for how it is obtained)"
     expected: "The function at 0x84007cf8 and what the special port 0x2e drives."
+    unlocks: "A complete reading of the boot stage's pad routine."
+    skills: ["Reading 32-bit Thumb"]
     state: open
+    contributions: []
 
   - question: IBSS-TAB-Q2
     title: "What are pins 08.06 and 11.02 for?"
@@ -76,15 +106,25 @@ missions:
     needs:
       - "The decrypted iBSS 4.3.5 for the n88ap model (see the previous missions)"
     expected: "The readers of the platform pin list at 0x84017ac8 and the function of the two pins that are not yet matched."
+    unlocks: "Two more pins matched to a function in the phone's pin map."
+    skills: ["Reading 32-bit Thumb", "Finding all readers of a table"]
     state: open
+    contributions: []
 
   - question: S5L-CLK-Q2
     title: "Do the clock mask registers mirror the gate words?"
     work: survey
     needs:
       - "An iPhone 3GS in DFU mode and the project's toolchain (tools/go.sh)"
-      - "The read-only payload trace_gate_survey.bin (STAGE 47)"
+      - "The payload trace_gate_survey.bin (STAGE 47), which only reads"
+    preconditions:
+      - "Read the payload source first and run it only if you understand what it reads: a read of a hardware block can have effects, and reading the GPIO interrupt controller once dropped the USB link."
+      - "The boot is tethered: nothing is written to the phone's storage, and a restart returns it to its previous state."
+      - "Note your board revision, so that the result can be compared with other phones."
     expected: "The values at offsets 0x40 to 0x74 and the 52 gate words, compared bit by bit, with your board revision noted."
+    unlocks: "Whether the clock mask registers mirror the gate words, which would settle how the device tree's numbers map to the physical gates."
+    skills: ["Running the project's toolchain on a phone", "Comparing two sets of register values"]
     state: blocked
     blocked_by:
       - "The STAGE 47 payload is built but has not been run yet; the maintainer runs it first, then opens this mission."
+    contributions: []
