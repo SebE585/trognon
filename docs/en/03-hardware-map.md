@@ -7,28 +7,30 @@ inline render.
 
 ## At a glance
 
-| Component | Function obtained | Limit | Section |
+| Component | Obtained | Remaining | Section |
 |---|---|---|---|
-| CPU/MMU | `MIDR`/`SCTLR`/`DACR` read; page tables confirmed sane | no code-level check beyond register reads | [CPU and MMU](#cpu-and-mmu-device) |
-| Display (CLCD) | framebuffer draws, confirmed by a visible fill; several status/timing registers read | panel init itself is the iBSS's, not ours; our own panel driver not written | [Display controller](#display-controller-clcd_base-0x85400000-device) |
-| GPIO and clock gates | base mapped, offsets answer; one pin toggle (panel reset) behaves as expected | most pins' roles unknown; `GPIOIC` untouched (dropped the USB link once) | [GPIO and clock gates](#gpio-and-clock-gates-device-partial) |
-| VIC0/1/2 | read-only survey of all three; a software-triggered IRQ proven to raise and be handled | which peripheral owns each of the 14 bits the iBSS left enabled is unknown | [Interrupt controllers](#interrupt-controllers-vic012-device-2026-10-15) |
-| Timer block | tick rate confirmed 24 MHz against the host clock; `STATE` registers read | a timer-sourced interrupt is **not proven**; the IRQ ack offsets are known wrong | [Timer block](#timer-block-timer_base-0xbf100000-device-2026-10-15) |
-| NAND | chip ID read on CE0/CE1 (Toshiba, matches the 32 GB label), geometry matched against OpeniBoot's table | CE2-CE15 give no identification response; bus 1 not swept; no page read, no program, no erase attempted | [NAND](#nand-h2fmi0_base-0x81200000-device-2026-10-15) |
-| Buttons | all 5 buttons mapped by GPIO difference, zero noise over 3 s hands-off | OpeniBoot's own names for this SoC were wrong; the sweep killed the USB control endpoint once (recovered without DFU) | [Buttons](#buttons-same-gpio-base-as-above-device-2026-10-15) |
-| Accelerometer | `WHO_AM_I` read `0x3B` over a real bit-banged I2C transaction, first try | exact chip model (LIS331DL vs LIS302DL) undetermined; axis data and the `orientation` property untested; compass/`compass1` not probed at all | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
-| Wi-Fi/SDIO | base address confirmed; reset/wake GPIO lines real, reset toggled and read back | every probed register reads `0` regardless of the register-layout hypothesis tried (SDHCI-standard never tried); IOP ownership is the leading explanation, not proven | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-mixed-devicehypothesis-2026-10-1516) |
-| Bluetooth | reset/wake GPIO levels read: reset `1`, wake `0` | read-only so far: no UART traffic attempted, chip presence/response unknown | [Bluetooth](#bluetooth-uart3-reset-1506-wake-1602-device-2026-10-16) |
+| CPU/MMU | Control registers and page-table descriptors read | No code-level check beyond register reads | [CPU and MMU](#cpu-and-mmu-device) |
+| Display (CLCD) | Framebuffer draws, confirmed by a visible fill | Panel init is the iBSS's; no driver of our own | [Display controller](#display-controller-clcd_base-0x85400000-device) |
+| GPIO and clock gates | Base mapped, several offsets read | Most pins' roles unknown; `GPIOIC` not re-read since it dropped the USB link | [GPIO and clock gates](#gpio-and-clock-gates-device-partial) |
+| VIC0/1/2 | Full read-only survey; a software IRQ raised and handled | Which peripheral owns each of the 14 enabled bits | [Interrupt controllers](#interrupt-controllers-vic012-device-2026-10-15) |
+| Timer block | Tick rate confirmed at 24 MHz | Timer interrupt not proven; IRQ-ack offsets and sequence not validated on this SoC | [Timer block](#timer-block-timer_base-0xbf100000-device-2026-10-15) |
+| NAND | Chip ID read on CE0/CE1 | CE2-CE15, bus 1, and any page access | [NAND](#nand-h2fmi0_base-0x81200000-device-2026-10-15) |
+| Buttons | All 5 buttons mapped by GPIO difference | Mapping found by observed difference, not by name | [Buttons](#buttons-same-gpio-base-as-above-device-2026-10-15) |
+| Accelerometer | Identifier read over a real I2C transaction | Exact chip model, axis data, `orientation` meaning | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
+| Wi-Fi/SDIO | Base address and GPIO lines confirmed; SDHCI layout confirmed in the IOP's own firmware | Which register window the IOP's SDHCI driver actually uses, and why CPU-side writes don't stick | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-mixed-devicehypothesis-2026-10-1516) |
+| Bluetooth | Reset/wake GPIO levels read | First UART response | [Bluetooth](#bluetooth-uart3-reset-1506-wake-1602-device-2026-10-16) |
 
 **Reading the tags**: **DEVICE** means observed on this real phone (a read, or a write
 with its result read back) — never assume a DEVICE tag on one line of a section means
 every claim on that line is proven; read the line itself. **SOURCE** means read in
-firmware or driver code, not yet checked here. **HYPOTHESIS** means our own reasoning,
-not confirmed either way. A tag next to a component name in the table above is never a
-checkmark: "DEVICE" on the accelerometer means the identifier byte came back, nothing
-about whether the axes work. "How to reproduce" in a section is the `make <payload>.bin`
-command that re-runs that exact check; "Links to evidence" is the bundle under
-[`evidence/`](08-evidence.md) with the raw screen output and build manifest.
+firmware or driver code, not yet checked here on this device. **HYPOTHESIS** means our own
+reasoning, not confirmed either way. A tag is never a checkmark: "DEVICE" on the
+accelerometer means the identifier byte came back, nothing about whether the axes work.
+"How to reproduce" in a section names two separate steps: building the payload
+(`make <payload>.bin`, from `tools/payloads/`) and running it on a device in DFU
+(`tools/go.sh tools/payloads/<payload>.bin`) — building does not run anything on the phone.
+"Links to evidence" is the bundle under [`evidence/`](08-evidence.md) with the raw screen
+output and build manifest from that run.
 
 Base addresses alone, with no narrative, are kept in the stabilised
 [SoC memory map](../spec/soc-s5l8920.md) — look there for a quick address lookup; this
@@ -78,10 +80,10 @@ Writing our own panel init is a much larger job (**HYPOTHESIS**, see OpenIBoot `
 
 Values read by eye from the screen; field widths were assumed to be 8 hex digits.
 
-## Not read, on purpose
+## Not re-read, on purpose
 
-`GPIOIC` (`0x39A00000`): the one read of it dropped the USB link (cause undetermined).
-Treat as dangerous until understood.
+`GPIOIC` (`0x39A00000`): the one read tried so far dropped the USB link (cause
+undetermined). Not retried since that incident. Treat as dangerous until understood.
 
 ## Interrupt controllers VIC0/1/2 (DEVICE, 2026-10-15)
 
@@ -199,9 +201,10 @@ and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, d
 only, not probed at all yet — two device-tree nodes do not by themselves prove two separate
 physical chips.
 
-**How to reproduce**: `make trace_accel_i2c.bin` (see `tools/payloads/`, STAGE 29). Reads
-the bus idle level first and only attempts the transaction if it looks plausibly
-pulled-up, so a mis-wired guess cannot look like a silent success.
+**How to reproduce**: build with `make trace_accel_i2c.bin` (see `tools/payloads/`, STAGE
+29), then run it on a device in DFU with `tools/go.sh tools/payloads/trace_accel_i2c.bin`.
+On that run it reads the bus idle level first and only attempts the transaction if it looks
+plausibly pulled-up, so a mis-wired guess cannot look like a silent success.
 
 **Links to evidence**: [evidence bundle `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), indexed on the [evidence page](08-evidence.md).
 
@@ -212,14 +215,26 @@ S5L8920 at all (unlike NAND). Everything below the address itself came from this
 own decrypted device tree and kernelcache (owner's IPSW, never redistributed), not from
 source code.
 
-**What's confirmed**: the block's base address; that every probed offset reads `0` and that
-re-reads never reflect a value written to them; that the reset and wake GPIO lines are real
-and one of them is writable. **The internal register layout itself is still open** — two
-incompatible candidates exist upstream (`plat-s5l8900`'s simple CTRL/CMD/ARGU/STATE/DSTA
-layout, and `plat-a4`'s SDHCI-standard layout), and only the first has actually been tried
-on this device; the all-zero/non-sticky result holds either way because the raw
-write-then-readback test (STAGE 24) writes straight to the base address and does not depend
-on either layout.
+**What's confirmed (DEVICE)**: the block's base address; that every probed offset reads `0`
+and that re-reads never reflect a value written to them; that the reset and wake GPIO lines
+are real and one of them is writable.
+
+**What the IOP firmware's own disassembly shows (SOURCE)**: the [Wi-Fi/IOP architecture
+report](../research/2026-10-16-wifi-iop-architecture.md) traces the IOP's own SDIO opcode
+handlers dereferencing a pointer (received at runtime, not a fixed constant in the
+disassembly) and accessing it at offsets that line up exactly with the real, standard SDHCI
+register layout — `+0x08` `ARGUMENT`, `+0x0e` `COMMAND`, `+0x10` `RESPONSE`, `+0x24` bit 0
+`PRESENT_STATE`/`CMD_INHIBIT`, `+0x2f` mask `7` `SOFTWARE_RESET`, `+0x30`/`+0x32`
+`INT_STATUS`, `+0x34`/`+0x36` `INT_ENABLE` — offset for offset, too precise to be a pattern
+match. This is real evidence that an SDHCI-layout register window exists on this SoC and
+that the IOP's own driver uses it; it comes from reading firmware code, not from a register
+on this device.
+
+**Not established**: whether the pointer the IOP firmware dereferences at runtime is the
+same `0x80000000` window the Cortex-A8 probes directly, or a different address only
+reachable from the IOP's side. "SDHCI was never tried directly from the CPU" is not the
+same claim as "no evidence for the SDHCI layout" — the firmware disassembly above is
+evidence, just not a CPU-side register read.
 
 | Item | Value | Status |
 |---|---|---|
@@ -229,17 +244,20 @@ on either layout.
 | `interrupts` | `0x22` | device tree, same caveat |
 | Reset GPIO (`gpio_baseband_wlan_reset`) | `16.5` | device tree gives the name/pin; DEVICE: read at `0`, then toggled low 12 ms / high 150 ms, read back `1` — confirmed write |
 | Wake GPIO (`gpio_sdio_device_wake`) | `14.4` | device tree gives the name/pin; DEVICE: read at `0` |
-| Any probed register in the block, tried under the legacy `plat-s5l8900`-style layout (STAGE 22) and as a raw write straight to the base address (STAGE 24) — the SDHCI-standard layout was never actually tried | reads `0`, re-reads don't reflect values written | DEVICE, repeatedly confirmed (clock-gate on, legacy-layout init sequence, raw write-then-readback) |
+| Any probed register at `0x80000000`, tried under the legacy `plat-s5l8900`-style layout (STAGE 22) and as a raw write straight to the base address (STAGE 24) | reads `0`, re-reads don't reflect values written | DEVICE, repeatedly confirmed (clock-gate on, legacy-layout init sequence, raw write-then-readback) — neither attempt used the SDHCI-standard offsets |
+| SDHCI-standard register layout (`ARGUMENT`/`COMMAND`/`RESPONSE`/`PRESENT_STATE`/`SOFTWARE_RESET`/`INT_STATUS`/`INT_ENABLE`) | offset-for-offset match | SOURCE: confirmed used by the IOP firmware's own code, at a base pointer not confirmed to be `0x80000000`; never tried directly from the CPU at that address |
 
-**What remains hypothesis**: *why* writes don't stick, and which register layout (if either
-of the two candidates above) actually matches this SoC. The leading explanation for the
-non-sticky writes is that a second, embedded ARM processor (Apple's "IOP") owns this block
-directly and runs its own real-time OS, with the application CPU only posting messages to
-it over a shared command channel — not yet fully proven.
+**What remains hypothesis**: *why* writes to `0x80000000` don't stick, and whether that
+address is the same window the IOP's SDHCI-layout driver uses. The leading explanation is
+that a second, embedded ARM processor (Apple's "IOP") owns the real SDHCI window directly
+and runs its own real-time OS, with the application CPU only posting messages to it over a
+shared command channel — not yet fully proven.
 
-**How to reproduce**: `make trace_sdio_init.bin` (see `tools/payloads/`, STAGE 22) runs the
-clock-gate enable and the legacy `plat-s5l8900`-style init sequence — not an SDHCI-standard
-sequence. The raw write-then-readback on the base address is a separate build (STAGE 24).
+**How to reproduce**: build with `make trace_sdio_init.bin` (see `tools/payloads/`, STAGE
+22), then run it on a device in DFU with `tools/go.sh tools/payloads/trace_sdio_init.bin`.
+It runs the clock-gate enable and the legacy `plat-s5l8900`-style init sequence at
+`0x80000000` — not the SDHCI-standard offsets above. The raw write-then-readback on the
+base address is a separate build (STAGE 24, `trace_write_test.bin`).
 
 **Links to evidence**: see the
 [Wi-Fi/IOP architecture report](../research/2026-10-16-wifi-iop-architecture.md) for the full
@@ -257,20 +275,22 @@ that Wi-Fi is secondary to it; no evidence either way on original design intent 
 `transport-speed = 0x2dc6c0` — 3,000,000 baud, `coex = 1`): this confirms the transport is
 UART, not SDIO, and that this device tree expects Wi-Fi/Bluetooth coexistence signalling.
 Reading the reset (`15.06`) and wake (`16.02`) lines, decoded the same `8*port+pin` way as
-the already-proven Wi-Fi reset/wake pair, gave a real result: reset reads `1` (released, not
-held low), wake reads `0`.
+the already-proven Wi-Fi reset/wake pair, gave a real result: reset reads `1`, wake reads
+`0`. Reading `1` as "not held in reset" assumes the line is active-low — a common
+convention for reset pins, but not established for this specific line.
 
 | Item | Value | Status |
 |---|---|---|
 | Transport | UART3, 3,000,000 baud | device tree `transport-speed`, not yet exercised |
-| Reset GPIO (`function-bt_reset`) | `15.06` | device tree gives the name/pin (same physical line as the baseband node's own `function-bt_reset`); DEVICE: read `1` |
+| Reset GPIO (`function-bt_reset`) | `15.06` | device tree gives the name/pin (same physical line as the baseband node's own `function-bt_reset`); DEVICE: read `1` (polarity, hence what "not asserted" means here, not established) |
 | Wake GPIO (`function-bt_wake`) | `16.02` | device tree gives the name/pin; DEVICE: read `0` |
 
 **What remains hypothesis**: everything about the UART link itself — whether the chip
 answers at all, any HCI handshake, whether toggling reset or wake changes anything. This is
 a read-only GPIO level check, nothing more.
 
-**How to reproduce**: `make trace_bt_gpio.bin` (see `tools/payloads/`, STAGE 30). Same
+**How to reproduce**: build with `make trace_bt_gpio.bin` (see `tools/payloads/`, STAGE 30),
+then run it on a device in DFU with `tools/go.sh tools/payloads/trace_bt_gpio.bin`. Same
 pattern as the Wi-Fi reset/wake read (STAGE 15): plain reads, no write, no UART touched.
 
 **Links to evidence**: [evidence bundle `20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio), indexed on the [evidence page](08-evidence.md).

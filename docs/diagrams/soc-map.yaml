@@ -14,7 +14,7 @@ nodes:
   - { id: nand,   label: "NAND (H2FMI0)",     subtitle: "0x81200000, DEVICE",           group: io,   style: stage }
   - { id: buttons, label: "Buttons",          subtitle: "via GPIO, DEVICE",             group: io,   style: stage }
   - { id: i2c0,   label: "i2c0 (soft)",       subtitle: "GPIO 04.00/04.01, DEVICE",     group: io,   style: stage }
-  - { id: accel,  label: "Accelerometer",     subtitle: "LIS331DL 0x1d, DEVICE",        group: io,   style: stage }
+  - { id: accel,  label: "Accelerometer",     subtitle: "ID 0x3B, i2c0 0x1d, DEVICE",   group: io,   style: stage }
   - { id: compass, label: "Compass (2 DT nodes)", subtitle: "AKM8973S, not probed",     group: io,   style: service }
   - { id: sdio,   label: "Wi-Fi/SDIO",        subtitle: "0x80000000, mixed",            group: io,   style: accent }
   - { id: iop,    label: "IOP coprocessor",   subtitle: "0x86300000, state under iBSS open", group: io, style: service }

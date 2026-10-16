@@ -7,30 +7,31 @@ dans le rendu intégré.
 
 ## En un coup d'œil
 
-| Composant | Fonction obtenue | Limite | Section |
+| Composant | Obtenu | Reste à faire | Section |
 |---|---|---|---|
-| CPU/MMU | `MIDR`/`SCTLR`/`DACR` lus ; table de pages confirmée saine | aucune vérification au niveau code au-delà des lectures de registre | [CPU et MMU](#cpu-et-mmu-device) |
-| Affichage (CLCD) | le framebuffer dessine, confirmé par un remplissage visible ; plusieurs registres de statut/timing lus | l'init de dalle est celle de l'iBSS, pas la nôtre ; notre propre pilote de dalle n'est pas écrit | [Contrôleur d'affichage](#controleur-daffichage-clcd_base-0x85400000-device) |
-| GPIO et horloges | base mappée, les décalages répondent ; une bascule de broche (reset dalle) se comporte comme attendu | le rôle de la plupart des broches reste inconnu ; `GPIOIC` non touché (a fait tomber la liaison USB une fois) | [GPIO et horloges](#gpio-et-horloges-device-partiel) |
-| VIC0/1/2 | relevé en lecture seule des trois ; une IRQ déclenchée logiciellement prouvée levée et prise | quel périphérique possède chacun des 14 bits laissés actifs par l'iBSS reste inconnu | [Contrôleurs d'interruptions](#controleurs-dinterruptions-vic012-device-2026-10-15) |
-| Bloc timer | fréquence du tick confirmée à 24 MHz contre l'horloge du Mac ; registres `STATE` lus | une interruption source timer n'est **pas prouvée** ; les décalages d'acquittement IRQ sont connus comme faux | [Bloc timer](#bloc-timer-timer_base-0xbf100000-device-2026-10-15) |
-| NAND | identifiant lu sur CE0/CE1 (Toshiba, cohérent avec l'étiquette 32 Go), géométrie recoupée avec la table d'OpeniBoot | CE2 à CE15 ne donnent aucune réponse d'identification ; bus 1 pas balayé ; aucune lecture de page, programmation ou effacement tentés | [NAND](#nand-h2fmi0_base-0x81200000-device-2026-10-15) |
-| Boutons | les 5 boutons mappés par différence GPIO, zéro bruit sur 3 s mains levées | les noms d'OpeniBoot pour ce SoC étaient faux ; le balayage a tué le point de contrôle USB une fois (récupéré sans DFU) | [Boutons](#boutons-meme-base-gpio-que-ci-dessus-device-2026-10-15) |
-| Accéléromètre | `WHO_AM_I` lu `0x3B` via une vraie transaction I2C bit-bang, du premier coup | modèle exact de la puce (LIS331DL ou LIS302DL) indéterminé ; données d'axe et propriété `orientation` non testées ; compass/`compass1` pas sondés du tout | [Accéléromètre](#accelerometre-adresse-i2c0-0x1d-device-2026-10-16) |
-| Wi-Fi/SDIO | adresse de base confirmée ; lignes GPIO reset/réveil réelles, reset basculé et relu | tout registre sondé lit `0` quelle que soit l'hypothèse de disposition essayée (SDHCI standard jamais essayée) ; la possession par l'IOP est l'explication la plus probable, pas prouvée | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-devicehypothese-melees-2026-10-1516) |
-| Bluetooth | niveaux GPIO reset/réveil lus : reset `1`, réveil `0` | lecture seule pour l'instant : aucun trafic UART tenté, présence/réponse de la puce inconnue | [Bluetooth](#bluetooth-uart3-reset-1506-reveil-1602-device-2026-10-16) |
+| CPU/MMU | Registres de contrôle et descripteurs de table de pages relevés | aucune vérification au niveau code au-delà des lectures de registre | [CPU et MMU](#cpu-et-mmu-device) |
+| Affichage (CLCD) | le framebuffer dessine, confirmé par un remplissage visible | l'init de dalle est celle de l'iBSS ; pas de pilote qui soit le nôtre | [Contrôleur d'affichage](#controleur-daffichage-clcd_base-0x85400000-device) |
+| GPIO et horloges | base mappée, plusieurs décalages lus | le rôle de la plupart des broches reste inconnu ; `GPIOIC` non relu depuis qu'il a fait tomber la liaison USB | [GPIO et horloges](#gpio-et-horloges-device-partiel) |
+| VIC0/1/2 | relevé en lecture seule complet ; une IRQ logicielle levée et prise | quel périphérique possède chacun des 14 bits activés | [Contrôleurs d'interruptions](#controleurs-dinterruptions-vic012-device-2026-10-15) |
+| Bloc timer | fréquence du tick confirmée à 24 MHz | interruption timer pas prouvée ; décalages et séquence d'acquittement IRQ non validés sur ce SoC | [Bloc timer](#bloc-timer-timer_base-0xbf100000-device-2026-10-15) |
+| NAND | identifiant lu sur CE0/CE1 | CE2 à CE15, bus 1, et tout accès de page | [NAND](#nand-h2fmi0_base-0x81200000-device-2026-10-15) |
+| Boutons | les 5 boutons mappés par différence GPIO | mapping trouvé par différence observée, pas par le nom | [Boutons](#boutons-meme-base-gpio-que-ci-dessus-device-2026-10-15) |
+| Accéléromètre | identifiant lu via une vraie transaction I2C | modèle exact de la puce, données d'axe, sens de `orientation` | [Accéléromètre](#accelerometre-adresse-i2c0-0x1d-device-2026-10-16) |
+| Wi-Fi/SDIO | adresse de base et lignes GPIO confirmées ; disposition SDHCI confirmée dans le firmware de l'IOP lui-même | quelle fenêtre de registres le pilote SDHCI de l'IOP utilise réellement, et pourquoi les écritures côté CPU ne tiennent pas | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-devicehypothese-melees-2026-10-1516) |
+| Bluetooth | niveaux GPIO reset/réveil lus | première réponse UART | [Bluetooth](#bluetooth-uart3-reset-1506-reveil-1602-device-2026-10-16) |
 
 **Lire les étiquettes** : **DEVICE** veut dire observé sur ce téléphone réel (une lecture,
 ou une écriture dont le résultat est relu) — ne jamais supposer que l'étiquette DEVICE sur
 une ligne de section prouve toutes les affirmations de cette ligne ; lire la ligne elle-même.
-**SOURCE** veut dire lu dans le code firmware ou pilote, pas encore vérifié ici.
-**HYPOTHESIS** veut dire notre propre raisonnement, pas confirmé dans un sens ou l'autre.
-Une étiquette à côté d'un nom de composant dans le tableau ci-dessus n'est jamais une coche :
-« DEVICE » sur l'accéléromètre veut dire que l'octet d'identifiant est revenu, rien sur le
-fonctionnement des axes. « Comment reproduire » dans une section est la commande
-`make <payload>.bin` qui rejoue exactement ce test ; « Liens vers les preuves » est le
-dossier sous [`evidence/`](08-evidence.md) avec la sortie écran brute et le manifeste de
-build.
+**SOURCE** veut dire lu dans le code firmware ou pilote, pas encore vérifié ici sur cet
+appareil. **HYPOTHESIS** veut dire notre propre raisonnement, pas confirmé dans un sens ou
+l'autre. Une étiquette n'est jamais une coche : « DEVICE » sur l'accéléromètre veut dire que
+l'octet d'identifiant est revenu, rien sur le fonctionnement des axes. « Comment
+reproduire » dans une section nomme deux étapes distinctes : construire le payload
+(`make <payload>.bin`, depuis `tools/payloads/`) et le faire tourner sur un appareil en DFU
+(`tools/go.sh tools/payloads/<payload>.bin`) — construire ne fait rien tourner sur le
+téléphone. « Liens vers les preuves » est le dossier sous [`evidence/`](08-evidence.md) avec
+la sortie écran brute et le manifeste de build de ce run.
 
 Les adresses de base seules, sans récit, sont tenues dans la
 [carte mémoire du SoC](../spec/soc-s5l8920.md) (en anglais, référence technique) — à
@@ -81,10 +82,11 @@ est un chantier bien plus gros (**HYPOTHESIS**, voir `pinot_init` d'OpenIBoot).
 
 Valeurs lues à l'œil sur l'écran ; largeur de champ supposée à 8 chiffres hexa.
 
-## Non lu, volontairement
+## Non relu, volontairement
 
-`GPIOIC` (`0x39A00000`) : l'unique lecture a fait tomber la liaison USB (cause non déterminée).
-À tenir pour dangereux tant que ce n'est pas compris.
+`GPIOIC` (`0x39A00000`) : la seule lecture tentée jusqu'ici a fait tomber la liaison USB
+(cause non déterminée). Non retentée depuis cet incident. À tenir pour dangereux tant que ce
+n'est pas compris.
 
 ## Contrôleurs d'interruptions VIC0/1/2 (DEVICE, 2026-10-15)
 
@@ -206,10 +208,11 @@ un second `compass1` (`0x1f`, sans propriété `interrupts`) partagent le même 
 seul, pas encore sondés — deux nœuds de device tree ne prouvent pas à eux seuls deux puces
 physiques distinctes.
 
-**Comment reproduire** : `make trace_accel_i2c.bin` (voir `tools/payloads/`, STAGE 29).
-Lit d'abord le niveau de repos du bus et ne tente la transaction que s'il a l'air
-plausiblement tiré haut, pour qu'un mauvais câblage ne puisse pas ressembler à une
-réussite silencieuse.
+**Comment reproduire** : construire avec `make trace_accel_i2c.bin` (voir `tools/payloads/`,
+STAGE 29), puis le faire tourner sur un appareil en DFU avec
+`tools/go.sh tools/payloads/trace_accel_i2c.bin`. Sur ce run, il lit d'abord le niveau de
+repos du bus et ne tente la transaction que s'il a l'air plausiblement tiré haut, pour
+qu'un mauvais câblage ne puisse pas ressembler à une réussite silencieuse.
 
 **Liens vers les preuves** : [dossier de preuve `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), indexé sur la [page Preuves](08-evidence.md).
 
@@ -220,15 +223,28 @@ le S5L8920 (contrairement au NAND). Tout ce qui suit l'adresse elle-même vient 
 tree et du kernelcache déchiffrés de cet appareil (IPSW du propriétaire, jamais
 redistribués), pas du code source.
 
-**Ce qui est confirmé** : l'adresse de base du bloc ; que tout décalage sondé lit `0` et
-qu'une relecture ne restitue jamais une valeur écrite ; que les lignes GPIO de reset et de
-réveil sont réelles et que l'une d'elles est inscriptible. **La disposition interne des
-registres reste ouverte** : deux candidats incompatibles existent en amont (la disposition
-simple CTRL/CMD/ARGU/STATE/DSTA de `plat-s5l8900`, et la disposition SDHCI standard de
-`plat-a4`), et seule la première a été réellement essayée sur cet appareil ; le résultat
-« tout à zéro / écritures qui ne tiennent pas » tient quel que soit le candidat, puisque le
-test d'écriture brute puis relecture (STAGE 24) écrit directement à l'adresse de base, sans
-dépendre d'une disposition de registres.
+**Ce qui est confirmé (DEVICE)** : l'adresse de base du bloc ; que tout décalage sondé lit
+`0` et qu'une relecture ne restitue jamais une valeur écrite ; que les lignes GPIO de reset
+et de réveil sont réelles et que l'une d'elles est inscriptible.
+
+**Ce que montre le désassemblage du firmware de l'IOP lui-même (SOURCE)** : le [rapport sur
+l'architecture Wi-Fi/IOP](../research/2026-10-16-wifi-iop-architecture.md) retrace les
+gestionnaires d'opcodes SDIO de l'IOP déréférençant un pointeur (reçu à l'exécution, pas une
+constante fixe dans le désassemblage) et y accédant à des décalages qui correspondent
+exactement à la disposition de registres SDHCI standard et réelle — `+0x08` `ARGUMENT`,
+`+0x0e` `COMMAND`, `+0x10` `RESPONSE`, `+0x24` bit 0 `PRESENT_STATE`/`CMD_INHIBIT`, `+0x2f`
+masque `7` `SOFTWARE_RESET`, `+0x30`/`+0x32` `INT_STATUS`, `+0x34`/`+0x36` `INT_ENABLE` —
+décalage pour décalage, trop précis pour être une coïncidence de motif. C'est une vraie
+preuve qu'une fenêtre de registres façon SDHCI existe sur ce SoC et que le pilote propre de
+l'IOP s'en sert ; elle vient de la lecture du code firmware, pas d'un registre de cet
+appareil.
+
+**Non établi** : si le pointeur que le firmware de l'IOP déréférence à l'exécution est la
+même fenêtre `0x80000000` que sonde directement le Cortex-A8, ou une adresse différente,
+accessible seulement depuis le côté IOP. « La disposition SDHCI n'a jamais été essayée
+directement depuis le CPU » n'est pas la même affirmation que « aucune preuve de la
+disposition SDHCI » — le désassemblage ci-dessus en est une, simplement pas une lecture de
+registre côté CPU.
 
 | Élément | Valeur | Statut |
 |---|---|---|
@@ -238,19 +254,22 @@ dépendre d'une disposition de registres.
 | `interrupts` | `0x22` | device tree, même réserve |
 | GPIO de reset (`gpio_baseband_wlan_reset`) | `16.5` | le device tree donne le nom/la broche ; DEVICE : lue à `0`, puis basculée bas 12 ms / haut 150 ms, relue à `1` — écriture confirmée |
 | GPIO de réveil (`gpio_sdio_device_wake`) | `14.4` | le device tree donne le nom/la broche ; DEVICE : lue à `0` |
-| Tout registre sondé dans le bloc, essayé sous la disposition héritée `plat-s5l8900` (STAGE 22) et en écriture brute directement à l'adresse de base (STAGE 24) — la disposition SDHCI standard n'a jamais été réellement essayée | lit `0`, les relectures ne restituent pas les valeurs écrites | DEVICE, confirmé plusieurs fois (clock-gate activé, séquence d'init façon ancienne disposition, écriture brute puis relecture) |
+| Tout registre sondé à `0x80000000`, essayé sous la disposition héritée `plat-s5l8900` (STAGE 22) et en écriture brute directement à l'adresse de base (STAGE 24) | lit `0`, les relectures ne restituent pas les valeurs écrites | DEVICE, confirmé plusieurs fois (clock-gate activé, séquence d'init façon ancienne disposition, écriture brute puis relecture) — aucun des deux essais n'a utilisé les décalages SDHCI standard |
+| Disposition de registres SDHCI standard (`ARGUMENT`/`COMMAND`/`RESPONSE`/`PRESENT_STATE`/`SOFTWARE_RESET`/`INT_STATUS`/`INT_ENABLE`) | correspondance décalage pour décalage | SOURCE : confirmée utilisée par le code propre du firmware de l'IOP, à un pointeur de base non confirmé comme étant `0x80000000` ; jamais essayée directement depuis le CPU à cette adresse |
 
-**Ce qui reste hypothèse** : *pourquoi* les écritures ne tiennent pas, et laquelle des deux
-dispositions candidates (si l'une des deux) correspond réellement à ce SoC. L'explication la
-plus probable pour les écritures qui ne tiennent pas est qu'un second processeur ARM
-embarqué (l'« IOP » d'Apple) possède ce bloc directement et fait tourner son propre système
-temps réel, le CPU principal ne faisant que poster des messages dans un canal de commande
-partagé — pas encore pleinement prouvé.
+**Ce qui reste hypothèse** : *pourquoi* les écritures à `0x80000000` ne tiennent pas, et si
+cette adresse est la même fenêtre que celle qu'utilise le pilote SDHCI de l'IOP.
+L'explication la plus probable est qu'un second processeur ARM embarqué (l'« IOP » d'Apple)
+possède directement la vraie fenêtre SDHCI et fait tourner son propre système temps réel, le
+CPU principal ne faisant que poster des messages dans un canal de commande partagé — pas
+encore pleinement prouvé.
 
-**Comment reproduire** : `make trace_sdio_init.bin` (voir `tools/payloads/`, STAGE 22)
-déroule l'activation du clock-gate et la séquence d'init façon `plat-s5l8900` héritée — pas
-une séquence SDHCI standard. L'écriture brute puis relecture sur l'adresse de base est un
-autre build (STAGE 24).
+**Comment reproduire** : construire avec `make trace_sdio_init.bin` (voir `tools/payloads/`,
+STAGE 22), puis le faire tourner sur un appareil en DFU avec
+`tools/go.sh tools/payloads/trace_sdio_init.bin`. Il déroule l'activation du clock-gate et
+la séquence d'init façon `plat-s5l8900` héritée à `0x80000000` — pas les décalages SDHCI
+standard ci-dessus. L'écriture brute puis relecture sur l'adresse de base est un autre build
+(STAGE 24, `trace_write_test.bin`).
 
 **Liens vers les preuves** : voir le
 [rapport sur l'architecture Wi-Fi/IOP](../research/2026-10-16-wifi-iop-architecture.md) pour la
@@ -270,20 +289,23 @@ sur l'intention de conception d'origine.
 est UART, pas SDIO, et que ce device tree prévoit une signalisation de coexistence
 Wi-Fi/Bluetooth. La lecture des lignes de reset (`15.06`) et de réveil (`16.02`), décodées de
 la même façon `8*port+pin` que la paire reset/réveil Wi-Fi déjà prouvée, a donné un vrai
-résultat : reset lit `1` (relâché, pas maintenu bas), réveil lit `0`.
+résultat : reset lit `1`, réveil lit `0`. Lire `1` comme « pas maintenu en reset » suppose
+que la ligne est active-bas — une convention courante pour une broche de reset, mais non
+établie pour cette ligne précise.
 
 | Élément | Valeur | Statut |
 |---|---|---|
 | Transport | UART3, 3 000 000 bauds | `transport-speed` du device tree, pas encore exercé |
-| GPIO de reset (`function-bt_reset`) | `15.06` | le device tree donne le nom/la broche (même ligne physique que le `function-bt_reset` du nœud baseband) ; DEVICE : lue à `1` |
+| GPIO de reset (`function-bt_reset`) | `15.06` | le device tree donne le nom/la broche (même ligne physique que le `function-bt_reset` du nœud baseband) ; DEVICE : lue à `1` (polarité, donc ce que « non activé » signifie ici, non établie) |
 | GPIO de réveil (`function-bt_wake`) | `16.02` | le device tree donne le nom/la broche ; DEVICE : lue à `0` |
 
 **Ce qui reste hypothèse** : tout ce qui concerne la liaison UART elle-même — si la puce
 répond, toute négociation HCI, si basculer reset ou réveil change quelque chose. C'est une
 simple lecture de niveaux GPIO, rien de plus.
 
-**Comment reproduire** : `make trace_bt_gpio.bin` (voir `tools/payloads/`, STAGE 30). Même
-schéma que la lecture reset/réveil Wi-Fi (STAGE 15) : lectures seules, aucune écriture,
-aucun accès à l'UART.
+**Comment reproduire** : construire avec `make trace_bt_gpio.bin` (voir `tools/payloads/`,
+STAGE 30), puis le faire tourner sur un appareil en DFU avec
+`tools/go.sh tools/payloads/trace_bt_gpio.bin`. Même schéma que la lecture reset/réveil
+Wi-Fi (STAGE 15) : lectures seules, aucune écriture, aucun accès à l'UART.
 
 **Liens vers les preuves** : [dossier de preuve `20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio), indexé sur la [page Preuves](08-evidence.md).

@@ -1,1 +1,1 @@
-Construit depuis le commit [`55afba4`](https://github.com/SebE585/trognon/commit/55afba4) (uncommitted changes present).
+Construit depuis le commit [`3d3cfd9`](https://github.com/SebE585/trognon/commit/3d3cfd9) (uncommitted changes present).
