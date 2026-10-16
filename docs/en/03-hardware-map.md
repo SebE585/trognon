@@ -140,9 +140,14 @@ close to 3 minutes) killed the USB control endpoint afterwards; a host-side USB 
 
 ## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (mixed DEVICE/HYPOTHESIS, 2026-10-15/16)
 
-No OpeniBoot source exists for this block on the S5L8920 at all (unlike NAND). Everything
-below the address itself came from this device's own decrypted device tree and kernelcache
-(owner's IPSW, never redistributed), not from source code.
+**Status**: mixed DEVICE/HYPOTHESIS. No OpeniBoot source exists for this block on the
+S5L8920 at all (unlike NAND). Everything below the address itself came from this device's
+own decrypted device tree and kernelcache (owner's IPSW, never redistributed), not from
+source code.
+
+**What's confirmed**: the block's base address and register layout (standard SDHCI); that
+every register in it reads `0` and ignores writes; that the reset and wake GPIO lines are
+real and one of them is writable.
 
 | Item | Value | Status |
 |---|---|---|
@@ -154,9 +159,15 @@ below the address itself came from this device's own decrypted device tree and k
 | Wake GPIO (`gpio_sdio_device_wake`) | `14.4` | device tree gives the name/pin; DEVICE: read at `0` |
 | Any register in the block (standard SDHCI layout: argument, command, response, present-state, software-reset, interrupt status/enable) | reads `0`, writes do not stick | DEVICE, repeatedly confirmed (clock-gate on, full SDHCI-style init sequence, raw write-then-readback) |
 
-**Why writes don't stick**: a second, embedded ARM processor (Apple's "IOP") owns this block
-directly and runs its own real-time OS; the application CPU only posts messages to it over a
-shared command channel. This is the leading explanation, not yet a fully proven one — see the
+**What remains hypothesis**: *why* writes don't stick. The leading explanation is that a
+second, embedded ARM processor (Apple's "IOP") owns this block directly and runs its own
+real-time OS, with the application CPU only posting messages to it over a shared command
+channel — not yet fully proven.
+
+**How to reproduce**: `make trace_sdio_init.bin` (see `tools/payloads/`) runs the clock-gate
+enable, the SDHCI-style init sequence, and the raw write-then-readback on each register.
+
+**Links to evidence**: see the
 [Wi-Fi/IOP architecture report](../research/2026-10-16-wifi-iop-architecture.md) for the full
 chain of evidence and what is confirmed versus still a hypothesis. That report's own firmware
 analysis finds NAND the dominant subsystem by debug-string count in the IOP's firmware image —

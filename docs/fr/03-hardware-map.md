@@ -144,9 +144,14 @@ côté hôte (`dev.reset()`, pas besoin de DFU) l'a réveillé — voir [preuves
 
 ## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (DEVICE/HYPOTHÈSE mêlées, 2026-10-15/16)
 
-Aucun code source OpeniBoot n'existe pour ce bloc sur le S5L8920 (contrairement au NAND). Tout
-ce qui suit l'adresse elle-même vient du device tree et du kernelcache déchiffrés de cet
-appareil (IPSW du propriétaire, jamais redistribués), pas du code source.
+**Statut** : DEVICE/HYPOTHÈSE mêlées. Aucun code source OpeniBoot n'existe pour ce bloc sur
+le S5L8920 (contrairement au NAND). Tout ce qui suit l'adresse elle-même vient du device
+tree et du kernelcache déchiffrés de cet appareil (IPSW du propriétaire, jamais
+redistribués), pas du code source.
+
+**Ce qui est confirmé** : l'adresse de base du bloc et sa disposition de registres (SDHCI
+standard) ; que tout registre du bloc lit `0` et ignore les écritures ; que les lignes GPIO
+de reset et de réveil sont réelles et que l'une d'elles est inscriptible.
 
 | Élément | Valeur | Statut |
 |---|---|---|
@@ -158,10 +163,16 @@ appareil (IPSW du propriétaire, jamais redistribués), pas du code source.
 | GPIO de réveil (`gpio_sdio_device_wake`) | `14.4` | le device tree donne le nom/la broche ; DEVICE : lue à `0` |
 | Tout registre du bloc (disposition SDHCI standard : argument, commande, réponse, present-state, software-reset, statut/activation des interruptions) | lit `0`, les écritures ne tiennent pas | DEVICE, confirmé plusieurs fois (clock-gate activé, séquence d'init complète façon SDHCI, écriture brute puis relecture) |
 
-**Pourquoi les écritures ne tiennent pas** : un second processeur ARM embarqué (l'« IOP »
-d'Apple) possède ce bloc directement et fait tourner son propre système temps réel ; le CPU
-principal ne fait que poster des messages dans un canal de commande partagé. C'est l'explication
-la plus probable, pas encore pleinement prouvée — voir le
+**Ce qui reste hypothèse** : *pourquoi* les écritures ne tiennent pas. L'explication la
+plus probable est qu'un second processeur ARM embarqué (l'« IOP » d'Apple) possède ce bloc
+directement et fait tourner son propre système temps réel, le CPU principal ne faisant que
+poster des messages dans un canal de commande partagé — pas encore pleinement prouvé.
+
+**Comment reproduire** : `make trace_sdio_init.bin` (voir `tools/payloads/`) déroule
+l'activation du clock-gate, la séquence d'init façon SDHCI, et l'écriture brute puis
+relecture sur chaque registre.
+
+**Liens vers les preuves** : voir le
 [rapport sur l'architecture Wi-Fi/IOP](../research/2026-10-16-wifi-iop-architecture.md) pour la
 chaîne de preuve complète et ce qui est établi contre ce qui reste hypothèse. Ce rapport trouve,
 dans le firmware de l'IOP, le NAND comme sous-système dominant en nombre de chaînes de debug —
