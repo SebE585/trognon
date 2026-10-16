@@ -527,6 +527,30 @@ the reading is one line at two instants.
 What would sharpen it: several reads between 0 and 15 ms and beyond (the rise time), and the same with the LDO on for longer or shorter before the
 release. Both stay read-only apart from the reset and the LDO already used.
 
+## Why W6 (the CHECK exchange) is not ready
+
+Preparing W6 against the OpeniBoot SPI driver for this SoC family and the kernel code read above showed three gaps, none of which a
+payload should paper over:
+
+1. **The SPI pads are not known.** The controller drives its clock, data-out and data-in pads only if the corresponding GPIO pads are
+   set to the SPI function. The `spi1` node lists only `function-spi_cs0` (GPIO `13.00`). No source read so far names the pads of
+   SCLK, MOSI and MISO for `spi1`, nor says whether iBoot has already set them to the SPI function at this stage of the boot. OpeniBoot's
+   header for this SoC family has no pad definitions for the SPI buses (its `plat-s5l8900` header has some for an older chip, where the
+   same bus also carries the LCD panel and the touch chip-select). A transfer programmed on the controller would otherwise reach nothing.
+2. **The register recipe for a transfer is not settled.** OpeniBoot sets CONTROL `0`, then SETUP (master `0x18`, plus `0x20`, plus
+   `0x4000` for the clock source), CLKDIVIDER, PIN `2`, CONTROL `1`; to send it ORs `0x200100` into SETUP, writes the length to `0x4c`, sets
+   CONTROL bits `4` and `8` first, and rewrites CONTROL to `1`. The kernel code read above builds SETUP without the `0x20`, writes
+   CONTROL from a field that nothing in the part read assigns (so it reads as `0`), and starts with `0x180` plus `0x200000` in SETUP. Which
+   of the two is right for this chip, or whether both work, is not shown. The clock divider also depends on the `nclk` frequency, which was not
+   read (`nclk` = 24 MHz would make a divider of 3 give 8 MHz, matching the 124 ns period, but that is a coincidence of two guesses).
+3. **The chip-select call has no checked semantics.** The `function-spi_cs0` object is called with `1` at the start of a transfer and `0`
+   at the end, and the SoC GPIO function reads that as level 0 then 1 (active low). That reading has not been exercised on the pin.
+
+A safe way to settle 1 and 2 before any exchange with the touch controller is a self-test of the controller with no peripheral: clock gate on,
+chip select untouched, send four bytes, and watch STATUS (the TX count draining, the RX count filling) to see whether the recipe works. For 1,
+a read-only dump of the GPIO registers, to look for pads whose function bits differ from plain input or output, is cheap and was done before for
+376 pins without incident.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values
@@ -539,7 +563,7 @@ come from the readings above; none of the write semantics was ever exercised on 
 | W3 (done, STAGE 39) | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (rebuilt as `(old & 0x19) | 0x02`; equal to `old | 0x02` only for this old value) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
 | W4 (done, STAGE 39) | touch LDO | PMU register `0x11`, `0xBE` to `0xFE` (set bit `0x40`), read-modify-write | `0xBE` | write `0xBE` | nothing visible alone except the read-back and possibly the controller's behaviour on SPI | powers a rail; if the index-to-rail reading is wrong, a different rail is switched |
 | W5 (done in the dry run, STAGE 40) | reset line | SoC GPIO `14.01` released (logical 0, which the descriptor reads as level 1, or high impedance as the personality's flag suggests), then the driver's delay (`0xf`, unit unknown) | level `0` (asserted by the reading) | drive low again | a change on SPI/attention if the controller starts | the polarity rests on a code reading; the unit of the delay is unknown |
-| W6 | first SPI exchange | the CHECK packet `05 00 00 06` (reply first byte `0xD0` = bootloader), `spi1` registers, chip select `13.00`; if the `reg` reading above holds, word size 8 and a period of about 124 ns | n/a | n/a | any answer | requires the controller's register layout confirmed on this chip (CLKDIVIDER and PIN undecoded), the `reg` inference confirmed, and the bootloader protocol |
+| W6 (blocked: see "Why W6 is not ready") | first SPI exchange | the CHECK packet `05 00 00 06` (reply first byte `0xD0` = bootloader), `spi1` registers, chip select `13.00`; if the `reg` reading above holds, word size 8 and a period of about 124 ns | n/a | n/a | any answer | requires the controller's register layout confirmed on this chip (CLKDIVIDER and PIN undecoded), the `reg` inference confirmed, and the bootloader protocol |
 
 The order that keeps the risk lowest is W1 and then W2, and stopping to read the result before
 anything touches the PMU. The PMU writes (W3, W4) follow the driver's apparent order of power first
