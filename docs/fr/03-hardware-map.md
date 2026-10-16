@@ -59,6 +59,8 @@ persistante » (rien d'enregistré en flash) n'est pas la même affirmation que 
 | `DACR` | `0x00000003` | domaine 0 manager, autres domaines sans accès |
 | Table de pages | sections de 1 Mio, toutes en domaine 0 | rien de non mappé aux index 1..0xfff |
 
+**Liens vers les preuves** : aucun dédié. `MIDR`, `SCTLR`, `DACR` et le parcours de la table des pages viennent d'exécutions antérieures qui ne sont **pas archivées** (voir le tableau des affirmations dans [Preuves](08-evidence.md)) ; le bundle [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace) montre la gestion des exceptions sur ce CPU, ce qui est une autre affirmation.
+
 ## Affichage
 
 Base `0x85400000` (`CLCD_BASE`) · **DEVICE**
@@ -79,6 +81,8 @@ La dalle est pilotée en MIPI DSI (ligne de reset probablement GPIO `0x500`) : l
 initialisé par l'iBSS, c'est pourquoi on peut simplement dessiner. Écrire notre propre init de dalle
 est un chantier bien plus gros (**HYPOTHESIS**, voir `pinot_init` d'OpenIBoot).
 
+**Liens vers les preuves** : [`20261015T050542Z-trace_regs`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050542Z-trace_regs).
+
 ## GPIO et horloges
 
 **DEVICE**, partiel
@@ -93,6 +97,8 @@ est un chantier bien plus gros (**HYPOTHESIS**, voir `pinot_init` d'OpenIBoot).
 | Clock gate `0xBF100128` | `0x0000000F` | lue seulement |
 
 Valeurs lues à l'œil sur l'écran ; largeur de champ supposée à 8 chiffres hexa.
+
+**Liens vers les preuves** : [`20261015T050542Z-trace_regs`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050542Z-trace_regs), [`20261015T164529Z-trace_buttons`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T164529Z-trace_buttons), [`20261016T042928Z-trace_gate_write`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042928Z-trace_gate_write), [`20261016T164825Z-trace_spi1_pre`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T164825Z-trace_spi1_pre), [`20261016T174843Z-trace_spi1_nogate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T174843Z-trace_spi1_nogate).
 
 ## Non relu, volontairement
 
@@ -125,6 +131,8 @@ Relevé en lecture seule. Tous les registres ont répondu, sans abort.
 - Quel périphérique correspond à chaque bit activé reste inconnu.
 
 Les registres du timer sont la partie la moins comprise d'OpenIBoot (son propre commentaire dit qu'ils sont copiés d'un SoC plus ancien).
+
+**Liens vers les preuves** : [`20261015T050543Z-trace_vic`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050543Z-trace_vic), [`20261015T050541Z-trace_irq`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050541Z-trace_irq).
 
 ## Timer
 
@@ -159,6 +167,8 @@ Base `0xBF100000` (`TIMER_BASE`) · **DEVICE** · 2026-10-15
   d'environnement lue par `getenv`, donc sans photo. Deux échantillons dans deux invocations séparées : un
   processus ne peut pas garder l'appareil à travers une pause (la deuxième connexion échoue).
 
+**Liens vers les preuves** : [`20261015T050544Z-trace_timer`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050544Z-trace_timer), [`20261016T042218Z-trace_which_timer`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042218Z-trace_which_timer), [`20261016T042306Z-trace_which_timer_b`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042306Z-trace_which_timer_b).
+
 ## NAND
 
 Base `0x81200000` (`H2FMI0_BASE`) · **DEVICE** · 2026-10-15
@@ -180,6 +190,8 @@ Bus 1 (`H2FMI1_BASE = 0x81300000`) pas encore balayé : même approche lecture d
 seule, ni programmation ni effacement ; la même prudence que ce projet applique au NOR
 (`tools/boot.sh` n'appelle jamais `flash_nor()`) s'applique ici aussi, avec une marge plus
 grande, puisque le NAND porte l'image iOS de l'appareil.
+
+**Liens vers les preuves** : [`20261015T171033Z-trace_nand`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171033Z-trace_nand), [`20261015T171514Z-trace_nand_sweep`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171514Z-trace_nand_sweep), [`20261015T171605Z-trace_nand_sweep`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171605Z-trace_nand_sweep).
 
 ## Boutons
 
@@ -203,6 +215,8 @@ base ci-dessus) a été échantillonné, le bruit mesuré mains levées, puis ch
 376 broches lues, zéro bruit sur une fenêtre de 3 secondes mains levées. Un payload long (ce
 balayage prend près de 3 minutes) a tué le point de contrôle USB ensuite ; un reset de port USB
 côté hôte (`dev.reset()`, pas besoin de DFU) l'a réveillé — voir [preuves](08-evidence.md).
+
+**Liens vers les preuves** : [`20261015T164529Z-trace_buttons`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T164529Z-trace_buttons).
 
 ## Accéléromètre
 
@@ -315,6 +329,8 @@ dans le firmware de l'IOP, le NAND comme sous-système dominant en nombre de cha
 une observation de comptage, circonscrite, pas une affirmation que le coprocesseur aurait été
 conçu pour le NAND ni que le Wi-Fi y serait secondaire : aucune preuve dans un sens ou l'autre
 sur l'intention de conception d'origine.
+
+**Liens vers les preuves** : [`20261015T174417Z-trace_wifi_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174417Z-trace_wifi_gpio), [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset), [`20261016T043007Z-trace_write_test`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T043007Z-trace_write_test), [`20261016T042851Z-trace_sdio_init`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042851Z-trace_sdio_init), [`20261016T041608Z-trace_sdio_cmd0`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T041608Z-trace_sdio_cmd0), [`20261015T174844Z-trace_sdio_dump`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174844Z-trace_sdio_dump), [`20261015T175220Z-trace_sdio_dump_b`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T175220Z-trace_sdio_dump_b).
 
 ## Bluetooth
 

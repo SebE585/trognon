@@ -496,7 +496,7 @@ It runs the clock-gate enable and the legacy `plat-s5l8900`-style init sequence 
 `0x80000000` — not the SDHCI-standard offsets above. The raw write-then-readback on the
 base address is a separate build (STAGE 24, `trace_write_test.bin`).
 
-**Links to evidence**: see the
+**Links to evidence**: [`20261015T174417Z-trace_wifi_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174417Z-trace_wifi_gpio), [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset), [`20261016T043007Z-trace_write_test`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T043007Z-trace_write_test), [`20261016T042851Z-trace_sdio_init`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042851Z-trace_sdio_init), [`20261016T041608Z-trace_sdio_cmd0`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T041608Z-trace_sdio_cmd0), [`20261015T174844Z-trace_sdio_dump`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174844Z-trace_sdio_dump), [`20261015T175220Z-trace_sdio_dump_b`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T175220Z-trace_sdio_dump_b); see also the
 [Wi-Fi/IOP architecture report](../research/2026-10-16-wifi-iop-architecture.md) for the full
 chain of evidence and what is confirmed versus still a hypothesis. That report's own firmware
 analysis finds NAND the dominant subsystem by debug-string count in the IOP's firmware image —

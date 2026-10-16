@@ -84,6 +84,8 @@ corpus:
 
 corpus-check:
 	python3 -I tools/test_export_corpus.py
+	python3 -I tools/test_check_device_evidence.py
+	python3 -I tools/check_device_evidence.py
 
 evidence-index:
 	python3 tools/evidence_index.py
