@@ -780,29 +780,70 @@ not yet located or disassembled). Sending only the ping is now known to
 be insufficient on its own. Not attempted this session; a deliberate
 stopping point, not an unfinished attempt.
 
-### The transport, partially traced
+### The transport, traced further: `this+0x20` is found by waiting for a `role="IOP"` service
 
-`sendIOPCommand`'s real send (`this+0x24`'s vtable `+0x84`) is obtained
-by calling a factory method (vtable offset `0x350`) on the
-`IOSlaveProcessor` *provider* object (`this+0x20`), passing the literal
-string `"sdio"` as an argument. Whatever class that factory returns is
-defined entirely inside a **separate, generic kext**,
-`com.apple.driver.IOSlaveProcessor` (`0x80398000`, 0x3000 bytes, SHA-256
-`abff4df9877f8c83a899de4f2308bca80f556478790b982d1823d39fd366a0c9`), not
-inside `AppleIOPSDIO` at all. That kext's own strings name five classes:
-`IOSlaveProcessor`, `IOSlaveEndpoint`, `IOSlaveMemory`,
-`IOSlaveMemoryBuffer`, `IOSlaveCPU`, `IOSlaveFirmware`.
-`IOSlaveEndpoint` is the strongest candidate for the command channel
-(the factory call's purpose and the name both point the same way), but
-the exact vtable slot was not pinned down — a scan for code pointers
-inside this kext's own `__const` found only a short, 6-entry run, too
-short to reach byte offset `0x350` on its own; the rest of
-`IOSlaveProcessor`'s vtable is almost certainly inherited `IOService`
-slots living in the main kernel.
+Re-read the setup code (`fcn.8057c6e0`) instruction by instruction rather
+than summarising from an earlier pass. `this+0x20` is not obtained by a
+simple cast of the immediate provider; `AppleIOPSDIO` actively **waits**
+for it:
 
-`IOSlaveCPU` and `IOSlaveFirmware` are a direct hit on "Open questions"
+1. Reads a property from its own provider (likely `"EmbeddedIOP-role"`,
+   compared against the string `"IOP"` found right next to it in the
+   same code).
+2. Enters a retry loop with a real timeout (`0x3b9aca00` = one second in
+   nanoseconds, used as the polling granularity), logging `"Failed to
+   get IOP after %llu sec."` if it never succeeds — i.e. it is actively
+   *waiting for a matching service to appear* in the registry, not just
+   reading an already-attached object.
+3. Once found, casts the result via a generic kernel helper
+   (`OSMetaClassBase`-style safe cast, `0x801aeec1`) against a metaclass
+   pointer stored in `IOSlaveProcessor.kext`'s own data
+   (`*(0x80399bfc)`) — failing with `"...service is not an instance of
+   IOSlaveProcessor"` if the cast fails. The result becomes `this+0x20`.
+
+**This strongly suggests `this+0x20` ends up being the `AppleARM7M`
+instance itself** (or an interface view of it) — `AppleARM7M` is the
+concrete driver matched against `role = "IOP"` in the device tree (see
+"The missing producer"), and this wait-for-a-role-IOP-service pattern is
+exactly how one driver finds a sibling driver through the IORegistry
+rather than a direct provider/client link.
+
+The subsequent factory call, read precisely rather than assumed: `this+0x20`'s
+vtable slot `0x350` is called with **three real arguments** — the
+`AppleIOPSDIO` instance itself, a small callback/action object built via
+a local helper (`fcn.8057c354`, the same wrapper used elsewhere for
+`handleIOProcCmdResp`), and the literal string `"sdio"`. This rules out
+one specific wrong hypothesis considered and rejected before writing
+anything down: slot `0x350` is *not* the generic, well-known
+`IOService::getDeviceMemoryWithIndex(unsigned int)` (a real kernel
+symbol, confirmed in the kernelcache at a different address entirely) —
+that would take one integer argument, not three, and the call site's own
+arguments don't match. The genuine three-argument shape is consistent
+with a real "open or create a named channel, with a completion callback"
+factory, matching the original reading. Its result becomes `this+0x24`,
+and `vtable+0x84` on *that* object is the real send.
+
+**Where static analysis hit its practical limit**: finding slot `0x350`
+and `0x84`'s own concrete implementations requires correctly reconstructing
+`IOSlaveProcessor`'s (or `AppleARM7M`'s) real C++ vtable layout, which
+these binaries don't carry symbols for and which a blind offset-into-`__const`
+read cannot reliably reconstruct (tried, and the numbers didn't match the
+call site's own argument count — caught before being written down as a
+finding). `IOSlaveProcessor.kext` (`0x80398000`, 0x3000 bytes, SHA-256
+`abff4df9877f8c83a899de4f2308bca80f556478790b982d1823d39fd366a0c9`) names
+five classes (`IOSlaveProcessor`, `IOSlaveEndpoint`, `IOSlaveMemory`,
+`IOSlaveMemoryBuffer`, `IOSlaveCPU`, `IOSlaveFirmware`) but its own code
+is almost entirely generic IOKit boilerplate (metaclass registration, a
+generic allocate-and-`init` factory) with no method bodies distinctive
+enough to assign to a specific named class with confidence. **This is
+exactly the kind of question dynamic inspection answers directly** — reading
+the live object's actual vtable pointer and its slots from a running
+system is far more reliable here than further static guessing, and is
+deferred to the hardware-testing phase.
+
+`IOSlaveCPU` and `IOSlaveFirmware` remain a direct hit on "Open questions"
 #6 (how `IOP_s5l8920x_firmware`'s bytes are loaded, verified, and
-started) — not disassembled, but now a named, concrete target.
+started) — not disassembled, but a named, concrete target.
 
 ## Two different goals, often conflated: commanding it vs. programming it
 

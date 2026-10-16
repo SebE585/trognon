@@ -636,6 +636,56 @@ from the main CPU to inspect this register window directly is now known
 (`0x86300000`, size `0x1000`) — a real, reproducible target for a
 Trognon payload, independent of reconstructing the message transport.
 
+### Host side, traced further: `this+0x20` is found by waiting for a `role="IOP"` service, not a simple cast
+
+Continued static analysis of `vtable+0x84` (the real send, per
+`sendIOPCommand`). Re-read `AppleIOPSDIO`'s channel-setup code
+(`fcn.8057c6e0`) instruction by instruction:
+
+1. Reads a property from its own provider (likely `"EmbeddedIOP-role"`,
+   compared against the string `"IOP"` sitting right next to it).
+2. Enters a retry loop with a real timeout (`0x3b9aca00` = one second in
+   nanoseconds), logging `"Failed to get IOP after %llu sec."` on
+   failure — it actively **waits for a matching service to appear**,
+   not reading an already-attached object.
+3. Casts the result via a generic kernel safe-cast helper against a
+   metaclass pointer stored in `IOSlaveProcessor.kext`'s own data
+   (`*(0x80399bfc)`), failing with `"...service is not an instance of
+   IOSlaveProcessor"` otherwise. The result becomes `this+0x20`.
+
+**This strongly suggests `this+0x20` ends up being the `AppleARM7M`
+instance itself** — `AppleARM7M` is the concrete driver matched against
+`role = "IOP"` in the device tree (see above), and this
+wait-for-a-role-IOP-service pattern is exactly how one driver finds a
+sibling through the IORegistry.
+
+The factory call itself, read precisely: `this+0x20`'s vtable slot
+`0x350` is called with **three real arguments** — the `AppleIOPSDIO`
+instance, a small callback object built via a local helper
+(`fcn.8057c354`, the same wrapper used for `handleIOProcCmdResp`), and
+the literal string `"sdio"`. **A wrong hypothesis was considered and
+correctly rejected before being written down anywhere**: slot `0x350`
+is *not* the generic, well-known `IOService::getDeviceMemoryWithIndex(unsigned int)`
+(a real kernel symbol, confirmed by disassembling it directly in the
+kernelcache at a completely different address) — that takes one integer
+argument, not three, and the call site's own argument count doesn't
+match. The three-argument shape is consistent with a genuine "open or
+create a named channel, with a completion callback" factory, matching
+the original reading. Its result becomes `this+0x24`; `vtable+0x84` on
+*that* object is the real send.
+
+**Practical limit of static analysis reached here**: pinning down slot
+`0x350`/`0x84`'s own concrete code requires correctly reconstructing
+`IOSlaveProcessor`'s (or `AppleARM7M`'s) real C++ vtable layout. A blind
+offset-into-`__const` read was tried and its numbers didn't match this
+call site's own argument count — caught and discarded before being
+reported as a finding, rather than published as one. `IOSlaveProcessor.kext`'s
+own code remains almost entirely generic IOKit boilerplate with no
+method bodies distinctive enough to assign to a specific named class
+with confidence. Reading the live object's actual vtable pointer and
+slots from a running system is the more reliable next step here —
+deferred to hardware testing.
+
 ### Lower-priority lead (2026-10-16): the "iop control" master task's "install" command
 
 The `"iop"` task (`0xafc`, priority 0) is a dispatcher for commands the
