@@ -598,6 +598,23 @@ What this gives and does not give:
   reading that fits all of this is that the SPI clock and data pads are dedicated pins outside the GPIO block, so that no pad configuration is needed for
   them; **this is a hypothesis**, not shown, and a transfer that returns nothing would not distinguish it from a missing pad configuration.
 
+## SPI1 controller self-test, kernel recipe (STAGE 45, device, 2026-10-16)
+
+Bundle `20261016T190939Z-trace_spi1_selftest`, nonce confirmed. No peripheral was powered; the only writes went to the `spi1` register block
+(`0x82100000`), after a guard (gate `0x0A` = `0xF` and the seven idle registers at their STAGE 44 values; it passed), and all were restored.
+The recipe was the kernel's: `CLKDIVIDER` 240, `STATUS` `0x40000f`, `SETUP` `0x4018`, `CONTROL` 0, `SPCNT` 4, register `0x4C` 4, four bytes
+`05 00 00 06` into `TXDATA`, then `SETUP` `0x4018 | 0x180 | 0x200000`.
+
+Observed: `STATUS` read 0 before the start, at 0, 50 us, 1 ms, 5 ms and at the end; no byte in the receive FIFO (`nrx` 0); the transmit counter did not rise
+after the four `TXDATA` writes. `SPCNT` and register `0x4C` held 4, and `SETUP` read `0x4018` afterwards (the start bits did not stay). After the restore
+every register read its initial value. The VIC0 word read 0 before and after; it is not an enable register as assumed, so the concern about the SPI1 interrupt
+was neither confirmed nor excluded by this run.
+
+What it shows: with `CONTROL` at 0, writes to `TXDATA` did not register in the transmit counter and the start produced no observable transfer. What it does
+not show: why. A controller left disabled by `CONTROL` 0 fits (OpeniBoot sets `CONTROL` to 1), but the order of writes, register `0x4C` or a missing `SETUP` bit are not
+excluded. STAGE 46 (OpeniBoot's recipe: `CONTROL` 0 then 1, `PIN` 2, `CONTROL |= 4 | 8`, `SETUP |= 0x200100`, `0x4C` as the transmit count) is built
+(`trace_spi1_selftest2.bin`) but **has not been run**: the phone's battery ran flat and it no longer enumerates.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values

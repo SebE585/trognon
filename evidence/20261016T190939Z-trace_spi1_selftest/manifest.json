@@ -1,0 +1,63 @@
+{
+  "payload": "trace_spi1_selftest.bin",
+  "sha256": "63e28cb3a51ba068bf3158258036e57fee55c8b3b614a31bca09ff2716a5c905",
+  "bytes": 4336,
+  "soc": "s5l8920",
+  "nonce_sent": "C7FB1719",
+  "nonce_read": "C7FB1719",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "spi1-selftest-1"
+  },
+  "variables": {
+    "gate_0a": "0000000F",
+    "guard_ok": "00000001",
+    "i_ctrl": "00000000",
+    "i_setup": "00000008",
+    "i_status": "00000000",
+    "i_pin": "00000003",
+    "i_div": "00000001",
+    "i_cnt": "00000000",
+    "i_idd": "00000000",
+    "i_4c": "00000000",
+    "vic0_before": "00000000",
+    "st_pre": "00000000",
+    "st_0": "00000000",
+    "st_50us": "00000000",
+    "st_1ms": "00000000",
+    "st_5ms": "00000000",
+    "st_end": "00000000",
+    "done_us": "FFFFFFFF",
+    "nrx": "00000000",
+    "rx0": "00000000",
+    "rx1": "00000000",
+    "rx2": "00000000",
+    "rx3": "00000000",
+    "p_status": "00000000",
+    "p_cnt": "00000004",
+    "p_4c": "00000004",
+    "p_setup": "00004018",
+    "r_setup": "00000008",
+    "r_div": "00000001",
+    "r_cnt": "00000000",
+    "r_status": "00000000",
+    "r_4c": "00000000",
+    "vic0_after": "00000000"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "bd1bd5d5cc7862d96b4de40c914565397a20fb06",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T190939Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_spi1_selftest.bin --evidence <repo>/tools/../evidence --vars gate_0a,guard_ok,i_ctrl,i_setup,i_status,i_pin,i_div,i_cnt,i_idd,i_4c,vic0_before,st_pre,st_0,st_50us,st_1ms,st_5ms,st_end,done_us,nrx,rx0,rx1,rx2,rx3,p_status,p_cnt,p_4c,p_setup,r_setup,r_div,r_cnt,r_status,r_4c,vic0_after",
+  "screen_rows": 23
+}
