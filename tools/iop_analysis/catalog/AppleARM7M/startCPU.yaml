@@ -72,8 +72,8 @@ review:
         (AppleARMIODevice, ARM7M-START-002). Role unknown; a power/clock/reset step is only a guess.
       proof_needed: >
         PRIORITY (they precede the first register write, so they gate T1 as a faithful replay):
-        read the two slots in the kernelcache; compare with the clock gate already at 0x0000000F on the device
-        (evidence/20261016T094945Z-trace_iop_clkgate/), which would make a pure clock-enable call redundant here
+        read the two slots in the kernelcache; (the earlier comparison with a clock gate read as 0x0000000F, evidence/20261016T094945Z-trace_iop_clkgate/,
+        is WITHDRAWN: that gate, 0x27, is the NAND controller 1 in the iBSS's numbering, IBSS-CLK-006; the IOP's own clock state is unknown)
     - id: ARM7M-STARTCPU-Q9
       text: >
         Indirect call at 0x807136fe on the object at this+0x68, vtable +0x54, arg 1. No store to this+0x68 was

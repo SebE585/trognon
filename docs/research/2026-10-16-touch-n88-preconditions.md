@@ -181,7 +181,7 @@ two DMA channels, `function-spi_cs0` = GPIO `13.00` (the same pin word as the to
 `function-enable_cs`), and the compatible list `spi,s5l8920x`, `spi,s5l8720x`, `spi,s5l8900x`; the
 last one is the match of `AppleS5L8900XSPIController`, the controller class named in the
 kernelcache. A read-only run read the clock-gate registers (`0xBF100078 + 4 * gate`, the layout
-already used for the IOP gate `0x27`, which read `0x0000000F`):
+already used at STAGE 28 for gate `0x27`, which read `0x0000000F`; see the correction below for what that gate is):
 
 | Gate | Source | Value read |
 |---|---|---|
@@ -577,7 +577,7 @@ What this corrects:
 - The reading of the device tree's numbers as physical register indexes is not supported where it was used elsewhere in this project: STAGE 28
   read gate `0x27` (the device tree's number for the IOP) as `0xF` and concluded the IOP clock was on, and STAGE 23 used the device tree's `0x10` for the
   SDIO block. The physical gate at those indexes may belong to other blocks (OpeniBoot puts a NAND controller at `0x26`, enabled by iBoot).
-  Those conclusions need review before they are relied on; they are listed as open.
+  **Resolved for `0x27`: it is the NAND controller 1** (next section), so the STAGE 28 conclusion "the IOP clock is already on" is withdrawn. STAGE 23's SDIO gate `0x10` is still open.
 
 ## The iBSS pad configuration table (static, 2026-10-16)
 
@@ -630,7 +630,7 @@ What this gives, and what it does not:
   `0x15` to `0x17` (read `0`) and disagree for `0x09` to `0x0D`, `0x19` and `0x27` (read `0xF`): something turned those on afterwards. Which code did is open (`IBSS-CLK-Q2`).
 - Notably, `0x15` to `0x17`, the device tree's SPI gates, are among those the routine turns off, and the iBSS's own SPI gates (`0x09` to `0x0B`) are not in the list it
   leaves on. The numbering correction above stands; this adds a second reason to distrust the device tree's numbers as physical indexes, without proving it.
-- **Who turns on `0x09` to `0x0D`:** the iBSS's SPI initialisation loop (`0x84007d24`) calls a single-gate routine (`0x8400dcd4`, same array) with each of its five SPI table entries' gate field and then registers their interrupts. So the SPI table's gate numbers `0x09` to `0x0D` are indexes of the same physical array, and the iBSS turns them all on (this settles the question `IBSS-TAB-Q1` and explains why `spi1` reads with no gate write). Other callers use constants: `0x08` (ten times), `0x19`, `0x1a`, `0x1b`, `0x21`, `0x22`, `0x25`, `0x26`, `0x2b`, `0x2f`; their blocks are not identified. The device tree's IOP number `0x27` is passed by none of the callers, including the three that take the gate from data (a pad-initialisation loop on gates 1 to 3, the UART routine, a routine passing `0x19`; `IBSS-CLK-005`). STAGE 28 read gate `0x27` as `0xF` although the clock initialisation turns it off, so that gate was turned on by something outside this image, or the STAGE 28 read was not of this gate; this is open and the STAGE 47 survey is what can separate them (`IBSS-CLK-Q2`).
+- **Who turns on `0x09` to `0x0D`:** the iBSS's SPI initialisation loop (`0x84007d24`) calls a single-gate routine (`0x8400dcd4`, same array) with each of its five SPI table entries' gate field and then registers their interrupts. So the SPI table's gate numbers `0x09` to `0x0D` are indexes of the same physical array, and the iBSS turns them all on (this settles the question `IBSS-TAB-Q1` and explains why `spi1` reads with no gate write). Other callers use constants: `0x08` (ten times), `0x19`, `0x1a`, `0x1b`, `0x21`, `0x22`, `0x25`, `0x26`, `0x2b`, `0x2f`; their blocks are not identified. **Update, the same day, resolved: gate `0x27` is the NAND controller 1** (`IBSS-CLK-006`). A reset-pulse routine at `0x8400e034` (bit 31 of the gate word, for gates `0x23`, `0x26`, `0x27`, `0x2e` only) is called by a function that takes a controller index 0 or 1, uses gate `0x26` plus the index, and logs `WMR_CLOCK_RESET_DEVICE called with invalid FMI` otherwise; its sibling at `0x8400fe28` enables the same gate. OpeniBoot names them `H2FMI0_CLOCK_GATE 0x26` and `H2FMI1_CLOCK_GATE 0x27`. So the `0xF` that STAGE 28 read at `0x27` is the NAND controller's clock, left on by the iBSS's NAND driver; it says nothing about the IOP, and the IOP's clock state is unknown. (Earlier text of this paragraph: the device tree's IOP number `0x27` is passed by none of the callers, including the three that take the gate from data (a pad-initialisation loop on gates 1 to 3, the UART routine, a routine passing `0x19`; `IBSS-CLK-005`). STAGE 28 read gate `0x27` as `0xF` although the clock initialisation turns it off, so that gate was turned on by something outside this image, or the STAGE 28 read was not of this gate; this is open and the STAGE 47 survey is what can separate them (`IBSS-CLK-Q2`).
 - A read-only survey of all 52 words (`trace_gate_survey.bin`, STAGE 47) is built and **not run**; its result would confirm or refute the prediction.
 
 ## Candidate write sequence (a proposal, nothing here is authorised or done)

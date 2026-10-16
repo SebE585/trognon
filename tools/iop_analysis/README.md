@@ -755,6 +755,11 @@ under this tethered path, not a configuration artifact. Evidence:
 `evidence/20261016T094340Z-trace_iop_probe_mmu/`,
 `evidence/20261016T094945Z-trace_iop_clkgate/`.
 
+**Correction (2026-10-16, later): the clock-gate reading above is withdrawn.** The decrypted iBSS names physical gates `0x26` and `0x27` as the NAND flash
+controllers 0 and 1 (`WMR_CLOCK_RESET_DEVICE`, `iBSS_n88ap_4.3.5/clock_gate_init_0x8400dd58.yaml`, `IBSS-CLK-006`), as OpeniBoot does. The `0xF` read at `0x27`
+is the NAND controller 1's clock, which the iBSS turns on to load the next stage; it says nothing about the IOP. The device tree's `clock-gates = 0x27` for the `iop` node
+does not tell which physical gate clocks the IOP. The IOP's clock state is unknown, and "clock already enabled" in the paragraph above is not established.
+
 ### Host side, traced further: `this+0x20` is found by waiting for a `role="IOP"` service, not a simple cast
 
 Continued static analysis of `vtable+0x84` (the real send, per
