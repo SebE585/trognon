@@ -16,6 +16,7 @@ deleted — check the date before relying on a specific number or address.
 | 2026-10-15 | [OS port comparison](2026-10-15-os-port-comparison.md) | NuttX vs. our own kernel vs. Linux ARM vs. Zephyr | active |
 | 2026-10-16 | [Wi-Fi/IOP architecture](2026-10-16-wifi-iop-architecture.md) | The second, embedded ARM core and its role in SDIO/Wi-Fi — the longest-running thread, several corrections | active — consolidated in place (the report's own description), supersedes earlier Wi-Fi/IOP notes |
 | 2026-10-16 | [IOP start-up to first sign of life](2026-10-16-iop-boot-to-life.md) | Thread from the driver's `start`/`startCPU` to a hardware ladder, open links with the proof each needs | active — `startCPU` read in full, no observation attributable to the IOP yet |
+| 2026-10-16 | [Bring-up dependency map](2026-10-16-bringup-dependency-map.md) | Touch and GPS as dependency paths over a shared base; what is acquired, what blocks, what would settle it | active — outline, steps to be amended with evidence |
 
 "Status" is a coarse read of whether a report is still the best current word on its topic,
 not a replacement for checking its date: "active" with no further note just means no later

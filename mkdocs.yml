@@ -78,6 +78,7 @@ nav:
       - OS port comparison: research/2026-10-15-os-port-comparison.md
       - Wi-Fi/IOP architecture: research/2026-10-16-wifi-iop-architecture.md
       - IOP start-up to first sign of life: research/2026-10-16-iop-boot-to-life.md
+      - Bring-up dependency map, touch and GPS: research/2026-10-16-bringup-dependency-map.md
   - Reference:
       - SoC memory map (S5L8920): spec/soc-s5l8920.md
   - Notes:
