@@ -25,17 +25,22 @@ review:
 claims:
   - id: IOSLAVE-TABLES-001
     text: >
-      In the second entry of each instance table of this kext, the size passed to the delete call is 8
+      FACTS. In the second entry of each instance table of this kext, the size passed to the delete call is 8
       (table 0x8039a4cc), 0x10 (0x80399c88), 0x38 (0x8039a588), 0x50 (0x80399d48 and 0x8039a110) and 0x68
-      (0x8039a678). These match the instance sizes of the six classes registered by the module init
-      (IOSLAVE-INIT-001): Memory 8, MemoryBuffer 16, Endpoint 56, CPU and Firmware 80, Processor 104.
+      (0x8039a678). The six sizes equal the six instance sizes registered by the module init (IOSLAVE-INIT-001):
+      Memory 8, MemoryBuffer 16, Endpoint 56, CPU and Firmware 80, Processor 104. That is a numeric match,
+      and it leaves the CPU and Firmware tables undistinguished.
     status: device_disassembly_verified
     evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
   - id: IOSLAVE-TABLES-002
     text: >
-      The 0x68-byte table 0x8039a678 is attributed to IOSlaveProcessor by size: three functions that store it and then call a base function (the pattern of destructors, the first of
-      which passes the size 0x68 to a delete call) are at 0x80399728, 0x8039974c and 0x80399764. Its +0x34c entry is the field accessor of IOSLAVE-GETTER-001, so that accessor is a method of
-      IOSlaveProcessor, not of IOSlaveFirmware.
+      CANDIDATE ATTRIBUTION, by size match only. Fact: three functions at 0x80399728, 0x8039974c and 0x80399764
+      store the table 0x8039a678 and then call a base function (the pattern of destructors), and the first
+      passes 0x68 to a delete call. Candidate: 0x68 is the instance size of IOSlaveProcessor and of no other
+      registered class, so the table is probably IOSlaveProcessor's and its +0x34c entry (the field accessor of
+      IOSLAVE-GETTER-001) probably a method of IOSlaveProcessor rather than of IOSlaveFirmware. Not confirmed:
+      no constructor was linked to the metaclass registration explicitly. The two 0x50 tables (CPU and
+      Firmware) cannot be told apart by size; see IOSLAVE-TABLES-Q1.
     status: device_disassembly_verified
     evidence: "docs/research/2026-10-16-iop-boot-to-life.md#who-starts-the-core-and-prepares-the-image"
   - id: IOSLAVE-TABLES-003

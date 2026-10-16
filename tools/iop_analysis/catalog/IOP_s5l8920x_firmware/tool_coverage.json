@@ -6,14 +6,14 @@
   "text_section_base": "0x80480000",
   "auto_recognized_bytes": 4,
   "auto_recognized_functions": 1,
-  "recognized_ranges": [
+  "tool": "radare2",
+  "tool_version": "6.2.4 +0 abi:152 @ darwin-arm_64",
+  "method": "r2 -e asm.bits=16 -qc 'aaa; aflj' IOP_s5l8920x_firmware.kext.bin: one record per function (unmerged, restricted to __text); bytes = union of the records' half-open ranges",
+  "note": "Candidate pool only: r2's automatic detection undercounts these kexts (it missed most hand-found functions in AppleARM7M). Extraction: tools/iop_analysis/extract_kext.py.",
+  "recognized_functions": [
     [
       "0x80480000",
       "0x80480004"
     ]
-  ],
-  "tool": "radare2",
-  "tool_version": "6.2.4 +0 abi:152 @ darwin-arm_64",
-  "method": "r2 -e asm.bits=16 -qc 'aaa; aflj' IOP_s5l8920x_firmware.kext.bin, union of [addr, addr+size) ranges (half-open), restricted to __text",
-  "note": "Candidate pool only: r2's automatic detection undercounts these kexts (it missed most hand-found functions in AppleARM7M). Extraction: tools/iop_analysis/extract_kext.py."
+  ]
 }

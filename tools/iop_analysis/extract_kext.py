@@ -12,6 +12,9 @@ owner's IPSW, never commit them. Run with `python3 -I`.
 Usage:
     python3 -I tools/iop_analysis/extract_kext.py KERNELCACHE.bin BUNDLE_ID OUT.bin
 
+With BUNDLE_ID `--decompress-only`, writes the decompressed Mach-O kernel instead (for symbol
+lookups, e.g. `r2 -qc 'e asm.bits=16; is~withAddress' OUT.bin`).
+
 Example (verified 2026-10-16):
     python3 -I tools/iop_analysis/extract_kext.py /tmp/trognon_dt/kernelcache_decrypted.bin \\
         com.apple.driver.EmbeddedIOP /tmp/trognon_dt/EmbeddedIOP.kext.bin
@@ -32,12 +35,16 @@ def lzss(data, out_size):
             flags = data[i] | 0xFF00
             i += 1
         if flags & 1:
+            if i >= len(data):
+                raise ValueError("lzss: input ends inside a literal")
             c = data[i]
             i += 1
             out.append(c)
             ring[r] = c
             r = (r + 1) & (N - 1)
         else:
+            if i + 1 >= len(data):
+                raise ValueError("lzss: input ends inside a match token")
             a, b = data[i], data[i + 1]
             i += 2
             pos, length = a | ((b & 0xF0) << 4), THRESH + (b & 0x0F)
@@ -46,26 +53,44 @@ def lzss(data, out_size):
                 out.append(c)
                 ring[r] = c
                 r = (r + 1) & (N - 1)
+    if len(out) < out_size:
+        raise ValueError("lzss: produced %d bytes, header announced %d (truncated input?)" % (len(out), out_size))
     return bytes(out[:out_size])
 
 
 def objects(d):
+    """Yield (offset, size, first segment vaddr) of each ARM MH_OBJECT, with every
+    load command and segment checked to lie inside the buffer; a malformed one is skipped."""
     i = 0
     while True:
         i = d.find(b"\xce\xfa\xed\xfe", i)
         if i < 0:
             return
-        _, cpu, _, ftype, ncmds = struct.unpack_from("<5I", d, i)
-        if cpu == 12 and ftype == 1 and ncmds < 20:
-            off, end, vaddr = i + 28, 0, None
-            for _ in range(ncmds):
-                cmd, size = struct.unpack_from("<II", d, off)
-                if cmd == 1:
-                    va, _, fo, fs = struct.unpack_from("<4I", d, off + 24)
-                    vaddr = va if vaddr is None else vaddr
-                    end = max(end, fo + fs)
-                off += size
-            yield i, end, vaddr
+        if i + 28 <= len(d):
+            _, cpu, _, ftype, ncmds, sizeofcmds = struct.unpack_from("<6I", d, i)[0:6]
+            if cpu == 12 and ftype == 1 and 0 < ncmds < 20 and i + 28 + sizeofcmds <= len(d):
+                off, end, vaddr, ok = i + 28, 0, None, True
+                for _ in range(ncmds):
+                    if off + 8 > len(d):
+                        ok = False
+                        break
+                    cmd, size = struct.unpack_from("<II", d, off)
+                    if size < 8 or off + size > i + 28 + sizeofcmds:
+                        ok = False
+                        break
+                    if cmd == 1:
+                        if size < 40:
+                            ok = False
+                            break
+                        va, _, fo, fs = struct.unpack_from("<4I", d, off + 24)
+                        if i + fo + fs > len(d):
+                            ok = False
+                            break
+                        vaddr = va if vaddr is None else vaddr
+                        end = max(end, fo + fs)
+                    off += size
+                if ok and end:
+                    yield i, end, vaddr
         i += 4
 
 
@@ -75,7 +100,13 @@ def main():
     raw = open(sys.argv[1], "rb").read()
     if raw[:8] == b"complzss":
         _, _, usize, csize = struct.unpack_from(">8sIII", raw, 0)
+        if 0x180 + csize > len(raw):
+            sys.exit("complzss header announces %d compressed bytes, file holds %d" % (csize, len(raw) - 0x180))
         raw = lzss(raw[0x180:0x180 + csize], usize)
+    if sys.argv[2] == "--decompress-only":
+        open(sys.argv[3], "wb").write(raw)
+        print("decompressed kernel: %d bytes, sha256 %s" % (len(raw), hashlib.sha256(raw).hexdigest()))
+        return
     want = sys.argv[2].encode()
     hits = [(i, n, va) for i, n, va in objects(raw) if want in raw[i:i + n]]
     if len(hits) != 1:

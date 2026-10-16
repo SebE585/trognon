@@ -5,8 +5,12 @@
   "text_section_bytes": 9728,
   "text_section_base": "0x80767000",
   "auto_recognized_bytes": 3244,
-  "auto_recognized_functions": 30,
-  "recognized_ranges": [
+  "auto_recognized_functions": 32,
+  "tool": "radare2",
+  "tool_version": "6.2.4 +0 abi:152 @ darwin-arm_64",
+  "method": "r2 -e asm.bits=16 -qc 'aaa; aflj' EmbeddedIOP.kext.bin: one record per function (unmerged, restricted to __text); bytes = union of the records' half-open ranges",
+  "note": "Candidate pool only: r2's automatic detection undercounts these kexts (it missed most hand-found functions in AppleARM7M). Extraction: tools/iop_analysis/extract_kext.py.",
+  "recognized_functions": [
     [
       "0x80767000",
       "0x80767018"
@@ -17,6 +21,14 @@
     ],
     [
       "0x80767158",
+      "0x80767190"
+    ],
+    [
+      "0x80767190",
+      "0x807671bc"
+    ],
+    [
+      "0x807671bc",
       "0x807671ec"
     ],
     [
@@ -127,9 +139,5 @@
       "0x807694cc",
       "0x807694da"
     ]
-  ],
-  "tool": "radare2",
-  "tool_version": "6.2.4 +0 abi:152 @ darwin-arm_64",
-  "method": "r2 -e asm.bits=16 -qc 'aaa; aflj' EmbeddedIOP.kext.bin, union of [addr, addr+size) ranges (half-open), restricted to __text",
-  "note": "Candidate pool only: r2's automatic detection undercounts these kexts (it missed most hand-found functions in AppleARM7M). Extraction: tools/iop_analysis/extract_kext.py."
+  ]
 }

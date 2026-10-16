@@ -14,8 +14,9 @@ review:
   resolved:
     - id: IOSLAVE-GETTER-Q1
       by: >
-        attributed to IOSlaveProcessor by the size passed to the delete call in that table's second entry
-        (0x68 = the IOSlaveProcessor instance size, unique among the six classes); see
+        attributed to IOSlaveProcessor as a candidate, by the size passed to the delete call in that table's second entry
+        (0x68 = the IOSlaveProcessor instance size, unique among the six classes); not linked to the
+        metaclass registration explicitly (IOSLAVE-TABLES-002); see
         IOSLAVE-TABLES-001 and -002
   unresolved:
     - id: IOSLAVE-GETTER-Q2

@@ -175,7 +175,10 @@ def validate(binaries):
         text_base = hex_to_int(tool["text_section_base"])
         text_end = text_base + tool["text_section_bytes"]
 
-        recognized_ranges = tool.get("recognized_ranges", [])
+        # `recognized_functions` (one record per tool-detected function, unmerged) is preferred over
+        # `recognized_ranges` (older caches): the function count must come from records, never from
+        # merged byte ranges, or adjacent functions are counted as one.
+        recognized_ranges = tool.get("recognized_functions") or tool.get("recognized_ranges", [])
         for r in recognized_ranges:
             s, e = hex_to_int(r[0]), hex_to_int(r[1])
             if not (s < e):

@@ -49,8 +49,8 @@ Controller node: `/device-tree/arm-io/spi1/multi-touch`, compatible
 `multi-touch,n88`. Decoded properties (project convention for `function-*`
 words: provider phandle, tag, pin word):
 
-- reset: GPIO controller, pin word `0x1401` (14.01)
-- chip-select enable: GPIO controller, pin word `0x1300` (13.00)
+- reset: GPIO controller, pin word `0x1401` (14.01; both components are hexadecimal digits of the word, port 0x14 and pin 0x01)
+- chip-select enable: GPIO controller, pin word `0x1300` (13.00, same notation). The electrical function of these pins (polarity, who drives them) is untested
 - power: `function-power_ldo` through the PMU phandle
 - clock enable: `function-clock_enable` through the PMU phandle, pin 0
 - attention: `interrupts = 0xb4, 0x0`, parent the GPIO node

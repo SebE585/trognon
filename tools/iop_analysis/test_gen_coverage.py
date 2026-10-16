@@ -224,6 +224,33 @@ class TestPublicationGate(CatalogTestCase):
         self.assertIn("further claim(s) exist", out)
 
 
+class TestFunctionRecords(CatalogTestCase):
+    def test_adjacent_functions_counted_separately(self):
+        import json
+        write_tool_coverage(self.binary_dir)
+        path = os.path.join(self.binary_dir, "tool_coverage.json")
+        tool = json.load(open(path))
+        tool.pop("recognized_ranges", None)
+        tool["recognized_functions"] = [["0x1000", "0x1010"], ["0x1010", "0x1020"], ["0x1020", "0x1030"]]
+        tool["auto_recognized_functions"] = 3
+        tool["auto_recognized_bytes"] = 0x30
+        json.dump(tool, open(path, "w"))
+        gc.validate(gc.load_catalog(self.catalog))
+
+    def test_function_count_must_match_records(self):
+        import json
+        write_tool_coverage(self.binary_dir)
+        path = os.path.join(self.binary_dir, "tool_coverage.json")
+        tool = json.load(open(path))
+        tool.pop("recognized_ranges", None)
+        tool["recognized_functions"] = [["0x1000", "0x1010"], ["0x1010", "0x1020"]]
+        tool["auto_recognized_functions"] = 1
+        tool["auto_recognized_bytes"] = 0x20
+        json.dump(tool, open(path, "w"))
+        with self.assertRaises(SystemExit):
+            gc.validate(gc.load_catalog(self.catalog))
+
+
 class TestConstantRanges(CatalogTestCase):
     def test_constants_not_counted_as_code(self):
         write_tool_coverage(self.binary_dir)

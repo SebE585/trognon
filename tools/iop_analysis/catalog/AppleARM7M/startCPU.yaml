@@ -29,11 +29,14 @@ review:
         bodies are not read (see ARM7M-STARTCPU-Q7).
     - id: ARM7M-STARTCPU-Q3
       by: "re-verified by direct disassembly: ARM7M-STARTCPU-002 corrected, not merely confirmed"
-    - id: ARM7M-STARTCPU-Q4
-      by: >
-        for the only concrete IOSlaveFirmware subclass found (IOP_s5l8920x_firmware): its +0x34c entry is a lazy
-        memory-descriptor getter (IOP-GETMD-001). Conditional on the receiver being an instance of that class.
   unresolved:
+    - id: ARM7M-STARTCPU-Q4
+      text: >
+        Indirect call at 0x80713686, firmware-object vtable slot +0x34c (arg: the IOSlaveFirmware). Returns the
+        object used as `md` in the next two calls. Target identified under a condition: if the receiver is an
+        instance of IOP_s5l8920x_firmware, the target is the getter of IOP-GETMD-001 (a memory descriptor
+        over the 110592-byte image). The receiver's class is not established.
+      proof_needed: "the producer of the IOSlaveFirmware object handed to startCPU (EMBIOP-Q1, EMBIOP-Q2)"
     - id: ARM7M-STARTCPU-Q5
       text: >
         Indirect call at 0x80713694, md vtable slot +0x98, args (offset=0, &segLength). Result stored at this+0x88

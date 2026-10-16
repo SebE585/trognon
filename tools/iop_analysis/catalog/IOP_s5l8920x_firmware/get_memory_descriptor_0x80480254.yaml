@@ -14,25 +14,21 @@ review:
   constant_ranges:
     - ["0x8048027c", "0x80480284"]
   resolved:
-    - id: ARM7M-STARTCPU-Q4
-      by: >
-        the +0x34c slot of the instance table installed by the IOP_s5l8920x_firmware constructor
-        (0x80480614) points to this function (IOP-GETMD-001). Caveat: IOP_s5l8920x_firmware is the only
-        concrete subclass of IOSlaveFirmware found by a scan of the kernelcache for its metaclass pointer;
-        that the object handed to startCPU is an instance of it is not shown.
-  unresolved:
     - id: IOP-GETMD-Q1
-      text: >
-        Identity of the external function at 0x801ea699, called with (0x80481000, 0x1b000, 3). Its use as the
-        constructor of a memory descriptor over a virtual range is an inference from the result being stored,
-        then used as an object with a vtable.
-      proof_needed: "disassemble 0x801ea698 in the kernelcache"
+      by: >
+        0x801ea698 carries the kernelcache symbol IOMemoryDescriptor::withAddress(void*, unsigned long,
+        IODirection) (symbol table of the decompressed kernel; reproduce with extract_kext.py --decompress-only, then `r2 -qc 'e asm.bits=16; is~withAddress'`). Its body
+        was not read here; a reviewer reports that it calls withAddressRange.
+  unresolved:
+    - id: IOP-GETMD-Q4
+      text: "Whether this getter is the callee of startCPU's +0x34c call depends on the receiver's class: see ARM7M-STARTCPU-Q4."
+      proof_needed: "see ARM7M-STARTCPU-Q4"
     - id: IOP-GETMD-Q2
       text: "Slot +0xa0 of the returned object, called with (object, 0) right after creation; role unknown (a prepare or wire step is a guess)."
       proof_needed: "read slot +0xa0 of that object's class in the kernelcache"
     - id: IOP-GETMD-Q3
-      text: "Meaning of the third argument, the constant 3 (direction or options)."
-      proof_needed: "same function as IOP-GETMD-Q1"
+      text: "The third parameter of the resolved function is an IODirection; the meaning of the constant 3 was not decoded."
+      proof_needed: "the IODirection constants of the kernel headers or of its use elsewhere in the kernelcache"
 
 claims:
   - id: IOP-GETMD-001

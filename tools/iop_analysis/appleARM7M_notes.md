@@ -254,8 +254,8 @@ Séquence, `r4 = this`, fenêtre 0 = `this+0x58` :
 fonction écrit « les octets bruts / la longueur du firmware » en
 `+0x110/+0x114/+0x118`. Faux : `+0x118` est un littéral, `+0x110` un
 résultat d'appel virtuel, `+0x114` un champ de taille. Aucun octet du
-firmware n'est écrit par cette fonction ; la copie du firmware est faite
-ailleurs (non localisée). La phrase d'origine est gardée ici, pas dans la
+firmware n'est écrit par cette fonction ; la préparation du tampon n'est
+pas localisée. La phrase d'origine est gardée ici, pas dans la
 fiche, selon la règle de ce fichier.
 
 **Ce que la lecture ne dit pas** : qui copie l'image, ce que font les
@@ -276,17 +276,26 @@ r2 -e asm.bits=16 -c 'px 32 @ 0x807137a0' /tmp/trognon_dt/AppleARM7M.kext.bin   
 
 ### Tables de pointeurs de `IOSlaveProcessor.kext` (2026-10-16, partiel)
 
-Recherche de l'appelant de `startCPU` et du producteur du tampon (`Q15`) :
-la seule référence à `0x80713665` est le mot de données `0x807143e8` (donc
-appel virtuel, pas de `bl`). Dans `IOSlaveProcessor.kext`, cinq tables de
-~220 mots (pointeurs noyau ou kext) ressemblent à des vtables. L'une
+Recherche de l'appelant de `startCPU` et du producteur du tampon (`Q15`).
+
+**Faits.** La seule référence à `0x80713665` trouvée est le mot de données
+`0x807143e8` (compatible avec un appel virtuel ; aucun `bl` direct trouvé,
+ce qui ne montre pas que tous les appels y passent). Dans
+`IOSlaveProcessor.kext`, des tables de ~220 mots (pointeurs noyau ou kext)
+ressemblent à des vtables ; la seconde entrée de chacune passe une taille à un
+appel de type `delete` (8, 0x10, 0x38, 0x50, 0x50, 0x68). L'une des tables
 (départ heuristique `0x8039a678`) a en `+0x34c` la fonction `0x8039901d`
-(`ldr r0,[r0,0x58]; bx lr`, un accesseur de champ) ; son `+0x364` appelle
-le `+0x34c` de son propre objet. Cet accesseur est un candidat pour le
-`+0x34c` d'`IOSlaveFirmware` **mais probablement pas** le bon : le champ
-`+0x58` dépasse les 80 octets d'`IOSlaveFirmware` (`IOSLAVE-INIT-001`).
-Voir `IOSLAVE-GETTER-Q1`/`Q2`. Les trois autres tables ont toutes
-`0x801bcd69` (adresse noyau) en `+0x34c`.
+(`ldr r0,[r0,0x58]; bx lr`).
+
+**Attribution candidate.** Les six tailles égalent les six tailles d'instance
+enregistrées par le module init ; `0x68` est unique à `IOSlaveProcessor`, donc
+cette table est probablement la sienne et l'accesseur probablement une de ses
+méthodes. Les deux tables de 0x50 octets (CPU et Firmware) ne se distinguent
+pas par la taille.
+
+**Pas confirmé.** Aucun constructeur n'a été relié explicitement à
+l'enregistrement de métaclasse ; les bornes des tables sont heuristiques.
+Voir `IOSLAVE-TABLES-001` à `003`, `IOSLAVE-GETTER-001`.
 
 ```
 python3 -I tools/iop_analysis/dt_node_reg.py /tmp/trognon_dt/devicetree_decrypted.bin iop
