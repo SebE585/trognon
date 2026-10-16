@@ -97,6 +97,19 @@ Everything here was observed on a real iPhone 3GS (S5L8920, Cortex-A8); each ite
 
 </div>
 
+## Reproduce a run
+
+With the one-time setup of [Boot chain](en/01-boot-chain.md#reproduce) done and the phone in DFU mode:
+
+```sh
+make -C tools/payloads trace.bin        # build the exception-console payload (arm-none-eabi-gcc)
+tools/go.sh tools/payloads/trace.bin    # pwn, send it, read its variables, write an evidence bundle
+```
+
+The screen shows the console above, and `evidence/` gains a dated folder with the payload's hash, the commit and the raw
+output. Payloads that **write** to hardware registers are described, with their guards, on the
+[hardware map](en/03-hardware-map.md); read a payload before you run it.
+
 ## Research in progress
 
 - **Touch controller.** Its reset line and power sequence have been observed on the device; no byte has been exchanged with it yet. The transfer recipe of the SPI controller is being established.

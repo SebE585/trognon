@@ -95,6 +95,19 @@ les [Preuves](08-evidence.md) relient chaque affirmation à une exécution.
 
 </div>
 
+## Reproduire une exécution
+
+Une fois la mise en place unique de la [Chaîne de démarrage](01-boot-chain.md#reproduire) faite et le téléphone en mode DFU :
+
+```sh
+make -C tools/payloads trace.bin        # compile le payload de la console d'exceptions (arm-none-eabi-gcc)
+tools/go.sh tools/payloads/trace.bin    # pwn, envoi, lecture des variables, dossier de preuve
+```
+
+L'écran affiche la console ci-dessus, et `evidence/` gagne un dossier daté avec l'empreinte du payload, le commit et
+la sortie brute. Les payloads qui **écrivent** dans des registres matériels sont décrits, avec leurs gardes, sur la
+[carte matérielle](03-hardware-map.md) ; lisez un payload avant de l'exécuter.
+
 ## Recherche en cours
 
 - **Contrôleur tactile.** Sa ligne de reset et sa séquence d'alimentation ont été observées sur l'appareil ; aucun octet n'a encore été échangé avec lui. La recette de transfert du contrôleur SPI est en cours d'établissement.

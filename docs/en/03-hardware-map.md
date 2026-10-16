@@ -300,7 +300,29 @@ close to 3 minutes) killed the USB control endpoint afterwards; a host-side USB 
 
 `i2c0` address `0x1d` · **DEVICE** · 2026-10-16
 
-*The accelerometer reports motion/orientation over a two-wire I2C bus.*
+It measures the phone's acceleration along three axes, over a two-wire I2C bus; at rest it reads gravity, which gives the orientation.
+
+<div class="grid cards stack" markdown>
+
+- **Observed on the phone** <span class="tag tag-device">DEVICE</span>
+
+    - A full I2C transaction to address `0x1d` was acknowledged; the identifier register read `0x3B`.
+    - The part was powered up with a write that reads back (`CTRL_REG1` `0x47`).
+    - The three axes were read in seven positions: +X toward the right edge, +Y up, +Z out of the screen, about 56 counts per g.
+
+- **Established by analysis** <span class="tag tag-source">SOURCE</span>
+
+    - The device tree names the bus (`i2c0`, a software bit-banged one, SDA `04.01`, SCL `04.00`), the address `0x1d` and two compatible parts (LIS331DL, LIS302DL).
+
+- **Still unknown** <span class="tag tag-hyp">HYPOTHESIS</span>
+
+    - Which of the two compatible chips is on the board (`0x3B` is consistent with both).
+    - Calibrated offsets and any angular accuracy.
+    - The sign of Y beyond the interpretation of one stated position.
+
+</div>
+
+The detail, the registers and the evidence follow.
 
 **Current state**: the identifier was read over a real I2C transaction; the part was powered up
 with a verified write (`CTRL_REG1` read back `0x47`); the three axes were read in seven
@@ -399,8 +421,31 @@ Base `0x80000000` (`SDIO0_BASE`) · mixed **DEVICE** / **HYPOTHESIS** · 2026-10
 
 *Figure 2 — Wi-Fi and the coprocessor. The reset and wake levels were read; the SDIO block does not take writes from the CPU; neither the coprocessor nor the Wi-Fi module has been reached. Dashed lines were not exercised.*
 
-*SDIO is the bus protocol most embedded Wi-Fi chips use; on this SoC it may be mediated by a
-second, embedded processor rather than driven directly.*
+It connects the phone to a Wi-Fi network. SDIO is the bus most embedded Wi-Fi chips use; on this SoC it may be mediated by a
+second, embedded processor rather than driven directly by the CPU.
+
+<div class="grid cards stack" markdown>
+
+- **Observed on the phone** <span class="tag tag-device">DEVICE</span>
+
+    - The Wi-Fi reset line (`16.5`) read `0`, was toggled low for 12 ms and high for 150 ms, and read back `1`; the wake line (`14.4`) read `0`.
+    - Every probed offset of the SDIO block at `0x80000000` reads `0`, and a value written to it is never read back.
+
+- **Established by analysis** <span class="tag tag-source">SOURCE</span>
+
+    - The base address, size, interrupt and compatible string come from this phone's own device tree.
+    - The embedded processor's firmware reaches an SDIO register window with the standard SDHCI layout, offset for offset.
+    - The start-up sequence of that processor was read in the firmware.
+
+- **Still unknown** <span class="tag tag-hyp">HYPOTHESIS</span>
+
+    - Why writes to `0x80000000` do not stick, and whether the processor's window is the same address.
+    - Which physical clock gate belongs to the SDIO block.
+    - Whether the embedded processor can be started, and whether any Wi-Fi module answers.
+
+</div>
+
+The detail, the registers and the evidence follow.
 
 **Status**: mixed DEVICE/HYPOTHESIS. No OpeniBoot source exists for this block on the
 S5L8920 at all (unlike NAND). Everything below the address itself came from this device's
@@ -432,7 +477,7 @@ evidence, just not a CPU-side register read.
 |---|---|---|
 | Base address, size | `0x80000000`, `0x1000` | from this device's own decrypted device tree (owner's IPSW), not a register read |
 | `compatible` | `"sdio,s5l8920x"` | device tree, same caveat |
-| `clock-gates` | `0x10` | device tree value; DEVICE: enabling it alone did not make any register respond |
+| `clock-gates` | `0x10` | device tree value; DEVICE: enabling gate `0x10` of the physical gate array alone did not make any register respond. **Caveat added later**: the device tree's gate numbers are not the physical indexes (they map by no constant offset; gate `0x27`, read as the IOP's, is the NAND controller 1), so that run may not have enabled this block's clock; the physical gate of the SDIO block is not identified |
 | `interrupts` | `0x22` | device tree, same caveat |
 | Reset GPIO (`gpio_baseband_wlan_reset`) | `16.5` | device tree gives the name/pin; DEVICE: read at `0`, then toggled low 12 ms / high 150 ms, read back `1` — confirmed write |
 | Wake GPIO (`gpio_sdio_device_wake`) | `14.4` | device tree gives the name/pin; DEVICE: read at `0` |
