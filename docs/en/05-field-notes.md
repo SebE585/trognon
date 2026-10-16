@@ -34,6 +34,23 @@ binary, the payload republishes it, and a stale marker cannot match it (see
 `ipwndfu -p` sometimes reports `Exploit failed`. Re-running it, sometimes after
 reinstating DFU, works. It has not damaged the device.
 
+## Battery false-dead loop (DEVICE)
+
+A forced restart (Home+Sleep) on a worn battery can make the battery icon disappear, then
+reappear red, after an hour or more of charging — on both a 3GS and an iPhone 4 unit seen
+so far. The icon cycle looks like "it's charging, just wait", but it is the worn-battery
+symptom, not a charging-time problem. Treat a battery replacement as a routine step on a
+secondhand unit, not a troubleshooting last resort.
+
+## CPID, not the label, identifies the chip (DEVICE)
+
+A secondhand unit's model number or seller listing is not reliable for telling chip
+generations apart (an A4 "iPhone 4" and an A5 "iPhone 4S" look alike at a glance, and
+model numbers get mixed up in listings). The CPID read over USB in DFU mode (`0x8920` for
+this 3GS, `0x8930` for the A4, `0x8940` for the A5) is the one source of truth this project
+relies on — see the intake checklist, and `ipwndfu -p`'s own CPID-to-exploit dispatch table
+(limera1n vs SHAtter vs checkm8, [research note](../research/2026-10-14-pre-a5-limera1n.md)).
+
 ## "Apple logo" means start over
 
 The device left Recovery. The RAM payload and the pwned state are gone: DFU again.

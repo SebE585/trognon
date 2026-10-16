@@ -34,6 +34,25 @@ binaire, le payload le republie, et un marqueur périmé ne peut pas lui corresp
 `ipwndfu -p` annonce parfois `Exploit failed`. Le relancer, parfois après avoir remis en DFU,
 fonctionne. Cela n'a pas abîmé l'appareil.
 
+## Boucle batterie faussement morte (DEVICE)
+
+Un réamorçage forcé (Accueil+Veille) sur une batterie usée peut faire disparaître l'icône
+de batterie, puis la faire réapparaître en rouge, après une heure ou plus de charge — vu
+sur un 3GS et un iPhone 4 jusqu'ici. Le cycle de l'icône donne l'impression que « ça charge,
+il suffit d'attendre », mais c'est le symptôme d'une batterie usée, pas un problème de
+durée de charge. Traiter le remplacement de batterie comme une étape de routine sur un
+appareil d'occasion, pas comme un dernier recours de dépannage.
+
+## Le CPID, pas l'étiquette, identifie la puce (DEVICE)
+
+Le numéro de modèle ou l'annonce du vendeur d'un appareil d'occasion n'est pas fiable pour
+distinguer les générations de puce (un « iPhone 4 » A4 et un « iPhone 4S » A5 se
+ressemblent au premier coup d'œil, et les numéros de modèle se mélangent dans les
+annonces). Le CPID lu par USB en mode DFU (`0x8920` pour ce 3GS, `0x8930` pour l'A4,
+`0x8940` pour l'A5) est la seule source de vérité que ce projet utilise — voir la check-list
+de réception, et la propre table d'aiguillage CPID → exploit d'`ipwndfu -p` (limera1n contre
+SHAtter contre checkm8, [note de recherche](../research/2026-10-14-pre-a5-limera1n.md)).
+
 ## « Logo Apple » veut dire : recommencer
 
 L'appareil a quitté la Recovery. Le payload RAM et l'état pwned ont disparu : DFU de nouveau.
