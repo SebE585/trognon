@@ -20,8 +20,8 @@ CPU leaves a truthful screen. **Never read the framebuffer** (no scrolling).
 
 Each vector is `ldr pc,[pc,#0x18]` through a pointer word: undef `0x24`,
 SWI `0x28`, prefetch abort `0x2c`, data abort `0x30`, IRQ `0x38`, FIQ `0x3c`.
-We overwrite the words in RAM and restore them at the end. Undef, prefetch and data
-are proven on the device; the SWI, IRQ and FIQ offsets follow the same layout (**SOURCE**).
+We overwrite the words in RAM and restore them at the end. Undef, prefetch, data and IRQ
+are proven on the device; the SWI and FIQ offsets follow the same layout (**SOURCE**).
 
 ![How an exception becomes a readable screen](../img/exception-flow.svg)
 

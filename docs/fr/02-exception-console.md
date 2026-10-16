@@ -20,7 +20,7 @@ laisse un écran fidèle. **Ne jamais lire le framebuffer** (donc pas de défile
 
 Chaque vecteur est `ldr pc,[pc,#0x18]` via un mot pointeur : undef `0x24`, SWI `0x28`, prefetch
 abort `0x2c`, data abort `0x30`, IRQ `0x38`, FIQ `0x3c`. On écrase les mots en RAM et on les
-restaure à la fin. Undef, prefetch et data sont prouvés sur l'appareil ; les décalages SWI, IRQ
+restaure à la fin. Undef, prefetch, data et IRQ sont prouvés sur l'appareil ; les décalages SWI
 et FIQ suivent la même disposition (**SOURCE**).
 
 ![Comment une exception devient un écran lisible](../img/exception-flow.svg)
