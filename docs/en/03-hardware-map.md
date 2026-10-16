@@ -56,6 +56,8 @@ same claim as "no write at all".
 | `DACR` | `0x00000003` | domain 0 manager, other domains no access |
 | Page table | 1 MiB sections, all in domain 0 | nothing unmapped in indexes 1..0xfff |
 
+**Links to evidence**: none dedicated. `MIDR`, `SCTLR`, `DACR` and the page-table walk come from earlier runs that are **not bundled** (see the claims table in [Evidence](08-evidence.md)); the bundle [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace) shows exception handling on this CPU, which is a different claim.
+
 ## Display controller, `CLCD_BASE = 0x85400000` (DEVICE)
 
 *The CLCD block drives the physical screen from the framebuffer in RAM.*
@@ -74,6 +76,8 @@ The panel itself is driven over MIPI DSI (reset line probably GPIO `0x500`): the
 controller is already initialised by the iBSS, which is why we can just draw.
 Writing our own panel init is a much larger job (**HYPOTHESIS**, see OpenIBoot `pinot_init`).
 
+**Links to evidence**: [`20261015T050542Z-trace_regs`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050542Z-trace_regs).
+
 ## GPIO and clock gates (DEVICE, partial)
 
 *GPIO reads or drives individual pins; a clock gate turns a peripheral's clock on or off.*
@@ -86,6 +90,8 @@ Writing our own panel init is a much larger job (**HYPOTHESIS**, see OpenIBoot `
 | Clock gate `0xBF100128` | `0x0000000F` | read only |
 
 Values read by eye from the screen; field widths were assumed to be 8 hex digits.
+
+**Links to evidence**: [`20261015T050542Z-trace_regs`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050542Z-trace_regs), [`20261015T164529Z-trace_buttons`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T164529Z-trace_buttons), [`20261016T042928Z-trace_gate_write`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042928Z-trace_gate_write), [`20261016T164825Z-trace_spi1_pre`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T164825Z-trace_spi1_pre), [`20261016T174843Z-trace_spi1_nogate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T174843Z-trace_spi1_nogate).
 
 ## Full GPIO register survey (DEVICE, 2026-10-16, bundle `20261016T174429Z-trace_gpio_survey`)
 
@@ -194,6 +200,8 @@ Read-only survey. All registers answered, no abort.
 
 Timer registers are the least understood part of OpenIBoot (its own comment says they are copied from an older SoC).
 
+**Links to evidence**: [`20261015T050543Z-trace_vic`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050543Z-trace_vic), [`20261015T050541Z-trace_irq`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050541Z-trace_irq).
+
 ## Timer block, `TIMER_BASE = 0xBF100000` (DEVICE, 2026-10-15)
 
 *Free-running counters and per-timer state, used for timing and, potentially, periodic
@@ -226,6 +234,8 @@ interrupts.*
   environment variable read with `getenv`, so no photo is needed. Two samples taken in two separate
   invocations: one process cannot hold the device across a pause (the second acquire fails).
 
+**Links to evidence**: [`20261015T050544Z-trace_timer`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050544Z-trace_timer), [`20261016T042218Z-trace_which_timer`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042218Z-trace_which_timer), [`20261016T042306Z-trace_which_timer_b`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042306Z-trace_which_timer_b).
+
 ## NAND, `H2FMI0_BASE = 0x81200000` (DEVICE, 2026-10-15)
 
 *The NAND controller talks to the flash chips that hold the device's own iOS image.*
@@ -244,6 +254,8 @@ table.
 Bus 1 (`H2FMI1_BASE = 0x81300000`) not swept yet: same ID-read-only approach, no program and
 no erase, this project's NOR-equivalent caution (`tools/boot.sh` never calls `flash_nor()`)
 applies here too, with a larger margin, since NAND holds the device's own iOS image.
+
+**Links to evidence**: [`20261015T171033Z-trace_nand`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171033Z-trace_nand), [`20261015T171514Z-trace_nand_sweep`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171514Z-trace_nand_sweep), [`20261015T171605Z-trace_nand_sweep`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171605Z-trace_nand_sweep).
 
 ## Buttons, same GPIO base as above (DEVICE, 2026-10-15)
 
@@ -264,6 +276,8 @@ noise measured with hands off, then each button asked for in turn.
 376 pins read, zero noise over a 3-second hands-off window. A long payload (this sweep takes
 close to 3 minutes) killed the USB control endpoint afterwards; a host-side USB port reset
 (`dev.reset()`, no DFU needed) revived it — see [evidence](08-evidence.md).
+
+**Links to evidence**: [`20261015T164529Z-trace_buttons`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T164529Z-trace_buttons).
 
 ## Accelerometer, i2c0 address `0x1d` (DEVICE, 2026-10-16)
 
@@ -579,7 +593,7 @@ the PMU access and the SPI controller, before any transaction.
 33), run it on a device in DFU with `tools/go.sh tools/payloads/trace_touch_gpio.bin`. Plain
 reads, nothing written, no SPI traffic.
 
-**Links to evidence**: [evidence bundle `20261016T150631Z-trace_touch_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150631Z-trace_touch_gpio) and the later `trace_pmu_read`, `trace_spi1_pre` and `trace_spi1_gate` bundles under `evidence/`, indexed on the [evidence page](08-evidence.md).
+**Links to evidence**: [`20261016T150631Z-trace_touch_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150631Z-trace_touch_gpio), [`20261016T164348Z-trace_pmu_read`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T164348Z-trace_pmu_read), [`20261016T164825Z-trace_spi1_pre`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T164825Z-trace_spi1_pre), [`20261016T165854Z-trace_spi1_gate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T165854Z-trace_spi1_gate), [`20261016T173129Z-trace_pmu_w34`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173129Z-trace_pmu_w34), [`20261016T173428Z-trace_touch_power`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173428Z-trace_touch_power), [`20261016T173630Z-trace_touch_rst_ctl`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173630Z-trace_touch_rst_ctl), [`20261016T173946Z-trace_touch_ldo`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173946Z-trace_touch_ldo), [`20261016T174843Z-trace_spi1_nogate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T174843Z-trace_spi1_nogate), [`20261016T190939Z-trace_spi1_selftest`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T190939Z-trace_spi1_selftest). The `trace_spi1_gate` conclusion about gate `0x16` is corrected by `trace_spi1_nogate` (see the [touch preconditions](../research/2026-10-16-touch-n88-preconditions.md)).
 
 ## Driver catalog
 

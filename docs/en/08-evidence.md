@@ -54,7 +54,7 @@ To check a bundle: check out its commit, `make -C tools/payloads <payload>`, com
 | Control: touch reset released with no supply reads `0x210` (low), at once and 15 ms later; restored | `trace_touch_rst_ctl` | bundled |
 | Dry run of the touch power-up (gate, PMU `0x11` and `0x50`, reset released), no SPI byte: reset register reads `0x211` with the supplies on, everything restored | `trace_touch_power` | bundled |
 | PMU register `0x11` written `0xBE` to `0xFE` and register `0x50` `0x11` to `0x13`, both read back, held 20 ms, restored | `trace_pmu_w34` | bundled |
-| `spi1` clock gate `0x16` written `0` to `0xF` and back (takes); idle registers of `spi1` read: SETUP `0x8`, PIN `0x3`, CLKDIV `1`, CONTROL/STATUS/SPCNT/SPIDD `0` | `trace_spi1_gate` | bundled |
+| `spi1` clock gate `0x16` written `0` to `0xF` and back (takes); idle registers of `spi1` read: SETUP `0x8`, PIN `0x3`, CLKDIV `1`, CONTROL/STATUS/SPCNT/SPIDD `0` (the write took; that it made `spi1` readable is **withdrawn**, see `trace_spi1_nogate` below) | `trace_spi1_gate` | bundled |
 | Clock gates `0x09`..`0x0D` read `0xF`; `0x15`, `0x16`, `0x17` (device tree SPI gates) read `0`; `spi1` registers deliberately not read | `trace_spi1_pre` | bundled |
 | PMU registers `0x10`, `0x11`, `0x17`..`0x22`, `0x50`..`0x57` read over I2C (22 acknowledged reads); bit `0x40` of `0x11` is `0` | `trace_pmu_read` | bundled |
 | Bus scan of `i2c0`: `0x1d`, `0x1e`, `0x39`, `0x74` acknowledge, no additional responder detected; AK8973 registers `0xC0`..`0xC4`, `0xE0`..`0xE6` read as the datasheet's reset state | `trace_i2c_scan` | bundled |
