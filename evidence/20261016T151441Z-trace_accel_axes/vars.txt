@@ -1,0 +1,15 @@
+scl_idle=00000001
+sda_idle=00000001
+who_am_i=0000003B
+ack_who=00000001
+ack_ctrl_w=00000001
+ack_ctrl_v=00000001
+ctrl1_rb=00000047
+ack_status=00000001
+status=000000FF
+ack_x=00000001
+out_x=000000CA
+ack_y=00000001
+out_y=000000F9
+ack_z=00000001
+out_z=000000FC
