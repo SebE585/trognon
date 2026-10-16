@@ -72,5 +72,15 @@ class StatsTests(unittest.TestCase):
         self.assertLess(text.index("alice"), text.index("The maintainer's own runs"))
 
 
+class ShallowTests(unittest.TestCase):
+    def test_is_shallow_answers_with_a_boolean(self):
+        self.assertIn(vb.is_shallow(), (True, False))
+
+    def test_a_row_is_not_rejected_for_a_missing_commit_when_the_check_is_told_history_is_absent(self):
+        rows = [row(commit="deadbeef")]
+        self.assertTrue(any("not in the repository history" in e for e in errs(rows)))
+        self.assertEqual(vb.check(rows, exists=lambda b: True, commit_ok=lambda c: True), [])
+
+
 if __name__ == "__main__":
     unittest.main()

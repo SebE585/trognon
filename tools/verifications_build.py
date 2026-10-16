@@ -32,6 +32,11 @@ def commit_exists(c):
     return subprocess.run(["git", "cat-file", "-e", str(c) + "^{commit}"], capture_output=True, cwd=ROOT).returncode == 0
 
 
+def is_shallow():
+    """A shallow clone has no history to look commits up in; CI checks out the full history so the check stays strict there."""
+    return subprocess.run(["git", "rev-parse", "--is-shallow-repository"], capture_output=True, text=True, cwd=ROOT).stdout.strip() == "true"
+
+
 def bundles():
     return sorted(p.name for p in EVIDENCE.iterdir() if (p / "manifest.json").is_file())
 
@@ -130,7 +135,10 @@ def main(argv=None):
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args(argv)
     rows = (yaml.safe_load(SRC.read_text()) or {}).get("verifications") or []
-    errors = check(rows)
+    shallow = is_shallow()
+    if shallow:
+        print("note: shallow clone, so the existence of the commits cited in the rows is not checked (CI checks it on the full history)")
+    errors = check(rows, commit_ok=(lambda c: True) if shallow else commit_exists)
     if errors:
         for e in errors:
             print(e)
