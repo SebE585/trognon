@@ -1,5 +1,6 @@
 ---
 title: Verifications
+source: tools/verifications.yaml
 hide:
   - toc
 ---

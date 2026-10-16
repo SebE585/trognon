@@ -1,0 +1,41 @@
+name: Suggest a correction
+description: Something on a page is wrong, misleading, unclear or missing. Quote it, say why, and say what it should be.
+title: "Correction: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. A correction is as welcome as a discovery. If you can fix it yourself, the *Edit this page* link at the bottom of every page opens a pull request.
+        Quote the text exactly, so the review can find it, and separate what you **observed** from what you **conclude**.
+  - type: input
+    id: page
+    attributes:
+      label: Page address
+      description: Filled in for you when you come from the site.
+      placeholder: https://sebe585.github.io/trognon/en/03-hardware-map/
+    validations:
+      required: true
+  - type: textarea
+    id: quote
+    attributes:
+      label: The exact text concerned
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong, misleading, unclear or missing?
+    validations:
+      required: true
+  - type: textarea
+    id: better
+    attributes:
+      label: What should it say, and on what evidence?
+      description: A source, a bundle under evidence/, a reproduction. If you are not sure, say so.
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Ground rules
+      options:
+        - label: This report contains no Apple firmware, keys or extracted binaries.
+          required: true

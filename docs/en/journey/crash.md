@@ -1,5 +1,6 @@
 ---
 title: "A crash you can read"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

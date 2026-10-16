@@ -1,5 +1,6 @@
 ---
 title: "Wi-Fi: the coprocessor is not running"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

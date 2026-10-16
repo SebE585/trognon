@@ -1,5 +1,6 @@
 ---
 title: "Proof that it ran"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

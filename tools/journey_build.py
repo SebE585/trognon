@@ -542,7 +542,7 @@ def tag_html(tag):
 
 
 def front_matter(title, src):
-    return ["---", "title: %s" % json.dumps(title), "hide:", "  - navigation", "  - toc", "  - footer", "---", "", GENERATED.format(src=src)]
+    return ["---", "title: %s" % json.dumps(title), "source: docs/journey-src/%s" % src, "hide:", "  - navigation", "  - toc", "  - footer", "---", "", GENERATED.format(src=src)]
 
 
 def page_for(g, n, route, nodes):

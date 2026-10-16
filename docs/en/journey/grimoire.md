@@ -1,5 +1,6 @@
 ---
 title: "The Grimoire"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

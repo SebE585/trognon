@@ -1,5 +1,6 @@
 ---
 title: "Nothing is kept"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

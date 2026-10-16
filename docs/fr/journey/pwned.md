@@ -1,5 +1,6 @@
 ---
 title: "Les contr\u00f4les de signature sont coup\u00e9s"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

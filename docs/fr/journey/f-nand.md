@@ -1,5 +1,6 @@
 ---
 title: "Stockage : seulement le nom de la puce"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

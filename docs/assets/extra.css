@@ -142,7 +142,7 @@
 .md-typeset h2 { margin-top: 1.8em; }
 
 /* A card set that should stack in a narrow column (component sheets). */
-.md-typeset .grid.cards.stack > ul { grid-template-columns: 1fr; }
+.md-typeset .grid.cards.stack { grid-template-columns: 1fr; }
 
 /* Guided journey */
 .journey-trail { font-size: .72rem; color: var(--md-default-fg-color--light); border-bottom: 1px solid var(--md-default-fg-color--lightest); padding-bottom: .5rem; margin-bottom: 1rem; }
@@ -206,3 +206,12 @@
 
 /* Map tiles: the state is also a symbol, never colour alone */
 .md-typeset .kmap-none { opacity: .85; }
+
+/* Participation strip at the bottom of every page */
+.page-actions { margin: 2.5rem 0 0; padding: 1rem 1.2rem; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; background: var(--tr-surface); }
+.md-typeset .page-actions .page-actions__title { margin: 0 0 .6rem; font-weight: 650; max-width: none; }
+.md-typeset .page-actions ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem 1.6rem; }
+.md-typeset aside.page-actions ul li { margin: 0; padding: 0; max-width: none; }
+.md-typeset .page-actions a { font-weight: 600; }
+/* A card set of four fits on one row on a wide page. */
+.md-typeset .grid.cards.four { grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr)); }

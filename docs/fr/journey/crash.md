@@ -1,5 +1,6 @@
 ---
 title: "Un plantage qu'on peut lire"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

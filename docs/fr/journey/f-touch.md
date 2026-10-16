@@ -1,5 +1,6 @@
 ---
 title: "Tactile : le contr\u00f4leur n'a pas r\u00e9pondu"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

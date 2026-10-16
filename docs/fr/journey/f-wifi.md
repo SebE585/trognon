@@ -1,5 +1,6 @@
 ---
 title: "Wi-Fi : le coprocesseur ne tourne pas"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

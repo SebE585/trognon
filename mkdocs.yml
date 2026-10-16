@@ -3,6 +3,7 @@ site_description: Open reverse engineering of the iPhone 3GS (S5L8920). Bilingua
 site_url: https://sebe585.github.io/trognon/
 repo_url: https://github.com/SebE585/trognon
 repo_name: SebE585/trognon
+edit_uri: edit/main/docs/
 docs_dir: docs
 site_dir: site
 exclude_docs: |
@@ -13,6 +14,7 @@ exclude_docs: |
 copyright: Documentation CC-BY-SA-4.0 · code GPL-2.0-only / MIT
 theme:
   name: material
+  custom_dir: overrides
   font: false
   logo: assets/logo.svg
   favicon: assets/logo.svg
@@ -33,6 +35,7 @@ theme:
     - search.suggest
     - search.highlight
     - content.code.copy
+    - content.action.edit
 extra_css: [assets/extra.css]
 extra_javascript: [javascripts/mermaid-palette.js, javascripts/journey.js]
 markdown_extensions:

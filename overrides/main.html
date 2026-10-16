@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{#- The participation strip: every page offers an issue (a correction, an observation) and a pull request (the edit button), so that
+    a reader who finds an error or has something to add is never at a dead end. -#}
+{% block content %}
+  {{ super() }}
+  {% if page and page.url is defined and page.file and page.file.src_uri != "404.md" %}
+    {% set fr = page.url.startswith("fr/") %}
+    {% set page_url = config.site_url ~ page.url %}
+    {% set repo = config.repo_url %}
+    {% set src = page.meta.source if page.meta else none %}
+    <aside class="page-actions" aria-label="{{ 'Participer' if fr else 'Take part' }}">
+      <p class="page-actions__title">{{ 'Quelque chose de flou, de faux ou de manquant sur cette page ?' if fr else 'Something unclear, wrong or missing on this page?' }}</p>
+      <ul>
+        <li><a href="{{ repo }}/issues/new?template=correction.yml&amp;title={{ ('Correction: ' ~ page.title) | urlencode }}&amp;page={{ page_url | urlencode }}">{{ 'Proposer une correction' if fr else 'Suggest a correction' }}</a></li>
+        <li><a href="{{ repo }}/issues/new?template=observation.yml&amp;title={{ ('Observation: ' ~ page.title) | urlencode }}">{{ 'Signaler une observation' if fr else 'Report an observation' }}</a></li>
+        {% if src %}
+          <li><a href="{{ repo }}/edit/main/{{ src }}">{{ 'Modifier la source (page générée)' if fr else 'Edit the source (generated page)' }}</a></li>
+        {% elif page.edit_url %}
+          <li><a href="{{ page.edit_url }}">{{ 'Modifier cette page (ouvre une pull request)' if fr else 'Edit this page (opens a pull request)' }}</a></li>
+        {% endif %}
+        <li><a href="{{ config.site_url }}en/missions/">{{ 'Prendre une mission (en anglais)' if fr else 'Take a mission' }}</a></li>
+      </ul>
+    </aside>
+  {% endif %}
+{% endblock %}

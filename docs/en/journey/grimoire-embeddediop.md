@@ -1,5 +1,6 @@
 ---
 title: "EmbeddedIOP"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

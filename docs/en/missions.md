@@ -1,5 +1,6 @@
 ---
 title: Missions
+source: tools/iop_analysis/missions.yaml
 hide:
   - toc
 ---
@@ -17,7 +18,7 @@ A mission is an open question of the [decompilation catalog](journey/grimoire.md
 3. Send what you found as a pull request, with the template's checklist: what you looked for, with which sources and versions, what you observed, what you conclude and what stays uncertain. No Apple firmware, keys or extracted binaries in a contribution.
 4. A review decides what the catalog says. A result is recorded with its method and limits, whichever way it points.
 
-See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTING.md).
+See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTING.md). Know a question that should be a mission? [Propose it](https://github.com/SebE585/trognon/issues/new?template=observation.yml&title=Mission+proposal%3A+).
 
 ## What the states mean
 
@@ -29,7 +30,7 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
 ## Open missions
 
-<div class="grid cards stack" markdown>
+<div class="grid cards" markdown>
 
 - **Where does the touch controller's firmware come from?**
 
@@ -178,7 +179,7 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
 ## In progress
 
-<div class="grid cards stack" markdown>
+<div class="grid cards" markdown>
 
 - **Which object implements the clock-gate call?**
 
@@ -205,7 +206,7 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
 ## Blocked
 
-<div class="grid cards stack" markdown>
+<div class="grid cards" markdown>
 
 - **Do the clock mask registers mirror the gate words?**
 

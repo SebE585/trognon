@@ -1,5 +1,6 @@
 ---
 title: "Our code arrives"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

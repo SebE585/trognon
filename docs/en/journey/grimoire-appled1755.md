@@ -1,5 +1,6 @@
 ---
 title: "AppleD1755"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

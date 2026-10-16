@@ -1,5 +1,6 @@
 ---
 title: "Rien n'est conserv\u00e9"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

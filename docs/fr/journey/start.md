@@ -1,5 +1,6 @@
 ---
 title: "Un 3GS dans un tiroir"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

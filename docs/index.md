@@ -111,6 +111,38 @@ The screen shows the console above, and `evidence/` gains a dated folder with th
 output. Payloads that **write** to hardware registers are described, with their guards, on the
 [hardware map](en/03-hardware-map.md); read a payload before you run it.
 
+## Take part
+
+You do not need a phone to help. Pick the way in that suits you.
+
+<div class="grid cards four" markdown>
+
+- **Take a mission**
+
+    An open question of the analysis, with what you need and what a good answer looks like.
+
+    [Missions](en/missions.md){ .card-link }
+
+- **Check a published run**
+
+    Rebuild a payload and compare its hash with the bundle's manifest. No phone.
+
+    [Verifications](en/verifications.md){ .card-link }
+
+- **Report an observation**
+
+    Something you saw or concluded, with the method and its limits. Negative results are welcome.
+
+    [Open the form](https://github.com/SebE585/trognon/issues/new?template=observation.yml){ .card-link }
+
+- **Suggest a correction**
+
+    A page is wrong, misleading or unclear. Quote it and say what it should say.
+
+    [Open the form](https://github.com/SebE585/trognon/issues/new?template=correction.yml){ .card-link }
+
+</div>
+
 ## Research in progress
 
 - **Touch controller.** Its reset line and power sequence have been observed on the device; no byte has been exchanged with it yet. The transfer recipe of the SPI controller is being established.

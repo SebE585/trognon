@@ -1,5 +1,6 @@
 ---
 title: "A 3GS in a drawer"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

@@ -1,5 +1,6 @@
 ---
 title: "Ici, notre connaissance s'arr\u00eate"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

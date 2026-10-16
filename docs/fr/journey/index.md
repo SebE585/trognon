@@ -1,5 +1,6 @@
 ---
 title: "Du t\u00e9l\u00e9phone \u00e9teint au premier pixel"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

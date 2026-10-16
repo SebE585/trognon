@@ -1,0 +1,11 @@
+{#- Page actions. A generated page points to its SOURCE (front matter `source:`), because an edit to the generated file would be overwritten. -#}
+{% set src = page.meta.source if page.meta else none %}
+{% if src %}
+  <a href="{{ config.repo_url }}/edit/main/{{ src }}" title="{{ 'Modifier la source (cette page est générée)' if page.url.startswith('fr/') else 'Edit the source (this page is generated)' }}" class="md-content__button md-icon" rel="edit">
+    {% include ".icons/material/file-edit-outline.svg" %}
+  </a>
+{% elif page.edit_url and "content.action.edit" in features %}
+  <a href="{{ page.edit_url }}" title="{{ lang.t('action.edit') }}" class="md-content__button md-icon" rel="edit">
+    {% include ".icons/material/file-edit-outline.svg" %}
+  </a>
+{% endif %}

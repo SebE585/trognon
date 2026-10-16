@@ -1,5 +1,6 @@
 ---
 title: "IOP_s5l8920x_firmware"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

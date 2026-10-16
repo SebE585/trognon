@@ -1,5 +1,6 @@
 ---
 title: "AppleS5L8900X"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

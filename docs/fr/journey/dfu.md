@@ -1,5 +1,6 @@
 ---
 title: "Le t\u00e9l\u00e9phone \u00e9coute : le mode DFU"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

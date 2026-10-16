@@ -101,7 +101,7 @@ def render(rows, all_bundles, recorded_commit):
     head = "| Bundle | Check | Result | Commit | Where | By | Notes |\n|---|---|---|---|---|---|---|"
     ind = [r for r in rows if independent(r)]
     own = [r for r in rows if not independent(r)]
-    lines = ["---", "title: Verifications", "hide:", "  - toc", "---", "", GENERATED, "# Verifications", "",
+    lines = ["---", "title: Verifications", "source: tools/verifications.yaml", "hide:", "  - toc", "---", "", GENERATED, "# Verifications", "",
              "A published run is only as good as someone else's ability to check it. This page records **independent checks of the evidence bundles**: "
              "someone rebuilds a payload and compares its hash with the bundle's manifest, or audits a claim against its bundle. "
              "A mismatch, or a bundle that cannot be reproduced, is a result and is recorded as such.", "",

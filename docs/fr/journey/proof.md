@@ -1,5 +1,6 @@
 ---
 title: "La preuve qu'il a tourn\u00e9"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

@@ -140,7 +140,7 @@ def render(missions, open_q):
     counts = {s: sum(1 for m in missions if m["state"] == s) for s in STATES}
     taken = {m["question"] for m in missions}
     unclassified = len([q for q in open_q if q not in taken])
-    lines = ["---", "title: Missions", "hide:", "  - toc", "---", "", GENERATED,
+    lines = ["---", "title: Missions", "source: tools/iop_analysis/missions.yaml", "hide:", "  - toc", "---", "", GENERATED,
              "# Missions", "",
              "A mission is an open question of the [decompilation catalog](journey/grimoire.md), framed so that you can take it: what you need, "
              "what a good answer looks like, and what state the work is in. The state of the **work** is not the state of the **knowledge**: "
@@ -153,7 +153,7 @@ def render(missions, open_q):
              "3. Send what you found as a pull request, with the template's checklist: what you looked for, with which sources and versions, "
              "what you observed, what you conclude and what stays uncertain. No Apple firmware, keys or extracted binaries in a contribution.",
              "4. A review decides what the catalog says. A result is recorded with its method and limits, whichever way it points.", "",
-             "See also [CONTRIBUTING](%s/blob/main/CONTRIBUTING.md)." % REPO, "",
+             "See also [CONTRIBUTING](%s/blob/main/CONTRIBUTING.md). Know a question that should be a mission? [Propose it](%s/issues/new?template=observation.yml&title=Mission+proposal%%3A+)." % (REPO, REPO), "",
              "## What the states mean", "",
              "**Open**: nobody is on it yet. **In progress**: someone has taken it. **Blocked**: it waits for something named on its card. "
              "**Closed**: the expected work is done, reviewed and merged, and the merged contribution is linked. "
@@ -165,7 +165,7 @@ def render(missions, open_q):
         group = [m for m in missions if m["state"] == state]
         if not group:
             continue
-        lines += ["## " + title, "", '<div class="grid cards stack" markdown>', ""]
+        lines += ["## " + title, "", '<div class="grid cards" markdown>', ""]
         for m in group:
             lines += card(m, open_q.get(m["question"]))
         lines += ["</div>", ""]

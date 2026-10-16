@@ -1,5 +1,6 @@
 ---
 title: "iBSS_n88ap_4.3.5"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

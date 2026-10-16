@@ -1,5 +1,6 @@
 ---
 title: "Une \u00e9tape de d\u00e9marrage modifi\u00e9e"
+source: docs/journey-src/first-pixel.fr.yaml
 hide:
   - navigation
   - toc

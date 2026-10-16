@@ -1,5 +1,6 @@
 ---
 title: "The first pixel"
+source: docs/journey-src/first-pixel.yaml
 hide:
   - navigation
   - toc

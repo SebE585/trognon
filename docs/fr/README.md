@@ -109,6 +109,38 @@ L'écran affiche la console ci-dessus, et `evidence/` gagne un dossier daté ave
 la sortie brute. Les payloads qui **écrivent** dans des registres matériels sont décrits, avec leurs gardes, sur la
 [carte matérielle](03-hardware-map.md) ; lisez un payload avant de l'exécuter.
 
+## Participer
+
+Pas besoin d'un téléphone pour aider. Choisissez la porte qui vous convient.
+
+<div class="grid cards four" markdown>
+
+- **Prendre une mission**
+
+    Une question ouverte de l'analyse, avec ce qu'il faut et à quoi ressemble une bonne réponse.
+
+    [Missions](../en/missions.md){ .card-link }
+
+- **Vérifier une exécution publiée**
+
+    Reconstruire un payload et comparer son empreinte avec le manifeste du dossier. Sans téléphone.
+
+    [Vérifications](../en/verifications.md){ .card-link }
+
+- **Signaler une observation**
+
+    Ce que vous avez vu ou conclu, avec la méthode et ses limites. Les résultats négatifs sont bienvenus.
+
+    [Ouvrir le formulaire](https://github.com/SebE585/trognon/issues/new?template=observation.yml){ .card-link }
+
+- **Proposer une correction**
+
+    Une page est fausse, trompeuse ou floue. Citez-la et dites ce qu'elle devrait dire.
+
+    [Ouvrir le formulaire](https://github.com/SebE585/trognon/issues/new?template=correction.yml){ .card-link }
+
+</div>
+
 ## Recherche en cours
 
 - **Contrôleur tactile.** Sa ligne de reset et sa séquence d'alimentation ont été observées sur l'appareil ; aucun octet n'a encore été échangé avec lui. La recette de transfert du contrôleur SPI est en cours d'établissement.
