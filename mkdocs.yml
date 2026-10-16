@@ -72,6 +72,9 @@ nav:
       - Untethered boot: research/2026-10-13-untethered-boot.md
       - Pre-A5 and limera1n: research/2026-10-14-pre-a5-limera1n.md
       - Microkernel on the 3GS: research/2026-10-14-microkernel-3gs.md
+      - Touch, Wi-Fi, NAND recon: research/2026-10-15-touch-wifi-nand-recon.md
+      - OS port comparison: research/2026-10-15-os-port-comparison.md
+      - Wi-Fi/IOP architecture: research/2026-10-16-wifi-iop-architecture.md
   - Notes:
       - Architecture (working notes, FR): architecture.md
       - Upstream tools: upstream-tools.md

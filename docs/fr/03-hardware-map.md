@@ -95,3 +95,64 @@ Les registres du timer sont la partie la moins comprise d'OpenIBoot (son propre 
 - Outil de mesure : `make trace_ticks.bin` et `tools/tick_rate.py`. Il publie le compteur dans une variable
   d'environnement lue par `getenv`, donc sans photo. Deux échantillons dans deux invocations séparées : un
   processus ne peut pas garder l'appareil à travers une pause (la deuxième connexion échoue).
+
+## NAND, `H2FMI0_BASE = 0x81200000` (DEVICE, 2026-10-15)
+
+Lecture d'identifiant (lecture pure : reset + commande READ ID, aucune lecture de page, aucune
+écriture) sur les 16 lignes de chip-select du bus 0, puis sa géométrie retrouvée dans la table
+figée d'OpeniBoot.
+
+| Élément | Valeur | Signification |
+|---|---|---|
+| CE0, CE1 | `98 DE 95 32 7A 54 0C 00` | Toshiba (fabricant JEDEC `0x98`) ; même identifiant sur les deux, recoupement |
+| CE2 à CE15 | `00 00 00 00` | aucune puce présente |
+| Géométrie (table OpeniBoot `nand_chip_info[]`, correspondance exacte) | `blocks_per_ce=0x2068`, `pages_per_block=0x80`, `bytes_per_page=0x2000`, `banks_per_ce=2` | correspondance SOURCE, pas lue sur l'appareil |
+| Capacité, calculée | 8296 x 128 x 8192 x 2 banks x 2 CE = 34,8 Go bruts | cohérent avec les 32 Go de l'étiquette de cet exemplaire, marge ECC/spare habituelle retirée (~8 %) |
+
+Bus 1 (`H2FMI1_BASE = 0x81300000`) pas encore balayé. Aucune lecture de page, aucune écriture
+tentée : la même prudence que ce projet applique au NOR (`tools/boot.sh` n'appelle jamais
+`flash_nor()`) s'applique ici aussi, avec une marge plus grande, puisque le NAND porte l'image
+iOS de l'appareil.
+
+## Boutons, même base GPIO que ci-dessus (DEVICE, 2026-10-15)
+
+Trouvés par différence, pas par le nom : les noms de boutons d'OpeniBoot pour ce SoC semblent
+copiés d'une génération antérieure, donc chaque bit GPIO lisible (`(8*port+pin)*4` depuis la
+base ci-dessus) a été échantillonné, le bruit mesuré mains levées, puis chaque bouton demandé
+à tour de rôle.
+
+| Bouton | Broche (`port.pin`) |
+|---|---|
+| HOME | `16.6` |
+| POWER | `16.7` |
+| VOL UP | `16.0` |
+| VOL DOWN | `16.1` |
+| RINGER (bascule) | `14.3` |
+
+376 broches lues, zéro bruit sur une fenêtre de 3 secondes mains levées. Un payload long (ce
+balayage prend près de 3 minutes) a tué le point de contrôle USB ensuite ; un reset de port USB
+côté hôte (`dev.reset()`, pas besoin de DFU) l'a réveillé — voir [preuves](08-evidence.md).
+
+## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (DEVICE/HYPOTHÈSE mêlées, 2026-10-15/16)
+
+Aucun code source OpeniBoot n'existe pour ce bloc sur le S5L8920 (contrairement au NAND). Tout
+ce qui suit l'adresse elle-même vient du device tree et du kernelcache déchiffrés de cet
+appareil (IPSW du propriétaire, jamais redistribués), pas du code source.
+
+| Élément | Valeur | Statut |
+|---|---|---|
+| Adresse de base, taille | `0x80000000`, `0x1000` | DEVICE (propriété `reg` du device tree) |
+| `compatible` | `"sdio,s5l8920x"` | DEVICE |
+| `clock-gates` | `0x10` | DEVICE (device tree) ; l'activer seul n'a fait répondre aucun registre |
+| `interrupts` | `0x22` | DEVICE |
+| GPIO de reset (`gpio_baseband_wlan_reset`) | `16.5` | DEVICE ; lue à `0`, puis basculée bas 12 ms / haut 150 ms, relue à `1` — écriture confirmée |
+| GPIO de réveil (`gpio_sdio_device_wake`) | `14.4` | DEVICE ; lue à `0` |
+| Tout registre du bloc (`CTRL`, `CMD`, capacités...) | lit `0`, les écritures ne tiennent pas | DEVICE, confirmé plusieurs fois (clock-gate activé, séquence d'init complète façon SDHCI, écriture brute puis relecture) |
+
+**Pourquoi les écritures ne tiennent pas** : un second processeur ARM embarqué (l'« IOP »
+d'Apple) possède ce bloc directement et fait tourner son propre système temps réel ; le CPU
+principal ne fait que poster des messages dans un canal de commande partagé. C'est l'explication
+la plus probable, pas encore pleinement prouvée — voir le
+[rapport sur l'architecture Wi-Fi/IOP](../research/2026-10-16-wifi-iop-architecture.md) pour la
+chaîne de preuve complète, ce qui est établi contre ce qui reste hypothèse, et pourquoi le NAND
+(pas le Wi-Fi) est très probablement la vraie raison d'être de ce coprocesseur.

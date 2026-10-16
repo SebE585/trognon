@@ -57,6 +57,17 @@ address, the display path and the iBSS patch offsets: they are re-read on each c
 - Next rung of the [ladder](04-mods.md): a timer (the software-triggered IRQ is proven).
 - OpeniBoot/iDroid is the code we read for addresses, and it is dormant since 2022
   (**SOURCE**, [research](../research/2026-10-14-microkernel-3gs.md)).
+- **NAND**: identified, geometry and capacity confirmed (Toshiba, 32 GB, two dies on CE0/CE1) —
+  [hardware map](03-hardware-map.md#nand-h2fmi0_base-0x81200000-device-2026-10-15).
+- **Wi-Fi/SDIO** (BCM4325): address, clock-gate, IRQ and the reset/wake GPIO lines are known
+  and the reset line has been toggled, but every register in the block still reads back `0`.
+  The leading explanation is architectural, not a wrong offset: a second, embedded processor
+  (Apple's "IOP") owns this block, running its own small OS that also drives NAND and an
+  AES-capable DMA engine — see the
+  [Wi-Fi/IOP architecture report](../research/2026-10-16-wifi-iop-architecture.md).
+- **Touch**: no OpeniBoot port for this SoC; the protocol (SPI, a proprietary Apple ASIC, not an
+  off-the-shelf chip) is known only from the previous generation
+  ([recon](../research/2026-10-15-touch-wifi-nand-recon.md)).
 
 ## iPhone 4, A4 (S5L8930): the second bench (SOURCE, not tried)
 

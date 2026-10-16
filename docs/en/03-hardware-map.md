@@ -95,3 +95,60 @@ Timer registers are the least understood part of OpenIBoot (its own comment says
 - Measurement tool: `make trace_ticks.bin` plus `tools/tick_rate.py`. It publishes the counter through an
   environment variable read with `getenv`, so no photo is needed. Two samples taken in two separate
   invocations: one process cannot hold the device across a pause (the second acquire fails).
+
+## NAND, `H2FMI0_BASE = 0x81200000` (DEVICE, 2026-10-15)
+
+Chip ID read (read-only: reset + READ ID command, no page read, no write) across all 16
+chip-select lines on bus 0, then its geometry looked up in OpeniBoot's own hardcoded table.
+
+| Item | Value | Meaning |
+|---|---|---|
+| CE0, CE1 | `98 DE 95 32 7A 54 0C 00` | Toshiba (JEDEC manufacturer `0x98`); the same ID on both, cross-check |
+| CE2 to CE15 | `00 00 00 00` | no chip present |
+| Geometry (OpeniBoot table, `nand_chip_info[]`, exact ID match) | `blocks_per_ce=0x2068`, `pages_per_block=0x80`, `bytes_per_page=0x2000`, `banks_per_ce=2` | SOURCE match, not read from the device |
+| Capacity, computed | 8296 x 128 x 8192 x 2 banks x 2 CE = 34.8 GB raw | matches the 32 GB label on this unit after the usual ECC/spare margin (~8%) |
+
+Bus 1 (`H2FMI1_BASE = 0x81300000`) not swept yet. No page read, no write attempted: this
+project's NOR-equivalent caution (`tools/boot.sh` never calls `flash_nor()`) applies here too,
+with a larger margin, since NAND holds the device's own iOS image.
+
+## Buttons, same GPIO base as above (DEVICE, 2026-10-15)
+
+Found by difference, not by name: OpeniBoot's own button names for this SoC look copied from
+an older one, so every readable GPIO bit (`(8*port+pin)*4` from the base above) was sampled,
+noise measured with hands off, then each button asked for in turn.
+
+| Button | Pin (`port.pin`) |
+|---|---|
+| HOME | `16.6` |
+| POWER | `16.7` |
+| VOL UP | `16.0` |
+| VOL DOWN | `16.1` |
+| RINGER (toggle) | `14.3` |
+
+376 pins read, zero noise over a 3-second hands-off window. A long payload (this sweep takes
+close to 3 minutes) killed the USB control endpoint afterwards; a host-side USB port reset
+(`dev.reset()`, no DFU needed) revived it — see [evidence](08-evidence.md).
+
+## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (mixed DEVICE/HYPOTHESIS, 2026-10-15/16)
+
+No OpeniBoot source exists for this block on the S5L8920 at all (unlike NAND). Everything
+below the address itself came from this device's own decrypted device tree and kernelcache
+(owner's IPSW, never redistributed), not from source code.
+
+| Item | Value | Status |
+|---|---|---|
+| Base address, size | `0x80000000`, `0x1000` | DEVICE (device tree's own `reg` property) |
+| `compatible` | `"sdio,s5l8920x"` | DEVICE |
+| `clock-gates` | `0x10` | DEVICE (device tree); enabling it alone did not make any register respond |
+| `interrupts` | `0x22` | DEVICE |
+| Reset GPIO (`gpio_baseband_wlan_reset`) | `16.5` | DEVICE; read at `0`, then toggled low 12 ms / high 150 ms, read back `1` — confirmed write |
+| Wake GPIO (`gpio_sdio_device_wake`) | `14.4` | DEVICE; read at `0` |
+| Any register in the block (`CTRL`, `CMD`, capabilities, ...) | reads `0`, writes do not stick | DEVICE, repeatedly confirmed (clock-gate on, full SDHCI-style init sequence, raw write-then-readback) |
+
+**Why writes don't stick**: a second, embedded ARM processor (Apple's "IOP") owns this block
+directly and runs its own real-time OS; the application CPU only posts messages to it over a
+shared command channel. This is the leading explanation, not yet a fully proven one — see the
+[Wi-Fi/IOP architecture report](../research/2026-10-16-wifi-iop-architecture.md) for the full
+chain of evidence, what is confirmed versus still a hypothesis, and why NAND (not Wi-Fi) is
+almost certainly this coprocessor's real reason to exist.

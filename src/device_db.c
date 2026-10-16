@@ -33,10 +33,21 @@ const struct trognon_device trognon_device_catalog[] = {
                              "exploit for CPID 0x8920, confirmed in the "
                              "tool's own source 2026-10-14)",
         .support = {
-            .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
+            .framebuffer = 1, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
             .notes = "Reference device of the bare-metal track: Trognon code "
-                     "runs on it (console, exceptions, IRQ). No modern OS "
-                     "port effort exists.",
+                     "runs on it (console, exceptions, IRQ, buttons). "
+                     "Framebuffer confirmed (CLCD, text drawn). NAND "
+                     "(H2FMI) identified: Toshiba, 32 GB, CE0/CE1 only, "
+                     "geometry and capacity computed from a real chip-ID "
+                     "read -- read-only, no page read/write yet, so "
+                     "storage stays 0. Wi-Fi (BCM4325/SDIO) address, "
+                     "clock-gate, IRQ and reset/wake GPIO are known and "
+                     "the reset line toggles, but every register still "
+                     "reads 0: the leading explanation is a second, "
+                     "embedded IOP processor that owns this block "
+                     "directly, not a wrong offset -- see "
+                     "docs/research/2026-10-16-wifi-iop-architecture.md. "
+                     "No modern OS port effort exists for this SoC.",
         },
     },
     {

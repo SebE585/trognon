@@ -40,5 +40,16 @@ To check a bundle: check out its commit, `make -C tools/payloads <payload>`, com
 | Code runs from DFU with nothing written to the phone; patched iBSS, `run` | the nonce of every bundle | bundled for execution; the DFU and pwn steps themselves are not |
 | Page table has no fault entry, all sections in domain 0, `DACR = 3` | earlier payloads | **not bundled**: an earlier run, not re-run |
 | Timer 5 interrupt | none | **not proven** (see the [hardware map](03-hardware-map.md)) |
+| Button GPIO mapping, 376 pins read, zero noise | `trace_buttons` | bundled |
+| NAND chip ID, CE0/CE1 only (Toshiba) | `trace_nand`, `trace_nand_sweep` x2 | bundled |
+| Wi-Fi reset/wake GPIO read at `0` | `trace_wifi_gpio` | bundled |
+| Wi-Fi reset GPIO toggled low/high, read back `1` | `trace_wifi_reset` | bundled |
+| SDIO register dump, two clock-gate hypotheses, all zero | `trace_sdio_dump`, `trace_sdio_dump_b` | bundled |
+| SDIO `CMD0` attempt, never leaves "not ready" | `trace_sdio_cmd0` | bundled |
+| Full SDHCI-style SDIO init sequence, still all zero | `trace_sdio_init` | bundled |
+| Clock-gate write persistence check (flawed, superseded below) | `trace_gate_write` | bundled |
+| Raw write-then-readback to the SDIO base, write does not land | `trace_write_test` | bundled |
+| Dynamic-clock-16 register, read-only, ambiguous | `trace_dyn_clock16` | bundled |
+| Timers 0-3, all 5 fields, nothing changes over 0.5 s | `trace_which_timer`, `trace_which_timer_b` | bundled |
 
 A claim without a bundle is documented from an earlier run and should be treated as a lead until re-run.

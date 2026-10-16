@@ -40,5 +40,16 @@ est déterministe avec la même chaîne d'outils), puis lire `screen.txt` face �
 | Le code tourne depuis le DFU sans rien écrire dans le téléphone ; iBSS patché, `run` | le nonce de chaque dossier | avec dossier pour l'exécution ; les étapes DFU et pwn elles-mêmes non |
 | La table de pages n'a aucune entrée de faute, toutes les sections en domaine 0, `DACR = 3` | payloads antérieurs | **sans dossier** : un run ancien, pas rejoué |
 | Interruption du timer 5 | aucun | **non prouvée** (voir la [carte matérielle](03-hardware-map.md)) |
+| Mapping GPIO des boutons, 376 broches lues, zéro bruit | `trace_buttons` | avec dossier |
+| Identifiant NAND, CE0/CE1 seulement (Toshiba) | `trace_nand`, `trace_nand_sweep` x2 | avec dossier |
+| GPIO reset/réveil Wi-Fi lues à `0` | `trace_wifi_gpio` | avec dossier |
+| GPIO reset Wi-Fi basculée bas/haut, relue à `1` | `trace_wifi_reset` | avec dossier |
+| Dump des registres SDIO, deux hypothèses de clock-gate, tout à zéro | `trace_sdio_dump`, `trace_sdio_dump_b` | avec dossier |
+| Tentative `CMD0` SDIO, ne quitte jamais « pas prêt » | `trace_sdio_cmd0` | avec dossier |
+| Séquence d'init SDIO complète façon SDHCI, toujours tout à zéro | `trace_sdio_init` | avec dossier |
+| Test de persistance d'écriture du clock-gate (faussé, dépassé ci-dessous) | `trace_gate_write` | avec dossier |
+| Écriture brute puis relecture sur la base SDIO, l'écriture ne tient pas | `trace_write_test` | avec dossier |
+| Registre d'horloge dynamique 16, lecture pure, ambigu | `trace_dyn_clock16` | avec dossier |
+| Timers 0-3, les 5 champs, rien ne change sur 0,5 s | `trace_which_timer`, `trace_which_timer_b` | avec dossier |
 
 Une affirmation sans dossier vient d'un run antérieur et reste une piste tant qu'elle n'est pas rejouée.

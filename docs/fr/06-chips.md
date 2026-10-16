@@ -57,6 +57,17 @@ les adresses, le chemin d'affichage et les offsets de patch de l'iBSS : on les r
 - Prochain barreau de l'[échelle](04-mods.md) : un timer (l'IRQ déclenchée par logiciel est prouvée).
 - OpeniBoot/iDroid est le code lu pour les adresses, dormant depuis 2022
   (**SOURCE**, [recherche](../research/2026-10-14-microkernel-3gs.md)).
+- **NAND** : identifié, géométrie et capacité confirmées (Toshiba, 32 Go, deux matrices sur
+  CE0/CE1) — [carte matérielle](03-hardware-map.md#nand-h2fmi0_base-0x81200000-device-2026-10-15).
+- **Wi-Fi/SDIO** (BCM4325) : adresse, clock-gate, IRQ et les lignes GPIO de reset/réveil sont
+  connues, la ligne de reset a été basculée, mais tout registre du bloc lit toujours `0`.
+  L'explication la plus probable est architecturale, pas un mauvais décalage : un second
+  processeur embarqué (l'« IOP » d'Apple) possède ce bloc, avec son propre petit système qui
+  pilote aussi le NAND et un moteur DMA chiffré — voir le
+  [rapport sur l'architecture Wi-Fi/IOP](../research/2026-10-16-wifi-iop-architecture.md).
+- **Tactile** : aucun portage OpeniBoot pour ce SoC ; le protocole (SPI, un ASIC Apple
+  propriétaire, pas une puce du commerce) n'est connu que de la génération précédente
+  ([reconnaissance](../research/2026-10-15-touch-wifi-nand-recon.md)).
 
 ## iPhone 4, A4 (S5L8930) : le deuxième banc (SOURCE, pas essayé)
 
