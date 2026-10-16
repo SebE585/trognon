@@ -8,6 +8,10 @@ A creature is a block of the phone that is not fully understood; its fronts are 
 computed from the fronts and a front only moves with a proof attached: `wounded` needs a page of docs/ that holds the reading in the code,
 `down` needs an evidence bundle. The checks refuse a front without its proof, a mission or bundle or section that does not exist,
 and a creature without a French name.
+
+A creature marked `campaign: true` also gets a campaign page (docs/en/campaigns/<id>.md, docs/fr/campagnes/<id>.md): its fronts in the order
+their `needs` allow, what is available now and what waits, and which kind of run would bring each one down. Availability is computed:
+a front is locked while a front it needs is not down: what waits is the run on the phone, a locked front can still be studied in the code.
 """
 import argparse
 import sys
@@ -25,7 +29,9 @@ MISSIONS = ROOT / "tools" / "iop_analysis" / "missions.yaml"
 REPO = "https://github.com/SebE585/trognon"
 STATES = ("open", "wounded", "down")
 SEGMENTS = 10
+DOWN_NEEDS = ("survey", "write", "unknown")
 OUT = {"en": DOCS / "en" / "bestiary.md", "fr": DOCS / "fr" / "bestiaire.md"}
+CAMPAIGN_DIR = {"en": DOCS / "en" / "campaigns", "fr": DOCS / "fr" / "campagnes"}
 
 TXT = {
     "en": {
@@ -39,6 +45,16 @@ TXT = {
             "**Wounded**: read in the firmware or in code (SOURCE), not yet seen working on the phone. Half a point of life is gone.",
             "**Down**: observed on the real phone (DEVICE), with an evidence folder you can open and rebuild. The point is gone.",
             "A creature is **defeated** when every front is down. It is called *unspotted* while it is not even in the hardware map."],
+        "camp": "Campaign", "camp_title": "Campaign: %s", "camp_lead": "The order in which to attack %s, and what each step needs.",
+        "camp_intro": ("A campaign is a creature plus a route. The fronts are not independent: some cannot be attacked before another is understood. "
+                       "Availability below is computed from the states in the [Bestiary](../bestiary.md), not typed in. A front is **locked** until every front it needs is down "
+                       "(seen on the phone). Locked does not mean closed: what waits is the run on the phone, and a locked front can still be studied in the code. "
+                       "The order is our working plan, not a proven requirement: it says what we would try first."),
+        "camp_next": "Next move", "camp_none": "Every front is down: this creature is defeated.",
+        "camp_route": "The route", "avail": "Available", "locked": "Locked until this is down:", "done": "Done", "step": "Step",
+        "needs_h": "To bring it down", "dn": {"survey": "a run on a phone that only reads", "write": "hardware writes: the maintainer only, one at a time, after an exact description and a go",
+                                               "unknown": "not known yet which run would settle it"},
+        "bestiary_page": "../bestiary.md", "mission_page": "../missions.md", "ref_up": "../../",
         "code": "Code", "found": "found", "slots": "slots", "digit": "Digit", "in_bundle": "read in",
         "code_note": "A creature is a code to find. Each front is one slot of it, shown as ? until a proof reveals it.",
         "life": "Life", "of": "of", "points": "points left", "state": {"open": "Open", "wounded": "Wounded: read in code", "down": "Down: seen on the phone"},
@@ -60,6 +76,16 @@ TXT = {
             "**Blessé** : lu dans le firmware ou dans du code (SOURCE), pas encore vu fonctionner sur le téléphone. Un demi-point de vie est parti.",
             "**À terre** : observé sur le vrai téléphone (DEVICE), avec un dossier de preuve que vous pouvez ouvrir et reconstruire. Le point est parti.",
             "Une créature est **vaincue** quand tous ses fronts sont à terre. Elle est dite *non repérée* tant qu'elle n'est même pas dans la carte matérielle."],
+        "camp": "Campagne", "camp_title": "Campagne : %s", "camp_lead": "L'ordre dans lequel attaquer %s, et ce dont chaque étape a besoin.",
+        "camp_intro": ("Une campagne est une créature plus un itinéraire. Les fronts ne sont pas indépendants : certains ne peuvent pas être attaqués avant qu'un autre soit compris. "
+                       "La disponibilité ci-dessous est calculée depuis les états du [Bestiaire](../bestiaire.md), pas saisie. Un front est **verrouillé** tant que chaque front dont il dépend "
+                       "n'est pas à terre (vu sur le téléphone). Verrouillé ne veut pas dire fermé : ce qui attend, c'est l'exécution sur le téléphone, et un front verrouillé peut "
+                       "encore être étudié dans le code. L'ordre est notre plan de travail, pas une exigence démontrée : il dit ce que nous essaierions en premier."),
+        "camp_next": "Prochain pas", "camp_none": "Tous les fronts sont à terre : cette créature est vaincue.",
+        "camp_route": "L'itinéraire", "avail": "Disponible", "locked": "Verrouillé jusqu'à ce que ceci soit à terre :", "done": "Fait", "step": "Étape",
+        "needs_h": "Pour le faire tomber", "dn": {"survey": "une exécution sur un téléphone qui ne fait que lire", "write": "des écritures matérielles : le mainteneur seulement, une par une, après une description exacte et un go",
+                                                   "unknown": "on ne sait pas encore quelle exécution trancherait"},
+        "bestiary_page": "../bestiaire.md", "mission_page": "../../en/missions.md", "ref_up": "../../",
         "code": "Code", "found": "trouvés", "slots": "emplacements", "digit": "Chiffre", "in_bundle": "lu dans",
         "code_note": "Une créature est un code à trouver. Chaque front en est un emplacement, affiché ? tant qu'une preuve ne le révèle pas.",
         "life": "Vie", "of": "sur", "points": "points restants", "state": {"open": "Ouvert", "wounded": "Blessé : lu dans le code", "down": "À terre : vu sur le téléphone"},
@@ -120,6 +146,62 @@ def code_strip(creature):
     return [f["digit"]["value"] if f.get("digit") else ("✓" if f["state"] == "down" else "?") for f in creature["fronts"]]
 
 
+def _campaign_errors(c):
+    """The ids and the `needs` of a creature's fronts: unique, existing, without a cycle; a campaign needs them all."""
+    errors, i = [], c.get("id", "?")
+    ids = [f["id"] for f in c.get("fronts", []) if f.get("id")]
+    if len(ids) != len(set(ids)):
+        errors.append("%s: front ids must be unique" % i)
+    if c.get("campaign"):
+        for k, f in enumerate(c.get("fronts", [])):
+            if not f.get("id"):
+                errors.append("%s front %d: a campaign needs an id on every front" % (i, k + 1))
+            if f.get("state") != "down" and f.get("down_needs") is None:
+                errors.append("%s front %d: a campaign says what would bring an unfinished front down (down_needs)" % (i, k + 1))
+        for k in ("en", "fr"):
+            if not (c.get("campaign_intro") or {}).get(k):
+                errors.append("%s: a campaign needs an intro in both languages (campaign_intro)" % i)
+    for f in c.get("fronts", []):
+        for n in f.get("needs", []):
+            if n not in ids:
+                errors.append("%s: front %r needs %r, which is not a front id of this creature" % (i, f.get("id"), n))
+            if n == f.get("id"):
+                errors.append("%s: front %r needs itself" % (i, n))
+    if not errors and route(c) is None:
+        errors.append("%s: the fronts' needs form a cycle" % i)
+    return errors
+
+
+def route(c):
+    """The fronts in an order their `needs` allow, keeping the order of the file otherwise; None on a cycle."""
+    fronts = c["fronts"]
+    done, order = set(), []
+    while len(order) < len(fronts):
+        progressed = False
+        for f in fronts:
+            if f in order:
+                continue
+            if all(n in done for n in f.get("needs", [])):
+                order.append(f)
+                if f.get("id"):
+                    done.add(f["id"])
+                progressed = True
+                break
+        if not progressed:
+            return None
+    return order
+
+
+def availability(c):
+    """{front index in the file: ('done'|'available'|'locked', [texts of the open fronts it waits for])}."""
+    by_id = {f["id"]: f for f in c["fronts"] if f.get("id")}
+    out = {}
+    for k, f in enumerate(c["fronts"]):
+        waits = [by_id[n] for n in f.get("needs", []) if by_id[n]["state"] != "down"]
+        out[k] = ("done", []) if f["state"] == "down" else (("locked", waits) if waits else ("available", []))
+    return out
+
+
 def check(data, titles=None, bundles=None):
     errors = []
     titles = mission_titles() if titles is None else titles
@@ -170,6 +252,9 @@ def check(data, titles=None, bundles=None):
             for m in f.get("missions", []):
                 if m not in titles:
                     errors.append("%s: mission %r is not in missions.yaml" % (where, m))
+            if f.get("down_needs") and f["down_needs"] not in DOWN_NEEDS:
+                errors.append("%s: down_needs must be one of %s" % (where, ", ".join(DOWN_NEEDS)))
+        errors += _campaign_errors(c)
     return errors
 
 
@@ -207,6 +292,8 @@ def render(data, lang, titles=None, fr_anchors=None):
                     lines.append("    - %s%s%s" % (t["attack"], col, " · ".join("[%s](%s) (%s)" % (titles[m][0], t["missions_page"], t["unit"].get(titles[m][1], titles[m][1])) for m in ms)))
                 else:
                     lines.append("    - %s [%s](%s/issues/new?template=mission.yml)." % (t["none"], t["propose"], REPO))
+        if c.get("campaign"):
+            lines += ["", "%s%s[%s](%s/%s.md)" % (t["camp"], col, t["camp_title"] % c["name"][lang], "campaigns" if lang == "en" else "campagnes", c["id"])]
         if c.get("section"):
             lang_anchor = c["section"] if lang == "en" or c["section"] in fr_anchors else None
             target = "%s#%s" % (page_map, lang_anchor) if lang_anchor else page_map
@@ -214,6 +301,57 @@ def render(data, lang, titles=None, fr_anchors=None):
         lines.append("")
     lines += ["## %s" % t["take_h"], "", t["take"], ""]
     return "\n".join(lines)
+
+
+def render_campaign(c, lang, titles=None):
+    t = TXT[lang]
+    col = " : " if lang == "fr" else ": "
+    titles = mission_titles() if titles is None else titles
+    left, total = life(c)
+    avail = availability(c)
+    order = route(c)
+    name = c["name"][lang]
+    lines = ["---", "title: \"%s\"" % (t["camp_title"] % name), "description: \"%s\"" % (t["camp_lead"] % name).replace('"', "'"),
+             "source: tools/bestiary.yaml", "---", "",
+             "<!-- Generated by tools/bestiary_build.py from tools/bestiary.yaml. Do not edit by hand. -->", "",
+             "# %s" % (t["camp_title"] % name), "", "*%s* · **%s**" % (c["block"][lang], t["status"][status(c)]), "",
+             t["camp_intro"], "", c["campaign_intro"][lang].strip(), "",
+             '<p class="bestiary-bar" role="img" aria-label="%s%s%d %s %d %s">%s</p>' % (t["life"], col, left, t["of"], total, t["points"], bar(left, total)), "",
+             "%s%s%d %s %d" % (t["life"], col, left, t["of"], total), "",
+             '<p class="bestiary-code">%s</p>' % " &nbsp;·&nbsp; ".join("<code>%s</code>" % v for v in code_strip(c)), ""]
+    nxt = next((f for f in order if avail[c["fronts"].index(f)][0] == "available"), None)
+    lines += ["## %s" % t["camp_next"], ""]
+    lines += ["- %s" % (nxt["text"][lang] if nxt else t["camp_none"]), "", "## %s" % t["camp_route"], ""]
+    for n, f in enumerate(order, 1):
+        kind, waits = avail[c["fronts"].index(f)]
+        label = t["done"] if kind == "done" else (t["avail"] if kind == "available" else "%s %s" % (t["locked"], " ; ".join(w["text"][lang].rstrip(".") for w in waits)))
+        lines += ["### %s %d. %s" % (t["step"], n, f["text"][lang].rstrip(".")), "", "- **%s** · %s" % (label, t["state"][f["state"]])]
+        if f.get("digit"):
+            lines.append("- %s%s<code>%s</code> (%s)" % (t["digit"], col, f["digit"]["value"], f["digit"]["label"][lang]))
+        if f["state"] == "down":
+            lines.append("- %s%s%s" % (t["proof"], col, ", ".join("[`%s`](%s/tree/main/evidence/%s)" % (b, REPO, b) for b in f["evidence"])))
+        else:
+            if f["state"] == "wounded":
+                lines.append("- %s%s[`%s`](%s%s)" % (t["src"], col, f["ref"], t["ref_up"], f["ref"]))
+            lines.append("- %s%s%s" % (t["needs_h"], col, t["dn"][f["down_needs"]]))
+            ms = f.get("missions", [])
+            if ms:
+                lines.append("- %s%s%s" % (t["attack"], col, " · ".join("[%s](%s) (%s)" % (titles[m][0], t["mission_page"], t["unit"].get(titles[m][1], titles[m][1])) for m in ms)))
+            else:
+                lines.append("- %s [%s](%s/issues/new?template=mission.yml)." % (t["none"], t["propose"], REPO))
+        lines.append("")
+    lines += ["[%s](%s)" % (t["title"], t["bestiary_page"]), ""]
+    return "\n".join(lines)
+
+
+def campaign_pages(data):
+    """{path: text} of every campaign page."""
+    out = {}
+    for c in data["creatures"]:
+        if c.get("campaign"):
+            for lang in ("en", "fr"):
+                out[CAMPAIGN_DIR[lang] / ("%s.md" % c["id"])] = render_campaign(c, lang)
+    return out
 
 
 def main(argv=None):
@@ -227,6 +365,7 @@ def main(argv=None):
             print(e)
         return 1
     pages = {lang: render(data, lang) for lang in OUT}
+    camps = campaign_pages(data)
     status_code = 0
     for lang, text in pages.items():
         if args.check:
@@ -236,6 +375,21 @@ def main(argv=None):
         else:
             OUT[lang].write_text(text)
             print("%d creatures written to %s" % (len(data["creatures"]), OUT[lang].relative_to(ROOT)))
+    for path, text in camps.items():
+        if args.check:
+            if not path.is_file() or path.read_text() != text:
+                print("%s is missing or stale (run make bestiary)" % path.relative_to(ROOT))
+                status_code = 1
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
+            print("campaign written to %s" % path.relative_to(ROOT))
+    if args.check:
+        for d in CAMPAIGN_DIR.values():
+            for f in sorted(d.glob("*.md")) if d.is_dir() else []:
+                if f not in camps:
+                    print("%s is not a campaign of the data (remove it)" % f.relative_to(ROOT))
+                    status_code = 1
     if args.check and status_code == 0:
         print("bestiary: %d creatures valid, generated pages up to date" % len(data["creatures"]))
     return status_code

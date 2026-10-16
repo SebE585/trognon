@@ -37,6 +37,8 @@ Vie : 5 sur 8
 - **Ouvert.** Pourquoi les écritures du processeur principal dans les registres Wi-Fi ne tiennent pas.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 
+Campagne : [Campagne : Le Chuchoteur](campagnes/wifi.md)
+
 Sa place dans la carte matérielle : [Wi-Fi et son coprocesseur](03-hardware-map.md)
 
 ## Le Timide

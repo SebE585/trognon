@@ -31,11 +31,29 @@ the payload hash, the commit, and a random number that must come back identical,
 - **Say when an AI assistant helped.** Name it in the pull request and say what you checked yourself: an assistant's output is a proposal, not evidence, and review treats it as such.
 - English for everything a contributor sees in the repository.
 
+## The Bestiary and its campaigns
+
+The [Bestiary](https://sebe585.github.io/trognon/en/bestiary/) shows each block of the phone we have not finished understanding as a creature, and a
+creature as a code to find. It is generated from `tools/bestiary.yaml` (`make bestiary`); never edit `docs/en/bestiary.md`, `docs/fr/bestiaire.md`
+or the campaign pages. What you can add, and what each needs:
+
+- **A front** (an open point of a creature), with `state`: `open` needs nothing; `wounded` needs `ref`, the page of `docs/` that holds the reading in
+  the code; `down` needs `evidence`, the bundle(s) under `evidence/` that show it. A front only moves when its proof is attached.
+- **A digit** on a front that is down: `{label, value, proof}`. `proof` must be a line that appears as is in the `screen.txt` or `vars.txt` of the front's
+  bundles; the generator refuses it otherwise.
+- **A creature**: a block, with its names in English and French. The life bar is computed from the fronts and is never typed.
+- **A campaign** (`campaign: true`, plus `campaign_intro` in both languages): every front gets an `id`, optionally `needs` (the fronts that come first in our
+  working order, a plan and not a proven requirement) and, unless it is down, `down_needs` (`survey`, `write` or `unknown`: what would bring it down).
+  A front is *locked* until every front it needs is down; locked fronts can still be studied in the code. Hardware writes stay with the maintainer.
+
+`make bestiary-check` runs its tests and refuses a front without its proof, a mission, bundle or section that does not exist, a cycle in `needs`,
+and a stale generated page.
+
 ## Checks
 
 `make docs-check` (documentation, generated pages, links) and `make iop-coverage` (the catalog and its tests) must pass; CI runs both.
-The guided journey and the missions page are generated: edit `docs/journey-src/*.yaml` and `tools/iop_analysis/missions.yaml`,
-then run `make journey` and `make missions`, never the generated pages.
+The guided journey, the missions page and the Bestiary are generated: edit `docs/journey-src/*.yaml`, `tools/iop_analysis/missions.yaml` and
+`tools/bestiary.yaml`, then run `make journey`, `make missions` and `make bestiary`, never the generated pages.
 
 ## Licences
 
