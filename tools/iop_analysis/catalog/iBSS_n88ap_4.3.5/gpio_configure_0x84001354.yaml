@@ -1,0 +1,71 @@
+binary: ibss_decrypted.bin
+binary_sha256: 9bd13fbd99aa8f05ee4e3df7452c6412111f5d9a4369384133e58fe1f1edbac9
+function_name_apple: null
+function_name_assigned: "iBSS gpio_configure(pin id, mode) and its per-pad default table"
+decode_mode: thumb
+subsystem: iboot_platform
+entry_code_address: "0x84001354"
+thumb_entry_pointer: "0x84001355"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x84001354", "0x840013dc"]
+  constant_ranges:
+    - ["0x840013dc", "0x840013e0"]
+  unresolved:
+    - id: IBSS-GPIO-Q1
+      text: "The loop that applies the whole table at start (near 0x84001330, which steps by 2 up to 0x2e0 = 736 bytes = 368 entries, against 376 pads read here) and the other callers of the routine: only the call sequence around 0x84005240 was read."
+      proof_needed: "disassemble 0x84001300..0x84001350 and the callers"
+    - id: IBSS-GPIO-Q2
+      text: "The special case for port 0x2e (a call to 0x84007cf8 with the pin number): not read."
+      proof_needed: "disassemble 0x84007cf8 and the sibling at 0x84007cd4"
+    - id: IBSS-GPIO-Q3
+      text: "Meaning of the table values other than the plain GPIO modes (0x290, 0x310, 0x250, 0x330, 0x6B0, 0x630, 0x09E, 0x11E, 0x41E, 0x610): no source gives them, and none was identified as the SPI1 clock or data pad function."
+      proof_needed: "the datasheet, or a controlled observation of pads of known peripherals"
+    - id: IBSS-GPIO-Q4
+      text: "Why 201 of the 376 pad registers read at the STAGE 43 survey differ from the table in their low ten bits (the iBSS reconfigures pads after the table, and the dedicated pads of ports 0x1c to 0x24 and the unimplemented ports 0x25 to 0x2e read differently)."
+      proof_needed: "the later GPIO calls of the iBSS and the behaviour of the dedicated pads"
+
+claims:
+  - id: IBSS-GPIO-001
+    text: >
+      The routine takes a pin id (port in bits 15 to 8, pin in bits 2 to 0) and a mode 0 to 7. For port 0x2e it calls
+      another function. Otherwise the register address is 0x83000000 + 4 * (8 * port + pin), obtained by adding
+      -0x7d000000 to the shifted index, which is why no literal 0x83000000 appears in the image. It computes
+      new = (old AND NOT mask) OR (value AND mask) with, per mode: 0 value 0x210 mask 0x27e; 1 value 0x212 mask 0x27e;
+      2 value 0x212 mask 0x27f; 3 value 0x213 mask 0x27f; 5 value 0x230 mask 0x27e; 6 value 0x250 mask 0x27e;
+      7 value 0x270 mask 0x27e; and mode 4 takes the value from the table below with mask 0x3ff. Modes 0 and 2/3 are
+      the release and the drive-low/high patterns that the project's I2C code uses.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-ibss-pad-configuration-table-static-2026-10-16"
+  - id: IBSS-GPIO-002
+    text: >
+      Mode 4 reads a 16-bit entry at 0x84017690 + 2 * index (index = 8 * port + pin) and uses its low ten bits: a table of
+      per-pad default configurations (376 entries read here). Its most common values are 0x01E (146 pads, the unused
+      default), 0x212 (42), 0x230 (39), 0x610 (38), 0x41E (31) and 0xD1E (28). Compared with the pad registers read at
+      the STAGE 43 survey, 175 of 376 are equal in the low ten bits.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-ibss-pad-configuration-table-static-2026-10-16"
+  - id: IBSS-GPIO-003
+    text: >
+      A call sequence at 0x84005240 sets pin 0x1407 (the baseband reset of the device tree) to 1, waits 0xc350, sets
+      0x1405 (radio_on) to 1 and waits again, applies mode 4 to the four pins listed at 0x84017ac8 (0x1605, 0x1506,
+      0x0806, 0x1102: WLAN reset, Bluetooth reset, UART3 TX, and 11.02), then sets 0x1405 and 0x1407 back to 0. The wait
+      argument 0xc350 is 50000 and its unit was not read.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-ibss-pad-configuration-table-static-2026-10-16"
+
+hardware_tests:
+  - name: trace_gpio_survey (STAGE 43) against the table
+    claim_tested: "IBSS-GPIO-002: the table describes the pads' configuration"
+    execution_status: executed
+    result: >
+      175 of 376 pad registers equal the table in their low ten bits, 201 differ (see IBSS-GPIO-Q4). For example the
+      touch reset 14.01 and chip select 13.00 read 0x212, the table's output-low value, and 04.00/04.01 read 0x211
+      where the table has 0x230. The table is therefore an initial configuration, not the state at the survey.
+    evidence: "evidence/20261016T174429Z-trace_gpio_survey/"
+
+publication:
+  status: approved
+  notes: "register layout, mode values and table address"

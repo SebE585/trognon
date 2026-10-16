@@ -530,7 +530,7 @@ release. Both stay read-only apart from the reset and the LDO already used.
 Preparing W6 against the OpeniBoot SPI driver for this SoC family and the kernel code read above showed three gaps, none of which a
 payload should paper over:
 
-1. **The SPI pads are not known.** The controller drives its clock, data-out and data-in pads only if the corresponding GPIO pads are
+1. **The SPI pads are not known.** (Update: the iBSS's pad table was read and gives no SPI function; see "The iBSS pad configuration table".) The controller drives its clock, data-out and data-in pads only if the corresponding GPIO pads are
    set to the SPI function. The `spi1` node lists only `function-spi_cs0` (GPIO `13.00`). No source read so far names the pads of
    SCLK, MOSI and MISO for `spi1`, nor says whether iBoot has already set them to the SPI function at this stage of the boot. OpeniBoot's
    header for this SoC family has no pad definitions for the SPI buses (its `plat-s5l8900` header has some for an older chip, where the
@@ -578,6 +578,25 @@ What this corrects:
   read gate `0x27` (the device tree's number for the IOP) as `0xF` and concluded the IOP clock was on, and STAGE 23 used the device tree's `0x10` for the
   SDIO block. The physical gate at those indexes may belong to other blocks (OpeniBoot puts a NAND controller at `0x26`, enabled by iBoot).
   Those conclusions need review before they are relied on; they are listed as open.
+
+## The iBSS pad configuration table (static, 2026-10-16)
+
+Catalog: `iBSS_n88ap_4.3.5/gpio_configure_0x84001354.yaml` (`IBSS-GPIO-*`). The decrypted iBSS has a routine that configures one pad from
+a pin id (port in the upper byte, pin in the low bits) and a mode from 0 to 7. The address is `0x83000000 + 4 * (8 * port + pin)`, formed by
+adding `-0x7d000000`, so no `0x8300xxxx` literal appears in the image. The modes write the patterns the project's I2C code already
+uses (`0x210` released, `0x212` driven low, `0x213` driven high) and a few more (`0x230`, `0x250`, `0x270`); mode 4 takes its value from a
+376-entry table of 16-bit words at `0x84017690`, one per pad. That table is therefore the iBSS's default configuration of every pad.
+
+What this gives and does not give:
+
+- The survey of the pad registers (STAGE 43) and this table agree on 175 of 376 pads in their low ten bits and differ on 201: the iBSS
+  reconfigures pads after the table, and the dedicated pads of ports `1C` to `24` and the unimplemented ports `25` to `2E` read differently from
+  their table entries. So the table is an initial state, not the state seen.
+- No table value was identified as the SPI1 clock or data pad function. The values other than the plain GPIO modes (`0x290`, `0x310`, `0x250`,
+  `0x330`, `0x6B0`, `0x630`, `0x09E`, `0x11E`, `0x41E`, `0x610`) have no documented meaning here.
+- The device tree lists a chip-select function for `spi1` but no clock or data pad, and the UART transmit pads (`07.06`, `08.06`) are GPIO ports in the tree. One
+  reading that fits all of this is that the SPI clock and data pads are dedicated pins outside the GPIO block, so that no pad configuration is needed for
+  them; **this is a hypothesis**, not shown, and a transfer that returns nothing would not distinguish it from a missing pad configuration.
 
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
