@@ -38,7 +38,7 @@ Everything here was observed on a real iPhone 3GS (S5L8920, Cortex-A8); each ite
 
 - **Our code runs from DFU**
 
-    The boot chain writes nothing to the phone's storage.
+    Our payloads are built never to write to the phone's storage (by design, not yet checked by comparing the storage before and after).
 
     <span class="tag tag-device">DEVICE</span> [Boot chain](en/01-boot-chain.md){ .card-link }
 
@@ -56,7 +56,7 @@ Everything here was observed on a real iPhone 3GS (S5L8920, Cortex-A8); each ite
 
 - **An accelerometer that answers**
 
-    Powered up, axes read in several positions, about 56 counts per g.
+    Its control register reads back what was written; axes read in several positions, about 56 counts per g.
 
     <span class="tag tag-device">DEVICE</span> [Accelerometer](en/03-hardware-map.md#accelerometer){ .card-link }
 
@@ -146,7 +146,7 @@ You do not need a phone to help. Pick the way in that suits you.
 ## Research in progress
 
 - **Touch controller.** Its reset line and power sequence have been observed on the device; no byte has been exchanged with it yet. The transfer recipe of the SPI controller is being established.
-- **Wi-Fi and the coprocessor.** The start-up sequence of the coprocessor involved in the SDIO and Wi-Fi path has been read in the firmware; that coprocessor is not running yet, and its role in the Wi-Fi chain is not established.
+- **Wi-Fi and the coprocessor.** The start-up sequence of the coprocessor involved in the SDIO and Wi-Fi path has been read in the firmware; we have not started that coprocessor and do not know whether it runs under the boot stage; its role in the Wi-Fi chain is not established.
 
 The dated notes are in the [research index](research/index.md).
 

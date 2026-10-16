@@ -36,7 +36,7 @@ les [Preuves](08-evidence.md) relient chaque affirmation à une exécution.
 
 - **Notre code s'exécute depuis le DFU**
 
-    La chaîne de démarrage n'écrit rien dans le stockage du téléphone.
+    Nos payloads sont conçus pour ne jamais écrire dans le stockage du téléphone (par construction, pas encore vérifié par une comparaison avant et après).
 
     <span class="tag tag-device">DEVICE</span> [Chaîne de démarrage](01-boot-chain.md){ .card-link }
 
@@ -54,7 +54,7 @@ les [Preuves](08-evidence.md) relient chaque affirmation à une exécution.
 
 - **Un accéléromètre qui répond**
 
-    Alimenté, axes lus dans plusieurs positions, environ 56 comptes par g.
+    Son registre de contrôle relit ce qui a été écrit ; axes lus dans plusieurs positions, environ 56 comptes par g.
 
     <span class="tag tag-device">DEVICE</span> [Accéléromètre](03-hardware-map.md#accelerometre){ .card-link }
 
@@ -144,7 +144,7 @@ Pas besoin d'un téléphone pour aider. Choisissez la porte qui vous convient.
 ## Recherche en cours
 
 - **Contrôleur tactile.** Sa ligne de reset et sa séquence d'alimentation ont été observées sur l'appareil ; aucun octet n'a encore été échangé avec lui. La recette de transfert du contrôleur SPI est en cours d'établissement.
-- **Wi-Fi et coprocesseur.** La séquence de démarrage du coprocesseur impliqué dans le chemin SDIO et Wi-Fi a été lue dans le firmware ; ce coprocesseur ne tourne pas encore, et son rôle dans la chaîne Wi-Fi n'est pas établi.
+- **Wi-Fi et coprocesseur.** La séquence de démarrage du coprocesseur impliqué dans le chemin SDIO et Wi-Fi a été lue dans le firmware ; nous n'avons pas démarré ce coprocesseur et ne savons pas s'il tourne sous l'étape de démarrage ; son rôle dans la chaîne Wi-Fi n'est pas établi.
 
 Les notes datées sont dans l'[index de la recherche](../research/index.md).
 

@@ -62,15 +62,15 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
     **What you need**
 
     - A DEVICE section of the hardware map and the bundle it cites (the page links it)
-    - A text editor and git; no phone, no compiler
+    - A browser and a text editor; no phone, no compiler. The payload source is readable on GitHub at the commit the manifest names.
 
     **Skills**: Careful reading, Reading register values as hexadecimal
 
-    **A good answer**: A `claim-audit` row for tools/verifications.yaml: the claim quoted exactly, its page, and whether the bundle's manifest.json, screen.txt and vars.txt show what the claim says, no less and no more (match, mismatch or inconclusive, with your reasons).
+    **A good answer**: A `claim-audit` row for tools/verifications.yaml, on the model shown on the Verifications page: the claim quoted exactly, its page, and whether the bundle (manifest.json, screen.txt, vars.txt) and the payload source at the commit the manifest names show what the claim says, no less and no more. Say which part each supports; match, mismatch or inconclusive, with your reasons.
 
     **Contributions so far**: none yet
 
-    [See the Verifications page](https://sebe585.github.io/trognon/en/verifications/)
+    [Audit a claim: the model row and how](https://sebe585.github.io/trognon/en/verifications/#audit-a-claim)
 
 - **Read a page as a newcomer and say where you got lost**
 
@@ -290,7 +290,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
     **Before you run anything** (these stay in force once the mission is open)
 
     - Read the payload source first and run it only if you understand what it reads: a read of a hardware block can have effects, and reading the GPIO interrupt controller once dropped the USB link.
-    - The boot is tethered: nothing is written to the phone's storage, and a restart returns it to its previous state.
+    - The boot is tethered: our payloads write nothing to the phone's storage, and a restart returns the phone to its normal boot. That is the design, not a verified guarantee that a run leaves no trace.
     - Note your board revision, so that the result can be compared with other phones.
 
     **A good answer**: The values at offsets 0x40 to 0x74 and the 52 gate words, compared bit by bit, with your board revision noted.

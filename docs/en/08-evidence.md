@@ -40,7 +40,7 @@ Independent checks are recorded on the [Verifications](verifications.md) page. T
 | VIC0/1/2 state left by the iBSS, IRQ/FIQ vector words | `trace_vic` | bundled |
 | Timer block state, free-running tick | `trace_timer` | bundled |
 | Tick rate 24 MHz against the host clock | `tools/tick_rate.py` | **not bundled yet**: measured and logged in the journal only |
-| Code runs from DFU with nothing written to the phone's storage; patched iBSS, `run` | the nonce of every bundle | bundled for execution; the DFU and pwn steps themselves are not |
+| Code runs from DFU; our payloads contain no write to the phone's storage (by design, not verified by comparing the storage before and after); patched iBSS, `run` | the nonce of every bundle | bundled for execution; the DFU and pwn steps themselves are not |
 | Page table has no fault entry, all sections in domain 0, `DACR = 3` | earlier payloads | **not bundled**: an earlier run, not re-run |
 | Timer 5 interrupt | none | **not proven** (see the [hardware map](03-hardware-map.md)) |
 | Button GPIO mapping, 376 pins read, zero noise | `trace_buttons` | bundled |

@@ -40,7 +40,7 @@ est déterministe avec la même chaîne d'outils), puis lire `screen.txt` face �
 | État de VIC0/1/2 laissé par l'iBSS, mots de vecteur IRQ/FIQ | `trace_vic` | avec dossier |
 | État du bloc timer, tick libre | `trace_timer` | avec dossier |
 | Fréquence du tick à 24 MHz contre l'horloge du Mac | `tools/tick_rate.py` | **pas encore de dossier** : mesuré et consigné au journal seulement |
-| Le code tourne depuis le DFU sans rien écrire dans le stockage du téléphone ; iBSS patché, `run` | le nonce de chaque dossier | avec dossier pour l'exécution ; les étapes DFU et pwn elles-mêmes non |
+| Le code tourne depuis le DFU ; nos payloads ne contiennent aucune écriture dans le stockage du téléphone (par construction, non vérifié par une comparaison avant et après) ; iBSS patché, `run` | le nonce de chaque dossier | avec dossier pour l'exécution ; les étapes DFU et pwn elles-mêmes non |
 | La table de pages n'a aucune entrée de faute, toutes les sections en domaine 0, `DACR = 3` | payloads antérieurs | **sans dossier** : un run ancien, pas rejoué |
 | Interruption du timer 5 | aucun | **non prouvée** (voir la [carte matérielle](03-hardware-map.md)) |
 | Mapping GPIO des boutons, 376 broches lues, zéro bruit | `trace_buttons` | avec dossier |

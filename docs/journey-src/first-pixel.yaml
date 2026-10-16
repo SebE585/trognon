@@ -197,7 +197,7 @@ nodes:
 
   - id: f-wifi
     kind: frontier
-    title: "Wi-Fi: the coprocessor is not running"
+    title: "Wi-Fi: the coprocessor has not been started"
     tag: HYPOTHESIS
     know: |
       The Wi-Fi reset line was toggled and read back. Every probed register of the SDIO block reads zero and a written value is

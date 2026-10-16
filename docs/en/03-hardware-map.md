@@ -17,7 +17,7 @@
 | Timer block | Tick rate confirmed at 24 MHz | Timer interrupt not proven; IRQ-ack offsets and sequence not validated on this SoC | [Timer block](#timer) |
 | NAND | Chip ID read on CE0/CE1 | CE2-CE15, bus 1, and any page access | [NAND](#nand) |
 | Buttons | All 5 buttons mapped by GPIO difference | Mapping found by observed difference, not by name | [Buttons](#buttons) |
-| Accelerometer | Identifier read; powered up with a verified write; axes read in seven positions; directions and a scale (56 counts per g on two axes) come out of them, the Y direction conditional on one stated position | Chip model (LIS331DL or LIS302DL), calibrated offsets, angular accuracy | [Accelerometer](#accelerometer) |
+| Accelerometer | Identifier read; a control-register write that reads back; axes read in seven positions; directions and a scale (56 counts per g on two axes) come out of them, the Y direction conditional on one stated position | Chip model (LIS331DL or LIS302DL), calibrated offsets, angular accuracy | [Accelerometer](#accelerometer) |
 | Wi-Fi/SDIO | Base address and GPIO lines confirmed; SDHCI layout confirmed in the IOP's own firmware | Which register window the IOP's SDHCI driver actually uses, and why CPU-side writes don't stick | [Wi-Fi/SDIO](#wi-fi-and-sdio) |
 | Magnetometer | A device at `0x1e` gives 12 register readings compatible with an AK8973's documented reset state; `0x1f` is silent; the `i2c0` scan found no additional responder | A measurement (needs EEPROM-derived setup), the role of `0x1f` | [Magnetometer](#magnetometer) |
 | Touch controller | Reset and chip-select GPIO levels read; PMU registers read, and the two registers read as the touch LDO enable and clock enable written and restored; `spi1` clock gate written and restored, its idle registers read | Polarity, powering the controller, any SPI transaction, any response | [Touch controller](#touch-controller) |
@@ -307,8 +307,8 @@ It measures the phone's acceleration along three axes, over a two-wire I2C bus; 
 - **Observed on the phone** <span class="tag tag-device">DEVICE</span>
 
     - A full I2C transaction to address `0x1d` was acknowledged; the identifier register read `0x3B`.
-    - The part was powered up with a write that reads back (`CTRL_REG1` `0x47`).
-    - The three axes were read in seven positions: +X toward the right edge, +Y up, +Z out of the screen, about 56 counts per g.
+    - A write to `CTRL_REG1` reads back as `0x47` (the power-down bit cleared, by the datasheet).
+    - The three axes were read in seven positions: +X toward the right edge, +Y up (this rests on one stated position), +Z out of the screen, about 56 counts per g.
 
 - **Established by analysis** <span class="tag tag-source">SOURCE</span>
 
@@ -324,8 +324,8 @@ It measures the phone's acceleration along three axes, over a two-wire I2C bus; 
 
 The detail, the registers and the evidence follow.
 
-**Current state**: the identifier was read over a real I2C transaction; the part was powered up
-with a verified write (`CTRL_REG1` read back `0x47`); the three axes were read in seven
+**Current state**: the identifier was read over a real I2C transaction; a write to the control register
+reads back (`CTRL_REG1` `0x47`, which clears the power-down bit by the datasheet); the three axes were read in seven
 positions, each pair of runs identical or one count apart. A first set of axis directions and a
 scale come out of those readings. What is **not** established: which of the two compatible-string
 chips (LIS331DL or LIS302DL) is on the board, calibrated offsets, any angular accuracy, and the
@@ -686,7 +686,7 @@ the PMU access and the SPI controller, before any transaction; the observations 
   was not confirmed on this chip.
 - Two PMU registers were written and restored (STAGE 39): `0x11` from `0xBE` to `0xFE` (bit `0x40`, the touch
   LDO's enable by a static reading of the PMU driver) and `0x50` from `0x11` to `0x13` (PMU GPIO 0, the touch
-  clock enable by the same reading). The PMU accepted both and held them for 20 ms; no electrical effect was
+  clock enable by the same reading). Both read back the written value after 20 ms; no electrical effect was
   observed, and both were put back.
 - A dry run of the candidate power-up sequence (STAGE 40) set the two PMU registers read as the touch supply and clock
   enables, then released the reset line, for about 35 ms with no SPI byte sent, and restored everything: the reset line

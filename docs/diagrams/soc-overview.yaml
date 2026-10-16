@@ -13,7 +13,7 @@ nodes:
   - { id: accel, label: "Accelerometer", subtitle: "i2c0, axes read",                   group: works, style: stage }
   - { id: nand,  label: "NAND",          subtitle: "chip ID only",                      group: works, style: stage }
   - { id: touch, label: "Touch",         subtitle: "GPIO and power seen, no SPI byte",  group: part,  style: accent }
-  - { id: wifi,  label: "Wi-Fi and IOP", subtitle: "GPIO seen, coprocessor not running", group: part, style: accent }
+  - { id: wifi,  label: "Wi-Fi and IOP", subtitle: "GPIO seen, coprocessor not started", group: part, style: accent }
   - { id: mag,   label: "Magnetometer",  subtitle: "present, no measurement",           group: part,  style: service }
 edges:
   - { from: cpu, to: disp }

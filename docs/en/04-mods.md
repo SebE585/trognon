@@ -13,7 +13,7 @@ was shaped by real use instead of guessed up front.
 This fits the constraints we found:
 
 - Boot is **tethered**: every run already sends a RAM payload over USB. A Mod is
-  exactly that unit. No installer, nothing written to the phone's storage.
+  exactly that unit. No installer; the aim is to write nothing to the phone's storage.
 - Every driver is proven on the device before the next one (the method of the
   [exception console](02-exception-console.md)).
 - It stays OS-agnostic: Mods are one track; booting Linux or a BSD on A5+ stays

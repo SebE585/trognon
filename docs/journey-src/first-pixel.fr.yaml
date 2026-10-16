@@ -201,7 +201,7 @@ nodes:
 
   - id: f-wifi
     kind: frontier
-    title: "Wi-Fi : le coprocesseur ne tourne pas"
+    title: "Wi-Fi : le coprocesseur n'a pas été démarré"
     tag: HYPOTHESIS
     know: |
       La ligne de reset du Wi-Fi a été basculée puis relue. Chaque registre testé du bloc SDIO se lit à zéro et une valeur

@@ -123,7 +123,7 @@ missions:
       - "The payload trace_gate_survey.bin (STAGE 47), which only reads"
     preconditions:
       - "Read the payload source first and run it only if you understand what it reads: a read of a hardware block can have effects, and reading the GPIO interrupt controller once dropped the USB link."
-      - "The boot is tethered: nothing is written to the phone's storage, and a restart returns it to its previous state."
+      - "The boot is tethered: our payloads write nothing to the phone's storage, and a restart returns the phone to its normal boot. That is the design, not a verified guarantee that a run leaves no trace."
       - "Note your board revision, so that the result can be compared with other phones."
     expected: "The values at offsets 0x40 to 0x74 and the 52 gate words, compared bit by bit, with your board revision noted."
     unlocks: "Whether the clock mask registers mirror the gate words, which would settle how the device tree's numbers map to the physical gates."
@@ -152,11 +152,11 @@ missions:
     work: static
     needs:
       - "A DEVICE section of the hardware map and the bundle it cites (the page links it)"
-      - "A text editor and git; no phone, no compiler"
-    expected: "A `claim-audit` row for tools/verifications.yaml: the claim quoted exactly, its page, and whether the bundle's manifest.json, screen.txt and vars.txt show what the claim says, no less and no more (match, mismatch or inconclusive, with your reasons)."
+      - "A browser and a text editor; no phone, no compiler. The payload source is readable on GitHub at the commit the manifest names."
+    expected: "A `claim-audit` row for tools/verifications.yaml, on the model shown on the Verifications page: the claim quoted exactly, its page, and whether the bundle (manifest.json, screen.txt, vars.txt) and the payload source at the commit the manifest names show what the claim says, no less and no more. Say which part each supports; match, mismatch or inconclusive, with your reasons."
     unlocks: "Finds claims that say more than their evidence, which is the failure this project exists to avoid."
     skills: ["Careful reading", "Reading register values as hexadecimal"]
-    submit: { label: "See the Verifications page", url: "https://sebe585.github.io/trognon/en/verifications/" }
+    submit: { label: "Audit a claim: the model row and how", url: "https://sebe585.github.io/trognon/en/verifications/#audit-a-claim" }
     state: open
 
   - id: FC-NEWCOMER-READ

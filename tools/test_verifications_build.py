@@ -106,5 +106,27 @@ class BreakdownTests(unittest.TestCase):
         self.assertIn("| **Total** | **1** |", text)
 
 
+class AssistedTests(unittest.TestCase):
+    def test_an_assisted_row_says_what_was_done(self):
+        self.assertTrue(any("what was actually done" in e for e in errs([row(assisted_by="an assistant", notes="")])))
+        self.assertEqual(errs([row(assisted_by="an assistant", notes="read the files, ran the tool")]), [])
+
+    def test_the_page_names_the_assistant_next_to_the_human(self):
+        r = row(by="alice", assisted_by="an assistant", notes="n")
+        self.assertIn("alice (assisted by an assistant)", vb.row_md(r))
+
+    def test_the_audit_model_comes_from_the_data(self):
+        a = row(kind="claim-audit", claim="THE CLAIM", page="p", result="match", notes="n")
+        self.assertIn("THE CLAIM", "\n".join(vb.audit_example([row(), a])))
+
+    def test_a_template_is_shown_when_no_audit_exists_yet(self):
+        self.assertIn("claim-audit", "\n".join(vb.audit_example([row()])))
+
+    def test_the_page_explains_what_a_bundle_does_not_show(self):
+        text = vb.render([row(by="maintainer")], ["B1"], {"B1": "abc123"})
+        self.assertIn("Results, not inputs", text)
+        self.assertIn("Agreement is not independence", text)
+
+
 if __name__ == "__main__":
     unittest.main()

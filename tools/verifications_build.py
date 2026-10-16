@@ -69,6 +69,8 @@ def check(rows, exists=None, commit_ok=commit_exists):
                     errors.append("%s: commit %s is not in the repository history" % (where, r["commit"]))
         if kind == "claim-audit" and not (r.get("claim") and r.get("page")):
             errors.append("%s: a claim audit quotes the claim and names its page" % where)
+        if r.get("assisted_by") and not r.get("notes"):
+            errors.append("%s: a row prepared with an assistant says in 'notes' what was actually done" % where)
         if r.get("result") in ("mismatch", "not-reproducible", "inconclusive") and not r.get("notes"):
             errors.append("%s: a %s result needs an explanation in 'notes'" % (where, r.get("result")))
     return errors
@@ -115,8 +117,20 @@ def recorded():
 def row_md(r):
     env = r.get("environment") or {}
     where = ("%s, %s" % (env.get("host", ""), env.get("toolchain", ""))).strip(", ") or "-"
+    by = r["by"] + (" (assisted by %s)" % r["assisted_by"] if r.get("assisted_by") else "")
+    text = ("*Claim:* %s %s" % (r["claim"], r.get("notes", "")) if r["kind"] == "claim-audit" else (r.get("notes") or "")).replace("|", "\\|")
     return "| [`%s`](%s/tree/main/evidence/%s) | %s | %s | `%s` | %s | %s | %s |" % (
-        r["bundle"], REPO, r["bundle"], r["kind"], r["result"], (r.get("commit") or "-")[:10], where, r["by"], (r.get("notes") or r.get("claim") or "").replace("|", "\\|"))
+        r["bundle"], REPO, r["bundle"], r["kind"], r["result"], (r.get("commit") or "-")[:10], where, by, text)
+
+
+def audit_example(rows):
+    """The first claim-audit row of the data, as a model; a fixed template when there is none yet."""
+    ex = next((r for r in rows if r.get("kind") == "claim-audit"), None)
+    if ex is None:
+        ex = {"bundle": "<bundle>", "kind": "claim-audit", "date": "YYYY-MM-DD", "by": "YOUR-GITHUB-HANDLE", "claim": "<the claim, quoted exactly>",
+              "page": "<the page>", "result": "inconclusive", "notes": "<what the bundle shows, and what it does not>"}
+    body = yaml.safe_dump([ex], sort_keys=False, allow_unicode=True, width=100, default_flow_style=False).rstrip("\n").split("\n")
+    return ["```yaml"] + body + ["```"]
 
 
 def render(rows, all_bundles, recorded_commit):
@@ -140,12 +154,26 @@ def render(rows, all_bundles, recorded_commit):
              "| **Total** | **%d** |" % s["bundles"], "",
              "**Independent checks: %d.** Every row counted above is the maintainer's, made on one toolchain (the project's own); a check by someone else "
              "is listed separately below and is the only kind that adds independence." % s["independent"], "",
-             "## Check a bundle yourself", "",
-             "You need the repository with its history, `arm-none-eabi-gcc` and `make`; no phone.", "",
+             "## Two ways to check", "",
+             "Both go into `tools/verifications.yaml` through a pull request. Neither needs a phone.", "",
+             "### Rebuild a bundle", "",
+             "You need the repository with its history, `arm-none-eabi-gcc` and `make`.", "",
              "```sh", "python3 tools/rebuild_bundle.py evidence/<bundle> --search-later --by YOUR-GITHUB-HANDLE", "```", "",
-             "It prints one row. Add it to `tools/verifications.yaml` in a pull request (the template asks what you checked and with which toolchain). "
-             "A different compiler can produce different bytes: if yours does, that is exactly the result to submit. "
-             "See [Missions](missions.md) for this as a first contribution.", ""]
+             "It prints one row. A different compiler can produce different bytes: if yours does, that is exactly the result to submit.", "",
+             "### Audit a claim", "",
+             "You need a browser and a text editor, no compiler. Pick one DEVICE claim of the [hardware map](03-hardware-map.md), quote it exactly, open the bundle "
+             "it cites, and say whether the bundle shows what the claim says, no less and no more. Write the row by hand, on this model "
+             "(`match`, `mismatch` or `inconclusive`; `by` is your GitHub handle):", ""] + audit_example(rows) + [
+             "", "### What a bundle shows, and what it does not", "",
+             "- **Results, not inputs.** `manifest.json`, `screen.txt` and `vars.txt` record what the phone reported. The parameters of the experiment (an address, "
+             "a register, a value) are in the **payload source** at the commit the manifest names; rebuild the payload to be sure it is the same binary.",
+             "- **Agreement is not independence.** The three files come from one instrument in one run: their agreement is one record, not three measurements.",
+             "- **Different guarantees.** The nonce shows that *this binary ran this time*; the hash ties the binary to a commit; the source at that commit gives the "
+             "parameters; none of them shows what the signal looked like on the bus. Say which part each one supports.", "",
+             "### If an AI assistant helped", "",
+             "Put the human responsible in `by`, name the assistant in `assisted_by`, and say in `notes` what was actually done (which files were read, what was run). "
+             "An assistant's output is a proposal, not evidence: a result it did not obtain by reading or running something should be written as *absent*.", "",
+             "See [Missions](missions.md) for these as first contributions.", ""]
     if ind:
         lines += ["## Independent checks", "", head] + [row_md(r) for r in ind] + [""]
     else:

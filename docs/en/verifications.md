@@ -26,15 +26,54 @@ A published run is only as good as someone else's ability to check it. This page
 
 **Independent checks: 0.** Every row counted above is the maintainer's, made on one toolchain (the project's own); a check by someone else is listed separately below and is the only kind that adds independence.
 
-## Check a bundle yourself
+## Two ways to check
 
-You need the repository with its history, `arm-none-eabi-gcc` and `make`; no phone.
+Both go into `tools/verifications.yaml` through a pull request. Neither needs a phone.
+
+### Rebuild a bundle
+
+You need the repository with its history, `arm-none-eabi-gcc` and `make`.
 
 ```sh
 python3 tools/rebuild_bundle.py evidence/<bundle> --search-later --by YOUR-GITHUB-HANDLE
 ```
 
-It prints one row. Add it to `tools/verifications.yaml` in a pull request (the template asks what you checked and with which toolchain). A different compiler can produce different bytes: if yours does, that is exactly the result to submit. See [Missions](missions.md) for this as a first contribution.
+It prints one row. A different compiler can produce different bytes: if yours does, that is exactly the result to submit.
+
+### Audit a claim
+
+You need a browser and a text editor, no compiler. Pick one DEVICE claim of the [hardware map](03-hardware-map.md), quote it exactly, open the bundle it cites, and say whether the bundle shows what the claim says, no less and no more. Write the row by hand, on this model (`match`, `mismatch` or `inconclusive`; `by` is your GitHub handle):
+
+```yaml
+- bundle: 20261016T101710Z-trace_accel_i2c
+  kind: claim-audit
+  date: '2026-10-17'
+  by: maintainer
+  assisted_by: Claude (AI assistant)
+  claim: A full I2C transaction to address 0x1d was acknowledged; the identifier register read 0x3B.
+  page: https://sebe585.github.io/trognon/en/03-hardware-map/#accelerometer
+  result: match
+  notes: 'Operations done: read manifest.json, screen.txt and vars.txt of the bundle, read the payload
+    source at the commit the manifest names, and ran tools/rebuild_bundle.py (the commit rebuilds to the
+    manifest hash). The bundle shows the RESULTS: the three files agree on three ACK flags at 1 and WHO_AM_I
+    0x3B (three records of one instrument, not three measurements) and the nonce came back identical.
+    It does NOT record the address or the register: those are SOC_ACCEL_I2C_ADDR 0x1d and SOC_ACCEL_WHO_AM_I_REG
+    0x0F in tools/payloads/soc/s5l8920.h at that commit. So the claim holds on the bundle plus the source;
+    the bundle alone would be inconclusive about the address. This gap was first noted by an external
+    AI review.'
+```
+
+### What a bundle shows, and what it does not
+
+- **Results, not inputs.** `manifest.json`, `screen.txt` and `vars.txt` record what the phone reported. The parameters of the experiment (an address, a register, a value) are in the **payload source** at the commit the manifest names; rebuild the payload to be sure it is the same binary.
+- **Agreement is not independence.** The three files come from one instrument in one run: their agreement is one record, not three measurements.
+- **Different guarantees.** The nonce shows that *this binary ran this time*; the hash ties the binary to a commit; the source at that commit gives the parameters; none of them shows what the signal looked like on the bus. Say which part each one supports.
+
+### If an AI assistant helped
+
+Put the human responsible in `by`, name the assistant in `assisted_by`, and say in `notes` what was actually done (which files were read, what was run). An assistant's output is a proposal, not evidence: a result it did not obtain by reading or running something should be written as *absent*.
+
+See [Missions](missions.md) for these as first contributions.
 
 ## Independent checks
 
@@ -43,7 +82,7 @@ None yet. This is the first thing anyone can add.
 ## The maintainer's own runs
 
 <details markdown="1">
-<summary>54 rows, on one toolchain</summary>
+<summary>55 rows, on one toolchain</summary>
 
 | Bundle | Check | Result | Commit | Where | By | Notes |
 |---|---|---|---|---|---|---|
@@ -101,5 +140,6 @@ None yet. This is the first thing anyone can add.
 | [`20261016T174429Z-trace_gpio_survey`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T174429Z-trace_gpio_survey) | rebuild | match | `2497ba789e` | Darwin arm64, arm-none-eabi-gcc (GCC) 16.2.0 | maintainer | Recorded with a dirty tree and no source.diff; rebuilds only at this later commit. |
 | [`20261016T174843Z-trace_spi1_nogate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T174843Z-trace_spi1_nogate) | rebuild | match | `7828b0c3db` | Darwin arm64, arm-none-eabi-gcc (GCC) 16.2.0 | maintainer | Recorded with a dirty tree and no source.diff; rebuilds only at this later commit. |
 | [`20261016T190939Z-trace_spi1_selftest`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T190939Z-trace_spi1_selftest) | rebuild | match | `fd410193b8` | Darwin arm64, arm-none-eabi-gcc (GCC) 16.2.0 | maintainer | Recorded with a dirty tree and no source.diff; rebuilds only at this later commit. |
+| [`20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c) | claim-audit | match | `-` | - | maintainer (assisted by Claude (AI assistant)) | *Claim:* A full I2C transaction to address 0x1d was acknowledged; the identifier register read 0x3B. Operations done: read manifest.json, screen.txt and vars.txt of the bundle, read the payload source at the commit the manifest names, and ran tools/rebuild_bundle.py (the commit rebuilds to the manifest hash). The bundle shows the RESULTS: the three files agree on three ACK flags at 1 and WHO_AM_I 0x3B (three records of one instrument, not three measurements) and the nonce came back identical. It does NOT record the address or the register: those are SOC_ACCEL_I2C_ADDR 0x1d and SOC_ACCEL_WHO_AM_I_REG 0x0F in tools/payloads/soc/s5l8920.h at that commit. So the claim holds on the bundle plus the source; the bundle alone would be inconclusive about the address. This gap was first noted by an external AI review. |
 
 </details>
