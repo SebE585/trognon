@@ -45,6 +45,8 @@ STAGE_trace_gate_write = 23
 STAGE_trace_write_test = 24
 STAGE_trace_dyn_clock16 = 25
 STAGE_trace_iop_regs = 26
+STAGE_trace_iop_probe_mmu = 27
+STAGE_trace_iop_clkgate = 28
 
 # Objects are built for one SoC. Without this stamp, `make SOC=other` would silently reuse objects built for
 # the previous chip. The stamp is rewritten only when SOC or the flags change.

@@ -90,5 +90,10 @@
  * firmware pointer, +0x114 size, +0x118 self-address. SOURCE (disassembly + device tree), not yet
  * read on the device. */
 #define SOC_IOP_REG_BASE      0x86300000
+/* The "iop" device tree node's own clock-gates property (0x27 = 39), read-only check: is this
+ * gate already enabled? CLOCK_GATE_BASE(0xBF100078) + 4*0x27. Not written anywhere in
+ * AppleARM7M::start()'s own disassembly (checked 2026-10-16) -- if this reads enabled already,
+ * something else (generic platform-bus matching, or it is simply not needed) accounts for it. */
+#define SOC_CLOCK_GATE_27     (0xBF100078 + 4 * 0x27)
 
 #endif

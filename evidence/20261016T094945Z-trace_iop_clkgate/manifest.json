@@ -1,0 +1,31 @@
+{
+  "payload": "trace_iop_clkgate.bin",
+  "sha256": "71d286f0ff6e43d149d128cde1521eca6ad643af480ec73238c1e35911896844",
+  "bytes": 2956,
+  "soc": "s5l8920",
+  "nonce_sent": "5D364061",
+  "nonce_read": "5D364061",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "iop-clkgate-1"
+  },
+  "variables": {
+    "gate27": "0000000F"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "fe54e9e660540db456e0c0d5decec8eb304e5bf9",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T094945Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_iop_clkgate.bin --evidence <repo>/tools/../evidence --vars gate27 --wait 15",
+  "screen_rows": 8
+}

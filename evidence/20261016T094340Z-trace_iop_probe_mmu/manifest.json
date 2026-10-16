@@ -1,0 +1,36 @@
+{
+  "payload": "trace_iop_probe_mmu.bin",
+  "sha256": "d4cb003079830eb3b89a4bb1e9f0517857f1e7d7fd97ba22caff5195e98ff8f4",
+  "bytes": 3332,
+  "soc": "s5l8920",
+  "nonce_sent": "D059C2F5",
+  "nonce_read": "D059C2F5",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "iop-mmu-1"
+  },
+  "variables": {
+    "ttbr0": "84034000",
+    "l1desc": "86300C12",
+    "l1type": "00000002",
+    "l1base": "86300000",
+    "l1dom": "00000000",
+    "l1aptex": "00000300"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "fe54e9e660540db456e0c0d5decec8eb304e5bf9",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T094340Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_iop_probe_mmu.bin --evidence <repo>/tools/../evidence --vars ttbr0,l1desc,l1type,l1base,l1dom,l1aptex --wait 15",
+  "screen_rows": 15
+}
