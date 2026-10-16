@@ -41,24 +41,59 @@ f sym.state_check_bits_0x2f @ 0x6e44
 
 # real low-level driver function, named via its own log-tag string
 f sym.sdiodrv_resetSDHC @ 0x64b0
+f sym.sdiodrv_sendCommand @ 0x67f0
+f sym.sdiodrv_completeCommand_inline @ 0x6724
+f sym.sdiodrv_performDMA_or_transferData @ 0x6898
+f sym.command_inhibited_check @ 0x6ac8
 
-# not yet disassembled this session, candidates for opcode 5/6/7 real
-# register access:
+# not yet disassembled this session, candidates for opcode 5's real
+# register access, and for sendCommand/performDMA's own sub-calls:
 #   0x6580, 0x63d0, 0x638c   (opcode 5 three sub-calls)
-#   0x67f0                   (opcode 6 tail-call target)
-#   0x6898                   (opcode 7 call target)
+#   0x6c70, 0x6c90, 0x6cf0, 0x6c00, 0x6f18     (sendCommand sub-calls)
+#   0x6804, 0x6d50, 0xa7d8, 0x8dfc             (performDMA sub-calls)
 
-# Known device-struct offsets (not registers -- fields of the per-device
-# state struct passed as the first argument to most functions above):
-#   [dev+0x00] "configured" flag, checked by every opcode handler
-#   [dev+0x04] allocated buffer pointer (set by op2, cleared by op3)
-#   [dev+0x2f] a one-byte state flag (bits 0-2 read/written by the poll helper)
-#   [dev+0x34], [dev+0x36] two 16-bit "desired register" bitmasks built by
-#                the reset sub-functions, applied to hardware somewhere
-#                NOT YET FOUND (probably an IRQ handler or deferred task)
+# CORRECTED 2026-10-16 (second review caught this): what earlier notes
+# called "dev" is NOT a separate struct -- for every one of the 6
+# non-ping opcode handlers, the dispatcher passes (message+0xc, message+0x14)
+# as arguments (confirmed in the switch's own disassembly, all 6 cases
+# identical). So every "[dev+N]" offset below actually means
+# "[message+0xc+N]"; there is one buffer, not two.
+#
+# dev (= message+0xc) origin, traced (2026-10-16, second review asked for
+# this explicitly): fcn.00000eb0 (the receive call) indexes a FIXED TABLE
+# at literal address 0x10da4, one 32-byte channel-descriptor per channel
+# (channel_id * 0x20), each holding a ring buffer of 64-byte message slots
+# (index<<6, masked to 64-byte alignment). This is RAM, part of the
+# firmware's own static data -- not an MMIO window, and not something the
+# host passes in as a raw hardware pointer. sdiodrv_sendCommand (0x67f0)
+# and the command-inhibited check (0x6ac8) both read/write further fields
+# of this SAME struct ([r5+0x8], [r5+0xe], [r5+0x10], [r5+0x24], [r5+0x30],
+# [r5+0x32]), all still inside this one RAM-based structure -- no literal
+# hardware address found at this level either.
+#
 #   [message+0x00] opcode byte (dispatched 1-7, see sdio_message_loop)
 #   [message+0x08] response status field (same offset the host side
 #                sendIOPCommand writes pending=1 into before sending)
+#   [message+0xc+0x00] "configured" flag, checked by every opcode handler
+#   [message+0xc+0x04] allocated buffer pointer (set by op2, cleared by op3)
+#   [message+0xc+0x08], [+0xe], [+0x10] cmd/arg-style fields (read by
+#                sendCommand, logged as "arg"/"cmd" in its own error strings)
+#   [message+0xc+0x24] a status word, &1 checked by command_inhibited_check
+#                -- could be a real cached copy of a hardware status bit,
+#                or pure software state; not distinguished yet (see below)
+#   [message+0xc+0x2f] a one-byte state flag (bits 0-2 read/written by the
+#                generic poll helper)
+#   [message+0xc+0x30], [+0x32] more fields read by sendCommand/performDMA
+#   [message+0xc+0x34], [message+0xc+0x36] two 16-bit "desired register"
+#                bitmasks built by the reset sub-functions
+
+# STILL OPEN (second review, 2026-10-16): the RAM origin of this struct is
+# now proven, which rules out "dev IS an MMIO window" -- but it does NOT
+# yet prove these fields are pure software bookkeeping rather than a
+# software-maintained MIRROR of real hardware state (updated by an
+# interrupt handler we have not found). The real register access, if it
+# exists in this firmware at all outside an ISR, is most likely in one of
+# the not-yet-disassembled sub-calls listed above.
 
 # Confirmed negative: neither 0x80000000 (SDIO) nor 0x81200000/0x81300000
 # (NAND H2FMI0/1) appear anywhere in this binary as a literal 32-bit word,

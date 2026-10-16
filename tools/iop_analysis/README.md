@@ -43,45 +43,86 @@ Every handler starts with the same guard: read `[message+0]` (the device's
 "configured" state), bail with generic error `0x401` if zero. Not
 opcode-specific.
 
-### The reset path (opcode 4), traced 5 levels deep
+### Correction (2026-10-16, caught by a second review): "dev" is not a separate struct
+
+Earlier notes called the first argument of opcode handlers 2-7 "dev", as if
+it were a distinct device struct. It is not: the switch's own dispatch code
+passes **`(message+0xc, message+0x14)`** to every one of the six non-ping
+handlers (confirmed identical in all six cases). There is one buffer, not
+two — every `[dev+N]` below really means `[message+0xc+N]`.
+
+### Where that buffer actually comes from (traced, 2026-10-16)
+
+The review asked for this explicitly, rather than accepting the offset-only
+description. `fcn.00000eb0` (the receive call inside the message loop)
+indexes a **fixed table at literal address `0x10da4`**: one 32-byte
+channel-descriptor per channel (`channel_id * 0x20`), each holding a ring
+buffer of 64-byte message slots (`index << 6`, masked to 64-byte alignment).
+**This is RAM, part of the firmware's own static data** — not an MMIO
+window, and not a raw hardware pointer handed in by the host. This rules out
+one specific concern the review raised ("dev could itself be a pointer into
+MMIO space"), though it does not yet rule out that these fields *mirror*
+real hardware state updated elsewhere (see below).
+
+### The reset and sendCommand/performDMA paths, traced
 
 ```
 sdio_op4_reset (0x19c4)
- +-- reset_set_bits_0x34_0x36_a (0x6c24)   -- builds a bitmask in [dev+0x34]/[dev+0x36]
+ +-- reset_set_bits_0x34_0x36_a (0x6c24)   -- builds a bitmask in [msg+0xc+0x34]/[+0x36]
  +-- reset_set_bits_0x34_0x36_b (0x6d04)   -- same, different bits
  +-- generic_poll_retry_100x (0x64b0)       -- shared by op4/op6/op7; retries up to 100x;
        |                                       this is also `sdiodrv_resetSDHC` by its own
        |                                       log-tag string, but it is generic, not
        |                                       reset-specific code
-       +-- state_set_bits_0x2f (0x6e30)    -- [dev+0x2f] |= (arg & 7)
-       +-- state_check_bits_0x2f (0x6e44)  -- ([dev+0x2f] & 7), pure software check
+       +-- state_set_bits_0x2f (0x6e30)    -- [msg+0xc+0x2f] |= (arg & 7)
+       +-- state_check_bits_0x2f (0x6e44)  -- ([msg+0xc+0x2f] & 7), same struct
+
+sdio_op6 -> sdiodrv_sendCommand (0x67f0, confirmed by its own log-tag string,
+            not a guess anymore) -- reads/writes more fields of the SAME
+            struct: [+0x8], [+0xe], [+0x10], [+0x24], [+0x30], [+0x32].
+            Calls command_inhibited_check (0x6ac8): `[+0x24] & 1`, polled
+            in a classic retry loop -- still the same RAM struct, no
+            literal address.
+sdio_op7 -> sdiodrv_performDMA / sdiodrv_transferData (0x6898, same: named
+            by its own log-tag strings, not guessed) -- same struct again.
 ```
 
-**No literal MMIO address found anywhere in this chain.** Confirmed by an
+**No literal MMIO address found anywhere in any of these paths**, and the
+buffer they all operate on is now proven to live in the firmware's own RAM
+table, not in peripheral address space. Confirmed separately by an
 exhaustive byte-level search of the whole firmware image for `0x80000000`
-(SDIO) and `0x81200000`/`0x81300000` (NAND H2FMI0/1): zero matches, in either
-the raw firmware or its wrapper kext (whose own `__const` turned out to be a
-plain kernel-API jump table, not a peripheral address table). The actual
-MMIO write is most likely deferred — an interrupt handler or a background
-task applying these bitmasks — not in the direct call path from the switch.
-**Not yet located.**
+(SDIO) and `0x81200000`/`0x81300000` (NAND H2FMI0/1): zero matches anywhere,
+in either the raw firmware or its wrapper kext.
 
-### Known struct offsets (software state, not registers)
+**What this does and does not prove** (the review's point, still open): this
+rules out the buffer itself being a hardware window. It does **not** yet
+prove these fields are pure software bookkeeping rather than a
+software-maintained *mirror* of real hardware state, kept in sync by an
+interrupt handler we have not found. The real register access, if this
+firmware does it anywhere outside an ISR, is most likely in one of the
+sub-calls below, none of which have been opened yet.
 
-| Offset | Meaning |
+### Known struct offsets, corrected (all relative to `message+0xc`)
+
+| Offset from `message` | Meaning |
 |---|---|
-| `[dev+0x00]` | "configured" flag, checked by every opcode handler |
-| `[dev+0x04]` | allocated buffer pointer (opcode 2 sets it, opcode 3 clears it) |
-| `[dev+0x2f]` | a one-byte state flag, bits 0-2 |
-| `[dev+0x34]`, `[dev+0x36]` | two 16-bit "desired register" bitmasks built by the reset path |
-| `[message+0x00]` | opcode byte |
-| `[message+0x08]` | response/status field — same offset the host's `sendIOPCommand` writes `pending=1` into before sending |
+| `+0x00` | opcode byte (dispatched 1-7) |
+| `+0x08` | response/status field — same offset the host's `sendIOPCommand` writes `pending=1` into before sending |
+| `+0xc+0x00` | "configured" flag, checked by every opcode handler |
+| `+0xc+0x04` | allocated buffer pointer (opcode 2 sets it, opcode 3 clears it) |
+| `+0xc+0x08`, `+0xc+0xe`, `+0xc+0x10` | cmd/arg-style fields, read and logged by `sendCommand` |
+| `+0xc+0x24` | a status word, `&1` checked by `command_inhibited_check` — hardware mirror or pure software, not distinguished yet |
+| `+0xc+0x2f` | a one-byte state flag, bits 0-2 |
+| `+0xc+0x30`, `+0xc+0x32` | more fields read by `sendCommand`/`performDMA` |
+| `+0xc+0x34`, `+0xc+0x36` | two 16-bit "desired register" bitmasks built by the reset path |
 
 ### Not disassembled yet (real next targets)
 
 - `0x6580`, `0x63d0`, `0x638c` — opcode 5's three sub-calls.
-- `0x67f0`, `0x6898` — opcode 6 and 7's call targets; the most likely place
-  to actually find a register access for "send command" / "transfer data".
+- `0x6c70`, `0x6c90`, `0x6cf0`, `0x6c00`, `0x6f18` — `sendCommand`'s own
+  sub-calls; `0x6804`, `0x6d50`, `0xa7d8`, `0x8dfc` — `performDMA`'s. These
+  are the best remaining candidates for an actual register access, now that
+  every level checked so far has turned out to be the same RAM struct.
 - The NAND (`h2fmi_iop_*`) and CDMA driver functions, named in the firmware's
   own strings but not traced at all — NAND is this firmware's dominant
   tenant by far (39 debug strings vs. 6 for SDIO; see the architecture

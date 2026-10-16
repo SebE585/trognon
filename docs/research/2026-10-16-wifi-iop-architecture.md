@@ -317,9 +317,24 @@ between the ping and hardware activation is wrong as stated.
 Table index 3 (**real opcode 4**) calls a function that references the
 `sdiodrv_resetSDHC` string — this, not the ping, is the opcode that
 actually touches hardware. The other five were disassembled too, each
-guarded by the same pattern seen in the ping handler (read `[message+0]`,
-the device's "configured" state; bail with a generic `0x401` error if it
-is zero — not opcode-specific, the same guard in all seven):
+guarded by the same pattern seen in the ping handler: read a "configured"
+flag, bail with a generic `0x401` error if it is zero.
+
+**Correction (caught by a second review, same day)**: the "`dev`" pointer
+below is not a separate struct, as an earlier version of this section
+implied. The switch's own dispatch code passes the identical pair
+`(message+0xc, message+0x14)` to every one of the six non-ping handlers —
+confirmed in all six cases, not assumed. There is one buffer, not two; every
+`[dev+N]` below means `[message+0xc+N]`. Traced one level further at the
+reviewer's explicit request: the receive call (`fcn.00000eb0`) resolves
+`message` itself through a **fixed table at literal address `0x10da4`** — a
+32-byte channel descriptor per channel, each holding a ring buffer of
+64-byte message slots. That address is RAM, part of the firmware's own
+static data, not an MMIO window and not a raw hardware pointer handed in by
+the host — which answers one of the reviewer's two concerns (that `dev`
+might itself be a pointer into register space) without yet answering the
+other (whether its fields *mirror* real hardware state kept in sync
+elsewhere; see "Known gaps").
 
 - **Opcode 2** (`fcn.00001a58`): allocates a 16-byte buffer and stores it
   at `[dev+4]` — opens a resource.
@@ -330,37 +345,44 @@ is zero — not opcode-specific, the same guard in all seven):
   sub-call per field, stopping at the first failure — matches the
   `setClockRate`/`setBusWidth`/`setBusSpeedMode` family named in the
   firmware's own debug strings; likely "set bus parameters" as a bundle.
-- **Opcode 6** (`fcn.0000190c`): a thin tail-call (a jump, not a call) into
-  `fcn.000067f0` with two pointers (the message, and message+8) — a
-  signature consistent with sending an SD command (index/argument in,
-  response out), not yet confirmed further.
-- **Opcode 7** (`fcn.000018bc`): passes four distinct sub-pointers
-  (message+8, +0x18, +0x28, +0x34→+0x38) into `fcn.00006898` — a signature
-  consistent with a data transfer (buffer, block size, block count,
-  direction), not yet confirmed further.
+- **Opcode 6** (`fcn.0000190c`): a thin tail-call into `fcn.000067f0`,
+  confirmed by its own log-tag strings to be **`sdiodrv_sendCommand`** (and,
+  inlined in the same function, `sdiodrv_completeCommand`) — not a guess
+  from signature anymore. Reads and writes several more fields of the same
+  `dev` struct (`+0x8`, `+0xe`, `+0x10`, `+0x24`, `+0x30`, `+0x32`), logged
+  as `cmd`/`arg` in its own error strings. Its `command_inhibited_check`
+  helper (`fcn.00006ac8`, polled in a classic retry loop) reads `[dev+0x24]
+  & 1` — still the same RAM struct, no literal address at this level either.
+- **Opcode 7** (`fcn.000018bc`): calls `fcn.00006898`, confirmed by its own
+  log-tag strings to be **`sdiodrv_performDMA`** / **`sdiodrv_transferData`**
+  — again not a guess. Operates on the same struct.
 
 `fcn.00006580`, `fcn.000063d0` and `fcn.0000638c` (opcode 5's three
-sub-calls) were not disassembled this session. The opcode-4 (reset) path
-was followed five function levels deep instead
+sub-calls), and `sendCommand`/`performDMA`'s own further sub-calls
+(`0x6c70`, `0x6c90`, `0x6cf0`, `0x6c00`, `0x6f18`, `0x6804`, `0x6d50`,
+`0xa7d8`, `0x8dfc`) were not disassembled this session. The opcode-4 (reset)
+path was followed five function levels deep instead
 (`fcn.000019c4` -> `fcn.00006c24`/`fcn.00006d04` -> the shared polling
-helper `fcn.000064b0` -> `fcn.00006e30`/`fcn.00006e44`), and **no literal
-hardware address was found anywhere along it**. Every one of these
-functions reads or writes a fixed byte/half-word offset of the *device
-struct* passed as its first argument (`[dev+0x2f]`, `[dev+0x34]`,
-`[dev+0x36]`) — building up what looks like a desired-register bitmask in
-software, not touching a hardware register directly. This is consistent
-with the address-is-parameterised theory (no address literal was found
-anywhere in either the raw firmware or its wrapper kext, beyond a plain
-kernel-API jump table in the latter), but it also means the actual MMIO
-write was not located: it is most likely applied somewhere else entirely —
-an interrupt handler, or a deferred/batched "commit pending register
-writes" routine neither `fcn.000067f0` (opcode 6) nor `fcn.00006898`
-(opcode 7) were checked for either — not in the direct call path from the
-switch. The host driver's own opcode numbering
-(`sendIOPCommand`'s special handling of "opcode 0", noted above as a
-plausible ping match) has not been reconciled with this IOP-side numbering
-— whether the host's opcode byte maps 1:1 to the IOP's, or through some
-other translation, is open; see "Known gaps".
+helper `fcn.000064b0` -> `fcn.00006e30`/`fcn.00006e44`), and, like
+`sendCommand`'s own path, **no literal hardware address was found anywhere
+along it** — every function reads or writes a fixed offset of the same
+RAM-based `dev` struct (`[dev+0x2f]`, `[dev+0x34]`, `[dev+0x36]`), building
+up what looks like a desired-register bitmask in software. Combined with
+the struct's now-confirmed RAM origin, this rules out "`dev` is itself an
+MMIO window" as a possibility, but does not yet distinguish pure software
+bookkeeping from a software-maintained mirror of hardware state updated by
+an interrupt handler we have not found — that distinction, and the real
+register access if this firmware performs it anywhere outside an ISR, most
+likely sits in one of the not-yet-disassembled sub-calls listed above. The
+host driver's own opcode numbering (`sendIOPCommand`'s special handling of
+"opcode 0", noted above as a plausible ping match) has not been reconciled
+with this IOP-side numbering — whether the host's opcode byte maps 1:1 to
+the IOP's, or through some other translation, is open; see "Known gaps".
+
+All of the above is also stored, reusable, in
+[`tools/iop_analysis/`](../../tools/iop_analysis/) (an r2 naming script plus
+a fuller prose reference), so this call graph does not need re-deriving
+from scratch in a future session.
 
 ```mermaid
 flowchart TD
@@ -376,8 +398,8 @@ flowchart TD
     SW -- "opcode 3<br/>(table[2])" --> C2["fcn.00001a24<br/>free [dev+4]<br/>(mirrors opcode 2)"]
     SW -- "opcode 4<br/>(table[3])" --> C3["fcn.000019c4<br/>-> sdiodrv_resetSDHC<br/><b>touches hardware</b>"]
     SW -- "opcode 5<br/>(table[4])" --> C4["fcn.0000192c<br/>set bus params (clock,<br/>width, speed mode) --<br/>one sub-call per field"]
-    SW -- "opcode 6<br/>(table[5])" --> C5["fcn.0000190c<br/>tail-call to fcn.000067f0<br/>(likely: send SD command)"]
-    SW -- "opcode 7<br/>(table[6])" --> C6["fcn.000018bc<br/>-> fcn.00006898, 4 sub-ptrs<br/>(likely: data transfer)"]
+    SW -- "opcode 6<br/>(table[5])" --> C5["fcn.0000190c<br/>-> sdiodrv_sendCommand (0x67f0)<br/>confirmed by its own log tag"]
+    SW -- "opcode 7<br/>(table[6])" --> C6["fcn.000018bc<br/>-> sdiodrv_performDMA (0x6898)<br/>confirmed by its own log tag"]
 
     C0["<b>the PING</b><br/>log 'Connection established'<br/>write status = 0 (success)<br/><b>no register touched</b>"]
 
