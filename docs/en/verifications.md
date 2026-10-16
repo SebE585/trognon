@@ -49,6 +49,7 @@ You need a browser and a text editor, no compiler. Pick one DEVICE claim of the 
   kind: claim-audit
   date: '2026-10-17'
   by: maintainer
+  assisted_by: Claude (AI assistant)
   claim: A full I2C transaction to address 0x1d was acknowledged; the identifier register read 0x3B.
   page: https://sebe585.github.io/trognon/en/03-hardware-map/#accelerometer
   result: match
@@ -66,6 +67,8 @@ You need a browser and a text editor, no compiler. Pick one DEVICE claim of the 
 - **Results, not inputs.** `manifest.json`, `screen.txt` and `vars.txt` record what the phone reported. The parameters of the experiment (an address, a register, a value) are in the **payload source** at the commit the manifest names; rebuild the payload to be sure it is the same binary.
 - **Agreement is not independence.** The three files come from one instrument in one run: their agreement is one record, not three measurements.
 - **Different guarantees.** The nonce shows that *this binary ran this time*; the hash ties the binary to a commit; the source at that commit gives the parameters; none of them shows what the signal looked like on the bus. Say which part each one supports.
+
+If an AI assistant helped prepare a row, name it in the optional field `assisted_by`; `by` stays the human responsible. The page shows both side by side.
 
 See [Missions](missions.md) for these as first contributions.
 
@@ -134,6 +137,6 @@ None yet. This is the first thing anyone can add.
 | [`20261016T174429Z-trace_gpio_survey`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T174429Z-trace_gpio_survey) | rebuild | match | `2497ba789e` | Darwin arm64, arm-none-eabi-gcc (GCC) 16.2.0 | maintainer | Recorded with a dirty tree and no source.diff; rebuilds only at this later commit. |
 | [`20261016T174843Z-trace_spi1_nogate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T174843Z-trace_spi1_nogate) | rebuild | match | `7828b0c3db` | Darwin arm64, arm-none-eabi-gcc (GCC) 16.2.0 | maintainer | Recorded with a dirty tree and no source.diff; rebuilds only at this later commit. |
 | [`20261016T190939Z-trace_spi1_selftest`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T190939Z-trace_spi1_selftest) | rebuild | match | `fd410193b8` | Darwin arm64, arm-none-eabi-gcc (GCC) 16.2.0 | maintainer | Recorded with a dirty tree and no source.diff; rebuilds only at this later commit. |
-| [`20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c) | claim-audit | match | `-` | - | maintainer | *Claim:* A full I2C transaction to address 0x1d was acknowledged; the identifier register read 0x3B. Operations done: read manifest.json, screen.txt and vars.txt of the bundle, read the payload source at the commit the manifest names, and ran tools/rebuild_bundle.py (the commit rebuilds to the manifest hash). The bundle shows the RESULTS: the three files agree on three ACK flags at 1 and WHO_AM_I 0x3B (three records of one instrument, not three measurements) and the nonce came back identical. It does NOT record the address or the register: those are SOC_ACCEL_I2C_ADDR 0x1d and SOC_ACCEL_WHO_AM_I_REG 0x0F in tools/payloads/soc/s5l8920.h at that commit. So the claim holds on the bundle plus the source; the bundle alone would be inconclusive about the address. |
+| [`20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c) | claim-audit | match | `-` | - | maintainer (assisted by Claude (AI assistant)) | *Claim:* A full I2C transaction to address 0x1d was acknowledged; the identifier register read 0x3B. Operations done: read manifest.json, screen.txt and vars.txt of the bundle, read the payload source at the commit the manifest names, and ran tools/rebuild_bundle.py (the commit rebuilds to the manifest hash). The bundle shows the RESULTS: the three files agree on three ACK flags at 1 and WHO_AM_I 0x3B (three records of one instrument, not three measurements) and the nonce came back identical. It does NOT record the address or the register: those are SOC_ACCEL_I2C_ADDR 0x1d and SOC_ACCEL_WHO_AM_I_REG 0x0F in tools/payloads/soc/s5l8920.h at that commit. So the claim holds on the bundle plus the source; the bundle alone would be inconclusive about the address. |
 
 </details>

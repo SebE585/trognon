@@ -106,6 +106,21 @@ class BreakdownTests(unittest.TestCase):
         self.assertIn("| **Total** | **1** |", text)
 
 
+class AssistedFieldTests(unittest.TestCase):
+    def test_the_field_is_optional_and_needs_no_remark(self):
+        self.assertEqual(errs([row(assisted_by="an assistant", notes="")]), [])
+
+    def test_the_field_must_be_a_non_empty_text(self):
+        self.assertTrue(any("'assisted_by'" in e for e in errs([row(assisted_by="")])))
+        self.assertTrue(any("'assisted_by'" in e for e in errs([row(assisted_by=3)])))
+
+    def test_the_table_shows_the_assistant_next_to_the_human(self):
+        self.assertIn("alice (assisted by an assistant)", vb.row_md(row(by="alice", assisted_by="an assistant")))
+
+    def test_a_row_without_it_shows_the_human_only(self):
+        self.assertNotIn("assisted by", vb.row_md(row(by="alice")))
+
+
 class AuditPageTests(unittest.TestCase):
     def test_the_audit_model_comes_from_the_data(self):
         a = row(kind="claim-audit", claim="THE CLAIM", page="p", result="match", notes="n")

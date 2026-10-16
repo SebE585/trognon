@@ -1,6 +1,6 @@
 # Independent checks of the evidence bundles: someone rebuilt a payload, or audited a claim, and recorded what they found.
 # A rebuild row is printed by tools/rebuild_bundle.py; a claim-audit row is written by hand (the first one below is the model). A mismatch or a failure to
-# reproduce is a result, not an error.
+# reproduce is a result, not an error. assisted_by (optional) names the AI assistant that helped prepare a row; it is a field, not a remark.
 # by: maintainer = run by the project's own maintainer, so not independent; any other handle is an independent check.
 verifications:
   - bundle: 20261015T050540Z-trace
@@ -437,6 +437,7 @@ verifications:
     kind: claim-audit
     date: "2026-10-17"
     by: maintainer
+    assisted_by: "Claude (AI assistant)"
     claim: "A full I2C transaction to address 0x1d was acknowledged; the identifier register read 0x3B."
     page: https://sebe585.github.io/trognon/en/03-hardware-map/#accelerometer
     result: match
