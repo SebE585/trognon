@@ -546,6 +546,9 @@ payload should paper over:
 3. **The chip-select call has no checked semantics.** The `function-spi_cs0` object is called with `1` at the start of a transfer and `0`
    at the end, and the SoC GPIO function reads that as level 0 then 1 (active low). That reading has not been exercised on the pin.
 
+The full GPIO survey (hardware map, bundle `20261016T174429Z-trace_gpio_survey`) did not close gap 1: it validates the bit layout on known pads
+but names no group of pads as the SPI1 clock and data lines.
+
 A safe way to settle 1 and 2 before any exchange with the touch controller is a self-test of the controller with no peripheral: clock gate on,
 chip select untouched, send four bytes, and watch STATUS (the TX count draining, the RX count filling) to see whether the recipe works. For 1,
 a read-only dump of the GPIO registers, to look for pads whose function bits differ from plain input or output, is cheap and was done before for

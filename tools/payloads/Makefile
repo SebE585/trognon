@@ -61,6 +61,7 @@ STAGE_trace_pmu_w34 = 39
 STAGE_trace_touch_power = 40
 STAGE_trace_touch_rst_ctl = 41
 STAGE_trace_touch_ldo = 42
+STAGE_trace_gpio_survey = 43
 
 # Objects are built for one SoC. Without this stamp, `make SOC=other` would silently reuse objects built for
 # the previous chip. The stamp is rewritten only when SOC or the flags change.

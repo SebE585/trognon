@@ -48,6 +48,7 @@ To check a bundle: check out its commit, `make -C tools/payloads <payload>`, com
 | Bluetooth reset/wake GPIO read: reset `1`, wake `0` | `trace_bt_gpio` | bundled |
 | Accelerometer powered up, `CTRL_REG1` read back `0x47`, axes +11 / -9 / +58 (one sample, phone not moved), then +19 / +47 / +8 after moving it, then +2 / -16 / +59 twice in a row at rest, then +3 / -6 / +59 twice flat screen up, then +2 / -6 / -53 twice screen down, then +57 / -7 / +6 and +58 / -6 / +6 on the left edge, then -55 / -6 / -5 and -54 / -7 / -4 on the right edge, then +3 / -60 / +11 and +4 / -61 / +11 on the top edge | `trace_accel_axes` x14 | bundled |
 | Touch LDO only, then reset released: the line reads `0x210` at once and `0x211` 15 ms later, restored | `trace_touch_ldo` | bundled |
+| Full GPIO configuration survey: 376 pad words read, 21 distinct values, known pads (I2C0, Bluetooth, touch reset and chip select) consistent with the bit layout | `trace_gpio_survey` | bundled |
 | Control: touch reset released with no supply reads `0x210` (low), at once and 15 ms later; restored | `trace_touch_rst_ctl` | bundled |
 | Dry run of the touch power-up (gate, PMU `0x11` and `0x50`, reset released), no SPI byte: reset register reads `0x211` with the supplies on, everything restored | `trace_touch_power` | bundled |
 | PMU register `0x11` written `0xBE` to `0xFE` and register `0x50` `0x11` to `0x13`, both read back, held 20 ms, restored | `trace_pmu_w34` | bundled |

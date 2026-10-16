@@ -87,6 +87,84 @@ Writing our own panel init is a much larger job (**HYPOTHESIS**, see OpenIBoot `
 
 Values read by eye from the screen; field widths were assumed to be 8 hex digits.
 
+## Full GPIO register survey (DEVICE, 2026-10-16, bundle `20261016T174429Z-trace_gpio_survey`)
+
+*A read-only dump of the configuration word of every GPIO pad, 47 ports of 8 pins.*
+
+All 376 pin registers at `0x83000000 + 4 * (8 * port + pin)` answered (the same fault-tolerant read as the button survey),
+nothing was written, and the GPIO interrupt controller was not touched. The 32-bit word of each pad, as `port: pin0 ... pin7`
+(hexadecimal; `---` would mean no answer, none occurred):
+
+```
+00: D1E D1E D1E D1E D1E D1E D1E D1E
+01: D1E D1E D1E D1E D1E D1E D1E D1E
+02: D1E D1E D1E D1E D1E D1E D1E D1E
+03: D1E D1E D1E D1E 11E 230 211 212
+04: 211 211 250 250 230 230 01E 01E
+05: 213 212 01E 01E 01E 01E 01E 01E
+06: 01E 11E 01E 09E 01E 01E 01E 01E
+07: 01E 01E 01E 01E 01E 01E 230 230
+08: 01E 01E 230 230 230 330 230 230
+09: 213 230 230 230 01E 213 230 230
+0A: 01E 01E 212 212 210 230 230 230
+0B: 212 01E 01E 01E 09E 09E 09E 09E
+0C: 230 230 230 230 230 230 230 230
+0D: 230 230 230 230 213 213 01E 01E
+0E: 01E 01E 230 230 230 230 230 230
+0F: 230 213 213 213 01E 01E 09E 09E
+10: 09E 09E 230 230 230 230 230 230
+11: 230 230 630 6B0 6B0 6B0 6B0 6B0
+12: 210 230 230 330 213 230 230 230
+13: 212 230 230 230 212 291 291 211
+14: 212 212 290 291 212 212 212 212
+15: 311 212 210 01E 213 230 213 230
+16: 291 291 212 01E 310 01E 210 210
+17: 01E 230 230 211 230 230 230 230
+18: 210 230 230 230 230 210 230 01E
+19: 01E 01E 01E 01E 01E 01E 01E 01E
+1A: 01E 01E 01E 01E 01E 01E 01E 01E
+1B: 01E 01E 01E 01E 01E 01E 01E 01E
+1C: 600 600 600 600 600 400 600 600
+1D: 600 600 600 600 600 600 600 400
+1E: 600 600 600 600 400 400 400 400
+1F: 400 400 400 400 400 400 400 400
+20: 400 400 400 400 600 400 600 400
+21: 400 400 400 400 400 400 400 400
+22: 400 600 600 600 600 600 400 600
+23: 600 600 600 600 600 600 600 600
+24: 400 600 600 600 600 200 200 000
+25: 000 000 000 000 000 000 000 000
+26: 000 000 000 000 000 000 000 000
+27: 000 000 000 000 000 000 000 000
+28: 000 000 000 000 000 000 000 000
+29: 000 000 000 000 000 000 000 000
+2A: 000 000 000 000 000 000 000 000
+2B: 000 200 000 000 000 000 000 000
+2C: 000 000 000 000 000 000 000 000
+2D: 000 200 200 200 200 200 000 000
+2E: 000 000 000 000 000 000 000 000
+```
+
+Twenty-one distinct values occur. The most common are `000` (75 pads, ports `25` to `2E` and a few others), `230` (66), `01E` (63),
+`600` (38), `400` (31), `D1E` (28, ports `00` to `02` and `03.00` to `03.03`), `212` (15) and `213` (11).
+
+Checks against pads whose use is known from earlier runs, which support the layout the project's I2C code relies on (bit 0 the
+level, bit 1 output enable, `0x210` an input):
+
+| Pad | Known use | Word in the survey | Reading |
+|---|---|---|---|
+| `04.00`, `04.01` | I2C0 SCL, SDA (bit-banged) | `211`, `211` | inputs reading high (pulled up) |
+| `15.06` | Bluetooth reset | `213` | output, level high (STAGE 30 read `1`) |
+| `16.02` | Bluetooth wake | `212` | output, level low (STAGE 30 read `0`) |
+| `14.01` | touch reset | `212` | output, level low |
+| `13.00` | touch chip select (SPI1 CS0) | `212` | output, level low |
+
+What the survey does not give: the pads of the SPI1 clock, data-out and data-in. No group of pads in the map is identified as SPI by a
+known use. Some groups stand out and are only candidates for other interfaces: `11.02` to `11.07` (`630` then `6B0` five times, six pads,
+the size of an SDIO clock, command and four data lines), and ports `1C` to `24` (`400` and `600`, 69 pads). The pad function
+codes themselves are not decoded here. This map is a baseline for later runs, which can show which words change when a peripheral
+is brought up.
+
 ## Not re-read, on purpose
 
 `GPIOIC` (`0x39A00000`): the one read tried so far dropped the USB link (cause

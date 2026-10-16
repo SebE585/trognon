@@ -1,0 +1,50 @@
+{
+  "payload": "trace_gpio_survey.bin",
+  "sha256": "6fb492d495417bfc41bffe884f481efa4b3dd05169a376f6fdcc6d8465744f83",
+  "bytes": 3552,
+  "soc": "s5l8920",
+  "nonce_sent": "6BE257D7",
+  "nonce_read": "6BE257D7",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "gpio-survey-1"
+  },
+  "variables": {
+    "n_readable": "00000178",
+    "n_distinct": "00000015",
+    "top_value": "00000000",
+    "n_not_top": "0000012D",
+    "v0": "00000000",
+    "c0": "0000004B",
+    "v1": "00000230",
+    "c1": "00000042",
+    "v2": "0000001E",
+    "c2": "0000003F",
+    "v3": "00000600",
+    "c3": "00000026",
+    "v4": "00000400",
+    "c4": "0000001F",
+    "v5": "00000D1E",
+    "c5": "0000001C",
+    "v6": "00000212",
+    "c6": "0000000F",
+    "v7": "00000213",
+    "c7": "0000000B"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "7b0c17f2fed42bd5138cef1aa5e2182c385d5e97",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T174411Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_gpio_survey.bin --evidence <repo>/evidence --vars n_readable,n_distinct,top_value,n_not_top,v0,c0,v1,c1,v2,c2,v3,c3,v4,c4,v5,c5,v6,c6,v7,c7",
+  "screen_rows": 11
+}
