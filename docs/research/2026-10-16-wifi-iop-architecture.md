@@ -50,17 +50,19 @@ register layout exactly (a one-to-one match against Linux's own
 document spends most of its length on, and it remains open.** Every
 direct producer checked so far — the host driver's message-send path,
 generic queue creation, all seven opcode handlers, the task scheduler's
-first-dispatch chain — turns out not to write it. A mechanism found and confirmed, not merely hypothesized, is that the
-firmware's own wrapper carries a property dictionary (`HeapBaseOffset`/
-`HeapSizeOffset`, after correcting an initial key/value misreading — see
+first-dispatch chain — turns out not to write it. A real, confirmed
+mechanism, not merely hypothesized, is that the firmware's own wrapper
+carries a property dictionary (`HeapBaseOffset`/`HeapSizeOffset`, after
+correcting an initial key/value misreading — see
 ["The missing producer"](#the-missing-producer-everything-checked-for-the-real-sdhc-base-pointer))
 pointing at two locations inside the firmware image that the firmware's
-own boot code dereferences directly to seed its heap allocator, and
-which currently hold the firmware's own "value not set" sentinel —
-confirmed evidence that a host-side loader patches fixed locations
-inside the firmware image before releasing the IOP from reset. Whether
-the same mechanism also supplies the SDHC base pointer is not yet shown;
-so far it is confirmed only for heap setup.
+own boot code dereferences directly to seed its heap allocator — **the
+consumer side of this, confirmed**. Both currently hold the firmware's
+own "value not set" sentinel, which implies a producer exists on the
+host side, but that producer itself has not been found or traced — an
+earlier version of this document overstated this as "confirmed", which
+was premature. Whether the same mechanism also supplies the SDHC base
+pointer is not shown either way.
 
 ```mermaid
 flowchart LR
@@ -556,14 +558,36 @@ before the matching call:
 Every value changed except by coincidence. **Do not reuse the previous
 table** from any earlier revision of this document.
 
-`ConfigurationOffset` (`0xf018`) turned out to be a **false lead**:
-every one of its three literal-address references in the firmware (two
-already-examined functions, the task-creation loop and
-`iop_control_task`'s own boot-init dispatcher) uses it purely as a
-pointer-increment loop's upper bound, never dereferenced as data, and the
-raw firmware holds `0x636e6667` there, not a sentinel. As far as this
-firmware's own code shows, this property marks the end of a
-statically-sized boot table, not a host-patched configuration pointer.
+`ConfigurationOffset` (`0xf018`) is a real, host-checkable configuration
+struct — just not an SDHC-related one. Two of its three literal-address
+references (the task-creation loop and `iop_control_task`'s boot-init
+dispatcher) use it only as a callback-table's upper bound; the third,
+checked afterward per a reviewer's push not to stop at that reading,
+shows the firmware testing bit 0 of `*(0xf01c)` (spawns an extra debug
+task if set) and calling a one-line function with `*(0xf024)` if non-zero
+(it just seeds a global variable read elsewhere). Both fields read zero
+in the shipped image, so neither fires as shipped, and neither is
+SDHC-related in anything traced so far — but the structure is real, not
+a boundary-only false lead as an earlier version of this report
+concluded.
+
+A second reframing, from re-tracing the raw receive call
+(`fcn.00000eb0`) instruction by instruction rather than trusting the
+earlier summary: the value `sdio_message_loop` passes into the
+physical→local address translator is **the *content* of the queue
+slot's first word** (`*(slot) & ~3`), not the slot's own address. The
+64-byte ring slot is a pointer-holder, initialised to the placeholder
+value `1` at queue creation — some sender is expected to overwrite it
+with a real pointer before a message can be received. Combined with the
+host side (`sendIOPCommand` hands the IOP its command buffer's physical
+address), the most direct reading is that **`message` — and therefore
+`message+0x0c` — is the translated view of the host's own shared command
+buffer, not IOP-internal firmware RAM as an earlier version of this
+report implied.** This does not relocate `base`'s producer by itself (a
+search for a write to `command_buffer+0x0c` in `AppleIOPSDIO.kext` did
+not resolve cleanly), but it reopens, rather than closes, whether the
+host writes it — through the narrower question of whether anything
+writes to that specific offset of the host's own buffer.
 
 **`HeapBaseOffset`/`HeapSizeOffset` (`0xf0a0`/`0xf0a4`) are the real,
 confirmed injection point** — and unlike the first pass, this is now
@@ -583,12 +607,15 @@ bl fcn.00007794    ; the generic allocator this whole firmware uses everywhere
 This is the firmware's own heap-allocator initialisation, seeded directly
 from these two locations. Both currently hold `0xffffffff` in the static
 file — a value that would make the allocator fail immediately if left
-unpatched, exactly the kind of field a host-side loader has to fill in
-before this boot code runs. **This confirms the configuration-injection
-mechanism concretely, for heap setup — not (yet) for anything
-SDHC-related.** Whether `AppleARM7M::startCPU`'s own computed size and
-hardware address (below) end up written into these same two offsets has
-not been confirmed, only shown to be plausible.
+unpatched. **Precision, corrected after an earlier overclaim**: what is
+actually confirmed is the *consumer* side — the firmware reads and
+dereferences these two offsets at boot and feeds the result to its
+generic allocator. That strongly implies a producer exists, but the
+producer itself — which code writes `0xf0a0`/`0xf0a4` before this boot
+code runs, and when — has not been found or traced; see "Open questions"
+#6. Whether `AppleARM7M::startCPU`'s own computed size and hardware
+address (below) end up written into these same two offsets is plausible,
+not confirmed.
 
 **Found: `AppleARM7M`, the concrete IOP-management driver, and its
 `startCPU(IOSlaveFirmware*)` method.** Rather than searching the whole

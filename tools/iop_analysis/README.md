@@ -302,21 +302,50 @@ numeric value by coincidence of position). **Do not reuse the old
 table** (`ConfigurationOffset = 0xf0a0`, etc.) from any earlier version
 of this document or its git history — it was wrong.
 
-### `ConfigurationOffset` (`0xf018`) traced: a loop boundary, not a config pointer
+### `ConfigurationOffset` (`0xf018`) traced in full: a real, checkable config struct, just not an SDHC one
 
 Searched the firmware for every reference to the literal address
-`0xf018`. Exactly three exist, all of them the *same* literal-pool entry
-reused across two already-known functions: the task-creation loop
-(`fcn.0000080c`) and `iop_control_task`'s own two-phase boot-init
-callback loop (`fcn.00000afc`). In both, `0xf018` is loaded into a
-register and used purely as an **upper bound for a pointer-increment
-loop** (`cmp r4, r8; blo ...`) — never dereferenced, never read as data.
-The raw firmware also holds `0x636e6667` at that address (not `0xffffffff`,
-not a sentinel pattern at all). **This name was a red herring**: as far
-as this firmware's own code shows, `ConfigurationOffset` does not point
-at a host-patched configuration struct — it marks the end of a
-statically-sized boot-time table. It does not need the host to write
-anything there at all, consistent with its non-sentinel content.
+`0xf018`. Exactly three exist. Two of them (inside `fcn.0000080c` and
+`iop_control_task`'s own two-phase boot-init dispatcher, `fcn.00000afc`)
+use `0xf018` purely as the **upper bound** of the 2-entry callback-pointer
+loop at `0xf010`/`0xf014` (already traced: entry 1 → `0x664`, a generic
+per-priority lock callback used for channel 3/"sdio"; entry 2 → `0x15fc`,
+NAND's own two-phase device-list dispatcher). Taken alone, that made
+`0xf018` look like a mere boundary, not something to dereference — a
+conclusion a reviewer correctly refused to accept without checking what
+*else* reads it.
+
+The third reference, inside `fcn.0000080c` right after the main
+task-creation loop, is different and more interesting:
+
+```
+0x890  ldr r4, [lit]       ; r4 = 0xf018
+0x894  ldr r3, [r4, 4]     ; r3 = *(0xf01c)
+0x898  tst r3, 1
+0x89c  beq 0x8b8           ; skip unless bit 0 is set
+       ... create an extra task named "slopsucker" ...
+0x8b8  ldr r0, [r4, 0xc]   ; r0 = *(0xf024)
+0x8bc  cmp r0, 0
+0x8c0  blne fcn.000085f8   ; call it with r0, if non-zero
+```
+
+`fcn.000085f8` is a two-instruction function: it just stores its argument
+into a global at `0x118e0` (read elsewhere by `fcn.00008ef0`, a generic
+dispatcher — not examined further). **This confirms `0xf018` is genuinely
+the start of a small, host-checkable configuration/flags struct** — the
+boundary interpretation and the struct interpretation are both correct
+and compatible, because the 2-entry callback table happens to end exactly
+where this struct begins in the firmware's packed static layout. Both
+fields (`+4` bit 0, `+0xc`) read as zero in the shipped image, so neither
+optional behaviour (an extra debug task, a global-variable override)
+fires as shipped.
+
+**This does not restore any SDHC link** — the two real fields found here
+(an extra-task flag, a generic global-variable seed) are unrelated to
+SDHC/SDHCI in anything traced so far — but it does mean `ConfigurationOffset`
+should not be dismissed as "just a boundary" the way an earlier version of
+this note put it. It is a real configuration mechanism; it is simply for
+something else.
 
 ### `HeapBaseOffset`/`HeapSizeOffset` (`0xf0a0`/`0xf0a4`): the real, confirmed injection point
 
@@ -337,11 +366,12 @@ very first call (`0x81c`):
 
 **This is the firmware's own heap-allocator initialisation, seeded
 directly from `*(0xf0a0)`/`*(0xf0a4)`.** Both currently hold `0xffffffff`
-in the static file — a value that would make the allocator fail
-immediately if left unpatched, which is exactly the kind of field a
-host-side loader has to fill in before this boot code runs. This
-confirms the configuration-injection mechanism concretely, for heap setup
-specifically — not yet for anything SDHC-related. `fcn.00008254` also
+in the static file. **Precision, corrected after an earlier overclaim**:
+this confirms the *consumer* side only — the firmware reads and
+dereferences both offsets at boot and feeds the result to its generic
+allocator. The producer (what writes `0xf0a0`/`0xf0a4` before this boot
+code runs) has not been found or traced; a producer existing is implied,
+not shown. `fcn.00008254` also
 calls `fcn.00008b14` and `fcn.00009304` right after the allocator setup
 (not yet opened) and tail-calls `fcn.00008098`, which does a second,
 separate `fcn.0000ae40(0x1000, 0x116a0)` call and stores its result at a
@@ -480,6 +510,55 @@ code) — which a string/address search cannot find. Needs either a full
 kernel-text disassembly pass (not completed this session — file too
 large for `radare2`'s `aaa` to finish in reasonable time) or dynamic
 tracing on real hardware.
+
+### Reframing (2026-10-16): the queue slot holds a POINTER to the message, not the message itself
+
+Per a reviewer's request to distinguish precisely the queue slot, the
+value it carries, and the translated buffer the handler finally uses —
+re-traced `fcn.00000eb0` (the raw receive call) instruction by
+instruction rather than trusting the earlier summary. The actual return
+path:
+
+```
+r4 = (channel_index << 5) + 0x10da4      ; the channel descriptor
+r1 = [r4+0xc]                             ; read index; -1 = empty queue
+r5 = [r4+0x14]                            ; ring base
+slot = (read_index << 6) + r5             ; the 64-byte slot address
+r1  = [slot]                              ; *** the slot's own FIRST WORD ***
+...
+r1  = r1 & ~3
+str r1, [r8]                              ; <-- THIS is the function's return value
+```
+
+**The value `sdio_message_loop` receives, and passes into the
+physical→local translator (`fcn.00008528`), is `*(slot) & ~3` — the
+*content* of the slot's first word — not the slot's own address.** This
+reframes the whole chain: the 64-byte ring slot is a **pointer-holder**,
+not the message. Consistent with this, `fcn.00000db4` (generic queue
+creation) initialises every slot's first word to the literal `1` — a
+placeholder/"empty" sentinel, not a valid pointer — which some other
+sender (plausibly the host, writing its own command buffer's physical
+address into the slot as part of "posting" a message) is expected to
+overwrite before a real message can be received.
+
+Put together with everything already known about the host side: the
+host's `sendIOPCommand` hands the IOP the **physical address of its own
+command buffer** via the transport call. The most direct reading of this
+new trace is that *that very physical address* is what ends up written
+into the ring slot, and **"message" (and therefore `message+0x0c`) is
+the translated view of the host's own shared command buffer — not an
+IOP-internal structure.** This does not, by itself, relocate `base`'s
+real producer (nothing here shows the host writing to `command_buffer+0x0c`
+specifically; a grep-based search for that pattern in `AppleIOPSDIO.kext`
+did not resolve cleanly — large, unaligned Thumb regions produced too
+much noise to trust without per-function disassembly), but it does mean
+the earlier framing ("message lives in firmware RAM, ruling out host
+involvement") was describing the *slot*, not the *message* — the message
+itself is, very plausibly, host memory all along. This reopens, rather
+than closes, the question of whether the host writes `base`, through a
+narrower and more specific question: does anything write to
+`command_buffer+0x0c` in the host's own code, at buffer-allocation time
+or afterward? Not yet confirmed either way.
 
 ### Lower-priority lead (2026-10-16): the "iop control" master task's "install" command
 
