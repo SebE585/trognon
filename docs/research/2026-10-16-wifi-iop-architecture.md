@@ -1,37 +1,62 @@
-# The 3GS has a second, embedded IOP processor; it likely — not yet proven — owns Wi-Fi/SDIO
+# The 3GS has a second, embedded IOP processor; SDIO/Wi-Fi almost certainly runs through it
 
-Research date: 2026-10-16. This moves the SDIO investigation started on
-2026-10-15 (`docs/research/2026-10-15-touch-wifi-nand-recon.md`) a long way
-forward, but does not close it: after extensive register-level probing from
-Trognon's own payloads produced only clean negatives, binary reverse
-engineering of the device's own firmware (extracted and decrypted from the
-owner's IPSW, never redistributed) found a strong architectural candidate
-explanation. A second review (see "Known gaps" below) correctly pointed out
-that the evidence so far establishes the architecture, not yet the causal
-chain for the specific symptom observed on 2026-10-15/16. This document
-states both clearly, rather than overclaiming the second.
+Research date: 2026-10-16, revised the same day across several external
+reviews. **This is the consolidated, current-state version**: wording
+that was later corrected has been rewritten in place rather than left
+standing with a patch stacked on top. The error trail itself is kept
+deliberately — not as noise to clean up, but because this project
+documents mistakes and corrections as part of the research record — in
+["Revision history"](#revision-history) at the end, out of the way of the
+main narrative.
+
+## Scope, stated precisely
+
+Two separate questions are easy to conflate, and are kept apart
+throughout this document:
+
+1. **Architecture** — does a second embedded ARM processor exist on the
+   S5L8920, and does it own the SDIO/Wi-Fi hardware? **Established**,
+   from the device's own extracted firmware and host driver, not
+   inferred from documentation or analogy with other SoCs.
+2. **Symptom** — is this architecture *why* every SDHC register read
+   back zero and ignored writes from Trognon's own payloads on
+   2026-10-15/16? **Not established.** It is the leading explanation,
+   ahead of the clock-gate and init-sequence hypotheses already ruled
+   out — but the causal chain (is the IOP actually running under
+   Trognon's tethered DFU/iBSS path? does it reach SDHC hardware with a
+   valid configuration at that point?) has not been traced end to end.
+
+Read every claim below about "the architecture" as settled, and every
+claim about "why the symptom happened" as a hypothesis, however well
+supported.
 
 ## Bottom line
 
-The S5L8920 has a second, embedded ARM processor (32-bit ARM instruction
-set, confirmed by directly disassembling its own raw firmware; the specific
-architecture version, e.g. ARMv7, is not established — see "Known gaps")
-— Apple calls it an "IOP" (I/O Processor) — running its own small real-time
-OS with its own
-scheduler, heap, exception handlers and interrupt controller. **This part is
-established.** What is still a working hypothesis, strongly supported but
-not proven: that this second processor, not the application CPU Trognon's
-payloads run on, is the exclusive owner of the SDIO/Wi-Fi host controller's
-registers, and that this is specifically why those registers read back zero
-and ignored writes on 2026-10-15/16. The application CPU does post messages
-to the IOP over a shared command channel and wait for a reply — that part is
-confirmed from the disassembled driver. The same IOP firmware also drives
-the NAND controller (`h2fmi`) and the AES-capable DMA engine (CDMA). The
-leading explanation for the 2026-10-15/16 negatives is that every SDIO
-register write attempted from the application CPU reached an address whose
-real owner never received a wake-up signal — not a wrong register, a wrong
-processor — but this causal link has not itself been traced; see "Known
-gaps" below.
+The S5L8920 has a second, embedded 32-bit ARM processor — Apple calls it
+an "IOP" (I/O Processor) — running its own small real-time OS: scheduler,
+heap, exception handling, an interrupt controller distinct from the
+application CPU's own. Its own debug strings show it manages exactly
+three subsystems: NAND (`h2fmi`), an AES-capable DMA engine (`cdma`), and
+SDIO/Wi-Fi (`sdiodrv`). The application CPU's `AppleIOPSDIO` driver talks
+to it over a shared-memory message channel (`sendIOPCommand`) and never
+itself maps or writes SDHC registers, as far as its own disassembled code
+shows. The IOP-side handler for one specific opcode (real opcode 4) calls
+`sdiodrv_resetSDHC`, which accesses a memory region through one pointer
+indirection whose offsets and bit masks match the real, standard SDHCI
+register layout exactly (a one-to-one match against Linux's own
+`sdhci.h`, not a loose pattern resemblance).
+
+**Where that pointer's own value comes from is the open question this
+document spends most of its length on, and it remains open.** Every
+direct producer checked so far — the host driver's message-send path,
+generic queue creation, all seven opcode handlers, the task scheduler's
+first-dispatch chain — turns out not to write it. A lead found and
+confirmed, not merely hypothesized, is that the firmware's own wrapper
+carries a `ConfigurationOffset` property pointing at a location inside
+the firmware image that currently holds the firmware's own "value not
+yet set" sentinel — strong evidence that a host-side loader patches it
+before releasing the IOP from reset, through a mechanism (a specific
+kext) not yet located. See ["The missing producer"](#the-missing-producer-everything-checked-for-the-real-sdhc-base-pointer).
 
 ```mermaid
 flowchart LR
@@ -61,110 +86,202 @@ flowchart LR
     style SDHC fill:#fde8e8,stroke:#c94a4a
 ```
 
-*Established (solid, confirmed from the disassembled driver and firmware):
-the message channel exists, and the IOP's own `sdiodrv_resetSDHC` is the
-function that touches SDHC hardware. Still a hypothesis, not yet proven
-(dotted line): that the application CPU's direct path to those same
-registers is actually blocked — only that it reads back zero in practice.*
+*Solid lines: confirmed from the disassembled driver and firmware. Dotted
+line: the application CPU's path to the same registers reads back zero
+in practice, but whether it is architecturally blocked, or simply never
+configured by the time it is probed, is not established.*
+
+## What's established
+
+- A second ARM core exists on this SoC, confirmed by disassembling its
+  own raw firmware directly — not inferred from a wrapper header or
+  documentation. Its exact instruction-set *version* is not established:
+  "ARM7" (a core family, hinted by the dependency name `AppleARM7M`) and
+  "ARMv7" (the instruction-set version the main Cortex-A8 uses) name
+  different things, and this document conflated them in an earlier
+  version.
+- It runs a genuine small OS: a task scheduler (`task_create`,
+  `task_yield`, `idle_task_routine`), a heap allocator, ARM exception-mode
+  dump strings, and its own interrupt-enable/status registers distinct
+  from the application CPU's VIC — read directly from the firmware's own
+  strings and code.
+- Its own debug strings name exactly three subsystems: NAND (`h2fmi_*`,
+  39 strings), an AES DMA engine (`cdma`, 7 strings), SDIO/Wi-Fi
+  (`sdiodrv_*`, 6 strings). An explicit search for every other peripheral
+  family (audio, USB, UART, I2C, SPI, backlight, PMU, touch, accelerometer,
+  baseband, Bluetooth, camera, display) found zero matches. **This is a
+  string census of one extracted firmware build, not a code-coverage
+  analysis or a claim about historical design intent** — a subsystem with
+  no descriptive debug strings would not show up in this count, and
+  "NAND is the largest subsystem by debug-string count" is a different,
+  narrower claim than "the IOP was built primarily for NAND."
+- The host driver (`AppleIOPSDIO`) posts messages to the IOP over a
+  shared buffer (`sendIOPCommand`) and waits for a reply; its own
+  disassembled code never maps or writes an SDHC register directly, and
+  contains no call resembling `getDeviceMemoryWithIndex`/
+  `mapDeviceMemory` (the IOKit calls that would resolve the SDHC device
+  tree node into a host-usable address).
+- The IOP's own SDIO message loop dispatches seven opcodes, confirmed by
+  reading the jump table's raw bytes rather than a disassembler's case
+  label (see "Decisive evidence snippets" below). Real opcode 1 is a
+  ping that only acknowledges a logical connection — no register is
+  touched. Real opcode 4 reaches `sdiodrv_resetSDHC`, which performs real
+  SDHCI-layout register access through one level of pointer indirection
+  (see "The SDHCI register mapping").
+
+## Open questions
+
+Each of these is genuinely unresolved. They are listed once, here, rather
+than scattered through the narrative under different wording:
+
+1. **Who writes the real SDHC base pointer, and when?** See
+   ["The missing producer"](#the-missing-producer-everything-checked-for-the-real-sdhc-base-pointer)
+   for the full, bounded trace of everything checked.
+2. **Host opcode 0 vs. IOP opcode 1.** `sendIOPCommand` has special
+   handling for a host-side "opcode 0"; the IOP's own jump table places
+   the ping at real opcode 1. Whether these are meant to line up 1:1,
+   through a fixed offset, or through a translation not yet found, is
+   unresolved — a structural inconsistency between the two halves of the
+   protocol this document reconstructs, not a labelling detail.
+3. **Is the IOP actually running under Trognon's own tethered DFU/iBSS
+   path?** Everything in this document describes what the firmware
+   *would* do while executing. Nothing here establishes that it is
+   actually executing — as opposed to merely being present as a loaded,
+   inert binary — at the point Trognon's own payloads run and probe the
+   SDHC registers.
+4. **What is actually zeroed, and when, in the IOP's own memory?**
+   Several findings below describe a location as "should be zero" based
+   on the raw firmware *file's* contents, assuming standard
+   load-time-zero semantics. The IOP's actual runtime memory/load map —
+   what the loader clears, what it patches, what might already carry a
+   host-prepared value before the firmware's own code runs even once —
+   has not been independently established. Read "should be zero" in this
+   document as a statement about the static file, not a confirmed
+   runtime fact.
+5. **`AppleARM7M`'s exact relationship to the physical IOP core** is
+   inferred from its name and its shared `IOSlaveProcessor` dependency,
+   not confirmed from its own code.
+6. **The IOP firmware's own load path**: who copies its bytes, to what
+   address, whether anything verifies them (signature, hash, a
+   memory-protection boundary), and what write releases the IOP's reset.
+   Not traced. This is question (1) from a different angle, and is the
+   most direct remaining research target — both for the SDHC-base
+   question and for whether Trognon could ever load its own code onto
+   the IOP (see "Two different goals" below).
+7. **The exact wire format of the host/IOP message struct.** Only the
+   outer shape (opcode byte, pending flag, a vaddr/paddr pair) is known;
+   the full byte-for-byte layout `sendIOPCommand`'s `cmd` argument uses
+   was not reverse-engineered.
+8. **The class backing the actual command-channel object**
+   (`this+0x24` in `AppleIOPSDIO`) was identified by dependency
+   (`IOSlaveProcessor`, most likely its `IOSlaveEndpoint` class) but its
+   own code was not located or disassembled.
 
 ## How this was found: a second opinion, then a real disassembler
 
 After three clean, carefully isolated negatives from direct register
-experiments (two clock-gate hypotheses, a full SDHC-style init sequence, and
-a raw write-then-readback test that showed the write never landed; see the
-2026-10-15/16 journal), a summary of the investigation was given to another
-LLM for review. Three corrections came back, all valid:
+experiments (two clock-gate hypotheses, a full SDHC-style init sequence,
+and a raw write-then-readback test that showed the write never landed;
+see the 2026-10-15/16 journal), a summary of the investigation was given
+to another LLM for review. Three corrections came back, all valid — kept
+here as the turning point they were, not as something to re-litigate:
 
-1. A zero readback does not by itself prove a write was ignored — an MMIO
-   register can be write-only, carry reserved bits, or trigger an action,
-   and the AMBA AXI specification explicitly treats these as different from
-   plain memory behaviour.
+1. A zero readback does not by itself prove a write was ignored — an
+   MMIO register can be write-only, carry reserved bits, or trigger an
+   action.
 2. Two incompatible register-layout hypotheses had been mixed without
    noticing: writes used the older, simple `CTRL`/`CMD` layout (from
-   `plat-s5l8900`/`iDroid-kernel`), while the "the Capabilities register
-   should read non-zero" argument assumed an SDHCI-standard layout. Only one
-   of the two can be right.
-3. The most important: the MMU page table cited as evidence was the one
-   **OpeniBoot** builds for itself at its own boot — but OpeniBoot never
-   runs on this device. Trognon's payloads execute inside Apple's own
-   patched iBSS, whose real MMU state had never been captured directly.
+   `plat-s5l8900`/`iDroid-kernel`), while a separate argument assumed an
+   SDHCI-standard layout. Only one of the two could be right (it turned
+   out to be SDHCI — see below).
+3. The MMU page table cited as evidence was the one **OpeniBoot** builds
+   for itself at its own boot — but OpeniBoot never runs on this device.
+   Trognon's payloads execute inside Apple's own patched iBSS, whose real
+   MMU state had never been captured directly.
 
-The review's own strongest lead: real iOS kernelcache restore logs for the
-3GS name an actual Apple driver class, and that kernelcache is inside the
-IPSW already in hand.
+The review's own strongest lead: real iOS kernelcache restore logs for
+the 3GS name an actual Apple driver class, and that kernelcache is inside
+an IPSW already in hand.
 
 ## Extracting and reading the real driver
 
 The kernelcache (`kernelcache.release.n88` inside
 `iPhone2,1_4.3.5_8L1_Restore.ipsw`, SHA-256
 `ed3a62f4c581a8f500303d4d8e0976dd84bfb5d1f39c83d884b6564a7ecb4ab2` for the
-IPSW) is an encrypted IMG3 container, same shape as the device tree handled
-on 2026-10-15: `TYPE`/`DATA`/`SEPO`/`KBAG`x2/`SHSH`/`CERT` tags, `DATA`
-encrypted (`KBAG` present). Decrypted the same way, with the 3GS back in
-pwned DFU (not Recovery): `axi0mX/ipwndfu`'s `image3.py`,
-`Image3.getDecryptedPayload()` -> `dfuexec.PwnedDFUDevice().decrypt_keybag()`
-(the chip's own hardware AES/GID primitive, a pure read, nothing written).
-The decrypted payload (SHA-256
-`487bcf47e494c1cd3e57f347e9b1a8cba90576c78b6a0752e0b2a60a76ed4a00`) starts
-with the ASCII tag `complzss`: Apple's standard LZSS kernelcache
+IPSW) is an encrypted IMG3 container, same shape as the device tree
+handled on 2026-10-15: `TYPE`/`DATA`/`SEPO`/`KBAG`x2/`SHSH`/`CERT` tags,
+`DATA` encrypted (`KBAG` present). Decrypted the same way, with the 3GS
+back in pwned DFU (not Recovery): `axi0mX/ipwndfu`'s `image3.py`,
+`Image3.getDecryptedPayload()` ->
+`dfuexec.PwnedDFUDevice().decrypt_keybag()` (the chip's own hardware
+AES/GID primitive, a pure read, nothing written). The decrypted payload
+(SHA-256 `487bcf47e494c1cd3e57f347e9b1a8cba90576c78b6a0752e0b2a60a76ed4a00`)
+starts with the ASCII tag `complzss`: Apple's standard LZSS kernelcache
 compression. No existing decompressor was available locally, so one was
 written from the publicly documented algorithm (4096-byte dictionary
 initialised to spaces, 18-byte max match, length = 3 + low nibble, exact
 parameters confirmed against `malus-security/lzssdec`'s own README rather
-than guessed) and validated: it reproduced the exact expected uncompressed
-size (10,047,488 bytes) and produced a structurally valid ARMv7 Mach-O.
+than guessed) and validated: it reproduced the exact expected
+uncompressed size (10,047,488 bytes) and produced a structurally valid
+ARMv7 Mach-O.
 
 The kernelcache's own `__PRELINK_INFO` plist lists the real driver class:
 **`AppleIOPSDIO`**, matching `IONameMatch = "sdio,s5l8920x"` (the exact
 `compatible` string already found in the device tree on 2026-10-15) and
 `IOProviderClass = "AppleARMIODevice"`, loaded at `0x80579000`. Its
-`__PRELINK_TEXT` slice is itself a small, complete Mach-O (a prelinked kext),
-parsed directly rather than guessed at (segment/section load commands read
-with a small script): `__text` at `0x8057a000` (0x343c bytes), `__cstring`
-at `0x8057d43c` (0x175d bytes).
+`__PRELINK_TEXT` slice is itself a small, complete Mach-O (a prelinked
+kext), parsed directly rather than guessed at (segment/section load
+commands read with a small script): `__text` at `0x8057a000` (0x343c
+bytes), `__cstring` at `0x8057d43c` (0x175d bytes).
 
 A first pass with `arm-none-eabi-objdump` (`-b binary -m arm -M
-force-thumb`) decoded cleanly from the start, confirming the code is Thumb
-throughout this function range, but manual string-cross-reference by
-literal-pool scanning (first by hand, then checked twice) found zero
-matches against the target debug strings — not a tooling limitation, an
-off-by-8-bytes error in how the target string's own address had been
-computed (the substring searched for was offset into the real string, not
-its start). Once `radare2` was installed (`brew install radare2`) and run
-with full analysis (`aaa`), its own `axt` cross-reference command found the
-right function immediately once the correct string address was used:
-`fcn.8057c424`.
+force-thumb`) decoded cleanly from the start, confirming the code is
+Thumb throughout this function range, but manual string-cross-reference
+by literal-pool scanning found zero matches against the target debug
+strings at first — an off-by-8-bytes error in how the target string's own
+address had been computed, not a tooling limitation. Once `radare2` was
+installed (`brew install radare2`) and run with full analysis (`aaa`),
+its own `axt` cross-reference command found the right function
+immediately once the correct string address was used: `fcn.8057c424`.
 
 ## What `sendIOPCommand` actually does
 
-Disassembled in full (`radare2`, Thumb, relocations applied). In short:
+Disassembled in full (`radare2`, Thumb, relocations applied; see "Tooling
+notes" for why the Thumb flag matters). In short:
 
-1. Checks the command pointer passed in against a stored "allocated buffer"
-   pointer (`this+0x14`); mismatches fail with "Command is not from the
-   command buffer."
-2. Checks it is running on the right IOKit workloop gate (two virtual calls
-   through the object at `this+0x18`); failing that logs "Must have
-   workloop gate to send a command."
+1. Checks the command pointer passed in against a stored "allocated
+   buffer" pointer (`this+0x14`); mismatches fail with "Command is not
+   from the command buffer."
+2. Checks it is running on the right IOKit workloop gate (two virtual
+   calls through the object at `this+0x18`); failing that logs "Must
+   have workloop gate to send a command."
 3. Fills in the command structure: writes the opcode byte, sets a
    "pending" flag, stores the current command pointer at `this+0x30`.
-4. Logs `"Sending command @ vaddr = %p, paddr = 0x%lX, opcode = %lu"`
-   (confirming the command descriptor itself carries a virtual *and* a
-   physical address — this is a real shared-memory message, not a register
-   poke).
-5. **The actual send** is a virtual call through a *different* object, at
-   `this+0x24`, vtable slot `+0x84` — this is the one that actually talks
-   to hardware; `AppleIOPSDIO` itself never touches the SDHC registers for
-   this step.
-6. On success, loops re-reading `this+0x30` until it is cleared — presumably
-   by the completion handler (`handleIOProcCmdResp`, named in the kext's own
-   strings) once the IOP actually answers.
+4. Logs `"Sending command @ vaddr = %p, paddr = 0x%lX, opcode = %lu"` —
+   the logged "vaddr" is the command buffer's own address, "paddr" its
+   own physical address: a real shared-memory message between two
+   processors, not a register poke.
+5. **The actual send** is a virtual call through a *different* object,
+   at `this+0x24`, vtable slot `+0x84` — this is the one that actually
+   hands the message to the IOP; `AppleIOPSDIO` itself never touches an
+   SDHC register for this step.
+6. On success, loops re-reading `this+0x30` until it is cleared —
+   presumably by the completion handler (`handleIOProcCmdResp`, named in
+   the kext's own strings) once the IOP actually answers.
+
+`sendIOPCommand` has exactly one caller in the kext. That caller passes,
+as the real argument to the step-5 send call, the command buffer's own
+physical address — the same value logged as `paddr` above. This is the
+host side's entire contribution to the message's contents for this call
+path; see "The missing producer" for what this does and does not rule
+out.
 
 ## The generic channel, and who else uses it
 
 The object at `this+0x24` is backed by a genuinely separate kernel
-extension, confirmed by searching the full kernelcache's `__PRELINK_INFO`
-(not just this one kext) for every driver that lists it as a library
-dependency:
+extension, confirmed by searching the full kernelcache's
+`__PRELINK_INFO` (not just this one kext) for every driver that lists it
+as a library dependency:
 
 | `OSBundleLibraries` client of `com.apple.driver.IOSlaveProcessor` | Role |
 |---|---|
@@ -175,395 +292,273 @@ dependency:
 | `com.apple.driver.IOP_s5l8920x_firmware` | **the firmware image itself** |
 
 `IOP_s5l8920x_firmware` is not a thin wrapper: `_PrelinkExecutableSize =
-0x1d000` (116 KB), `IOProviderClass = IOResources` (a global resource, not a
-per-device driver). Extracted (SHA-256
+0x1d000` (116 KB), `IOProviderClass = IOResources` (a global resource,
+not a per-device driver). Extracted (SHA-256
 `b8af809426e15cd23b5247a15c7ee950843aa893f8bdc7b4e2cc9e018100cd37`), it
-turns out to be **two layers**, not one, and the distinction matters for
-what each fact actually proves:
+is **two layers**, not one:
 
-- A wrapper: a Mach-O container (`cputype=12`, `cpusubtype=9` — ARMv7) with
-  its own tiny `__text`/`__cstring`, holding config keys
-  (`ConfigurationOffset`, `HeapBaseOffset`, `PageTableBase`,
-  `MessageChannelSize`, ...) that tell the host how to load what follows.
-  This Mach-O header describes what the **host** (an ARMv7 Cortex-A8) needs
-  to load the file with XNU's normal kext mechanism — it says nothing about
-  the embedded core's own instruction set.
+- A wrapper: a Mach-O container (`cputype=12`, `cpusubtype=9` — ARMv7)
+  describing what the **host** CPU needs to load the file with XNU's
+  normal kext mechanism. It carries real executable code (not just
+  metadata) and a property dictionary — `ConfigurationOffset`,
+  `HeapBaseOffset`, `HeapSizeOffset`, `HeapRequired`, `PageTableBase`,
+  `PageTableSize`, `MessageChannelSize`, `PanicString`, `PanicFunction`,
+  `PanicLog*` — whose actual role is traced in "The missing producer"
+  below. This Mach-O header says nothing about the embedded core's own
+  instruction set.
 - The actual payload: a `fwFirmwareImage` section (0x1b000 bytes, SHA-256
   `02397017927bfa05d23f77b9e76e9a3e7c73711806c0a230780136af7f7d8bfc`), a
   *raw* binary with no Mach-O header of its own, starting with a genuine
   ARM32 exception vector table (confirmed byte-for-byte: its first word,
   `0e0000ea`, decodes as a `B` branch instruction) and self-identifying,
   once disassembled, as `"EmbeddedIOP for s5l8920x, Copyright 2010, Apple
-  Inc."`, built alongside `iBoot-1072.61`. This is the code that was
-  actually disassembled below — directly, with `radare2` told to decode it
-  as 32-bit ARM, not inferred from the wrapper's own header.
+  Inc."`, built alongside `iBoot-1072.61`. This is the code disassembled
+  throughout the rest of this document — directly, with `radare2` told to
+  decode it as 32-bit ARM, not inferred from the wrapper's own header.
 
-Its own debug strings strongly support this reading, but by themselves they
-establish a dialogue, not yet a proven causal chain to the specific symptom:
+Its own debug strings establish a real dialogue between host and IOP for
+SDHC, NAND, and DMA:
 
-- `"SDHC: Ping received, IOKit <--> IOP Connection established"` — this
-  establishes that a ping/connection handshake exists between IOKit and the
-  IOP firmware for SDHC. `sendIOPCommand`'s special handling of opcode 0
-  (seen above) was first guessed as a plausible match for this ping; the
-  IOP-side disassembly below instead identifies the ping as opcode 1, so
-  this specific host/IOP opcode correspondence is not yet established either
-  — see "Known gaps". **What is not yet shown**:
-  whether this handshake is itself what activates the SDHC hardware, or
-  merely opens a logical connection on top of hardware that is initialised
-  some other way — that distinction requires tracing the ping's handler
-  (transport used, expected message, response, and which initialisations it
-  actually triggers), not inferring it from the log line's wording.
+- `"SDHC: Ping received, IOKit <--> IOP Connection established"` — a
+  ping/connection handshake exists. Traced in full below: it does not
+  activate SDHC hardware, only acknowledges a logical connection.
 - `sdiodrv_resetSDHC`, `sdiodrv_sendCommand`, `sdiodrv_performDMA`,
-  `sdiodrv_completeTransfer`: a real low-level SD protocol driver, using the
-  exact register names Trognon's own hypotheses used (`cmd`, `arg`, `resp0`,
-  `normalInt`, `errorInt`, `state`), runs on the IOP. That it runs there is
-  established; that the application CPU is *excluded* from reaching the same
-  registers, and that this exclusion is specifically why 2026-10-15/16's
-  reads came back zero, is plausible but not proven by this string alone.
+  `sdiodrv_completeTransfer` — a real low-level SD protocol driver, using
+  the exact register names Trognon's own earlier hypotheses used (`cmd`,
+  `arg`, `resp0`, `normalInt`, `errorInt`, `state`), runs on the IOP.
 - `h2fmi_iop_read_multiple`, `h2fmi_erase_blocks`, `h2fmi_nand_reset_all`,
-  and the rest of the `h2fmi_*` family: NAND's real driver lives here too.
-  One possible explanation for why Trognon's own NAND chip-ID read
-  (2026-10-15) worked without ever pinging anything is that NAND is needed
-  to boot iOS and so the IOP's NAND component is already live by the time
-  Recovery mode is reached. **This is not established**: the needs of a
-  normal iOS boot do not by themselves prove the IOP's actual state along
-  Trognon's own tethered DFU/iBSS path, which skips most of that normal
-  boot. The chip-ID read succeeding is a fact; why it succeeded is still a
-  hypothesis.
+  and the rest of the `h2fmi_*` family: NAND's real driver lives here
+  too. One possible explanation for why Trognon's own NAND chip-ID read
+  (2026-10-15) worked without ever pinging anything is that NAND is
+  needed to boot iOS, so the IOP's NAND component might already be live
+  by the time Recovery mode is reached — **not established**: the needs
+  of a normal iOS boot do not by themselves prove the IOP's actual state
+  along Trognon's own tethered DFU/iBSS path, which skips most of that
+  normal boot.
 - `drivers/apple/cdma/cdma.c`: the AES-capable DMA engine already seen
   referenced in `h2fmi.c`'s source is also IOP-managed.
-- `task_create`, `task_yield`, `idle_task_routine`, a heap allocator, ARM
-  exception-mode dump strings (`"ARM %s abort in %s mode at 0x%08x"`), and
-  its own interrupt-enable/status registers (`rVICINTENABLE`,
-  `rVICIRQSTATUS`, distinct from the application CPU's own VIC0/1/2): this
-  part is a plain reading of the firmware's own strings, not an inference —
-  a complete small embedded OS, not a thin relay.
 
-### Not "an OS just for Wi-Fi": NAND is the dominant tenant
+## The IOP's SDIO message loop: opcodes, dispatch, and the SDHCI mapping
 
-A full string census of the firmware image (290 strings total) counts the
-driver-specific prefixes directly: **39** for `h2fmi_*` (NAND), **7** for
-the `dma`/`cdma` family, and **6** for `sdiodrv_*` (SDIO/Wi-Fi) — the rest
-is generic OS infrastructure (scheduler, heap, ARM exception handling). An
-explicit search for other peripheral families (`audio`, `usb`, `uart`,
-`i2c`, `spi`, `backlight`, `pmu`, `touch`, `accel`, `baseband`,
-`bluetooth`, `camera`, `lcd`/`display`) found zero matches anywhere in the
-image. As far as this firmware's own debug strings show, it manages
-exactly three subsystems, and Wi-Fi/SDIO is the smallest of the three by a
-wide margin. This reframes the whole architecture: it is not a second
-operating system built *for* Wi-Fi — it is a shared I/O coprocessor whose
-primary reason to exist is almost certainly NAND (latency-sensitive,
-ECC/DMA-heavy, a natural fit for offloading to a dedicated core), with
-SDIO/Wi-Fi riding along on the same already-justified infrastructure
-because it is also a slow, interrupt-driven peripheral well suited to the
-same offload — not because Wi-Fi itself warranted a second processor.
-
-## What this settles, and what it reopens
-
-What is now established: the S5L8920 has a second embedded processor
-running real, separate firmware, and a message-passing dialogue exists
-between the application CPU's `AppleIOPSDIO` driver and that firmware for
-SDIO. What is not yet established: that this is *why* `0x80000000` ignored
-reads and writes from the application CPU on 2026-10-15/16. The architecture
-makes that explanation plausible and is now the leading hypothesis, ahead of
-the clock-gate and init-sequence hypotheses already ruled out — but it has
-not itself been traced end to end.
-
-The ambiguous dynamic-clock-16 read from 2026-10-15 (`0xF18` instead of an
-expected `0x718`) is in the same position: the IOP architecture makes it
-plausible that clocking this block is not something the application CPU's
-clock-gate table alone controls end to end, but this has not been confirmed
-either.
-
-### Known gaps (raised by a second review, 2026-10-16)
-
-A second review of this writeup, after the IOP finding, flagged exactly the
-two points above as conclusions stated too strongly, and named the decisive
-next step precisely: **trace the ping's own handler** — which transport it
-uses, what message it expects, what it replies, and which initialisations
-it actually triggers before and after the "Connection established" log
-line. Until that is traced, "the application CPU cannot reach the block
-because only the IOP can" remains the leading hypothesis, not a proven
-fact, and the two softened bullets above should be read as open questions,
-not settled ones.
-
-### The ping handler, traced: it does not activate hardware
-
-Following a detailed six-step plan (from the same review) for rebuilding
-the IOP dialogue, step 2 was completed: the ping's own handler, inside the
-IOP's *raw* firmware image (not the ARMv7 Mach-O wrapper kext that merely
-carries it — a distinct 0x1b000-byte section, starting with a genuine ARM32
-exception vector table, confirmed byte-for-byte: `0e0000ea` decodes as a
-`B` instruction), was located (via `radare2`, cross-referencing the "Ping
-received" string) and disassembled in full.
-
-It is a message-processing loop (a queue named `"sdio message"`) that reads
-an incoming message's opcode field, computes `r3 = opcode - 1`, and if
+The message loop (`fcn.00001730`, a queue named `"sdio message"`) reads
+an incoming message's opcode byte, computes `r3 = opcode - 1`, and if
 `r3 <= 6` (unsigned), jumps through a 7-entry table at `r3`'s index —
-so the table covers **opcodes 1 to 7**; opcode 0 underflows `r3` and falls
-to the same default/error path as any opcode above 7 ("unrecognised sdio
-opcode"). This indexing was checked directly against the table's own raw
-bytes (7 pointers at file offset `0x17c4`), not inferred from a case
-label, after a second review flagged exactly this kind of off-by-one as a
-real risk. **Table index 0 (real opcode 1)** — the ping — logs the
-"Connection established" string, writes a success status back into the
-message's response field, and returns to wait for the next message.
-**Nothing else.** No register access, no call into any `sdiodrv_*`
-function. This directly answers the determining question flagged above:
-**the ping does not initialise the SDHC hardware; it only acknowledges a
-logical connection.** The earlier hypothesis assuming a direct causal link
-between the ping and hardware activation is wrong as stated.
+the table covers **real opcodes 1 to 7**; opcode 0 underflows `r3` and
+falls to the same default/error path as any opcode above 7. This
+indexing was checked against the table's own raw bytes (see "Decisive
+evidence snippets"), not inferred from a case label.
 
-Table index 3 (**real opcode 4**) calls a function that references the
-`sdiodrv_resetSDHC` string — this, not the ping, is the opcode that
-actually touches hardware. The other five were disassembled too, each
-guarded by the same pattern seen in the ping handler: read a "configured"
-flag, bail with a generic `0x401` error if it is zero.
+| Real opcode | Function | Role |
+|---|---|---|
+| 1 | `fcn.00001844` | **The ping.** Logs "Connection established", writes success, returns. No register access, no call into any `sdiodrv_*` function. |
+| 2 | `fcn.00001a58` | Allocates a 16-byte buffer, stores it at `message+0x0c+0x04`. Reads and null-checks `message+0x0c+0x00` (see below) but never writes it. |
+| 3 | `fcn.00001a24` | Frees that same field — the mirror of opcode 2. |
+| 4 | `fcn.000019c4` | Reaches `sdiodrv_resetSDHC` — the opcode that actually touches hardware. |
+| 5 | `fcn.0000192c` | A compound dispatcher over the message's bus-parameter fields — matches the `setClockRate`/`setBusWidth`/`setBusSpeedMode` family named in the firmware's own strings. |
+| 6 | `fcn.0000190c` | Tail-calls into `sdiodrv_sendCommand`/`sdiodrv_completeCommand` (`0x67f0`), identified by its own log-tag strings, not a signature guess. |
+| 7 | `fcn.000018bc` | Calls `sdiodrv_performDMA`/`sdiodrv_transferData` (`0x6898`), likewise identified by its own log-tag strings. |
 
-**Correction (caught by a second review, same day)**: the "`dev`" pointer
-below is not a separate struct, as an earlier version of this section
-implied. The switch's own dispatch code passes the identical pair
-`(message+0xc, message+0x14)` to every one of the six non-ping handlers —
-confirmed in all six cases, not assumed. There is one buffer, not two; every
-`[dev+N]` below means `[message+0xc+N]`. Traced one level further at the
-reviewer's explicit request: the receive call (`fcn.00000eb0`) resolves
-`message` itself through a **fixed table at literal address `0x10da4`** — a
-32-byte channel descriptor per channel, each holding a ring buffer of
-64-byte message slots. That address is RAM, part of the firmware's own
-static data, not an MMIO window and not a raw hardware pointer handed in by
-the host.
+Every non-ping handler (opcodes 2–7) receives the identical argument
+pair `(message+0x0c, message+0x14)` from the dispatcher — confirmed in
+all six cases, not assumed. There is one message buffer, not a separate
+"device struct"; every offset below is relative to it.
 
-- **Opcode 2** (`fcn.00001a58`): allocates a 16-byte buffer and stores it
-  at `[dev+4]` — opens a resource. It reads and null-checks `[dev+0]` but
-  never writes it (see the correction below — this matters).
-- **Opcode 3** (`fcn.00001a24`): frees exactly that same `[dev+4]` field —
-  the mirror of opcode 2, a clean open/close pair.
-- **Opcode 5** (`fcn.0000192c`): a compound dispatcher checking the
-  message's `+4`, `+8`, `+0x10` and `+0xc` fields in turn, one distinct
-  sub-call per field, stopping at the first failure — matches the
-  `setClockRate`/`setBusWidth`/`setBusSpeedMode` family named in the
-  firmware's own debug strings; likely "set bus parameters" as a bundle.
-- **Opcode 6** (`fcn.0000190c`): a thin tail-call into `fcn.000067f0`,
-  confirmed by its own log-tag strings to be **`sdiodrv_sendCommand`** (and,
-  inlined in the same function, `sdiodrv_completeCommand`) — not a guess
-  from signature anymore. Its `command_inhibited_check` helper
-  (`fcn.00006ac8`, polled in a classic retry loop) reads `[dev+0x24] & 1`.
-- **Opcode 7** (`fcn.000018bc`): calls `fcn.00006898`, confirmed by its own
-  log-tag strings to be **`sdiodrv_performDMA`** / **`sdiodrv_transferData`**
-  — again not a guess.
+### The SDHCI register mapping
 
-### Major correction: this is real SDHCI hardware, one pointer indirection away
+`sdio_op4_reset` (`0x19c4`) opens with `r4 = [r0]` — it dereferences
+`message+0x0c` **once**, and passes that dereferenced *value* (not the
+address `message+0x0c` itself) into the functions that build the reset
+bitmasks. `sdio_op6`'s wrapper (`0x190c`) does the identical `r0 = [r0]`
+before tail-calling `sdiodrv_sendCommand`. Three distinct things, kept
+separate with consistent names throughout this document:
 
-A third review, reading the GitHub copy of this report, flagged that the
-exact offsets and bit masks quoted above match the *real, standard SDHCI
-register layout* (the same one Linux's own `sdhci.h` uses) far too
-precisely to be a coincidence, and asked the decisive question: does
-`[dev+0x2f]` etc. really use `dev` itself, or a pointer *loaded from* a
-field of `dev`? Re-read instruction by instruction, not re-summarised from
-memory: `sdio_op4_reset` (`0x19c4`) opens with `r4 = [r0]` — it dereferences
-`message+0x0c` **once**, and passes that dereferenced value (not the
-address `message+0x0c` itself) into `generic_poll_retry_100x`,
-`reset_set_bits_0x34_0x36_a` and `reset_set_bits_0x34_0x36_b`. `sdio_op6`'s
-wrapper (`0x190c`) does the identical `r0 = [r0]` before tail-calling
-`sdiodrv_sendCommand`.
-
-**Notation fix** (a reviewer caught a real conflation in the previous
-version of this section, not just a phrasing issue — used consistently
-from here on):
-- `message+0x0c` — a *location*, inside the firmware's own 64-byte message
+- `message+0x0c` — a *location* inside the firmware's own 64-byte message
   slot.
-- `base = *(message+0x0c)` — the *value* stored there: a pointer, the
-  real SDHCI base, null-checked before use exactly like a driver checking
-  its mapped register window. This is what the previous version wrongly
-  called `[dev+0]`/a "configured" boolean.
-- `base+N` — real SDHCI registers, **not** `message+0x0c+N`. (This also
-  resolves a consistency check the same reviewer asked for: a 64-byte
-  message slot cannot contain an offset-`0x42` field, which
-  `message+0x0c+0x36` would be — the overflow only existed because of the
-  conflation; `base+0x36` is a separate address space entirely.)
+- `base = *(message+0x0c)` — the *value* stored there: a pointer,
+  null-checked before use exactly like a driver checking its mapped
+  register window.
+- `base+N` — real SDHCI registers, reached through `base`, **not**
+  `message+0x0c+N`.
 
-With that correction, every offset lines up exactly with real SDHCI:
+Every offset accessed through `base` lines up exactly with the real,
+standard SDHCI register layout (the one Linux's own `sdhci.h` uses):
 
-| `base+N` | What we saw | Real SDHCI register |
+| `base+N` | What the firmware does there | Real SDHCI register |
 |---|---|---|
 | `+0x08` | read/logged as `arg` in `sendCommand` | `SDHCI_ARGUMENT` |
 | `+0x0e` | 16-bit, logged as `cmd` | `SDHCI_COMMAND` |
-| `+0x10` | — | `SDHCI_RESPONSE` (0-3) |
+| `+0x10` | — | `SDHCI_RESPONSE` (0–3) |
 | `+0x24` | `&1` checked in a retry loop, error string "Command inhibited!" | `SDHCI_PRESENT_STATE`, bit 0 = `CMD_INHIBIT` — exact match |
 | `+0x2f` | byte access, mask `7` | `SDHCI_SOFTWARE_RESET` (bit0=all, bit1=CMD, bit2=DAT — mask 7 = "reset everything") |
 | `+0x30`, `+0x32` | logged as `normalInt`/`errorInt` | `SDHCI_INT_STATUS` (normal/error) |
 | `+0x34`, `+0x36` | bits set by the reset path | `SDHCI_INT_ENABLE` (normal/error) |
 
 This is the standard SDHCI layout, offset for offset, not a pattern-match
-coincidence. It also means the reset path is very plausibly writing a real,
-self-clearing hardware reset register directly (`SOFTWARE_RESET`'s bits
-clear themselves once the reset completes) — the "deferred/background
-worker" theory floated in an earlier version of this section may not be
-needed at all; a live hypothesis, not yet proven.
+coincidence — too precise and too complete to be one. The reset path is
+very plausibly writing a real, self-clearing hardware reset register
+directly (`SOFTWARE_RESET`'s bits clear themselves once the reset
+completes).
 
-**The real open question**: not "software or hardware" (hardware,
-convincingly) but **what numeric value is `base`, and who writes it to
-`message+0x0c`**. Neither `sdio_op2_alloc` nor any opcode handler
-disassembled so far *sets* this field — every one of them only reads and
-null-checks it.
+### Decisive evidence snippets
 
-The firmware's own static task table (`0xe848`) confirms, from the
-firmware's own data rather than inference, that NAND (`fmi0`/`fmi1`) and
-Wi-Fi (`sdio`, entry point `sdio_message_loop`) are peer tasks of a real
-small OS. The raw value `sdio_message_loop` gets from the generic receive
-call is passed through `fcn.00008528`/`fcn.000084a0` before becoming
-`message` — disassembled in full, this is a **generic physical-address ↔
-IOP-local-address translator** (a table at `0xf07c`, used from 27 places
-across the firmware, not SDIO-specific). It explains how `message` becomes
-dereferenceable at all; it does not supply `base`.
+- **The jump table off-by-one, checked against raw bytes**, not a case
+  label: the 7-entry table lives at file offset `0x17c4`; the dispatcher
+  computes `r3 = opcode - 1` before indexing it, so table index 0 is
+  real opcode 1 (the ping), and an opcode-0 message underflows `r3`
+  instead of hitting the ping.
+- **`base` is a pointer, not a flag**, confirmed instruction by
+  instruction at `sdio_op4_reset` (`0x19c4`):
+  ```
+  0x000019cc  ldr r4, [r0]       ; r4 = *(message+0x0c)  -- dereference, once
+  0x000019d0  cmp r4, 0
+  0x000019e4  mov r0, r4         ; r4 (the dereferenced VALUE), not r0 (the address), passed onward
+  0x000019ec  bl fcn.000064b0    ; -> generic_poll_retry_100x, eventually sdiodrv_resetSDHC
+  ```
+- **The scheduler's first-dispatch**, confirmed rather than assumed from
+  a disassembler-chosen argument name, at `fcn.00009ff4`:
+  ```
+  0x0000a000  ldr r3, [0xa018]   ; r3 = *(0xf0a8)  -- global "current task" TCB pointer
+  0x0000a004  ldr r3, [r3]
+  0x0000a008  ldr r0, [r3, 0x74] ; R0 = TCB's own per-priority context-slot address
+  0x0000a00c  mov lr, pc
+  0x0000a010  ldr pc, [r3, 0x70] ; jump to the task's entry point
+  ```
+  `+0x74` traces back to `fcn.00008988` (task init), which stores the
+  per-priority context-slot address (`0xf028 + priority*8`, computed by
+  the task-creation loop at `fcn.0000080c`, `0xf000`–`0xf00c`) there.
 
-**Checked and ruled out: does the host supply `base`?** The natural
-hypothesis — the host CPU knows the real SDHC physical address from the
-device tree and writes it into the message before calling
-`sendIOPCommand` — was checked directly against the host kext
-(`AppleIOPSDIO.kext`) and ruled out. (An earlier disassembly pass of this
-same kext, done in plain ARM mode, was wrong — it is Thumb-2 code; redone
-correctly with `asm.bits=16`.) `sendIOPCommand` has exactly one caller in
-the kext, and it passes, as the real argument to the underlying transport
-call, the **physical address of the command buffer itself** (the same
-value logged as `paddr` in the `"Sending command @ vaddr=%p, paddr=..."`
-string) — standard shared-memory IPC, not a separate hardware address.
-`sendIOPCommand` also requires its command argument to be exactly one
-single, fixed, pre-allocated buffer, checked by pointer identity. And the
-kext contains **zero** strings or calls resembling
-`getDeviceMemoryWithIndex`/`mapDeviceMemory` — the standard IOKit calls
-that would resolve the device tree's SDHC `"reg"` property into a
-host-usable address. The host CPU very plausibly never maps or touches the
-SDHC registers at all. So `base` must come from the IOP side — most likely
-a boot-time constant from a smaller IOP boot stage that has not been
-extracted (this `0x1b000`-byte blob may not be everything that runs on the
-IOP), or built via split `movw`/`movt`-style instructions rather than a
-single literal (the earlier exhaustive search only caught whole-word
-literals) — neither checked yet.
+## Reconciling host and IOP opcode numbering
 
-**Checked: does `sdio`'s own task entry produce `base`?** Compared
-`sdio_message_loop`'s entry (`0x1730`) instruction-by-instruction against
-`fmi0`/`fmi1`'s shared entry (`0x1114`). Real structural difference:
-`fmi0`/`fmi1` allocate a `0x1b8`-byte instance struct, zero it, and
-register it into a global array that the firmware's own two-phase
-boot-init dispatcher iterates — `sdio`'s entry does none of this, going
-straight to generic queue creation instead. Traced that generic
-queue-creation code fully: for every slot in a new ring it writes the
-literal value `1` into `[slot+0]` (almost certainly the opcode byte, a
-safe default matching real opcode 1 = ping) and never touches
-`[slot+0x0c]`. Since `.bss` should be zero at load, `base` should start at
-0 for a freshly created channel — which should fail every opcode handler's
-null-check. Whatever writes a real value there for the first time is
-still not the host, and not this generic queue setup either.
+Still open (see "Open questions" #2). `sendIOPCommand`'s own special
+handling of a host-side "opcode 0" was first guessed, before the IOP-side
+jump table was disassembled, to be a plausible match for the ping. Once
+the table's own bytes were read, the ping turned out to sit at **real
+opcode 1**, not 0. Neither number has been traced through an actual
+translation layer; whether the host's opcode byte maps 1:1 onto the
+IOP's numbering, through a fixed `+1` offset, or through something not
+yet found, is unresolved. This matters beyond labelling: it is the kind
+of mismatch that would make a hand-built "send opcode 0 to ping" payload
+silently hit the wrong IOP-side handler.
 
-**Checked: could `base` be built across several instructions rather than
-stored as one literal?** Grepped a full linear disassembly for every
-`0x80000000`/`0x81000000`-prefixed immediate in the whole firmware.
-Several exist, but every one inspected is a status/error code built right
-before a function return (inside NAND functions), not a hardware address
-— and none fall inside any SDIO-related function. So `base` is not
-constructed this way in the SDIO code path either; it must be a genuine
-load from somewhere, most likely the "sdio" task's own creation-time
-parameter struct, whose own producer (the real task-creation call site —
-not the static task table, which has no visible field for it) has not yet
-been found.
+## The missing producer: everything checked for the real SDHC base pointer
 
-**Full scheduler trace, checked instruction-by-instruction rather than by
-name.** A reviewer refused to accept "arg1" at face value and asked for
-three bounded checks instead of a full scheduler reverse-engineering:
+This section states precisely what has and has not been ruled out for
+`base`'s own producer — the question "who writes `message+0x0c`, and
+with what value" — rather than letting that scope creep across several
+separately-worded findings.
 
-1. Recount the stack/registers at `sdio_message_loop`'s entry (`0x1730`):
-   `push {r4,r5,r7,lr}` never touches r0, and `mov r4,r0` at `0x1740`
-   captures the raw incoming r0 before it is used for anything else — so
-   `ldm r4,{r0,r5}` really does dereference the task's true first
-   argument.
-2. Find the actual first-dispatch instruction and its R0 value: traced to
-   `fcn.00009ff4`, a "resume task" trampoline (installed as the fake
-   initial return address at task creation). It loads the global
-   "current task" pointer, then does `r0 = [tcb+0x74]; mov lr,pc;
-   pc = [tcb+0x70]` — R0 is loaded from the TCB's own `+0x74` field right
-   before jumping to its `+0x70` entry-point field. `+0x74` traces back
-   to `fcn.00008988` (task init), which stores the per-priority
-   context-slot address (`0xf028 + priority*8`, computed by the
-   task-creation loop) there. This confirms, instruction by instruction,
-   that R0 at first entry is the *address* of the task's own 8-byte slot
-   in that table — not a guess from a disassembler-chosen name.
-3. Search for *indexed* writes into that slot table, not just literal
-   addresses: only two `str`s to a `+0x74` offset exist anywhere in the
-   firmware. One is the TCB-init write just described (stores the slot's
-   address into the TCB, does not write through it). The other, at
-   `0x1be0`, is inside `fcn.00001ac4` — called from `fmi0`/`fmi1`'s
-   *shared* entry point, i.e. NAND, not SDIO — building a similarly
-   shaped record that feeds NAND's own two-phase boot-init dispatcher.
-   `sdio`'s entry never calls anything like it. No other indexed write
-   into the `0xf028` range exists.
+**Checked, and ruled out for this specific path**: the host writing it
+directly into the message before calling `sendIOPCommand`. That function
+has exactly one caller, and it passes the command buffer's own physical
+address as the real transport argument — standard shared-memory IPC, not
+a separate hardware address. `sendIOPCommand` also requires its command
+argument to be exactly one single, fixed, pre-allocated buffer (checked
+by pointer identity), and the kext contains no call resembling
+`getDeviceMemoryWithIndex`/`mapDeviceMemory`. **This rules out one
+specific path** — the buffer-allocation and `sendIOPCommand`-transport
+code examined — not every conceivable host-side producer. Other command
+constructors, other virtual methods on the channel object (`this+0x24`,
+not itself disassembled — see "Open questions" #8), and pre-boot
+configuration (see below, which turned out to be exactly this) remain
+outside this specific check's scope.
 
-This is now a thorough negative result, checked from every angle this
-firmware blob offers, not an unexplored gap. Combined with NAND having a
-whole parallel per-instance registration mechanism that SDIO's task entry
-never calls at all, the two explanations left are: SDIO support in this
-exact firmware build may be incomplete or not fully wired up (consistent
-with every real SDHC register reading 0 on actual hardware), or the real
-initialisation happens in an earlier IOP boot stage that has not been
-extracted (before this `0x1b000`-byte blob even starts running).
+**Checked, and ruled out**: `sdio`'s own task entry writing it at
+creation time. Compared `sdio_message_loop`'s entry (`0x1730`)
+instruction-by-instruction against `fmi0`/`fmi1`'s shared entry
+(`0x1114`). Real structural difference: `fmi0`/`fmi1` allocate a
+`0x1b8`-byte instance struct and register it into a global array that the
+firmware's own two-phase boot-init dispatcher iterates; `sdio`'s entry
+does none of this, going straight to generic queue creation. That generic
+queue-creation code (`fcn.00000db4`) writes the literal value `1` into
+every new slot's offset `+0` (almost certainly the opcode byte, a safe
+default matching real opcode 1 = ping) and never touches `+0x0c`.
 
-**Breakthrough: the configuration-injection mechanism, found and
-confirmed.** A reviewer pointed back at a lead from earlier in this report
-that had never been followed up: the wrapper kext
-(`IOP_s5l8920x_firmware`) carries a property dictionary with keys
-`ConfigurationOffset`, `HeapBaseOffset`, `HeapSizeOffset`, `HeapRequired`,
-`PageTableBase`, `PageTableSize`, `MessageChannelSize`. Disassembled the
-wrapper's own `__text` (it has real code, not just metadata carrying the
-payload) and found a clean `{key, value}` table feeding this dictionary.
-The actual stored values: `ConfigurationOffset = 0xf0a0`,
-`HeapBaseOffset = 0xf0a4`, `HeapSizeOffset = 0xa000`,
-`PageTableBase = 0xffffffff` (no MMU on this IOP), `MessageChannelSize =
-0x1a460`.
+**Checked, and ruled out**: a split/computed-constant construction of
+`base` inside the SDIO code path. Grepped a full linear disassembly for
+every `0x80000000`/`0x81000000`-prefixed immediate in the whole firmware.
+Several exist, but every one inspected is a status/error code built
+right before a function return inside NAND functions, not a hardware
+address — and none fall inside any SDIO-related function.
 
-**These are offsets into the raw firmware image itself, not addresses in
-some other space.** Checked directly against the firmware file: at
-offset `0xf0a0` and `0xf0a4`, it holds `0xffffffff` at both — the same
-"-1 = not yet configured" sentinel pattern seen everywhere else in this
-firmware for an unset field. This confirms, rather than merely
-hypothesizes, that **the host-side loader patches specific, fixed
-locations inside the firmware image before releasing the IOP from
-reset** — a configuration-injection mechanism distinct from, and
-upstream of, every message-passing path chased so far. It explains why
-none of those paths (host message content, generic queue creation, task
-creation, the scheduler) ever write anything real into the fields this
-report has been tracing: the real write happens before any of that code
-even runs, as part of loading the firmware itself.
+**Checked, and ruled out**: that the task scheduler's own first-dispatch
+mechanism supplies `base`. Traced the actual chain, not just the
+argument's name (see "Decisive evidence snippets"): R0 at a task's first
+entry is the *address* of its own 8-byte context slot in a table at
+`0xf028`. That slot's two words read `0, 0` in the static firmware file.
+Searched for *indexed* writes into that slot range too, not only literal
+addresses: the only other `str` to a `+0x74` offset anywhere in the
+firmware is inside `fcn.00001ac4`, called from `fmi0`/`fmi1`'s shared
+entry (NAND, not SDIO), building an unrelated record for NAND's own
+registration mechanism. **This search covered writes at the `+0x74`
+offset itself and at the slot's base address; it does not cover every
+possible write through a pointer loaded *from* that slot via a
+register-to-register copy or a multi-register `stm`, which was not
+separately enumerated.** Treat "nobody writes the slot" as checked for
+the mechanisms listed, not as an exhaustive proof covering every
+addressing mode.
 
-Not yet found: which kext performs this patch. Neither `AppleIOPSDIO.kext`
-nor `IOSlaveProcessor.kext` contain the string `"ConfigurationOffset"` —
-a third, not-yet-extracted kext (a generic IOP firmware loader, likely
-the concrete class backing `IOSlaveFirmware`/`IOSlaveCPU`) must do it.
-Finding it and checking what it actually writes at those two offsets —
-and whether that includes or points to the real SDHC base address — is
-now the single most direct remaining step.
+**Found and confirmed — the strongest lead so far**: the firmware
+wrapper's own property dictionary (`ConfigurationOffset`, `HeapBaseOffset`,
+`HeapSizeOffset`, `HeapRequired`, `PageTableBase`, `PageTableSize`,
+`MessageChannelSize`) is not just metadata sitting unused. Its `__text`
+section contains real code with a `{key, value}` table feeding the
+dictionary; read directly:
 
-A lower-priority lead, not yet connected to any of the above: the task
-table's fourth, highest-priority entry, `"iop"` (`0xafc`), is a dispatcher
-for commands the host sends on a *separate* "iop control" channel. Its
-`"inst"` ("install") command builds a per-client config struct whose last
-copied field is the "iop" task's own third creation-time parameter — a
-fixed constant, not copied from the host message. Nothing yet connects
-this specific struct or field to the "sdio message" channel's own slots,
-and it requires an extra, unconfirmed hop compared to the direct
-`message+0x0c` dereference above, so it stays secondary.
+| Key | Value |
+|---|---|
+| `ConfigurationOffset` | `0xf0a0` |
+| `HeapBaseOffset` | `0xf0a4` |
+| `HeapSizeOffset` | `0xa000` |
+| `HeapRequired` | `0xffffffff` |
+| `PageTableBase` | `0xffffffff` (no MMU on this IOP) |
+| `PageTableSize` | `8` |
+| `MessageChannelSize` | `0x1a460` |
+
+These are **offsets into the raw firmware image itself**. Checked
+directly against the firmware file: both `fwFirmwareImage[0xf0a0]` and
+`[0xf0a4]` read `0xffffffff` — the firmware's own "not yet set" sentinel
+pattern, seen at every other genuinely-unconfigured field found so far.
+This is evidence, not proof, that a host-side loader patches these exact
+locations before releasing the IOP from reset — a configuration-injection
+mechanism upstream of, and structurally different from, every
+message-passing path checked above, which would explain why none of them
+ever write anything real: the real write would happen before any of that
+code runs, as part of loading the firmware itself.
+
+**Not yet found**: which kext performs this patch. Neither
+`AppleIOPSDIO.kext` nor `IOSlaveProcessor.kext` contain the string
+`"ConfigurationOffset"` anywhere — a third, not-yet-extracted kext (a
+generic IOP firmware loader, likely the concrete class backing
+`IOSlaveFirmware`/`IOSlaveCPU`) must do it. Finding it and checking what
+it actually writes at these two offsets — and whether that includes or
+points to the real SDHC base address — is the single most direct
+remaining step, and the one most likely to also answer "Open questions"
+#4 and #6 at the same time.
+
+A weaker, secondary lead, not yet connected to any of the above: the
+task table's fourth, highest-priority entry, `"iop"` (`0xafc`), is a
+dispatcher for commands the host sends on a *separate* "iop control"
+channel. Its `"inst"` ("install") command builds a per-client config
+struct whose last copied field is the "iop" task's own third
+creation-time parameter. Followed its destination: that struct is the
+"iop control" channel's own ephemeral received message, replied to the
+host immediately afterward (`fcn.00000f70`) — nothing found keeps it
+alive or forwards it to the "sdio message" channel. This is a real,
+checked negative on the *persistence* question, not a disproof of every
+possible connection (the two channels' underlying ring buffers could
+still alias, which was not checked); it stays secondary because it
+requires an extra, unconfirmed hop compared to the direct
+`message+0x0c` dereference above.
 
 `fcn.00006580`, `fcn.000063d0` and `fcn.0000638c` (opcode 5's three
 sub-calls), and `sendCommand`/`performDMA`'s own further sub-calls
 (`0x6c70`, `0x6c90`, `0x6cf0`, `0x6c00`, `0x6f18`, `0x6804`, `0x6d50`,
-`0xa7d8`, `0x8dfc`) remain undisassembled. The host driver's own opcode
-numbering (`sendIOPCommand`'s special handling of "opcode 0", noted
-above as a plausible ping match) has not been reconciled with this IOP-side
-numbering either; see "Known gaps".
+`0xa7d8`, `0x8dfc`) remain undisassembled.
 
 All of the above is also stored, reusable, in
 [`tools/iop_analysis/`](https://github.com/SebE585/trognon/tree/main/tools/iop_analysis)
-(an r2 naming script plus a fuller prose reference), so this call graph does
-not need re-deriving from scratch in a future session.
+(an r2 naming script plus a fuller prose reference), so this call graph
+does not need re-deriving from scratch in a future session.
 
 ```mermaid
 flowchart TD
@@ -575,8 +570,8 @@ flowchart TD
 
     SW -- "opcode 0, or &gt; 7<br/>(default)" --> ERR["log 'unrecognised<br/>sdio opcode'"]
     SW -- "opcode 1<br/>(table[0])" --> C0
-    SW -- "opcode 2<br/>(table[1])" --> C1["fcn.00001a58<br/>allocate a 0x10-byte buffer,<br/>store at [dev+4]"]
-    SW -- "opcode 3<br/>(table[2])" --> C2["fcn.00001a24<br/>free [dev+4]<br/>(mirrors opcode 2)"]
+    SW -- "opcode 2<br/>(table[1])" --> C1["fcn.00001a58<br/>allocate a 0x10-byte buffer,<br/>store at message+0x0c+4"]
+    SW -- "opcode 3<br/>(table[2])" --> C2["fcn.00001a24<br/>free message+0x0c+4<br/>(mirrors opcode 2)"]
     SW -- "opcode 4<br/>(table[3])" --> C3["fcn.000019c4<br/>-> sdiodrv_resetSDHC<br/><b>touches hardware</b>"]
     SW -- "opcode 5<br/>(table[4])" --> C4["fcn.0000192c<br/>set bus params (clock,<br/>width, speed mode) --<br/>one sub-call per field"]
     SW -- "opcode 6<br/>(table[5])" --> C5["fcn.0000190c<br/>-> sdiodrv_sendCommand (0x67f0)<br/>confirmed by its own log tag"]
@@ -598,140 +593,148 @@ flowchart TD
     style C3 fill:#e8f8e8,stroke:#4ac97a
 ```
 
-*The ping (real opcode 1) and the reset (real opcode 4) are two different,
-unrelated branches of the same switch — confirmed by reading the jump
-table's own bytes, not inferred from a case label or the log message's
-wording. An earlier version of this document mislabelled these as opcodes
-0 and 3 respectively, off by one for the reason the switch's `opcode - 1`
-subtraction makes easy to miss; corrected 2026-10-16.*
+## What would be needed to actually drive Wi-Fi from a Trognon payload
 
-Updated evidence table (format suggested by the review):
+The message-channel wire format, precisely enough to construct and send
+both the ping (real opcode 1, now known to be a no-op connection
+handshake) *and* real opcode 4 (the one that actually calls into
+`sdiodrv_resetSDHC`) — the command/message structure seen in
+`sendIOPCommand`, plus whatever the real low-level kickoff write at
+`this+0x24`'s vtable `+0x84` does on the host side (a separate class,
+not yet located or disassembled). Sending only the ping is now known to
+be insufficient on its own. Not attempted this session; a deliberate
+stopping point, not an unfinished attempt.
 
-| Claim | Status |
-|---|---|
-| The IOP is running | **Not confirmed** — firmware identified and its message loop disassembled; whether it is actually executing under Trognon's own tethered DFU/iBSS path (as opposed to merely being present as a loaded binary) is not verified |
-| The transport works | Partial — the message's opcode/status fields are understood; the full shared-buffer format is not |
-| The ping activates the SDHC | **Disproven** — the ping handler never touches a register |
-| The SDHC works | Not tested — real opcode 4 (reset) has not been sent from a payload |
+### The transport, partially traced
 
-What would be needed to actually drive Wi-Fi from Trognon's own payloads:
-the message-channel wire format precisely enough to construct and send both
-the ping (real opcode 1, now known to be a no-op connection handshake) *and*
-real opcode 4 (the one that actually calls into `sdiodrv_resetSDHC`) — the
-command/message structure seen in `sendIOPCommand`, plus whatever the real
-low-level kickoff write at `this+0x24`'s vtable `+0x84` does on the host
-side (a separate class, not yet located or disassembled). Sending only the
-ping, as the architecture doc first assumed might be enough, is now known
-to be insufficient on its own. Not attempted this session; this is a
-deliberate stopping point, not an unfinished attempt.
-
-### The transport, partially traced: a generic IOKit queue, and a second kext worth its own look
-
-Step 3 of the plan (rebuild both ends of the transport) was started on the
-host side. `sendIOPCommand`'s real send (`this+0x24`'s vtable `+0x84`,
-left unlocated in the previous section) is not something `AppleIOPSDIO`
-constructs itself: disassembling its `init()` function shows it obtained by
-calling a factory method (vtable offset `0x350`) on the `IOSlaveProcessor`
-*provider* object (`this+0x20`), passing the literal string `"sdio"` as an
-argument. Whatever class that factory returns is defined entirely inside a
-**separate, generic kext**, `com.apple.driver.IOSlaveProcessor`
-(`0x80398000`, 0x3000 bytes, SHA-256
+`sendIOPCommand`'s real send (`this+0x24`'s vtable `+0x84`) is obtained
+by calling a factory method (vtable offset `0x350`) on the
+`IOSlaveProcessor` *provider* object (`this+0x20`), passing the literal
+string `"sdio"` as an argument. Whatever class that factory returns is
+defined entirely inside a **separate, generic kext**,
+`com.apple.driver.IOSlaveProcessor` (`0x80398000`, 0x3000 bytes, SHA-256
 `abff4df9877f8c83a899de4f2308bca80f556478790b982d1823d39fd366a0c9`), not
-inside `AppleIOPSDIO` at all — which is exactly why no "channel" class name
-string exists in the SDIO kext's own strings.
+inside `AppleIOPSDIO` at all. That kext's own strings name five classes:
+`IOSlaveProcessor`, `IOSlaveEndpoint`, `IOSlaveMemory`,
+`IOSlaveMemoryBuffer`, `IOSlaveCPU`, `IOSlaveFirmware`.
+`IOSlaveEndpoint` is the strongest candidate for the command channel
+(the factory call's purpose and the name both point the same way), but
+the exact vtable slot was not pinned down — a scan for code pointers
+inside this kext's own `__const` found only a short, 6-entry run, too
+short to reach byte offset `0x350` on its own; the rest of
+`IOSlaveProcessor`'s vtable is almost certainly inherited `IOService`
+slots living in the main kernel.
 
-That kext's own strings name five classes: `IOSlaveProcessor`,
-`IOSlaveEndpoint`, `IOSlaveMemory`, `IOSlaveMemoryBuffer`, `IOSlaveCPU`,
-`IOSlaveFirmware`. `IOSlaveEndpoint` is the strongest candidate for the
-command channel (the factory call's purpose and the name both point the
-same way), but the exact vtable slot was not pinned down this session — a
-scan for code pointers inside this kext's own `__const` found only a short,
-6-entry run, too short to reach byte offset `0x350` on its own; the
-rest of `IOSlaveProcessor`'s vtable is almost certainly inherited `IOService`
-slots living in the main kernel, not in this small kext, which is
-consistent with but does not prove the `IOSlaveEndpoint` identification.
+`IOSlaveCPU` and `IOSlaveFirmware` are a direct hit on "Open questions"
+#6 (how `IOP_s5l8920x_firmware`'s bytes are loaded, verified, and
+started) — not disassembled, but now a named, concrete target.
 
-The other two names, `IOSlaveCPU` and `IOSlaveFirmware`, are a direct hit
-on the *other* open question from "known gaps" above (how
-`IOP_s5l8920x_firmware`'s bytes are loaded, verified, and started) — they
-were not disassembled this session, but they are now a named, concrete
-target rather than an unlocated one.
-
-### Two different goals, often conflated: commanding it vs. programming it
+## Two different goals, often conflated: commanding it vs. programming it
 
 It is tempting to read "there's a second ARM core" as "we have a second,
-programmable processor on this device" — worth separating explicitly into
-two distinct, unequally-supported goals:
+programmable processor on this device" — worth separating explicitly
+into two distinct, unequally-supported goals:
 
 | Goal | What is known today |
 |---|---|
 | Drive the IOP's *existing* firmware (send it a ping, a reset, real SDIO commands) | The message protocol exists and its outer shape is partly understood (this document); the transport still needs reconstructing, and whether the IOP is actually running under Trognon's tethered path is unverified |
-| Run Trognon's *own* code on the IOP (turn it into a small programmable coprocessor) | Not demonstrated at all. Would require understanding how `IOP_s5l8920x_firmware`'s own bytes are loaded, by what, to what address, whether anything verifies them (a signature check, a hash, a memory-protection boundary), and what write actually releases the IOP's reset. None of this was traced this session — it is the next concrete research target, not an open question idly raised. |
+| Run Trognon's *own* code on the IOP (turn it into a small programmable coprocessor) | Not demonstrated at all. Would require understanding how `IOP_s5l8920x_firmware`'s own bytes are loaded, by what, to what address, whether anything verifies them, and what write actually releases the IOP's reset. None of this was traced — it is the next concrete research target. |
 
-Even if the main CPU turns out to be free to load arbitrary bytes into the
-IOP's memory and release its reset — a real possibility, not yet ruled
-out — that would still depend on `limera1n`'s own hold over the main CPU to
-get there in the first place. It would not be an independent exploitation
-path beyond the phone's bootrom bug; it would be a new capability unlocked
-*through* the same `limera1n`-pwned state Trognon already has, not a
-separate escape hatch from it.
+Even if the main CPU turns out to be free to load arbitrary bytes into
+the IOP's memory and release its reset — a real possibility, not yet
+ruled out — that would still depend on `limera1n`'s own hold over the
+main CPU to get there in the first place. It would not be an independent
+exploitation path beyond the phone's bootrom bug; it would be a new
+capability unlocked *through* the same `limera1n`-pwned state Trognon
+already has, not a separate escape hatch from it.
 
 ## Tooling notes, for reproducibility
 
 - `radare2` (`brew install radare2`, 6.2.4) was needed: manual
   `objdump`-based literal-pool resolution looked correct but silently
   missed the target function because of a small, easy-to-make address
-  arithmetic mistake. `r2`'s own `aaa` analysis plus `axt` found the right
-  function immediately once the mistake was caught.
-- `AppleIOPSDIO.kext`'s code is Thumb-2, not plain 32-bit ARM. A pass over
-  it with `r2 -a arm -b 32` (no Thumb flag) produced disassembly that
-  *looked* plausible (valid-seeming mnemonics, no errors) but was wrong —
-  caught only because the surrounding context stopped making sense.
-  Correct invocation: `-e asm.bits=16` (or load it as the Mach-O it is, so
-  r2's own symbol-table CPU-subtype detection picks Thumb automatically).
-  The raw `fwFirmwareImage.bin` IOP payload, by contrast, is plain 32-bit
-  ARM throughout — don't apply this flag there.
+  arithmetic mistake. `r2`'s own `aaa` analysis plus `axt` found the
+  right function immediately once the mistake was caught.
+- `AppleIOPSDIO.kext`'s code is Thumb-2, not plain 32-bit ARM. A pass
+  over it with `r2 -a arm -b 32` (no Thumb flag) produced disassembly
+  that *looked* plausible (valid-seeming mnemonics, no errors) but was
+  wrong — caught only because the surrounding context stopped making
+  sense. Correct invocation: `-e asm.bits=16` (or load it as the Mach-O
+  it is, so r2's own symbol-table CPU-subtype detection picks Thumb
+  automatically). The raw `fwFirmwareImage.bin` IOP payload, by contrast,
+  is plain 32-bit ARM throughout — don't apply this flag there.
 - The LZSS decompressor parameters (4096-byte window, 18-byte max match,
   space-filled dictionary, length threshold 3) came from
   `malus-security/lzssdec`'s README, not from memory or a guess — an
   earlier attempt using remembered classic-LZSS parameters (zero-filled
-  dictionary, different length threshold) decoded structurally but produced
-  garbage.
+  dictionary, different length threshold) decoded structurally but
+  produced garbage.
 - Extracted binaries (kernelcache, device tree, IOP firmware, the small
-  kext slice) were kept outside this repository (a temporary working
+  kext slices) were kept outside this repository (a temporary working
   directory, not committed), consistent with this project's rule against
   ever hosting Apple firmware: every fact above is cited as a finding
-  (string, struct offset, behaviour), never as a redistributed blob.
+  (string, struct offset, behaviour, instruction sequence), never as a
+  redistributed blob.
+- To reproduce the SDHCI-mapping and scheduler-trace findings:
+  `r2 -q -a arm -b 32 -c "aaa; pdr @ <addr>" fwFirmwareImage.bin` for any
+  address named above (file offset = vaddr, no base). For the host-side
+  kexts, add `-e bin.relocs.apply=true -e asm.bits=16`.
 
-## Not verified
+## Revision history
 
-- The "NAND is the dominant tenant" finding is a string census of this one
-  extracted firmware image, not a code-coverage analysis: a subsystem with
-  no descriptive debug strings (silent code paths, or functionality this
-  particular build string-stripped) would not show up in this count. Absence
-  of a string is evidence of absence, not proof of it.
-- The exact wire format of the IOP command/message structure (what each
-  byte of the struct pointed to by `sendIOPCommand`'s `cmd` argument means)
-  was not reverse-engineered; only its outer shape (opcode byte, pending
-  flag, vaddr/paddr pair) is known.
-- The class backing the object at `this+0x24` (the actual command channel)
-  was identified by dependency (`IOSlaveProcessor`) but its own code was
-  not located or disassembled this session.
-- Whether the IOP is already initialised/running by the time Trognon's
-  iBSS-based payloads execute, or needs to be booted by something the
-  normal iOS boot chain does that Trognon's tethered path skips, is not
-  established either way.
-- `AppleARM7M`'s exact relationship to the physical IOP core (whether it
-  names the core itself or a related peripheral) is inferred from its name
-  and its shared dependency on `IOSlaveProcessor`, not confirmed from its
-  own code. The name is a hint toward an ARM7-family core, which is a
-  different thing from the ARMv7 *architecture version* the main Cortex-A8
-  uses — "ARM7" and "ARMv7" name different things, and conflating them was
-  an earlier mistake in this document, corrected 2026-10-16.
-- The IOP firmware's own *load path* — who copies `IOP_s5l8920x_firmware`'s
-  bytes, to what address, whether anything verifies them (signature, hash,
-  a memory-protection boundary) before or after, and what write actually
-  releases the IOP's reset — was not traced this session. This is the
-  specific next target for deciding whether the IOP could ever run
-  Trognon's own code rather than just being sent messages its existing
-  firmware understands.
+This research moved fast, across several external reviews in one day,
+and several earlier claims in this area were wrong before being
+corrected. They are listed here, chronologically, rather than left as
+patches inside the main text above — kept because this project documents
+the error trail as part of the record, not to re-litigate them:
+
+1. **Ping assumed to activate hardware.** First read of the host driver
+   guessed that `sendIOPCommand`'s special "opcode 0" handling, matched
+   against the "Connection established" log line, meant the ping
+   initialised SDHC hardware. Disproven once the IOP-side ping handler
+   was disassembled: it only acknowledges a logical connection, no
+   register touched.
+2. **Opcode off-by-one.** The ping was first labelled table index 0 /
+   "opcode 0", and the reset "opcode 3", from the switch's case labels.
+   Reading the jump table's own raw bytes showed the dispatcher computes
+   `opcode - 1` before indexing — the real opcodes are 1 (ping) and 4
+   (reset), not 0 and 3.
+3. **`dev` treated as a separate struct.** An early pass through the
+   opcode handlers called the first argument to opcodes 2–7 `dev`, as if
+   it were a distinct device struct. The dispatcher's own code passes the
+   identical pair `(message+0x0c, message+0x14)` to all six handlers —
+   there is one buffer, not two.
+4. **Deep register-like offsets (`+0x2f`, `+0x34`, `+0x36`, etc.) called
+   "software state".** Read as RAM bookkeeping fields of the message
+   struct, not real hardware, because the buffer they appeared to belong
+   to was shown to live in ordinary firmware RAM. A later, closer
+   instruction-level read showed these offsets are reached through one
+   additional pointer dereference (`base = *(message+0x0c)`) that was
+   missed the first time — `base` is the real SDHC register window;
+   `message+0x0c` is merely where that pointer's value is stored.
+5. **ARM7 vs. ARMv7 conflated.** The dependency name `AppleARM7M` (an
+   ARM7-core-family hint) was read as confirming the IOP uses the ARMv7
+   instruction set (the main Cortex-A8's architecture version) — two
+   different claims, wrongly treated as one.
+6. **"An OS built for Wi-Fi" overclaim avoided, then almost reintroduced
+   in reverse.** Once the NAND string count turned out to dominate, an
+   earlier draft of this document drifted from "NAND dominates the
+   identified debug strings" (defensible) toward "the IOP was built
+   primarily for NAND" (a claim about historical design intent that a
+   string census cannot support either way) — corrected in this
+   revision.
+7. **"Host never supplies `base`" stated too broadly.** A specific,
+   narrow check (the buffer-allocation and `sendIOPCommand`-transport
+   code) was at one point summarised as if it ruled out every
+   conceivable host-side producer. The configuration-injection finding
+   later in the same investigation shows a host-side mechanism *does*
+   patch values into the firmware image before boot — just not through
+   the path that was checked. The scope of what was actually ruled out
+   is now stated explicitly in "The missing producer".
+8. **Indirect-write search treated as exhaustive.** An early summary of
+   the search for writes into the per-task context slot (via the `+0x74`
+   offset) was phrased as if it closed the question entirely. It covers
+   writes at that specific offset and the slot's own base address; it
+   does not cover every register-to-register copy or multi-register
+   `stm` that could write through a pointer obtained from that slot by
+   another route — now stated as a bounded, not exhaustive, result.
