@@ -19,7 +19,7 @@ export PYTHONPATH=.
 cd "$IPWNDFU"
 
 tries=0
-until python3 ipwndfu -p 2>&1 | tee /dev/stderr | grep -q "now in pwned DFU Mode"; do
+until python3 ipwndfu -p 2>&1 | tee /dev/stderr | grep -qE "now in pwned DFU Mode|already in pwned DFU Mode"; do
   tries=$((tries + 1))
   if [ "$tries" -ge 3 ]; then
     echo "boot.sh: pwn failed $tries times. Put the device back in DFU and rerun."

@@ -80,4 +80,15 @@
 #define SOC_SDIO0_BASE        0x80000000
 #define SOC_CLOCK_GATE_10     0xBF1000B8    /* CLOCK_GATE_BASE(0xBF100078) + 4*0x10, device tree "clock-gates" */
 
+/* Embedded IOP ("EmbeddedIOP") control/boot register window, index 0 of the device tree's
+ * /device-tree/arm-io/iop node (reg = 0x06300000,0x1000; CPU-visible with the standard high bit
+ * set). Cross-confirmed two ways without reading the device: the same literal 0x86300000 is
+ * hardcoded in the IOP firmware's own generic log function, and this is the address
+ * AppleARM7M::start() caches from mapDeviceMemoryWithIndex(0) (see
+ * docs/research/2026-10-16-wifi-iop-architecture.md). Offsets from AppleARM7M::startCPU's own
+ * disassembly: +0x100 control (host writes 0x10 then polls bit 1, then writes 1 to "go"), +0x110
+ * firmware pointer, +0x114 size, +0x118 self-address. SOURCE (disassembly + device tree), not yet
+ * read on the device. */
+#define SOC_IOP_REG_BASE      0x86300000
+
 #endif

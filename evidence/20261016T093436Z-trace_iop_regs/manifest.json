@@ -1,0 +1,35 @@
+{
+  "payload": "trace_iop_regs.bin",
+  "sha256": "ac28b3f7cb024a3581bff0fc418bf8511b75e54c11d278d0275c5e53e6d4d5b1",
+  "bytes": 3128,
+  "soc": "s5l8920",
+  "nonce_sent": "401E6B27",
+  "nonce_read": "401E6B27",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "iop-regs-1"
+  },
+  "variables": {
+    "iop000": "00000000",
+    "iop100": "00000000",
+    "iop110": "00000000",
+    "iop114": "00000000",
+    "iop118": "00000000"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "a0a88989cf6e33bcc0eacac41f81f15f6b473a04",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T093436Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_iop_regs.bin --evidence <repo>/tools/../evidence --vars iop000,iop100,iop110,iop114,iop118 --wait 15",
+  "screen_rows": 12
+}

@@ -21,3 +21,4 @@
 | [`20261016T042928Z-trace_gate_write`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042928Z-trace_gate_write) | `trace_gate_write.bin` | `992f0ccbcfc2` | `31dea319` (dirty tree) | confirmé | 12 |
 | [`20261016T043007Z-trace_write_test`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T043007Z-trace_write_test) | `trace_write_test.bin` | `35cccaa4bbf4` | `31dea319` (dirty tree) | confirmé | 11 |
 | [`20261016T043545Z-trace_dyn_clock16`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T043545Z-trace_dyn_clock16) | `trace_dyn_clock16.bin` | `a4fd621bb348` | `31dea319` (dirty tree) | confirmé | 10 |
+| [`20261016T093436Z-trace_iop_regs`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T093436Z-trace_iop_regs) | `trace_iop_regs.bin` | `ac28b3f7cb02` | `a0a88989` (dirty tree) | confirmé | 12 |
