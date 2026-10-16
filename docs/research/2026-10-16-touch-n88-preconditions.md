@@ -60,12 +60,48 @@ name a bootload path; settling the question needs the bootload code read, or a t
 device. If firmware is needed it is Apple's, and Trognon never ships it: it would be extracted
 from the owner's IPSW at install time. Where it sits in the IPSW was not looked up.
 
+## The PMU side (static reading of the `AppleD1755` driver, 2026-10-16)
+
+The touch node's `function-power_ldo` is `(PMU phandle, tag, 0x0708020b)`. The PMU driver
+(`com.apple.driver.AppleD1755`, extracted with `extract_kext.py`, SHA-256 in the journal of the
+catalog work) registers one function class per tag, among them `AppleD1755PMULDOFunction` and
+`AppleD1755PMUGPIOFunction`. What a read of those functions shows, without any run on the device:
+
+- **Register access**: the PMU is reached through an I2C nub with an 8-bit register address and a
+  combined transfer (write the register number, then read). Reads and writes go through two small
+  helpers whose failure messages say `_readRegs`/`_writeRegs`. The 7-bit address `0x74` from the
+  device tree is the one that acknowledged in the bus scan.
+- **The LDO argument** `0x0708020b` is read as little-endian bytes `0b 02 08 07`: byte 0
+  (`0x0b`) is the LDO index, byte 1 (`0x02`) carries an on/off bit in its bit 0, and the half-word
+  at bytes 2 and 3 is `0x0708` (1800), whose top bit is a second flag and whose low 15 bits are a
+  voltage in millivolts if the LDO has a voltage table. The driver's own failure message prints
+  the index plus one (`ldo12`).
+- **A table of 12 LDOs** (8 bytes each, at `0x80764174` of the extracted kext) gives for each a
+  minimum voltage, a step, a count, a mask, a secondary enable mask and an enable register with its
+  bit mask. LDOs 0 to 10 have a voltage table; **LDO index 11 has none** (min, step and count are
+  zero), so the 1800 in the argument is not used to program a voltage for it by this code path. Its
+  enable is **bit `0x40` of PMU register `0x11`** (registers `0x10` and `0x11` hold the enable bits
+  of the 12 LDOs). Setting the bit turns the LDO on in the code that was read (the update is
+  `new = (old & ~mask) | (on ? mask : 0)`).
+- **Default state**: the function's initialiser applies the descriptor once with the on/off bit
+  taken from byte 1 of the argument, which is 0 here. That reads as "this LDO is switched off
+  when the PMU driver starts", which is consistent with a touch controller that is unpowered at
+  boot; it was not observed.
+- **PMU GPIOs** (used for `function-clock_enable`, pin 0): eight PMU pins, each with a
+  configuration register at `0x50` plus the pin number. The code that configures them mixes
+  function bits, an input/output distinction and polarity; its bit meanings were not decoded, so
+  the clock-enable step is **not** recoverable from this reading yet.
+
+So powering the touch controller would involve at least a read-modify-write of PMU register
+`0x11` (bit `0x40`) and some configuration of PMU GPIO 0, plus the SoC reset line, the SPI
+controller and its clock. Only the first is decoded. Nothing was written to the PMU.
+
 ## Preconditions, with their state
 
 | Precondition | Source | State |
 |---|---|---|
-| Power | `function-power_ldo` through the PMU (`pmu,d1755`, I2C `0x74`) | the PMU **acknowledges its address** on `i2c0` (bus scan, `20261016T152515Z`); its register protocol is unknown. The PMU kext (`AppleD1755`, with `AppleD1755PMULDOFunction` and `AppleD1755PMUGPIOFunction`) holds it and was located, not read |
-| Clock enable | `function-clock_enable` through the PMU, pin 0 | device tree only |
+| Power | `function-power_ldo` through the PMU (`pmu,d1755`, I2C `0x74`) | the PMU **acknowledges its address** on `i2c0` (bus scan, `20261016T152515Z`). Static reading: LDO index 11, enable = bit `0x40` of PMU register `0x11`; not observed on the device, nothing written |
+| Clock enable | `function-clock_enable` through the PMU, pin 0 | device tree and a partial reading of the PMU GPIO code; bit meanings of registers `0x50`..`0x57` not decoded |
 | Reset | GPIO `14.01` | level read `0` once; polarity not established; the personality has a `reset-deassert-high-z` flag whose effect was not read |
 | Chip select | GPIO `13.00` (`function-enable_cs`) plus the SPI controller's own select | level read `0` once; role not established |
 | SPI controller | `spi1` at CPU address `0x82100000` (`reg 0x2100000` plus the `0x80000000` offset of `arm-io`) | not read; its clock gate was not read either |
@@ -76,8 +112,11 @@ from the owner's IPSW at install time. Where it sits in the IPSW was not looked 
 
 In increasing order of risk, each step read-only until the previous one gave a result:
 
-1. Read the PMU driver (`AppleD1755`) for the register that its LDO function writes and the
-   meaning of the argument `0x0708020b` in `function-power_ldo`. Static, no risk.
+1. (Done for the LDO) read the PMU driver for the register its LDO function writes and the
+   meaning of `0x0708020b`; still to do for the PMU GPIO that gates the clock. Static, no risk.
+1b. Read the PMU registers `0x10`, `0x11`, `0x17`..`0x22` and `0x50`..`0x57` over I2C
+   (`STAGE 36`, prepared, not run) to see their present values, which would show whether LDO 11
+   is currently off. Read-only transactions on `i2c0`.
 2. Read the clock gate of `spi1` and the controller's idle registers at `0x82100000`. This is the
    same kind of read as the IOP and GPIO probes.
 3. Only then consider a PMU write to power the controller, which changes a power rail and
