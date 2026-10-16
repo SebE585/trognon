@@ -106,13 +106,13 @@ review:
         not reproduce the driver's preamble (Q8, Q9), so a negative result stays ambiguous
     - id: ARM7M-STARTCPU-Q14
       text: >
-        Why the driver writes 0x86300000 into window0+0x118 (the exact open question). The constant 0x86300000 is also pair 0 of the `reg`
-        property of the `iop` device-tree node (tools/iop_analysis/dt_node_reg.py): the CPU-visible base of
-        window 0 itself. So the constant equals the host-view address of the block it is written into, not a RAM address;
-        that does not exclude a role as a base or alias in another address view (the IOP's). The image
-        fwFirmwareImage.bin is linked at base 0 (small absolute handler addresses such as 0x40 and 0x939c in its
-        vector table, no 0x86xxxxxx literal), so it is not the image's load address either. Why the IOP is told
-        its own block's base (its view of the bus may differ from the host's) is unknown.
+        What the driver means by writing 0x86300000 into window0+0x118 (the exact open question). The only
+        established fact is a numerical identity: the constant equals pair 0 of the `reg` property of the `iop`
+        device-tree node (tools/iop_analysis/dt_node_reg.py), the host-view (CPU) address of window 0, the block
+        it is written into. The role of the value for the IOP is unknown; this identity does not decide it,
+        in particular it does not exclude a base or alias role in another address view (the IOP's). Observation
+        on the image, not a conclusion: fwFirmwareImage.bin has small absolute handler addresses in its vector
+        table (such as 0x40 and 0x939c) and no 0x86xxxxxx literal.
       proof_needed: >
         static: how the IOP firmware uses a register holding this value. A readback of +0x118 would show
         storage only, not the register's role. Any statement that the host sees the firmware at zero must

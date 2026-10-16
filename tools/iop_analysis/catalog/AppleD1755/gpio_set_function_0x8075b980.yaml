@@ -50,8 +50,8 @@ hardware_tests:
     claim_tested: "PMU-GPIOFN-001: layout of the configuration register of pin 0"
     execution_status: executed
     result: >
-      Register 0x50 read 0x11: bit 1 and the bits 0xE0 are clear. Consistent with a pin that is not an
-      input and not asserted; the layout itself was not tested by changing the register.
+      Register 0x50 read 0x11: bit 1 and the bits 0xE0 are clear. This is the byte value only; no direction,
+      polarity or electrical state is concluded from it, and the layout was not tested by changing the register.
     evidence: "evidence/20261016T164348Z-trace_pmu_read/"
 
 publication:

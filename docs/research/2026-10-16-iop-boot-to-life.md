@@ -174,9 +174,9 @@ which selects the masked form of `+0x114`.
 
 - **`0x86300000` is the window's own address.** It is pair 0 of the `reg`
   property of the `iop` node, i.e. the CPU-visible base of the register block
-  that `startCPU` is writing into. It is neither a RAM address nor the image's
-  load address (`ARM7M-STARTCPU-Q14`). That it equals the host-view address of the block does not
-  exclude a role as a base or an alias in another address view, the IOP's. The earlier probe of `0x86300000` that
+  that `startCPU` is writing into. That numerical identity is all that is established: the role of the
+  value for the IOP is unknown (`ARM7M-STARTCPU-Q14`), and the identity does not exclude a role as a base
+  or an alias in another address view, the IOP's. The earlier probe of `0x86300000` that
   read zero (`20261016T094340Z-trace_iop_probe_mmu`) was a read of this
   register block, not of RAM.
 - **The image is linked at base 0.** `fwFirmwareImage.bin` (110592 bytes)

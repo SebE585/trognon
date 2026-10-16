@@ -151,10 +151,12 @@ value and can also update 3-bit per-pin fields packed in registers `0x59` to `0x
 type byte (`+0xc`) is 1, so the default application is "function `0x00`, polarity flag `1`". A
 later "set" with a value calls the same routine with function `value != 0` and the same flag, which
 reads as: **asserting the clock enable makes the setter rebuild PMU register `0x50` with bit 1
-(`0x02`) set**, and the flag being non-zero means the function bit is not flipped (active high). STAGE 36
-read register `0x50` as `0x11` (bit 1 clear, upper bits zero), which reads as "configured as an output,
-level low". The rebuilt value would be `0x13` (`0x11 & 0x19`, plus `0x02`), which equals `old | 0x02`
-only because the old byte has no bits outside `0x19`. That the touch driver calls this "set with a value"
+(`0x02`) set**, and a non-zero flag means the code does not flip that bit afterwards. That is a byte
+transformation and the absence of an inversion in the code; what it does electrically (the polarity of the
+pin, whether it is driven, what it gates) was not established. STAGE 36 read register `0x50` as `0x11`
+(bit 1 clear, bits `0xE0` clear); no electrical state is concluded from that byte. The rebuilt value
+would be `0x13` (`0x11 & 0x19`, plus `0x02`), which equals `old | 0x02` only because the old byte has no
+bits outside `0x19`. That the touch driver calls this "set with a value"
 path for its clock enable is not established: only the descriptor and the path were read.
 This is a reading of about thirty instructions. The jump table (`PMU-GPIOAPPLY-003`) maps the type
 byte to: 0 an input direction, 1 an output direction, 2 and 3 a function taken from byte `+0xe` or
