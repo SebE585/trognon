@@ -45,6 +45,7 @@ TXT = {
             "**Wounded**: read in the firmware or in code (SOURCE), not yet seen working on the phone. Half a point of life is gone.",
             "**Down**: observed on the real phone (DEVICE), with an evidence folder you can open and rebuild. The point is gone.",
             "A creature is **defeated** when every front is down. It is called *unspotted* while it is not even in the hardware map."],
+        "story": "The story behind it",
         "camp": "Campaign", "camp_title": "Campaign: %s", "camp_lead": "The order in which to attack %s, and what each step needs.",
         "camp_intro": ("A campaign is a creature plus a route. The fronts are not independent: some cannot be attacked before another is understood. "
                        "Availability below is computed from the states in the [Bestiary](../bestiary.md), not typed in. A front is **locked** until every front it needs is down "
@@ -76,6 +77,7 @@ TXT = {
             "**Blessé** : lu dans le firmware ou dans du code (SOURCE), pas encore vu fonctionner sur le téléphone. Un demi-point de vie est parti.",
             "**À terre** : observé sur le vrai téléphone (DEVICE), avec un dossier de preuve que vous pouvez ouvrir et reconstruire. Le point est parti.",
             "Une créature est **vaincue** quand tous ses fronts sont à terre. Elle est dite *non repérée* tant qu'elle n'est même pas dans la carte matérielle."],
+        "story": "L'histoire qui y mène",
         "camp": "Campagne", "camp_title": "Campagne : %s", "camp_lead": "L'ordre dans lequel attaquer %s, et ce dont chaque étape a besoin.",
         "camp_intro": ("Une campagne est une créature plus un itinéraire. Les fronts ne sont pas indépendants : certains ne peuvent pas être attaqués avant qu'un autre soit compris. "
                        "La disponibilité ci-dessous est calculée depuis les états du [Bestiaire](../bestiaire.md), pas saisie. Un front est **verrouillé** tant que chaque front dont il dépend "
@@ -216,6 +218,8 @@ def check(data, titles=None, bundles=None):
         for lang in ("en", "fr"):
             if not (c.get("name") or {}).get(lang) or not (c.get("block") or {}).get(lang):
                 errors.append("%s: name and block need both languages (%s is missing)" % (i, lang))
+        if c.get("story") and not (DOCS / "en" / "journey" / ("%s.md" % c["story"])).is_file():
+            errors.append("%s: story %r is not a step of the guided path (docs/en/journey/%s.md)" % (i, c["story"], c["story"]))
         if c.get("section") and c["section"] not in anchors:
             errors.append("%s: section %r is not an anchor of the hardware map" % (i, c["section"]))
         if not c.get("fronts"):
@@ -292,6 +296,8 @@ def render(data, lang, titles=None, fr_anchors=None):
                     lines.append("    - %s%s%s" % (t["attack"], col, " · ".join("[%s](%s) (%s)" % (titles[m][0], t["missions_page"], t["unit"].get(titles[m][1], titles[m][1])) for m in ms)))
                 else:
                     lines.append("    - %s [%s](%s/issues/new?template=mission.yml)." % (t["none"], t["propose"], REPO))
+        if c.get("story"):
+            lines += ["", "%s%s[%s](journey/%s.md)" % (t["story"], col, c["block"][lang], c["story"])]
         if c.get("campaign"):
             lines += ["", "%s%s[%s](%s/%s.md)" % (t["camp"], col, t["camp_title"] % c["name"][lang], "campaigns" if lang == "en" else "campagnes", c["id"])]
         if c.get("section"):
@@ -340,6 +346,8 @@ def render_campaign(c, lang, titles=None):
             else:
                 lines.append("- %s [%s](%s/issues/new?template=mission.yml)." % (t["none"], t["propose"], REPO))
         lines.append("")
+    if c.get("story"):
+        lines += ["%s%s[%s](../journey/%s.md)" % (t["story"], col, c["block"][lang], c["story"]), ""]
     lines += ["[%s](%s)" % (t["title"], t["bestiary_page"]), ""]
     return "\n".join(lines)
 

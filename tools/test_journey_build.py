@@ -170,6 +170,27 @@ class ScreenCaptureTests(unittest.TestCase):
         self.assertEqual(files, {"img/journey/screens/%s.png" % self.BUNDLE: (jb.ROOT / "evidence" / self.BUNDLE / "screen.png").read_bytes()})
 
 
+class CreatureLinkTests(unittest.TestCase):
+    def g(self, lang="en", **extra):
+        return {"lang": lang, "_src": "t.yaml", "title": "T", "start": "a", "nodes": [node("a", ["a"], kind="start", **extra)]}
+
+    def test_a_step_that_names_a_creature_links_the_bestiary_and_the_campaign(self):
+        page = jb.render(self.g(creature="wifi"))["a.md"]
+        self.assertIn("(../bestiary.md#the-whisperer)", page)
+        self.assertIn("(../campaigns/wifi.md)", page)
+
+    def test_the_french_step_links_the_french_pages(self):
+        page = jb.render(self.g("fr", creature="wifi"))["a.md"]
+        self.assertIn("(../bestiaire.md#le-chuchoteur)", page)
+        self.assertIn("(../campagnes/wifi.md)", page)
+
+    def test_a_creature_without_a_campaign_gets_no_campaign_link(self):
+        self.assertNotIn("campaign", jb.render(self.g(creature="nand"))["a.md"].lower().split("## ")[0].replace("bestiary", ""))
+
+    def test_an_unknown_creature_is_refused(self):
+        self.assertTrue(any("not in tools/bestiary.yaml" in e for e in jb.check(self.g(creature="no-such"))))
+
+
 class FrenchWordingTests(unittest.TestCase):
     """Literal calques that were found in the French pages and fixed; they must not come back."""
     BANNED = ["au bord de ce que", "Retour au bord", "validations d'alimentation", "données du disque", "Demander quelque chose à voir",

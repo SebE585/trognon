@@ -40,6 +40,8 @@ not run), then a first check packet, to which a first reply byte of `0xD0` would
 
 *This describes an experiment, not a procedure to follow: a step that writes to the phone's hardware is only run after a written description and an explicit decision.*
 
+**Face it.** This block is a creature of the [Bestiary](../bestiary.md#the-shy-one), *The Shy One*: a life bar that only proof lowers, and a code to find.
+
 ## Where to next?
 
 <div class="journey-choices" markdown>

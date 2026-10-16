@@ -37,6 +37,8 @@ Une première lecture de page par le contrôleur. Elle n'a pas encore été con�
 
 *Ceci décrit une expérience, pas une procédure à suivre : une étape qui écrit dans le matériel du téléphone n'est exécutée qu'après une description écrite et une décision explicite.*
 
+**Affrontez-le.** Ce bloc est une créature du [Bestiaire](../bestiaire.md#le-coffre), *Le Coffre* : une barre de vie que seule une preuve fait baisser, et un code à trouver.
+
 ## Et maintenant ?
 
 <div class="journey-choices" markdown>

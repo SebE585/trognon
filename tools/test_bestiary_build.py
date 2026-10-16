@@ -138,6 +138,16 @@ class CampaignTests(unittest.TestCase):
         self.assertIn("Campagne", bb.render_campaign(c, "fr", titles=TITLES))
 
 
+class StoryTests(unittest.TestCase):
+    def test_a_story_must_be_a_step_of_the_guided_path(self):
+        self.assertTrue(any("not a step of the guided path" in e for e in errs(front("open"), story="no-such-step")))
+        self.assertEqual(errs(front("open"), story="f-wifi"), [])
+
+    def test_the_pages_link_back_to_the_story(self):
+        c = creature(front("open"), story="f-wifi")
+        self.assertIn("journey/f-wifi.md", bb.render({"creatures": [c]}, "en", titles=TITLES))
+
+
 class RenderTests(unittest.TestCase):
     def data(self):
         return {"creatures": [creature(front("down", evidence=[B]), front("open", missions=["M-1"]), front("open"))]}

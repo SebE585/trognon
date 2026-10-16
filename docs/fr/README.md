@@ -27,6 +27,24 @@ de console du payload, <strong>pas une photographie</strong>.</figcaption>
 
 </div>
 
+## Deux façons d'entrer
+
+<div class="grid cards" markdown>
+
+- **Suivre l'histoire**
+
+    Un parcours guidé du téléphone éteint au premier pixel. Vous faites des choix, et chaque étape dit à quel point nous sommes sûrs.
+
+    [Commencer l'histoire](journey/start.md){ .card-link }
+
+- **Prendre un problème**
+
+    Choisissez une créature : un bloc du téléphone que nous n'avons pas fini de comprendre, et un code à trouver. Seule une preuve lui enlève de la vie.
+
+    [Ouvrir le Bestiaire](bestiaire.md){ .card-link }
+
+</div>
+
 ## Ce qui fonctionne aujourd'hui
 
 Tout ce qui suit a été observé sur un vrai iPhone 3GS (S5L8920, Cortex-A8) ; chaque élément renvoie à sa page, et
