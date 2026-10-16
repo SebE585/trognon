@@ -374,6 +374,39 @@ is a chosen byte from a defined request. It does not need the bootload packets, 
 informative only if the power, clock, reset and chip-select preconditions were met. The shape of the
 exchange (how the transfer routine frames it, `MT-CHECK-Q2`) was not read, and nothing was sent.
 
+## Shape of the CHECK exchange, and W3 + W4 prepared (STAGE 39, not run)
+
+**Shape of the exchange.** The routine at `0x8056cbd8` that the CHECK code calls last is a log helper (it
+tags the buffers "TX" and "RX"); the exchange itself is the call of slot `0x368` on the SPI device object
+just before it, with the four packet bytes, a length of 4, a four-byte receive buffer, a length of 4 and a
+zero flag (`MT-CHECK-002`; the slot's body was not read). In the controller (`SPI-XFER-004`), equal lengths
+mean no skipped byte and no filler: the byte received at position `i` is clocked in while byte `i` of the
+packet is clocked out. So the expected `0xD0` would arrive during the first byte of `05 00 00 06`, with the
+chip select (GPIO `13.00`) held for the four bytes. This is the reading of both routines, untested.
+
+**W3 + W4 as prepared** (`tools/payloads/trace.c`, `STAGE 39`, `trace_pmu_w34.bin`; built, not run). Its
+only writes are to two PMU registers at `0x74`, each changed once and restored once, behind a guard:
+
+| Step | Register | Guard / value | Restore |
+|---|---|---|---|
+| guard | reads `0x11` and `0x50` | nothing is written unless `0x11` reads `0xBE`, `0x50` reads `0x11` and both reads are acknowledged | n/a |
+| W4 | `0x11` | `old | 0x40` (`0xBE` to `0xFE`) | write the value read at the start |
+| W3 | `0x50` | `(old & 0x19) | 0x02` (`0x11` to `0x13`) | write the value read at the start |
+| observe | read both back, wait 20 ms, read both again | | |
+| restore | `0x50` first, then `0x11` (reverse order), read both | | |
+
+No SoC GPIO, clock gate or SPI register is touched, and the SPI clock stays off. The disassembly shows the
+guard (`0xBE` and `0x11`), the W4 value (`old | 0x40`), the W3 value (`(old & 0x19) | 0x02`) and four PMU
+writes in all.
+
+What this run could show: whether the PMU accepts the two writes (read-back), and whether they persist for
+20 ms. What it cannot show: that the touch controller is powered (nothing talks to it), that the registers
+mean what the static reading says, or what the LDO and the pin do electrically. Risks: the bit `0x40` of
+register `0x11` may not be the touch LDO's enable as read, in which case another rail is switched for
+about 20 ms and then restored; the clock-enable pin may gate something else; a PMU register that does not
+behave as read could leave a rail changed, which a return to DFU resets. The guard stops the run if the
+registers do not read as in STAGE 36.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values

@@ -54,6 +54,16 @@ claims:
     status: device_disassembly_verified
     evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
 
+  - id: SPI-XFER-004
+    text: >
+      Lengths: with a transmit length T (this+0xfc) and a receive length R (this+0x104), if T is greater than R the
+      controller keeps a skip count T - R (this+0x108, receive bytes discarded) and no filler; otherwise it sends
+      R - T filler bytes (this+0x100) and skips none. SPCNT (0x34) is written with the larger of T and R. For
+      T = R = 4 there is no skip and no filler: the receive byte i is clocked in while the transmit byte i is
+      clocked out.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+
 hardware_tests: []
 
 publication:
