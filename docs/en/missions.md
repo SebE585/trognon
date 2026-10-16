@@ -28,6 +28,70 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
 7 open · 1 in progress · 1 blocked · 0 closed. **68 other open questions of the catalog are not framed as missions yet** (see the [map of what we know](journey/grimoire.md)).
 
+## First contributions
+
+These need no skill in reading firmware and nothing to claim: anyone can do them, as many times as they like. Each one produces something a reviewer can check.
+
+<div class="grid cards" markdown>
+
+- **Rebuild a published run and compare its hash**
+
+    <span class="mission-level mission-level-0">First contribution</span> <span class="mission-state mission-state-open">Open to everyone, any number of times</span>
+
+    **What it would unlock**: Turns "the maintainer says it reproduces" into "someone else got the same hash", or finds where it does not.
+
+    **What you need**
+
+    - The repository with its history, `make` and `arm-none-eabi-gcc`. No phone.
+    - One bundle under evidence/ that has no independent check yet (see the Verifications page)
+
+    **Skills**: Using make and a C cross-compiler, Opening a pull request that adds one row
+
+    **A good answer**: One row for tools/verifications.yaml, printed by `python3 tools/rebuild_bundle.py evidence/<bundle> --search-later --by YOUR-GITHUB-HANDLE`: a match, a mismatch or a failure to reproduce, with your toolchain. A different compiler producing different bytes is exactly the result to send.
+
+    **Contributions so far**: none yet
+
+    [See the Verifications page](https://sebe585.github.io/trognon/en/verifications/)
+
+- **Audit one DEVICE claim against its bundle**
+
+    <span class="mission-level mission-level-0">First contribution</span> <span class="mission-state mission-state-open">Open to everyone, any number of times</span>
+
+    **What it would unlock**: Finds claims that say more than their evidence, which is the failure this project exists to avoid.
+
+    **What you need**
+
+    - A DEVICE section of the hardware map and the bundle it cites (the page links it)
+    - A text editor and git; no phone, no compiler
+
+    **Skills**: Careful reading, Reading register values as hexadecimal
+
+    **A good answer**: A `claim-audit` row for tools/verifications.yaml: the claim quoted exactly, its page, and whether the bundle's manifest.json, screen.txt and vars.txt show what the claim says, no less and no more (match, mismatch or inconclusive, with your reasons).
+
+    **Contributions so far**: none yet
+
+    [See the Verifications page](https://sebe585.github.io/trognon/en/verifications/)
+
+- **Read a page as a newcomer and say where you got lost**
+
+    <span class="mission-level mission-level-0">First contribution</span> <span class="mission-state mission-state-open">Open to everyone, any number of times</span>
+
+    **What it would unlock**: Finds the places where a page says more, or less, than it means: the places a newcomer is most likely to be misled.
+
+    **What you need**
+
+    - A page of the site you have not read before
+
+    **Skills**: None: being new is the qualification
+
+    **A good answer**: An issue that quotes the exact sentence that confused you or that you took to mean more than it says, what you understood, and what you think it meant.
+
+    **Contributions so far**: none yet
+
+    [Suggest a correction](https://github.com/SebE585/trognon/issues/new?template=correction.yml)
+
+</div>
+
 ## Open missions
 
 <div class="grid cards" markdown>

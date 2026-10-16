@@ -58,5 +58,12 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(actions, [("duplicate", "Q-1", "T Q-1")])
 
 
+    def test_a_first_contribution_is_keyed_by_its_fc_id(self):
+        fc = {"id": "FC-X", "recurring": True, "title": "T", "work": "static", "state": "open"}
+        self.assertEqual(ps.plan([fc], []), [("create", "FC-X", "T")])
+        item = {"id": "i", "title": "T", "content": {"id": "d", "body": ps.body(fc)}, "mission state": "Open", "level": "1 x", "question id": "FC-X"}
+        self.assertEqual(ps.plan([fc], [item]), [])
+
+
 if __name__ == "__main__":
     unittest.main()

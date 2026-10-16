@@ -195,7 +195,7 @@
 
 /* Missions */
 .mission-level, .mission-state { display: inline-block; padding: 0 .5em; border-radius: 3px; font-size: .68rem; font-weight: 700; border: 1px solid currentColor; margin-right: .3rem; }
-.mission-level-1 { color: var(--md-accent-fg-color); }
+.mission-level-0, .mission-level-1 { color: var(--md-accent-fg-color); }
 .mission-level-2 { color: #8a6410; }
 .mission-level-3 { color: #a23220; }
 .mission-state-open { color: var(--md-accent-fg-color); }

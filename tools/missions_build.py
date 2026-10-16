@@ -44,6 +44,11 @@ def questions():
     return open_q, resolved
 
 
+def key(m):
+    """A mission is keyed by its catalog question, or by its own FC- id for a first contribution."""
+    return m.get("question") or m.get("id")
+
+
 def load():
     return yaml.safe_load(SRC.read_text())["missions"]
 
@@ -51,14 +56,24 @@ def load():
 def check(missions, open_q, resolved):
     errors, seen = [], set()
     for m in missions:
-        q = m.get("question")
+        q = key(m)
         if q in seen:
             errors.append("%s: listed twice" % q)
         seen.add(q)
-        if q not in open_q and q not in resolved:
-            errors.append("%s: not a question of an approved catalog entry" % q)
-        if q in resolved and m.get("state") != "closed":
-            errors.append("%s: the catalog has resolved this question, so the mission must be closed" % q)
+        if m.get("recurring"):
+            # A first contribution: no catalog question, open to anyone as often as they like, so it never closes.
+            if m.get("question") or not str(m.get("id", "")).startswith("FC-"):
+                errors.append("%s: a recurring mission has an id starting with FC- and no catalog question" % q)
+            if m.get("state") != "open" or m.get("outcome") or m.get("integrated_in"):
+                errors.append("%s: a recurring mission stays open and has no outcome" % q)
+            sub = m.get("submit") or {}
+            if not (sub.get("label") and str(sub.get("url", "")).startswith("https://")):
+                errors.append("%s: a recurring mission says where to submit (submit: label and https url)" % q)
+        else:
+            if q not in open_q and q not in resolved:
+                errors.append("%s: not a question of an approved catalog entry" % q)
+            if q in resolved and m.get("state") != "closed":
+                errors.append("%s: the catalog has resolved this question, so the mission must be closed" % q)
         if m.get("work") not in WORK:
             errors.append("%s: unknown kind of work %r" % (q, m.get("work")))
         if m.get("state") not in STATES:
@@ -105,13 +120,15 @@ def issue_url(q):
 def card(m, qinfo):
     lvl, label = WORK[m["work"]]
     out = ["- **%s**" % m["title"], ""]
-    out.append('    <span class="mission-level mission-level-%d">%s</span> <span class="mission-state mission-state-%s">%s</span>'
-               % (lvl, label, m["state"], STATE_LABEL[m["state"]]))
+    badge = ('<span class="mission-level mission-level-0">First contribution</span> <span class="mission-state mission-state-open">Open to everyone, any number of times</span>'
+             if m.get("recurring") else
+             '<span class="mission-level mission-level-%d">%s</span> <span class="mission-state mission-state-%s">%s</span>' % (lvl, label, m["state"], STATE_LABEL[m["state"]]))
+    out.append("    " + badge)
     out.append("")
     if m.get("outcome"):
         out += ["    **Outcome:** %s" % m["outcome"], ""]
     if qinfo:
-        out += ["    *The open question* (`%s`): %s" % (m["question"], jb.first_sentence(qinfo["text"], 300)), ""]
+        out += ["    *The open question* (`%s`): %s" % (key(m), jb.first_sentence(qinfo["text"], 300)), ""]
     out += ["    **What it would unlock**: %s" % m["unlocks"], ""]
     out += ["    **What you need**", ""] + ["    - %s" % n for n in m.get("needs", [])] + [""]
     out += ["    **Skills**: %s" % ", ".join(m["skills"]), ""]
@@ -130,15 +147,19 @@ def card(m, qinfo):
     links = []
     if qinfo:
         links.append("[Catalog entry](%s/blob/main/tools/iop_analysis/catalog/%s/%s)" % (REPO, qinfo["binary"], qinfo["file"]))
-    if m["state"] == "open":
-        links.append("[Take this mission](%s)" % issue_url(m["question"]))
+    if m.get("recurring"):
+        links.append("[%s](%s)" % (m["submit"]["label"], m["submit"]["url"]))
+    elif m["state"] == "open":
+        links.append("[Take this mission](%s)" % issue_url(key(m)))
     out += ["    " + " · ".join(links), ""]
     return out
 
 
 def render(missions, open_q):
+    first = [m for m in missions if m.get("recurring")]
+    missions = [m for m in missions if not m.get("recurring")]
     counts = {s: sum(1 for m in missions if m["state"] == s) for s in STATES}
-    taken = {m["question"] for m in missions}
+    taken = {m.get("question") for m in missions}
     unclassified = len([q for q in open_q if q not in taken])
     lines = ["---", "title: Missions", "source: tools/iop_analysis/missions.yaml", "hide:", "  - toc", "---", "", GENERATED,
              "# Missions", "",
@@ -161,13 +182,20 @@ def render(missions, open_q):
              "## State of the missions", "",
              "%d open · %d in progress · %d blocked · %d closed. **%d other open questions of the catalog are not framed as missions yet** "
              "(see the [map of what we know](journey/grimoire.md))." % (counts["open"], counts["in-progress"], counts["blocked"], counts["closed"], unclassified), ""]
+    if first:
+        lines += ["## First contributions", "",
+                  "These need no skill in reading firmware and nothing to claim: anyone can do them, as many times as they like. "
+                  "Each one produces something a reviewer can check.", "", '<div class="grid cards" markdown>', ""]
+        for m in first:
+            lines += card(m, None)
+        lines += ["</div>", ""]
     for state, title in (("open", "Open missions"), ("in-progress", "In progress"), ("blocked", "Blocked"), ("closed", "Closed")):
         group = [m for m in missions if m["state"] == state]
         if not group:
             continue
         lines += ["## " + title, "", '<div class="grid cards" markdown>', ""]
         for m in group:
-            lines += card(m, open_q.get(m["question"]))
+            lines += card(m, open_q.get(key(m)))
         lines += ["</div>", ""]
     return "\n".join(lines)
 

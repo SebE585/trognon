@@ -86,5 +86,43 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(set(mb.WORK), {"static", "survey", "write"})
 
 
+def fc(**kw):
+    m = {"id": "FC-TEST", "recurring": True, "title": "T", "work": "static", "needs": ["a"], "expected": "e", "unlocks": "u", "skills": ["s"],
+         "submit": {"label": "go", "url": "https://example.org/x"}, "state": "open"}
+    m.update(kw)
+    return m
+
+
+class FirstContributionTests(unittest.TestCase):
+    def test_a_valid_first_contribution_needs_no_catalog_question(self):
+        self.assertEqual(mb.check([fc()], {}, set()), [])
+
+    def test_its_id_starts_with_fc_and_it_has_no_question(self):
+        self.assertTrue(any("starting with FC-" in e for e in mb.check([fc(id="X-1")], {}, set())))
+        self.assertTrue(any("starting with FC-" in e for e in mb.check([fc(question="Q-1")], OPEN, set())))
+
+    def test_it_stays_open_with_no_outcome(self):
+        self.assertTrue(any("stays open" in e for e in mb.check([fc(state="closed")], {}, set())))
+        self.assertTrue(any("stays open" in e for e in mb.check([fc(outcome="confirmed")], {}, set())))
+
+    def test_it_says_where_to_submit(self):
+        self.assertTrue(any("where to submit" in e for e in mb.check([fc(submit={})], {}, set())))
+        self.assertTrue(any("where to submit" in e for e in mb.check([fc(submit={"label": "x", "url": "ftp://x"})], {}, set())))
+
+    def test_the_card_links_to_the_submission_not_to_a_claim_form(self):
+        card = "\n".join(mb.card(fc(), None))
+        self.assertIn("go](https://example.org/x)", card)
+        self.assertNotIn("Take this mission", card)
+        self.assertIn("First contribution", card)
+
+    def test_the_page_lists_first_contributions_apart_from_the_open_missions(self):
+        text = mb.render([fc(), mission()], OPEN)
+        self.assertLess(text.index("## First contributions"), text.index("## Open missions"))
+
+    def test_the_keys_of_the_two_kinds_do_not_collide(self):
+        self.assertEqual(mb.key(fc()), "FC-TEST")
+        self.assertEqual(mb.key(mission()), "Q-1")
+
+
 if __name__ == "__main__":
     unittest.main()

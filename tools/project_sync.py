@@ -24,10 +24,14 @@ LEVEL = {"static": "1", "survey": "2", "write": "3"}
 PAGE = "https://sebe585.github.io/trognon/en/missions/"
 
 
+def key(m):
+    return m.get("question") or m.get("id")
+
+
 def body(m):
     return ("Question `%s`. What you need and what a good answer looks like: %s\n\n"
             "This card mirrors the generated Missions page (tools/iop_analysis/missions.yaml); the file is the source of truth."
-            % (m["question"], PAGE))
+            % (key(m), PAGE))
 
 
 def wanted(m):
@@ -53,7 +57,7 @@ def plan(missions, items):
         by_q[q] = it
     known = set()
     for m in missions:
-        q = m["question"]
+        q = key(m)
         known.add(q)
         if q not in by_q:
             actions.append(("create", q, m["title"]))
@@ -108,14 +112,14 @@ def main(argv=None):
     state_opt = {o["name"]: o["id"] for o in fields["Mission state"]["options"]}
     level_opt = {o["name"][0]: o["id"] for o in fields["Level"]["options"]}
     by_q = {it["question id"]: it for it in items if it.get("question id")}
-    by_m = {m["question"]: m for m in missions}
+    by_m = {key(m): m for m in missions}
 
     def set_fields(item_id, m):
         gh("project", "item-edit", "--id", item_id, "--project-id", project_id, "--field-id", fields["Mission state"]["id"],
            "--single-select-option-id", state_opt[STATE_LABEL[m["state"]]])
         gh("project", "item-edit", "--id", item_id, "--project-id", project_id, "--field-id", fields["Level"]["id"],
            "--single-select-option-id", level_opt[LEVEL[m["work"]]])
-        gh("project", "item-edit", "--id", item_id, "--project-id", project_id, "--field-id", fields["Question id"]["id"], "--text", m["question"])
+        gh("project", "item-edit", "--id", item_id, "--project-id", project_id, "--field-id", fields["Question id"]["id"], "--text", key(m))
 
     for kind, q, detail in actions:
         if kind == "create":

@@ -17,6 +17,8 @@
 #   preconditions: required for survey and write; they stay after a mission is unblocked.
 #   unlocks / skills: what answering would make possible, and what it takes (shown on the page).
 #   contributions: links to merged contributions that moved the mission forward, closed or not.
+#   recurring: true marks a FIRST CONTRIBUTION: an `id` starting with FC- instead of a catalog question, open to anyone as often as they like
+#              (so it never closes), with `submit` saying where the result goes.
 project: { owner: SebE585, number: 1 }
 missions:
   - question: S5L-CLK-Q1
@@ -130,3 +132,41 @@ missions:
     blocked_by:
       - "The STAGE 47 payload is built but has not been run yet; the maintainer runs it first, then opens this mission."
     contributions: []
+
+  - id: FC-REBUILD-BUNDLE
+    recurring: true
+    title: "Rebuild a published run and compare its hash"
+    work: static
+    needs:
+      - "The repository with its history, `make` and `arm-none-eabi-gcc`. No phone."
+      - "One bundle under evidence/ that has no independent check yet (see the Verifications page)"
+    expected: "One row for tools/verifications.yaml, printed by `python3 tools/rebuild_bundle.py evidence/<bundle> --search-later --by YOUR-GITHUB-HANDLE`: a match, a mismatch or a failure to reproduce, with your toolchain. A different compiler producing different bytes is exactly the result to send."
+    unlocks: "Turns \"the maintainer says it reproduces\" into \"someone else got the same hash\", or finds where it does not."
+    skills: ["Using make and a C cross-compiler", "Opening a pull request that adds one row"]
+    submit: { label: "See the Verifications page", url: "https://sebe585.github.io/trognon/en/verifications/" }
+    state: open
+
+  - id: FC-AUDIT-CLAIM
+    recurring: true
+    title: "Audit one DEVICE claim against its bundle"
+    work: static
+    needs:
+      - "A DEVICE section of the hardware map and the bundle it cites (the page links it)"
+      - "A text editor and git; no phone, no compiler"
+    expected: "A `claim-audit` row for tools/verifications.yaml: the claim quoted exactly, its page, and whether the bundle's manifest.json, screen.txt and vars.txt show what the claim says, no less and no more (match, mismatch or inconclusive, with your reasons)."
+    unlocks: "Finds claims that say more than their evidence, which is the failure this project exists to avoid."
+    skills: ["Careful reading", "Reading register values as hexadecimal"]
+    submit: { label: "See the Verifications page", url: "https://sebe585.github.io/trognon/en/verifications/" }
+    state: open
+
+  - id: FC-NEWCOMER-READ
+    recurring: true
+    title: "Read a page as a newcomer and say where you got lost"
+    work: static
+    needs:
+      - "A page of the site you have not read before"
+    expected: "An issue that quotes the exact sentence that confused you or that you took to mean more than it says, what you understood, and what you think it meant."
+    unlocks: "Finds the places where a page says more, or less, than it means: the places a newcomer is most likely to be misled."
+    skills: ["None: being new is the qualification"]
+    submit: { label: "Suggest a correction", url: "https://github.com/SebE585/trognon/issues/new?template=correction.yml" }
+    state: open

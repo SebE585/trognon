@@ -250,7 +250,7 @@ def missions_by_question():
     """{question id: (title, state)} for the framed missions."""
     if not MISSIONS_FILE.is_file():
         return {}
-    return {m["question"]: (m["title"], m["state"]) for m in yaml.safe_load(MISSIONS_FILE.read_text()).get("missions", [])}
+    return {m["question"]: (m["title"], m["state"]) for m in yaml.safe_load(MISSIONS_FILE.read_text()).get("missions", []) if m.get("question")}
 
 
 # ---- the notebook ------------------------------------------------------------------------------------------------------
