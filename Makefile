@@ -9,7 +9,7 @@ SRC     := src/device_db.c src/serial_parse.c src/usb_probe.c src/chain.c src/cl
 OBJ     := $(SRC:.c=.o)
 BIN     := trognon
 
-.PHONY: all clean test test-sanitize diagrams evidence-index
+.PHONY: all clean test test-sanitize diagrams evidence-index docs-build docs-check
 
 all: $(BIN)
 
@@ -54,3 +54,12 @@ diagrams:
 
 evidence-index:
 	python3 tools/evidence_index.py
+
+# Build the site and run structural checks mkdocs --strict does not cover (external audit,
+# 2026-10-16): currently, exactly one <h1> per page. Run this, not a bare `mkdocs build`,
+# before trusting a docs change is safe to publish.
+docs-build:
+	mkdocs build --strict
+
+docs-check: docs-build
+	python3 -I tools/check_headings.py
