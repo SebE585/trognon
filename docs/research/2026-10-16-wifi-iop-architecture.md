@@ -137,12 +137,11 @@ than scattered through the narrative under different wording:
 1. **Who writes the real SDHC base pointer, and when?** See
    ["The missing producer"](#the-missing-producer-everything-checked-for-the-real-sdhc-base-pointer)
    for the full, bounded trace of everything checked.
-2. **Host opcode 0 vs. IOP opcode 1.** `sendIOPCommand` has special
-   handling for a host-side "opcode 0"; the IOP's own jump table places
-   the ping at real opcode 1. Whether these are meant to line up 1:1,
-   through a fixed offset, or through a translation not yet found, is
-   unresolved — a structural inconsistency between the two halves of the
-   protocol this document reconstructs, not a labelling detail.
+2. ~~Host opcode 0 vs. IOP opcode 1~~ — **resolved**: the "opcode 0"
+   claim was never actually verified in `sendIOPCommand`'s own code; its
+   one caller sends a hardcoded opcode `1`, matching the IOP's real
+   opcode 1 (the ping) exactly. See
+   ["Reconciling host and IOP opcode numbering"](#reconciling-host-and-iop-opcode-numbering).
 3. **Is the IOP actually running under Trognon's own tethered DFU/iBSS
    path?** Everything in this document describes what the firmware
    *would* do while executing. Nothing here establishes that it is
@@ -429,16 +428,39 @@ completes).
 
 ## Reconciling host and IOP opcode numbering
 
-Still open (see "Open questions" #2). `sendIOPCommand`'s own special
-handling of a host-side "opcode 0" was first guessed, before the IOP-side
-jump table was disassembled, to be a plausible match for the ping. Once
-the table's own bytes were read, the ping turned out to sit at **real
-opcode 1**, not 0. Neither number has been traced through an actual
-translation layer; whether the host's opcode byte maps 1:1 onto the
-IOP's numbering, through a fixed `+1` offset, or through something not
-yet found, is unresolved. This matters beyond labelling: it is the kind
-of mismatch that would make a hand-built "send opcode 0 to ping" payload
-silently hit the wrong IOP-side handler.
+**Resolved — the earlier "opcode 0" claim was never actually verified,
+and checking it directly removes the apparent mismatch.** Across several
+revisions, this document stated that `sendIOPCommand` has "special
+handling of a host-side opcode 0", guessed early on (before the IOP-side
+jump table was disassembled) as a plausible match for the ping, and then
+carried forward as an unreconciled inconsistency once the IOP's own
+table placed the ping at real opcode 1 instead. Re-reading
+`sendIOPCommand`'s own body end to end shows **no comparison against 0
+anywhere** — the opcode byte (`uxtb r6, r2` at entry) is simply stored
+into the command structure and used as-is; the "special handling of
+opcode 0" was never actually there.
+
+Checked at the opcode's real producer instead: `sendIOPCommand` has
+exactly one caller, inside a function named by its own log string
+`runIOPCommandSyncGated`. The opcode value it passes is not read from a
+parameter — it is a hardcoded immediate:
+
+```
+0x8057cb94  mov r1, r5
+0x8057cb96  movs r2, 1          ; opcode = 1, a literal constant
+0x8057cb98  bl fcn.8057c424     ; sendIOPCommand
+```
+
+**The host sends opcode `1` here, which is exactly the IOP's real opcode
+1 (the ping).** There is no off-by-one, no translation layer, and no
+unresolved mismatch for this call path — the numbering lines up 1:1
+because it was never actually different; the earlier "opcode 0" wording
+was an unverified assumption that stuck around through several
+corrections instead of being checked against the disassembly directly.
+This does not confirm the numbering for every other command type (reset,
+sendCommand, etc. may be issued through a different call path not traced
+here), only that the specific inconsistency named in earlier revisions of
+this document does not exist.
 
 ## The missing producer: everything checked for the real SDHC base pointer
 
@@ -525,15 +547,29 @@ message-passing path checked above, which would explain why none of them
 ever write anything real: the real write would happen before any of that
 code runs, as part of loading the firmware itself.
 
-**Not yet found**: which kext performs this patch. Neither
-`AppleIOPSDIO.kext` nor `IOSlaveProcessor.kext` contain the string
-`"ConfigurationOffset"` anywhere — a third, not-yet-extracted kext (a
-generic IOP firmware loader, likely the concrete class backing
-`IOSlaveFirmware`/`IOSlaveCPU`) must do it. Finding it and checking what
-it actually writes at these two offsets — and whether that includes or
-points to the real SDHC base address — is the single most direct
-remaining step, and the one most likely to also answer "Open questions"
-#4 and #6 at the same time.
+**Not yet found**: which code performs this patch. Checked the full
+decompressed kernelcache (10 MB), not just the two kexts already
+extracted: the string `"ConfigurationOffset"` and the literal address of
+its own string both appear exactly once more, a few hundred bytes from
+where the wrapper's own `{key, value}` table already was — the
+kernelcache's prelinked copy of the *same* `IOP_s5l8920x_firmware`
+wrapper, not a separate consumer. `IOSlaveProcessor.kext`'s own `__text`
+(small enough to read in full, ~3 KB) contains only generic IOKit
+boilerplate — metaclass registration, a generic allocate-and-`init`
+factory — and no call that reads a property by one of these names. No
+other plausible loader name (`IOEmbeddedIOP`, `startIOP`, `bootIOP`,
+`releaseReset`, and similar guesses) was found as a string anywhere in
+the kernelcache either. **This means the actual consumer reads these
+properties generically** (iterating a dictionary's existing keys rather
+than looking each one up by a literal string baked into its own code),
+which is exactly the kind of code a literal-string or literal-address
+search cannot find. Locating it requires either a slower, fuller
+disassembly of the kernel's own `__TEXT` (not attempted this session —
+the file is large enough that `radare2`'s full analysis did not
+complete in reasonable time) or dynamic tracing on real hardware.
+Finding it, and checking what it actually writes at these two offsets,
+remains the single most direct remaining step, and the one most likely
+to also answer "Open questions" #4 and #6 at the same time.
 
 A weaker, secondary lead, not yet connected to any of the above: the
 task table's fourth, highest-priority entry, `"iop"` (`0xafc`), is a

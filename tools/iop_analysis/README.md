@@ -296,6 +296,35 @@ it — to see what it actually writes at `fwFirmwareImage+0xf0a0` and
 `+0xf0a4`, and whether that includes or points to the real SDHC base
 address — is now the single most direct remaining step.
 
+### Host opcode 0 vs IOP opcode 1: resolved, was never actually a mismatch
+
+An earlier note claimed `sendIOPCommand` has "special handling of opcode
+0". Re-read its full body: there is no `cmp` against 0 anywhere in it —
+the opcode byte is just stored and used as-is. Its one caller (inside
+`runIOPCommandSyncGated`) passes a hardcoded `movs r2, 1` before calling
+it — the host sends opcode **1**, matching the IOP's real opcode 1 (the
+ping) exactly. No off-by-one, no translation layer; the "opcode 0" claim
+was an early, unverified guess that stuck around across several
+revisions instead of being checked directly against the disassembly.
+
+### ConfigurationOffset's consumer: checked the full kernelcache, still not found
+
+Searched the entire decompressed kernelcache (10 MB, not just
+`AppleIOPSDIO.kext`/`IOSlaveProcessor.kext`) for the literal string
+`"ConfigurationOffset"` and for a literal reference to its known vaddr
+(`0x804804b0`): both appear exactly once more, right next to the
+wrapper's own `{key,value}` table already disassembled — the
+kernelcache's prelinked copy of the *same* wrapper kext, not a new
+consumer. Disassembled `IOSlaveProcessor.kext`'s full `__text` (small
+enough, ~3 KB): metaclass-registration boilerplate and a generic
+allocate+`init` factory only, no property-by-name lookup. The real
+consumer must read these properties generically (iterating existing
+dictionary keys, not looking each one up by a literal string in its own
+code) — which a string/address search cannot find. Needs either a full
+kernel-text disassembly pass (not completed this session — file too
+large for `radare2`'s `aaa` to finish in reasonable time) or dynamic
+tracing on real hardware.
+
 ### Lower-priority lead (2026-10-16): the "iop control" master task's "install" command
 
 The `"iop"` task (`0xafc`, priority 0) is a dispatcher for commands the
