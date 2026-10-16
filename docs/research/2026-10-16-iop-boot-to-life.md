@@ -20,19 +20,37 @@ that graph stops, and each one is listed as an open link with the proof
 that would resolve it. The generated table in the main report carries them
 ([open links](2026-10-16-wifi-iop-architecture.md#open-links-and-hardware-tests)).
 
-## The thread
+## The thread: proven, assumed, related
 
-| Step | Function (address in `AppleARM7M.kext.bin`) | Fiche | Established | Still open |
-|---|---|---|---|---|
-| 1 | `AppleARM7M::start(IOService*)`, read in part (`0x80713190`–`0x8071326c`) | `start.yaml` | provider cached at `this+0x50`; device memory index 0 mapped to `this+0x58`, index 1 to `this+0x60` (`ARM7M-START-001`, `-002`) | entry address, lock allocation, tail after `0x8071326c` (`ARM7M-START-Q1`–`Q3`) |
-| 2 | `AppleARM7M::startCPU(IOSlaveFirmware*)` (`0x80713664`) | `startCPU.yaml` | full body read; register sequence in window 0 (`ARM7M-STARTCPU-002`), guard (`-003`), size field (`-004`), start write last (`-005`) | 11 indirect or external calls (`ARM7M-STARTCPU-Q4`–`Q12`), bit meanings (`Q13`), constant `0x86300000` (`Q14`) |
-| 3 | method at `0x80713510` | `vic_enable_0x80713510.yaml` | writes 8 or 4 to `[window1 + 0x18]` (`ARM7M-VIC-001`) | register semantics (`ARM7M-VIC-Q2`) |
-| 4 | caller of `startCPU`, firmware copy to RAM, the `IOSlaveProcessor` class | `module_init.yaml` covers class sizes only | six class sizes (`IOSLAVE-INIT-001`) | **not read**: who calls `startCPU`, who copies the image, where. No id yet; to be created when the first of them is read |
-| 5 | `sendIOPCommand` and the SDIO ping handler in the IOP firmware | not yet in the catalog | described in prose in the architecture report | no fiche; the ping is only reachable once the core runs |
+The earlier version of this page drew one call chain. Only part of it is
+established, so the links are separated by what supports them.
 
-Step 4 is the weakest link: the registers programmed by step 2 describe a
-buffer (`+0x110`) and a size mask (`+0x114`), but this thread has not shown
-who put the firmware there.
+**Proven by disassembly** (a call or data reference visible in the code):
+
+| From | To | Evidence |
+|---|---|---|
+| `startCPU` | window 0 register writes `+0x100`, `+0x118`, `+0x110`, `+0x114`, `+0x100` | `ARM7M-STARTCPU-002` |
+| `startCPU` | 11 indirect or external calls (callee not read) | `ARM7M-STARTCPU-Q4`–`Q12` |
+| `start()` | window 0 mapped to `this+0x58`, window 1 to `this+0x60` | `ARM7M-START-001` |
+| the 0x80713511 method | a write of 8 or 4 to `window1+0x18` | `ARM7M-VIC-001` |
+| one data word at `0x807153e8` | `startCPU` (its only reference in this kext) | `ARM7M-STARTCPU-006` |
+
+**Assumed, not shown** (plausible, no evidence that the link exists):
+
+| Assumption | What is missing |
+|---|---|
+| `startCPU` triggers, or is followed by, the VIC method | the two functions sit in the same pointer table (`0x807153e8`, `0x807153f0`), which shows class membership only; no call between them was found |
+| the IOP reaches the ping handler after `startCPU` | no observation of the IOP running (see proof of life below) |
+| `startCPU`'s caller copies the image before the call | caller and producer not located (`ARM7M-STARTCPU-Q15`) |
+
+**Related functions** (same subsystem, no dependency claimed): the six
+`IOSlaveProcessor` class registrations (`IOSLAVE-INIT-001`), `sendIOPCommand`
+and the SDIO ping handler in the IOP firmware (architecture report, prose
+only, no fiche yet).
+
+Priority for the next reading: `Q8`/`Q9` (they precede the first register
+write and therefore frame T1) and `Q15` (producer of the buffer, which frames
+T2).
 
 ## What the register sequence says, and what it does not
 
@@ -42,17 +60,24 @@ order: `+0x100 <- 0x10`, readback of `+0x100` (bit 1 tested), `+0x118 <-
 `+0x100 <- 1`. The device-tree property `iop-version` is 1 on this device,
 which selects the masked form of `+0x114`.
 
-Two observations that limit what can be inferred:
-
-- The firmware image (`fwFirmwareImage.bin`, 110592 bytes) starts with an
-  ARM vector table whose handler words are small absolute addresses (`0x40`,
-  `0x939c`, ...). It is linked at base 0 and contains no `0x86xxxxxx`
-  literal. `0x86300000` is therefore not the image's address as the IOP
-  sees it (`ARM7M-STARTCPU-Q14`).
-- At rest all five probed registers of window 0 read `0` (evidence
-  `20261016T093436Z-trace_iop_regs`). The driver expects bit 1 of `+0x100`
-  to be set after it writes `0x10`. A zero at rest is compatible with that
-  and is not a measurement of "idle".
+- **`0x86300000` is the window's own address.** It is pair 0 of the `reg`
+  property of the `iop` node, i.e. the CPU-visible base of the register block
+  that `startCPU` is writing into. It is neither a RAM address nor the image's
+  load address (`ARM7M-STARTCPU-Q14`). The earlier probe of `0x86300000` that
+  read zero (`20261016T094340Z-trace_iop_probe_mmu`) was a read of this
+  register block, not of RAM.
+- **The image is linked at base 0.** `fwFirmwareImage.bin` (110592 bytes)
+  starts with an ARM vector table whose handler words are small absolute
+  addresses (`0x40`, `0x939c`), with no `0x86xxxxxx` literal.
+- **Zero at rest is not "idle".** All five probed registers read `0`
+  (`20261016T093436Z-trace_iop_regs`). The driver expects bit 1 of `+0x100`
+  after writing `0x10`; a zero before any write is compatible with that and
+  measures nothing about a stop request.
+- **Readbacks prove storage, not role.** Reading back what was written to
+  `+0x110` or `+0x118` would not show that the hardware treats them as a
+  physical address or as a base. An apparent zero at the firmware's location
+  would not exclude an alias or a translation between the IOP's view and the
+  host's; that stays open.
 
 ## Hardware ladder
 
@@ -63,27 +88,44 @@ contradicts the reading.
 | Rung | Action | Prediction recorded in advance | Records into | Status |
 |---|---|---|---|---|
 | T0 | read window 0 at rest (5 offsets) | all zero | `startCPU.yaml`, `start.yaml` | executed, result 0 |
-| T0b | read window 1 (`SOC_IOP_VIC_BASE`), highlight `+0x18` (STAGE 32, `trace_iop_vic.bin`) | readable without abort | `start.yaml`, `vic_enable_0x80713510.yaml` | payload ready, **not run** |
-| T1 | write `0x10` to `window0+0x100`, read it back, bounded: one write, one read, USB link checked after | `readback & 2 != 0` | `startCPU.yaml` (`ARM7M-STARTCPU-Q13`) | spec only, no payload yet |
-| T2 | place the image in RAM with a sentinel pattern around it, program `+0x118`, `+0x110`, `+0x114`, write `1` to `+0x100`, wait a bounded time, read `+0x100`, window 1, and the sentinel | none yet: depends on `Q5` and `Q14` | `startCPU.yaml`, new fiche for the caller | **not authorised** until T1 is observed and `Q5`, `Q14` are reviewed |
+| T0b | read window 1 (`SOC_IOP_VIC_BASE`), highlight `+0x18` (STAGE 32, `trace_iop_vic.bin`) | readable without abort | `start.yaml`, `vic_enable_0x80713510.yaml` | payload ready, **not run**; adds one observation, resolves none of the dependencies |
+| T1 | **isolated test**: write `0x10` to `window0+0x100`, read back immediately and again after fixed delays, check the USB link after | `readback & 2 != 0` at some delay | `startCPU.yaml` (`Q13`) | spec only, no payload |
+| T2 | place the image in RAM, program `+0x118`, `+0x110`, `+0x114`, write `1` to `+0x100`, bounded wait, observe | none yet: depends on `Q5`, `Q14`, `Q15` | `startCPU.yaml`, new fiche for the caller | **not authorised** |
 
-T1 is the same write the driver issues at the start of every `startCPU`.
-T2 starts a second core running an image whose first instructions were not
-disassembled for this purpose, with a DMA-capable block pointed at a buffer:
-it is a different class of risk and is gated.
+T1 does not replay the driver's preamble: `Q8` and `Q9` are made before the
+first register write and are unread. A positive T1 is informative; a
+negative T1 is ambiguous (missing precondition, or the reading of the bit is
+wrong) and must be recorded as such, not as a refutation. Reading once
+immediately can also miss a delayed transition, hence the delayed readbacks.
 
-Reading grid for T1 and T2, to fix before the run: (a) register still zero,
+T2 starts a second core and points a DMA-capable block at a buffer: a
+different class of risk, gated on T1 and on `Q5`, `Q14`, `Q15`.
+
+## Proof of life: indications versus proof
+
+Reading grid for T1 and T2, fixed before the run: (a) register still zero,
 (b) stable structured value, (c) value that changes between reads, (d)
-abort or loss of the USB link. A recognisable value would still not prove
-that the IOP executes its firmware; proof of life requires an effect that
-only the IOP can produce, such as the sentinel region changing, or a
-status bit changing after the start write without any further host write.
+abort or loss of the USB link.
+
+Two levels, not to be confused:
+
+- **Indication of activity.** A status bit that changes, a sentinel region
+  that gets modified, a VIC register that moves. Each of these can also come
+  from a hardware state machine, a DMA engine or a corruption. They justify
+  further work and nothing more.
+- **Proof of execution.** A response to a host-chosen nonce that was computed
+  by identified IOP code, or an explicit write by that code to an agreed
+  location, with the code's address known in the firmware image. This
+  requires knowing which IOP routine produces it (for example the SDIO ping
+  handler once its trigger is understood, or a minimal program of our own, the
+  "own firmware" step of Phase 4). Until then the project claims at most an
+  indication.
 
 ## Reproduction
 
 ```
-python3 -I tools/iop_analysis/dt_node_reg.py ...        # reg pairs of the iop node
-r2 -e asm.bits=16 -c 'pd 90 @ 0x80713664' /tmp/trognon_dt/AppleARM7M.kext.bin
+python3 -I tools/iop_analysis/dt_node_reg.py /tmp/trognon_dt/devicetree_decrypted.bin iop   # reg pairs of the iop node
+r2 -e asm.bits=16 -c 'pd 90 @ 0x80713664' /tmp/trognon_dt/AppleARM7M.kext.bin   # startCPU
 make iop-coverage                                        # validates and regenerates the table
 ```
 

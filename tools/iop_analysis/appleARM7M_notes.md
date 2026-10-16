@@ -264,12 +264,33 @@ bits de `+0x100`. Le firmware `fwFirmwareImage.bin` est une image plate liée
 à l'adresse 0 (table de vecteurs `ea00000e e59ff018 ...`, adresses de
 handlers absolues petites comme `0x40`, `0x939c`, aucun littéral `0x86xxxxxx`
 dans les 110592 octets) : `0x86300000` n'est donc pas son adresse de
-chargement dans la vue de l'IOP.
+chargement dans la vue de l'IOP. Elle vaut en revanche la paire 0 de `reg` du
+nœud `iop` (`dt_node_reg.py`) : c'est l'adresse CPU de la fenêtre de
+registres elle-même (`ARM7M-STARTCPU-Q14`).
 
 **Commande pour reproduire** :
 ```
 r2 -e asm.bits=16 -c 'pd 90 @ 0x80713664' /tmp/trognon_dt/AppleARM7M.kext.bin
 r2 -e asm.bits=16 -c 'px 32 @ 0x807137a0' /tmp/trognon_dt/AppleARM7M.kext.bin   # littéraux 0x86300000 et 0x3ffff000
+```
+
+### Tables de pointeurs de `IOSlaveProcessor.kext` (2026-10-16, partiel)
+
+Recherche de l'appelant de `startCPU` et du producteur du tampon (`Q15`) :
+la seule référence à `0x80713665` est le mot de données `0x807153e8` (donc
+appel virtuel, pas de `bl`). Dans `IOSlaveProcessor.kext`, cinq tables de
+~220 mots (pointeurs noyau ou kext) ressemblent à des vtables. L'une
+(départ heuristique `0x8039a678`) a en `+0x34c` la fonction `0x8039901d`
+(`ldr r0,[r0,0x58]; bx lr`, un accesseur de champ) ; son `+0x364` appelle
+le `+0x34c` de son propre objet. Cet accesseur est un candidat pour le
+`+0x34c` d'`IOSlaveFirmware` **mais probablement pas** le bon : le champ
+`+0x58` dépasse les 80 octets d'`IOSlaveFirmware` (`IOSLAVE-INIT-001`).
+Voir `IOSLAVE-GETTER-Q1`/`Q2`. Les trois autres tables ont toutes
+`0x801bcd69` (adresse noyau) en `+0x34c`.
+
+```
+python3 -I tools/iop_analysis/dt_node_reg.py /tmp/trognon_dt/devicetree_decrypted.bin iop
+r2 -e asm.bits=16 -c 'pd 8 @ 0x8039901c' /tmp/trognon_dt/IOSlaveProcessor.kext.bin
 ```
 
 ## Prochaine couche (pas encore écrite)

@@ -16,6 +16,8 @@ use and communication of what is learned):
     installed -- never requires the binary or r2 at generation time, so
     this script runs in CI with neither.
   - "Human review" counts come only from the YAML fiches' own
+    constant_ranges -- optional literal pools read for their values; validated,
+    never counted in "Bytes reviewed" (which is code only).
     reviewed_ranges -- what was actually read and interpreted, which can
     be smaller OR larger than tool coverage (a human can trace a function
     the automatic analysis missed entirely, as happened with
@@ -239,6 +241,17 @@ def validate(binaries):
                         f"{path}: reviewed_range {rng} falls outside the __text section "
                         f"[{hex(text_base)}, {hex(text_end)}) declared in {sub}/tool_coverage.json"
                     )
+
+            # constant_ranges (literal pools): same sanity as code ranges, but never counted as
+            # code bytes reviewed, and must not overlap them.
+            for rng in fiche.get("review", {}).get("constant_ranges", []):
+                s, e = hex_to_int(rng[0]), hex_to_int(rng[1])
+                if not (s < e) or not (text_base <= s and e <= text_end):
+                    errors.append(f"{path}: constant_range {rng} is inverted or outside the __text section")
+                for code in fiche.get("review", {}).get("reviewed_ranges", []):
+                    cs, ce = hex_to_int(code[0]), hex_to_int(code[1])
+                    if s < ce and cs < e:
+                        errors.append(f"{path}: constant_range {rng} overlaps code range {code}")
 
             pstatus = fiche.get("publication", {}).get("status")
             if pstatus not in PUBLICATION_STATUSES:

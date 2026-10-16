@@ -15,8 +15,9 @@ review:
   # calls: what they do is NOT established by this fiche.
   status: complete
   reviewed_ranges:
-    - ["0x80713664", "0x80713788"]     # code, entry to pop {pc}
-    - ["0x80713788", "0x807137b0"]     # literal pool (constants read, not code)
+    - ["0x80713664", "0x80713788"]     # code only, entry to pop {pc}
+  constant_ranges:                     # literal pool: constants read, NOT counted as code bytes reviewed
+    - ["0x80713788", "0x807137b0"]
   resolved:
     - id: ARM7M-STARTCPU-Q1
       by: "full linear + branch trace of 0x80713664..0x80713786 on 2026-10-16 (this fiche)"
@@ -33,13 +34,21 @@ review:
       text: >
         Indirect call at 0x80713686, firmware-object vtable slot +0x34c (arg: the IOSlaveFirmware).
         Returns an object used as `md` in the next two calls. Role: probably the firmware's memory descriptor.
-      proof_needed: "read slot +0x34c of the IOSlaveFirmware vtable in IOSlaveProcessor.kext.bin (class size 80, IOSLAVE-INIT-001) and its body"
+      proof_needed: >
+        read slot +0x34c of the IOSlaveFirmware vtable and its body. A candidate getter returning a field at
+        +0x58 exists in IOSlaveProcessor.kext (IOSLAVE-GETTER-001) but is probably another class's
+        (IOSLAVE-GETTER-Q1); it must not be taken as this callee
     - id: ARM7M-STARTCPU-Q5
       text: >
         Indirect call at 0x80713694, md vtable slot +0x98, args (offset=0, &segLength). Result stored at this+0x88
         and later written to window0+0x110. Plausibly a physical-address getter (segLength is its out-parameter,
         compared against md->getLength()); not confirmed.
-      proof_needed: "hardware: after the sequence runs, +0x110 equals the physical address of the loaded image; or static: concrete md class vtable slot +0x98"
+      proof_needed: >
+        static: the concrete md class and its slot +0x98 body (a getter of a physical address, or something else).
+        A hardware readback of +0x110 equal to the written value would show only that the register stores it,
+        not that the hardware interprets it as a physical address; that needs an effect (for example the IOP
+        fetching from the buffer), and an alias or translation between the address written and the RAM seen by
+        the host stays possible until then
     - id: ARM7M-STARTCPU-Q6
       text: >
         Indirect call at 0x807136a2, md vtable slot +0x84, no args. The source-location string at line 155 names it
@@ -56,6 +65,7 @@ review:
         args 1,0,0), between the size computation and the first register write. Provider is this+0x50
         (AppleARMIODevice, ARM7M-START-002). Role unknown; a power/clock/reset step is only a guess.
       proof_needed: >
+        PRIORITY (they precede the first register write, so they gate T1 as a faithful replay):
         read the two slots in the kernelcache; compare with the clock gate already at 0x0000000F on the device
         (evidence/20261016T094945Z-trace_iop_clkgate/), which would make a pure clock-enable call redundant here
     - id: ARM7M-STARTCPU-Q9
@@ -85,14 +95,31 @@ review:
         Meaning of window0+0x100 bits: 0x10 written first, bit 1 expected set on readback (else the line-170
         message), then 1 written last. "Stop request", "stopped status" and "start" are readings of the log
         string, not established.
-      proof_needed: "hardware tier T1 of docs/research/2026-10-16-iop-boot-to-life.md"
+      proof_needed: >
+        hardware tier T1 of docs/research/2026-10-16-iop-boot-to-life.md, which is an isolated test: it does
+        not reproduce the driver's preamble (Q8, Q9), so a negative result stays ambiguous
     - id: ARM7M-STARTCPU-Q14
       text: >
-        Meaning of the constant 0x86300000 written to window0+0x118. The image fwFirmwareImage.bin is linked
-        at base 0 (its vector table holds small absolute handler addresses such as 0x40 and 0x939c, no 0x86xxxxxx
-        literal anywhere), so this is not the image's load address in the IOP's own view. 0x86300000 is a host
-        physical address whose content read as zero (evidence/20261016T094340Z-trace_iop_probe_mmu/).
-      proof_needed: "hardware: read +0x118 back after a start; static: find what the IOP firmware does with a register holding it"
+        Meaning of the constant 0x86300000 written to window0+0x118. 0x86300000 is also pair 0 of the `reg`
+        property of the `iop` device-tree node (tools/iop_analysis/dt_node_reg.py): the CPU-visible base of
+        window 0 itself. So the constant is the register block's own address, not a RAM address. The image
+        fwFirmwareImage.bin is linked at base 0 (small absolute handler addresses such as 0x40 and 0x939c in its
+        vector table, no 0x86xxxxxx literal), so it is not the image's load address either. Why the IOP is told
+        its own block's base (its view of the bus may differ from the host's) is unknown.
+      proof_needed: >
+        static: how the IOP firmware uses a register holding this value. A readback of +0x118 would show
+        storage only, not the register's role. Any statement that the host sees the firmware at zero must
+        keep open an alias or translation between the two views.
+    - id: ARM7M-STARTCPU-Q15
+      text: >
+        Who calls startCPU, and who prepares its buffer (copies the firmware image into RAM, builds the
+        IOSlaveFirmware and its memory descriptor). The only reference to 0x80713665 in AppleARM7M.kext.bin is
+        one data word at 0x807153e8 (ARM7M-STARTCPU-006): there is no direct call, so the caller is a virtual
+        call elsewhere. IOSlaveProcessor.kext holds no loading logic (IOSLAVE-INIT-002), so the caller is
+        probably in the kernel proper; not read.
+      proof_needed: >
+        locate the caller in the decrypted kernelcache (a virtual call through the slot holding startCPU),
+        then the producer of the IOSlaveFirmware object and its memory descriptor
 
 claims:
   - id: ARM7M-STARTCPU-001
@@ -142,6 +169,15 @@ claims:
     status: device_disassembly_verified
     evidence: "tools/iop_analysis/appleARM7M_notes.md#startcpu-0x80713664-lue-en-entier-2026-10-16"
 
+  - id: ARM7M-STARTCPU-006
+    text: >
+      The Thumb pointer 0x80713665 occurs exactly once in AppleARM7M.kext.bin, as a data word at 0x807153e8,
+      in a table of function pointers that also holds 0x80713559, 0x80713511 (the method of ARM7M-VIC-001)
+      and 0x80713629 in the next three words. Adjacency in one table shows shared class membership, not that
+      startCPU calls, or is called with, the VIC method.
+    status: device_disassembly_verified
+    evidence: "tools/iop_analysis/appleARM7M_notes.md#startcpu-0x80713664-lue-en-entier-2026-10-16"
+
 hardware_tests:
   - name: trace_iop_regs (STAGE 26), rest state of the startCPU registers
     claim_tested: "ARM7M-STARTCPU-002: the registers startCPU programs are readable from the main CPU before startCPU runs"
@@ -158,9 +194,12 @@ hardware_tests:
     execution_status: planned
     result: null
     notes: >
-      First write of the ladder, and the same write the driver performs at
-      every startCPU. A fixed prediction is recorded before the run:
-      readback & 2 != 0. Either outcome goes into this fiche. See
+      ISOLATED test: the driver makes calls Q8 and Q9 before this write and
+      T1 does not reproduce them, so a negative result is ambiguous (missing
+      precondition, or the reading is wrong). Readbacks at several delays
+      (immediate, then after fixed waits), since a transition can be delayed.
+      Prediction recorded in advance: readback & 2 != 0 at some delay. Either
+      outcome goes into this fiche. See
       docs/research/2026-10-16-iop-boot-to-life.md for the full ladder.
 
 publication:

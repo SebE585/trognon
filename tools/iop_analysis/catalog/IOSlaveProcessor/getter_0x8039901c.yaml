@@ -1,0 +1,44 @@
+binary: IOSlaveProcessor.kext.bin
+binary_sha256: abff4df9877f8c83a899de4f2308bca80f556478790b982d1823d39fd366a0c9
+function_name_apple: null
+function_name_assigned: "field_0x58_getter (working name, not Apple's)"
+decode_mode: thumb
+subsystem: iop_class_registry
+entry_code_address: "0x8039901c"
+thumb_entry_pointer: "0x8039901d"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8039901c", "0x80399020"]
+  unresolved:
+    - id: IOSLAVE-GETTER-Q1
+      text: >
+        Class that owns the pointer table holding 0x8039901d at table offset +0x34c. The table starts at
+        0x8039a678 by a heuristic (a run of 220 words that are kernel or kext pointers), not from a located
+        vtable header. The OSMetaClass sizes of IOSLAVE-INIT-001 give IOSlaveFirmware 80 bytes, so a field at
+        +0x58 cannot belong to an IOSlaveFirmware instance; IOSlaveProcessor (104 bytes) fits. If so this is
+        NOT the callee of the +0x34c call made on the firmware object in startCPU.
+      proof_needed: "tie each pointer table to its OSMetaClass registration (module init), or read the vtable pointer a constructor stores"
+    - id: IOSLAVE-GETTER-Q2
+      text: >
+        Whether the +0x34c slot of the IOSlaveFirmware table is a kext function at all: in the other tables of
+        this kext, slot +0x34c holds 0x801bcd69 (a kernel address, identical in four tables) or other kernel
+        addresses. Their bodies are not read.
+      proof_needed: "disassemble 0x801bcd68 in the kernelcache"
+
+claims:
+  - id: IOSLAVE-GETTER-001
+    text: >
+      A two-byte-instruction function that returns the 32-bit field at offset +0x58 of its object
+      (ldr r0,[r0,#0x58]; bx lr). A pointer to it is the +0x34c entry of one pointer table of this kext,
+      whose +0x364 entry (0x8039909d) calls the +0x34c method of its own object and whose +0x358 entry
+      (0x8039908d) forwards to the +0x364 method of the object stored at this+0x50.
+    status: device_disassembly_verified
+    evidence: "tools/iop_analysis/appleARM7M_notes.md#startcpu-0x80713664-lue-en-entier-2026-10-16"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "offsets and control flow of a two-instruction function"

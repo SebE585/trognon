@@ -224,6 +224,26 @@ class TestPublicationGate(CatalogTestCase):
         self.assertIn("further claim(s) exist", out)
 
 
+class TestConstantRanges(CatalogTestCase):
+    def test_constants_not_counted_as_code(self):
+        write_tool_coverage(self.binary_dir)
+        write_fiche(self.binary_dir, "f1", review={"status": "complete",
+            "reviewed_ranges": [["0x1000", "0x1010"]],
+            "constant_ranges": [["0x1010", "0x1020"]], "unresolved": []})
+        binaries = gc.load_catalog(self.catalog)
+        gc.validate(binaries)
+        self.assertIn("| 16 B |", gc.render(binaries))
+
+    def test_constants_overlapping_code_fail(self):
+        write_tool_coverage(self.binary_dir)
+        write_fiche(self.binary_dir, "f1", review={"status": "complete",
+            "reviewed_ranges": [["0x1000", "0x1010"]],
+            "constant_ranges": [["0x100c", "0x1020"]], "unresolved": []})
+        with self.assertRaises(SystemExit) as ctx:
+            gc.validate(gc.load_catalog(self.catalog))
+        self.assertIn("overlaps", str(ctx.exception))
+
+
 class TestOpenLinks(CatalogTestCase):
     def test_open_link_and_planned_test_rendered_with_proof(self):
         write_tool_coverage(self.binary_dir)
