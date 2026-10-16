@@ -13,11 +13,19 @@ review:
     - ["0x8045e750", "0x8045e8b2"]
     - ["0x8045e5d2", "0x8045e6a0"]
     - ["0x8045da5c", "0x8045da78"]
-  constant_ranges: []
+    - ["0x8045e504", "0x8045e554"]  # factory head and clkG construction branch
+    - ["0x8045e140", "0x8045e15a"]  # clkG constructor through return
+    - ["0x8045dbe0", "0x8045dc08"]  # initializer through return
+    - ["0x8045da44", "0x8045da54"]  # actual clkG table +0x50 method
+    - ["0x8045e048", "0x8045e062"]  # ARST constructor through return
+  constant_ranges:
+    - ["0x8045e15c", "0x8045e16c"]
+    - ["0x8045dc08", "0x8045dc14"]
+    - ["0x8045e064", "0x8045e074"]
   unresolved:
     - id: S5L-CLK-Q1
-      text: "How a device-tree clock-gates number becomes a register: the clkG function object stores the controller (this+0x18) and the gate (this+0x1c) and calls a virtual method at slot 0x380 of the object's class. AppleS5L8900XClockController's own table (0x80463318) holds, at that slot, a base-class stub in the kernel (0x801d7c08: movs r0, 0; bx lr), so the object at this+0x18 is not shown to be the controller, or the real work is elsewhere."
-      proof_needed: "find where the function object's +0x18 and +0x1c fields are written (callers of the factory at 0x8045e504) and the class of the object stored there"
+      text: "How clkG ultimately changes a hardware clock gate remains open. The earlier premise mixed two function objects: clkG installs table 0x804632b8, whose +0x50 method is 0x8045da44 and calls the receiver at this+0x18 through slot +0x354. The routine 0x8045da5c that uses this+0x1c and slot +0x380 belongs to table 0x80463200, installed by the ARST constructor, not the clkG object. The initializer 0x8045dbe0 obtains this+0x18 by safeMetaCast of this+8 with metaclass 0x80464688; the producer of this+8, its dynamic class and the implementation of +0x354 are not established."
+      proof_needed: "follow the base initializer called by 0x8045dbe0 to find the producer of this+8, identify the concrete receiver of the clkG method, and resolve its +0x354 slot; reproduce the two table paths with probe_clock_function_tables.py"
     - id: S5L-CLK-Q2
       text: "Whether CGCON0 and the following word (offsets 0x48 and 0x4c) are an aggregate view of the same per-gate words the iBSS uses at 0xBF100078 + 4 * i, and how a bit number (the device-tree gate) maps to an array index."
       proof_needed: "a read of offsets 0x40 to 0x74 of the block next to the 52 gate words (STAGE 47, built, not run)"
@@ -49,6 +57,25 @@ claims:
       N88AP (iPhone2,1).
     status: source_verified
     evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#where-the-iop-clock-gate-is-search-2026-10-16"
+
+  - id: S5L-CLK-004
+    text: >
+      Corrected attribution (2026-10-16): the clkG branch of the factory calls constructor 0x8045e140,
+      which installs table 0x804632b8. Its +0x4c entry is initializer 0x8045dbe1; its +0x50 entry is
+      0x8045da45. The initializer stores at this+0x18 the safeMetaCast result of the object at this+8
+      with metaclass 0x80464688. The +0x50 method calls this+0x18 through slot +0x354 without loading
+      a gate number from this+0x1c. The base initializer and concrete receiver remain untraced.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#mission-s5l-clk-q1-correcting-the-function-object-attribution"
+  - id: S5L-CLK-005
+    text: >
+      The factory branch for selector 0x41525354 (ARST) calls constructor 0x8045e048, which installs
+      table 0x80463200. Its +0x54 entry points to 0x8045da5d, the routine that conditionally calls
+      slot +0x380 of this+0x18 with the word at this+0x1c. That routine is not the clkG table's +0x50
+      method. This corrects the earlier attribution; it establishes neither the final gate register
+      mapping nor the runtime class of the clkG receiver.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#mission-s5l-clk-q1-correcting-the-function-object-attribution"
 
 hardware_tests:
   - name: trace_gate_survey (STAGE 47), offsets 0x40 to 0x74 and the 52 gate words

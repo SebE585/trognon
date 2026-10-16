@@ -25,10 +25,10 @@ missions:
     needs:
       - "The AppleS5L8900X kernel extension, extracted from your own copy of the 4.3.5 firmware (tools/iop_analysis/extract_kext.py)"
       - "A disassembler for 32-bit Thumb, and the catalog entry open next to it"
-    expected: "The class of the object the clkG function object stores at +0x18, and the code of its slot 0x380, with addresses; or a documented reason it cannot be found."
+    expected: "The concrete class of the object the clkG function stores at +0x18, and its slot +0x354 implementation, with addresses; or a documented reason it cannot be found. The earlier +0x380 attribution belongs to the ARST object and was refuted by a constructor/table trace."
     unlocks: "How the device tree's clock-gate numbers become physical clock gates, which is needed to find the clocks of the SDIO block and of the coprocessor."
     skills: ["Reading 32-bit Thumb", "Following virtual calls through class tables"]
-    state: open
+    state: in-progress
     contributions: []
 
   - question: MT-BOOT-Q1

@@ -19,13 +19,15 @@ Each entry is a function or a table read in the decompiled binary. It records wh
 
 ## AppleS5L8900XClockController::start and its clock-gate function plumbing
 
-Entry `0x8045e750` · Review: partial · 3 claims · 2 open questions
+Entry `0x8045e750` · Review: partial · 5 claims · 2 open questions
 
 - **S5L-CLK-001** (device disassembly verified): The device tree's arm-io node carries function-clock_gate, 8 bytes: a phandle word and the selector 0x636c6b47 ("clkG" as a four-character code).
 - **S5L-CLK-002** (device disassembly verified): AppleS5L8900XClockController::start reads the device-tree properties clock-gate-defaults and clock-gate-suspend as 64-bit masks (two 32-bit words, stored at this+0x15c/0x160 and this+0x7a4/0x7a8) and writes them to the controller…
 - **S5L-CLK-003** (source verified): The device tree's clock-gates numbers of this phone range from 0x10 to 0x3b: dart0 0x2d, dart1 0x33, sdio 0x10, sha1 0x11, ceata 0x12, flash-controller0 0x13 and 0x14, spi0..2 0x15..0x17, uart0..4 0x1a..0x1e, pke 0x1f, i2c0 0x20,…
+- **S5L-CLK-004** (device disassembly verified): Corrected attribution (2026-10-16): the clkG branch of the factory calls constructor 0x8045e140, which installs table 0x804632b8.
+- **S5L-CLK-005** (device disassembly verified): The factory branch for selector 0x41525354 (ARST) calls constructor 0x8045e048, which installs table 0x80463200.
 
-- *Open* **S5L-CLK-Q1**: How a device-tree clock-gates number becomes a register: the clkG function object stores the controller (this+0x18) and the gate (this+0x1c) and calls a virtual method at slot 0x380 of the object's class.
+- *Open* **S5L-CLK-Q1**: How clkG ultimately changes a hardware clock gate remains open.
 - *Open* **S5L-CLK-Q2**: Whether CGCON0 and the following word (offsets 0x48 and 0x4c) are an aggregate view of the same per-gate words the iBSS uses at 0xBF100078 + 4 * i, and how a bit number (the device-tree gate) maps to an array index.
 
 [Full entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleS5L8900X/clock_controller_gates_0x8045e750.yaml)

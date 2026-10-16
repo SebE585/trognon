@@ -42,7 +42,7 @@ Légende : vert, relue ; ambre, relue en partie ; gris, non relue.
 
 [2](grimoire-applemultitouchspi.md){ .kmap-tile .kmap-partial title="AppleMultitouchSPI::bootloadTimerFiredHandler()" } [3](grimoire-applemultitouchspi.md){ .kmap-tile .kmap-complete title="bootloader check (CHECK packet)" }
 
-**AppleS5L8900X** · 8 entrées · 21 affirmations · 17 questions ouvertes
+**AppleS5L8900X** · 8 entrées · 23 affirmations · 17 questions ouvertes
 
 [2](grimoire-apples5l8900x.md){ .kmap-tile .kmap-partial title="AppleS5L8900XClockController::start and its clock-gate function plumbing" } [3](grimoire-apples5l8900x.md){ .kmap-tile .kmap-partial title="SoC GPIO function apply (set, get and default application)" } [2](grimoire-apples5l8900x.md){ .kmap-tile .kmap-complete title="SPI device configuration (builds SETUP, CLKDIVIDER and the delay fields from a setting)" } [2](grimoire-apples5l8900x.md){ .kmap-tile .kmap-complete title="SPI interrupt service (FIFO drain and refill) and transfer finish" } [1](grimoire-apples5l8900x.md){ .kmap-tile .kmap-complete title="SPI register helpers (PIN chip-select bit, STATUS FIFO fields, register read and write)" } [3](grimoire-apples5l8900x.md){ .kmap-tile .kmap-complete title="AppleS5L8900XSPIController::start(IOService&#42;)" } [2](grimoire-apples5l8900x.md){ .kmap-tile .kmap-partial title="SPI transfer start (head: register programming)" } [2](grimoire-apples5l8900x.md){ .kmap-tile .kmap-complete title="SPI per-device setting validation (working name)" }
 
@@ -64,7 +64,7 @@ Légende : vert, relue ; ambre, relue en partie ; gris, non relue.
 
 </div>
 
-30 entrées, 74 affirmations, 77 questions ouvertes.
+30 entrées, 76 affirmations, 77 questions ouvertes.
 
 
 ## Et maintenant ?
