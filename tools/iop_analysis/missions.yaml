@@ -29,7 +29,9 @@ missions:
     unlocks: "How the device tree's clock-gate numbers become physical clock gates, which is needed to find the clocks of the SDIO block and of the coprocessor."
     skills: ["Reading 32-bit Thumb", "Following virtual calls through class tables"]
     state: in-progress
-    contributions: []
+    contributions:
+      - title: "Correct the clkG/ARST attribution (a refuted attribution, merged)"
+        url: https://github.com/SebE585/trognon/pull/2
 
   - question: MT-BOOT-Q1
     title: "Where does the touch controller's firmware come from?"

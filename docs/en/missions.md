@@ -197,7 +197,7 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
     **A good answer**: The concrete class of the object the clkG function stores at +0x18, and its slot +0x354 implementation, with addresses; or a documented reason it cannot be found. The earlier +0x380 attribution belongs to the ARST object and was refuted by a constructor/table trace.
 
-    **Contributions so far**: none yet
+    **Contributions so far**: [Correct the clkG/ARST attribution (a refuted attribution, merged)](https://github.com/SebE585/trognon/pull/2)
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleS5L8900X/clock_controller_gates_0x8045e750.yaml)
 

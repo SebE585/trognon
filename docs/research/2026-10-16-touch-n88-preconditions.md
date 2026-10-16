@@ -717,9 +717,9 @@ Tools used: radare2 6.2.4 and Python 3.13. The probe below reads Mach-O segment 
 selected table/literal words; it does **not** prove call reachability or dynamic object identity.
 
 ```sh
-python3 -I tools/iop_analysis/probe_clock_function_tables.py /tmp/trognon_dt/AppleS5L8900X.kext.bin
-r2 -e asm.bits=16 -qc 'pD 80 @ 0x8045e504; pD 26 @ 0x8045e140; pD 40 @ 0x8045dbe0; pD 16 @ 0x8045da44' /tmp/trognon_dt/AppleS5L8900X.kext.bin
-r2 -e asm.bits=16 -qc 'pD 26 @ 0x8045e048; pD 28 @ 0x8045da5c' /tmp/trognon_dt/AppleS5L8900X.kext.bin
+python3 -I tools/iop_analysis/probe_clock_function_tables.py AppleS5L8900X.kext.bin   # your own extracted kext
+r2 -e asm.bits=16 -qc 'pD 80 @ 0x8045e504; pD 26 @ 0x8045e140; pD 40 @ 0x8045dbe0; pD 16 @ 0x8045da44' AppleS5L8900X.kext.bin
+r2 -e asm.bits=16 -qc 'pD 26 @ 0x8045e048; pD 28 @ 0x8045da5c' AppleS5L8900X.kext.bin
 ```
 
 For the cast symbol, decompress the same kernelcache with `extract_kext.py --decompress-only`, then run
