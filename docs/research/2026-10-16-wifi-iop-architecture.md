@@ -507,6 +507,41 @@ with every real SDHC register reading 0 on actual hardware), or the real
 initialisation happens in an earlier IOP boot stage that has not been
 extracted (before this `0x1b000`-byte blob even starts running).
 
+**Breakthrough: the configuration-injection mechanism, found and
+confirmed.** A reviewer pointed back at a lead from earlier in this report
+that had never been followed up: the wrapper kext
+(`IOP_s5l8920x_firmware`) carries a property dictionary with keys
+`ConfigurationOffset`, `HeapBaseOffset`, `HeapSizeOffset`, `HeapRequired`,
+`PageTableBase`, `PageTableSize`, `MessageChannelSize`. Disassembled the
+wrapper's own `__text` (it has real code, not just metadata carrying the
+payload) and found a clean `{key, value}` table feeding this dictionary.
+The actual stored values: `ConfigurationOffset = 0xf0a0`,
+`HeapBaseOffset = 0xf0a4`, `HeapSizeOffset = 0xa000`,
+`PageTableBase = 0xffffffff` (no MMU on this IOP), `MessageChannelSize =
+0x1a460`.
+
+**These are offsets into the raw firmware image itself, not addresses in
+some other space.** Checked directly against the firmware file: at
+offset `0xf0a0` and `0xf0a4`, it holds `0xffffffff` at both — the same
+"-1 = not yet configured" sentinel pattern seen everywhere else in this
+firmware for an unset field. This confirms, rather than merely
+hypothesizes, that **the host-side loader patches specific, fixed
+locations inside the firmware image before releasing the IOP from
+reset** — a configuration-injection mechanism distinct from, and
+upstream of, every message-passing path chased so far. It explains why
+none of those paths (host message content, generic queue creation, task
+creation, the scheduler) ever write anything real into the fields this
+report has been tracing: the real write happens before any of that code
+even runs, as part of loading the firmware itself.
+
+Not yet found: which kext performs this patch. Neither `AppleIOPSDIO.kext`
+nor `IOSlaveProcessor.kext` contain the string `"ConfigurationOffset"` —
+a third, not-yet-extracted kext (a generic IOP firmware loader, likely
+the concrete class backing `IOSlaveFirmware`/`IOSlaveCPU`) must do it.
+Finding it and checking what it actually writes at those two offsets —
+and whether that includes or points to the real SDHC base address — is
+now the single most direct remaining step.
+
 A lower-priority lead, not yet connected to any of the above: the task
 table's fourth, highest-priority entry, `"iop"` (`0xafc`), is a dispatcher
 for commands the host sends on a *separate* "iop control" channel. Its

@@ -169,6 +169,30 @@ f sym.task_iop_control @ 0xafc
 # hardware), or (b) real init happens in an earlier IOP boot stage not
 # extracted (before this ~0x1b000-byte blob even starts running).
 
+# BREAKTHROUGH (2026-10-16): configuration-injection mechanism found and
+# CONFIRMED (not hypothesized). The wrapper kext (iop_firmware.bin, NOT
+# this raw payload) has real code in its __text, with a {key_str_ptr,
+# value_ptr} table at 0x804801b4 feeding an OSDictionary of properties:
+# ConfigurationOffset=0xf0a0, HeapBaseOffset=0xf0a4, HeapSizeOffset=
+# 0xa000, HeapRequired=-1, PageTableBase=-1 (no MMU), PageTableSize=8,
+# MessageChannelSize=0x1a460. These are OFFSETS INTO THIS FIRMWARE IMAGE.
+# Checked directly: fwFirmwareImage.bin[0xf0a0] and [0xf0a4] (this file,
+# right here) both read 0xffffffff -- the same "-1 = unset" sentinel seen
+# everywhere else in this firmware for an unconfigured field. This
+# CONFIRMS the host-side loader patches these exact locations before
+# releasing the IOP from reset -- the configuration-injection mechanism
+# that was missing from every other lead (host message content, generic
+# queue creation, task creation, scheduler): none of those ever write
+# anything real because the real write happens BEFORE any of that code
+# runs, as part of firmware loading itself.
+#
+# NOT YET FOUND: which kext performs this patch. Neither AppleIOPSDIO nor
+# IOSlaveProcessor contain the string "ConfigurationOffset" -- a third,
+# not-yet-extracted kext (a generic IOP firmware loader, likely backing
+# IOSlaveFirmware/IOSlaveCPU concretely) must do it. Finding it and
+# checking what it writes at fwFirmwareImage+0xf0a0/+0xf0a4 is now the
+# single most direct remaining step.
+
 # LOWER-PRIORITY LEAD: iop_control_task (0xafc, priority 0 in the static
 # task table at 0xe848) is a dispatcher for HOST-sent commands on a
 # SEPARATE "iop control" channel (not "sdio message"). Its "inst" (install)

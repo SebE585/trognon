@@ -247,6 +247,55 @@ the original real-hardware observation that every SDHC register reads
 blob even starts running, in an earlier IOP boot stage that has not been
 extracted.
 
+### BREAKTHROUGH (2026-10-16): the configuration-injection mechanism, found and confirmed
+
+A reviewer pointed at a lead from the original architecture report that
+had not been followed up: the wrapper kext (`IOP_s5l8920x_firmware`,
+`iop_firmware.bin` — distinct from the raw `fwFirmwareImage.bin` payload)
+carries a property dictionary with keys `ConfigurationOffset`,
+`HeapBaseOffset`, `HeapSizeOffset`, `HeapRequired`, `PageTableBase`,
+`PageTableSize`, `MessageChannelSize`, `PanicString`, `PanicFunction`,
+`PanicLog...`, found earlier but never opened.
+
+Disassembled the wrapper's own `__text` (it has real code, not just
+metadata): a clean array of `{key_string_ptr, value_location_ptr}` pairs
+at `0x804801b4` onward, each value pointer landing inside the wrapper's
+own `__data` section. Read the actual stored values directly:
+
+| Key | Value |
+|---|---|
+| `ConfigurationOffset` | `0xf0a0` |
+| `HeapBaseOffset` | `0xf0a4` |
+| `HeapSizeOffset` | `0xa000` |
+| `HeapRequired` | `0xffffffff` (not required) |
+| `PageTableBase` | `0xffffffff` (no MMU on this IOP) |
+| `PageTableSize` | `8` |
+| `MessageChannelSize` | `0x1a460` |
+
+**These are offsets *into the raw firmware image* (`fwFirmwareImage.bin`),
+not addresses in some other space.** Checked directly: at file offset
+`0xf0a0` (`ConfigurationOffset`) and `0xf0a4` (`HeapBaseOffset`), the raw
+firmware image holds `0xffffffff` at both — exactly the "-1 = not yet
+configured" sentinel pattern seen everywhere else in this firmware for an
+unset field.
+
+**This confirms, not just hypothesizes, that the host-side loader patches
+specific, fixed locations inside the firmware image before releasing the
+IOP from reset.** This is the configuration-injection mechanism that was
+missing from every other lead chased so far (host message content,
+generic queue creation, task creation, the scheduler) — none of those
+ever write anything real, because the real write happens *before any of
+that code runs*, as part of loading the firmware itself.
+
+**Not yet found**: which kext actually performs this patch. Neither
+`AppleIOPSDIO.kext` nor `IOSlaveProcessor.kext` contain the string
+`"ConfigurationOffset"` anywhere — so a third kext (a generic IOP
+firmware-loader, likely the concrete subclass backing `IOSlaveFirmware`/
+`IOSlaveCPU`) exists and has not been extracted yet. Finding and opening
+it — to see what it actually writes at `fwFirmwareImage+0xf0a0` and
+`+0xf0a4`, and whether that includes or points to the real SDHC base
+address — is now the single most direct remaining step.
+
 ### Lower-priority lead (2026-10-16): the "iop control" master task's "install" command
 
 The `"iop"` task (`0xafc`, priority 0) is a dispatcher for commands the
