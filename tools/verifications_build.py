@@ -120,6 +120,12 @@ def row_md(r):
         r["bundle"], REPO, r["bundle"], r["kind"], r["result"], (r.get("commit") or "-")[:10], where, r["by"], text)
 
 
+def audit_draft():
+    return ["```yaml", "- bundle: <bundle folder name>", "  kind: claim-audit", "  date: <YYYY-MM-DD>", "  by: <your GitHub handle>",
+            "  claim: <the claim, quoted exactly>", "  page: <URL of the page that makes it>", "  result: <match | mismatch | inconclusive>",
+            "  notes: <the operations you did, what the bundle shows, what it does not>", "```"]
+
+
 def audit_example(rows):
     """The first claim-audit row of the data, as a model; a fixed template when there is none yet."""
     ex = next((r for r in rows if r.get("kind") == "claim-audit"), None)
@@ -159,8 +165,11 @@ def render(rows, all_bundles, recorded_commit):
              "It prints one row. A different compiler can produce different bytes: if yours does, that is exactly the result to submit.", "",
              "### Audit a claim", "",
              "You need a browser and a text editor, no compiler. Pick one DEVICE claim of the [hardware map](03-hardware-map.md), quote it exactly, open the bundle "
-             "it cites, and say whether the bundle shows what the claim says, no less and no more. Write the row by hand, on this model "
-             "(`match`, `mismatch` or `inconclusive`; `by` is your GitHub handle):", ""] + audit_example(rows) + [
+             "it cites, and say whether the bundle shows what the claim says, no less and no more. The payload source is one link away: "
+             "`https://github.com/SebE585/trognon/blob/<commit from manifest.json>/tools/payloads/<file>`. Write the row by hand.", "",
+             "**A draft to fill in.** Replace every `<...>`; `inconclusive` is a normal result when the bundle does not settle the claim.", ""] + audit_draft() + [
+             "", "**A real example, as an illustration.** One row from the maintainer, with the checks that person actually did "
+             "(read the files, read the source at the commit, rebuilt the payload). Do not copy its identity or its operations: describe your own.", ""] + audit_example(rows) + [
              "", "### What a bundle shows, and what it does not", "",
              "- **Results, not inputs.** `manifest.json`, `screen.txt` and `vars.txt` record what the phone reported. The parameters of the experiment (an address, "
              "a register, a value) are in the **payload source** at the commit the manifest names; rebuild the payload to be sure it is the same binary.",

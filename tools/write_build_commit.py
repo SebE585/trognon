@@ -15,7 +15,7 @@ def main() -> int:
     try:
         commit = subprocess.check_output(['git', '-C', str(REPO), 'rev-parse', '--short', 'HEAD'],
                                           text=True).strip()
-        dirty = bool(subprocess.check_output(['git', '-C', str(REPO), 'status', '--porcelain'], text=True).strip())
+        dirty = bool(subprocess.check_output(['git', '-C', str(REPO), 'status', '--porcelain', '--', '.', ':(exclude)docs/snippets/build-commit.en.md', ':(exclude)docs/snippets/build-commit.fr.md'], text=True).strip())
     except subprocess.CalledProcessError as e:
         print(f"write_build_commit: git failed: {e}", file=sys.stderr)
         return 1

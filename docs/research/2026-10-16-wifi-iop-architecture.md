@@ -241,7 +241,7 @@ After three clean, carefully isolated negatives from direct register
 experiments (two clock-gate hypotheses, a full SDHC-style init sequence,
 and a raw write-then-readback test that showed the write never landed;
 see the 2026-10-15/16 journal), a summary of the investigation was given
-to another LLM for review. Three corrections came back, all valid — kept
+to an external reviewer for a second opinion. Three corrections came back, all valid — kept
 here as the turning point they were, not as something to re-litigate:
 
 1. A zero readback does not by itself prove a write was ignored — an

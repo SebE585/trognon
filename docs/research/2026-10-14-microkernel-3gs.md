@@ -1,8 +1,9 @@
 # Micro noyau + driver tactile sur iPhone 3GS (S5L8920) : étude de faisabilité
 
-Research date: 2026-10-14. Étude menée par un autre LLM à partir d'un prompt
-construit pour cette session (web uniquement ; rien revérifié sur le matériel
-pendant cette recherche. Seuls le dump ROM et le passage en Recovery via
+Research date: 2026-10-14. Étude externe, à partir d'un cahier des charges
+rédigé pour cette session (web uniquement ; rien revérifié sur le matériel
+pendant cette recherche : ses affirmations restent des pistes non vérifiées,
+à lire comme HYPOTHESIS tant qu'une autre note ne les confirme pas. Seuls le dump ROM et le passage en Recovery via
 `boot_ibss()`, déjà faits et documentés dans [`docs/en/01-boot-chain.md`](../en/01-boot-chain.md),
 sont pris comme acquis).
 

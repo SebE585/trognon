@@ -16,6 +16,7 @@ def _git(*args):
 
 def on_config(config):
     config.extra["build_commit"] = _git("rev-parse", "--short", "HEAD") or "unknown"
-    config.extra["build_dirty"] = bool(_git("status", "--porcelain"))
+    # the build-commit snippets are rewritten by the build itself: they must not make the tree look modified
+    config.extra["build_dirty"] = bool(_git("status", "--porcelain", "--", ".", ":(exclude)docs/snippets/build-commit.en.md", ":(exclude)docs/snippets/build-commit.fr.md"))
     config.extra["build_date"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
     return config

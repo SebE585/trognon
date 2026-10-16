@@ -435,11 +435,11 @@ boucler indéfiniment. C'est une propriété de sécurité utile pour un premier
 essai : on ne risque pas de laisser l'appareil pendu si le retour marche
 comme pour les deux autres handlers.
 
-### Pré-étude NotebookLM, 2026-10-14 (nuit) : confirme sans ajouter d'info nouvelle
+### Pré-étude par relecture externe, 2026-10-14 (nuit) : confirme sans ajouter d'info nouvelle
 
-Corpus déposé dans NotebookLM : toute la doc `docs/` + les notes de
+Corpus soumis au relecteur : toute la doc `docs/` + les notes de
 travail du projet (non publiées) + les sources `dfuexec.py`/`recovery.py`/`image3.py`
-d'ipwndfu (bundle à plat, non versionné). Réponse : elle confirme qu'elle n'a
+d'ipwndfu (bundle à plat, non versionné). Réponse : le relecteur confirme qu'il n'a
 **pas** le dispatcher de commandes dans son corpus (normal, on ne l'a
 pas trouvé nous-mêmes, donc on ne pouvait pas le lui fournir), ne
 fabrique rien pour combler le vide, et reformule correctement les deux
@@ -447,7 +447,7 @@ points déjà établis plus haut (convention d'appel cohérente par
 analogie avec les deux handlers déjà désassemblés ; risque
 seulement si le programme touche MMU/caches/pile/horloges/IRQ avant de
 retourner). Un point confirmé en creux : **R0-R3 à l'entrée du
-handler ne sont pas documentés** (ni par nous, ni par elle). Notre
+handler ne sont pas documentés** (ni par nous, ni par lui). Notre
 futur payload de test ne doit pas en dépendre.
 
 ### Primitive de lecture existante trouvée : `getenv`
