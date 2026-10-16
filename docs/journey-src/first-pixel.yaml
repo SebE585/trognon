@@ -183,6 +183,11 @@ nodes:
       not run), then a first check packet, to which a first reply byte of `0xD0` would mean the controller is in its loader.
     grimoire: [AppleMultitouchSPI, AppleS5L8900X, AppleD1755]
     notebook: [MT-CHECK-001, MT-BOOT-002, MT-BOOT-Q1]
+    corrections:
+      - date: "2026-10-16"
+        was: "A write to the device tree's clock gate 0x16 made the SPI block readable."
+        now: "Withdrawn: the block reads the same with no gate write, and its physical gate, 0x0A, was already on."
+        ref: { label: "Which clock-gate numbers are physical", page: research/2026-10-16-touch-n88-preconditions.md#correction-which-clock-gate-numbers-are-physical }
     evidence: [20261016T190939Z-trace_spi1_selftest, 20261016T173946Z-trace_touch_ldo, 20261016T174843Z-trace_spi1_nogate]
     refs:
       - { label: "Hardware map: touch controller", page: en/03-hardware-map.md#touch-controller }
@@ -206,6 +211,15 @@ nodes:
       blocks are clocked before anything is started.
     grimoire: [AppleARM7M, EmbeddedIOP, IOP_s5l8920x_firmware]
     notebook: [EMBIOP-SEQ-001, EMBIOP-SEQ-Q1, ARM7M-STARTCPU-Q4]
+    corrections:
+      - date: "2026-10-16"
+        was: "Gate 0x27 read 0xF, so the coprocessor's clock was already on."
+        now: "Withdrawn: gate 0x27 is the NAND controller 1's, not the coprocessor's. The coprocessor's clock state is unknown."
+        ref: { label: "The iBSS clock initialisation", page: research/2026-10-16-touch-n88-preconditions.md#the-ibss-clock-initialisation-static-2026-10-16 }
+      - date: "2026-10-16"
+        was: "Enabling the device tree's gate 0x10 alone did not make the SDIO block answer."
+        now: "Caveat: the device tree's gate numbers are not physical indexes, so that run may not have enabled the block's clock."
+        ref: { label: "Hardware map: Wi-Fi and SDIO", page: en/03-hardware-map.md#wi-fi-and-sdio }
     evidence: [20261015T174633Z-trace_wifi_reset, 20261016T043007Z-trace_write_test]
     refs:
       - { label: "Hardware map: Wi-Fi and SDIO", page: en/03-hardware-map.md#wi-fi-and-sdio }

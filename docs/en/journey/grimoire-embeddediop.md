@@ -15,7 +15,7 @@ You are exploring: [A 3GS in a drawer](start.md) → [The Grimoire](grimoire.md)
 
 The kernel extension that prepares the coprocessor's image and starts it.
 
-Each entry is a function or a table read in the decompiled binary. It records what was read, with its status; no Apple code is stored here.
+Each entry is a function or a table read in the decompiled binary. It records what was read, with its status; no Apple code is stored here. The notes themselves are written in English.
 
 ## EmbeddedIOP start-up path: _prepareFirmwareImage, start-IOP, start() middle, address translator
 

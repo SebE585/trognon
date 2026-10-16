@@ -22,18 +22,63 @@ Nothing here is Apple's code: an entry records addresses, constants, structure a
 marked *device disassembly verified* was read in the code; it has not necessarily been seen working on the phone, and
 the open questions say what proof is missing.
 
+## Map of what we know
+
+One tile per entry. The colour is the review state; the number is how many questions remain open on it.
+
+Legend: green, reviewed; amber, partly reviewed; grey, not reviewed.
+
+<div class="kmap" markdown="1">
+
+**AppleARM7M** · 5 entries · 11 claims · 17 open questions
+
+[1](grimoire-applearm7m.md){ .kmap-tile .kmap-complete title="addr&#95;adjust&#95;by&#95;version (working name, not Apple's)" } [0](grimoire-applearm7m.md){ .kmap-tile .kmap-complete title="AppleARM7M metaclass constructor" } [3](grimoire-applearm7m.md){ .kmap-tile .kmap-partial title="AppleARM7M::start(IOService&#42;)" } [11](grimoire-applearm7m.md){ .kmap-tile .kmap-complete title="AppleARM7M::startCPU(IOSlaveFirmware&#42;)" } [2](grimoire-applearm7m.md){ .kmap-tile .kmap-complete title="vic&#95;write&#95;0x18 (working name, not Apple's)" }
+
+**AppleD1755** · 5 entries · 10 claims · 11 open questions
+
+[2](grimoire-appled1755.md){ .kmap-tile .kmap-partial title="GPIO function apply (default configuration and set)" } [1](grimoire-appled1755.md){ .kmap-tile .kmap-partial title="GPIO masked update (register 0x50+pin and per-pin 3-bit fields at 0x59..0x5b)" } [3](grimoire-appled1755.md){ .kmap-tile .kmap-complete title="setGPIOFunction (the driver's own message says '&#95;setGPIOFunction')" } [2](grimoire-appled1755.md){ .kmap-tile .kmap-complete title="LDO function initialiser (applies the descriptor once)" } [3](grimoire-appled1755.md){ .kmap-tile .kmap-complete title="setLDO (working name; the driver's own log text says '&#95;setLDO')" }
+
+**AppleMultitouchSPI** · 2 entries · 4 claims · 5 open questions
+
+[2](grimoire-applemultitouchspi.md){ .kmap-tile .kmap-partial title="AppleMultitouchSPI::bootloadTimerFiredHandler()" } [3](grimoire-applemultitouchspi.md){ .kmap-tile .kmap-complete title="bootloader check (CHECK packet)" }
+
+**AppleS5L8900X** · 8 entries · 21 claims · 17 open questions
+
+[2](grimoire-apples5l8900x.md){ .kmap-tile .kmap-partial title="AppleS5L8900XClockController::start and its clock-gate function plumbing" } [3](grimoire-apples5l8900x.md){ .kmap-tile .kmap-partial title="SoC GPIO function apply (set, get and default application)" } [2](grimoire-apples5l8900x.md){ .kmap-tile .kmap-complete title="SPI device configuration (builds SETUP, CLKDIVIDER and the delay fields from a setting)" } [2](grimoire-apples5l8900x.md){ .kmap-tile .kmap-complete title="SPI interrupt service (FIFO drain and refill) and transfer finish" } [1](grimoire-apples5l8900x.md){ .kmap-tile .kmap-complete title="SPI register helpers (PIN chip-select bit, STATUS FIFO fields, register read and write)" } [3](grimoire-apples5l8900x.md){ .kmap-tile .kmap-complete title="AppleS5L8900XSPIController::start(IOService&#42;)" } [2](grimoire-apples5l8900x.md){ .kmap-tile .kmap-partial title="SPI transfer start (head: register programming)" } [2](grimoire-apples5l8900x.md){ .kmap-tile .kmap-complete title="SPI per-device setting validation (working name)" }
+
+**EmbeddedIOP** · 2 entries · 7 claims · 9 open questions
+
+[7](grimoire-embeddediop.md){ .kmap-tile .kmap-partial title="EmbeddedIOP start-up path: &#95;prepareFirmwareImage, start-IOP, start() middle, address translator" } [2](grimoire-embeddediop.md){ .kmap-tile .kmap-none title="EmbeddedIOP: survey by strings (no function read yet)" }
+
+**IOP_s5l8920x_firmware** · 2 entries · 3 claims · 4 open questions
+
+[1](grimoire-iop_s5l8920x_firmware.md){ .kmap-tile .kmap-partial title="IOP&#95;s5l8920x&#95;firmware class registration (metaclass constructor, allocator, instance constructor head)" } [3](grimoire-iop_s5l8920x_firmware.md){ .kmap-tile .kmap-complete title="firmware&#95;memory&#95;descriptor&#95;getter (working name, not Apple's)" }
+
+**IOSlaveProcessor** · 3 entries · 7 claims · 6 open questions
+
+[3](grimoire-ioslaveprocessor.md){ .kmap-tile .kmap-partial title="class tables survey (pointer tables, destructor sizes, metaclass arguments)" } [1](grimoire-ioslaveprocessor.md){ .kmap-tile .kmap-complete title="field&#95;0x58&#95;getter (working name, not Apple's)" } [2](grimoire-ioslaveprocessor.md){ .kmap-tile .kmap-complete title="module init (OSMetaClass registration loop)" }
+
+**iBSS_n88ap_4.3.5** · 3 entries · 11 claims · 8 open questions
+
+[2](grimoire-ibss_n88ap_435.md){ .kmap-tile .kmap-complete title="iBSS clock-gate initialisation (set&#95;gates(mask, on) at 0x8400dd04 and its wrapper)" } [4](grimoire-ibss_n88ap_435.md){ .kmap-tile .kmap-complete title="iBSS gpio&#95;configure(pin id, mode) and its per-pad default table" } [2](grimoire-ibss_n88ap_435.md){ .kmap-tile .kmap-none title="iBSS peripheral tables (SPI, I2C0, platform pin list): data read, no code" }
+
+</div>
+
+30 entries, 74 claims, 77 open questions.
+
+
 ## Where to next?
 
 <div class="journey-choices" markdown>
 
-- [AppleARM7M (5 entries)](grimoire-applearm7m.md)
-- [AppleD1755 (5 entries)](grimoire-appled1755.md)
-- [AppleMultitouchSPI (2 entries)](grimoire-applemultitouchspi.md)
-- [AppleS5L8900X (8 entries)](grimoire-apples5l8900x.md)
-- [EmbeddedIOP (2 entries)](grimoire-embeddediop.md)
-- [IOP_s5l8920x_firmware (2 entries)](grimoire-iop_s5l8920x_firmware.md)
-- [IOSlaveProcessor (3 entries)](grimoire-ioslaveprocessor.md)
-- [iBSS_n88ap_4.3.5 (3 entries)](grimoire-ibss_n88ap_435.md)
+- [AppleARM7M (5)](grimoire-applearm7m.md)
+- [AppleD1755 (5)](grimoire-appled1755.md)
+- [AppleMultitouchSPI (2)](grimoire-applemultitouchspi.md)
+- [AppleS5L8900X (8)](grimoire-apples5l8900x.md)
+- [EmbeddedIOP (2)](grimoire-embeddediop.md)
+- [IOP_s5l8920x_firmware (2)](grimoire-iop_s5l8920x_firmware.md)
+- [IOSlaveProcessor (3)](grimoire-ioslaveprocessor.md)
+- [iBSS_n88ap_4.3.5 (3)](grimoire-ibss_n88ap_435.md)
 - [Go back to the drawer<span class="journey-hint">Return to the start of the path</span>](start.md)
 
 </div>

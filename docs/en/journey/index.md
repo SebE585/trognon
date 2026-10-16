@@ -9,7 +9,7 @@ hide:
 
 # From a powered-off phone to the first pixel
 
-A guided path through what Trognon has observed on a real iPhone 3GS. Two or three choices at each step, an honest statement of how sure we are, and at the end the places where our knowledge stops. If you already know what you want, go straight to the [reference manual](../README.md) or the [search](../../research/index.md).
+A guided path through what Trognon has observed on a real iPhone 3GS. Two or three choices at each step, an honest statement of how sure we are, and at the end the places where our knowledge stops. If you already know what you want, go straight to the [reference manual](../README.md) or the [research notes](../../research/index.md).
 
 [Start the journey](start.md){ .md-button .md-button--primary }
 

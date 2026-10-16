@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 224" role="img" font-family="system-ui, sans-serif" font-size="11">
+<rect x="30" y="12" width="96" height="190" rx="14" fill="#f8f8f4" stroke="#202522" stroke-width="2"/>
+<rect x="40" y="36" width="76" height="132" rx="3" fill="#111613"/>
+<circle cx="78" cy="185" r="7" fill="none" stroke="#202522" stroke-width="1.5"/>
+<rect x="50" y="86" width="56" height="40" rx="3" fill="none" stroke="#8fcfa3" stroke-width="1.5" stroke-dasharray="4 3" opacity=".7"/>
+<text x="78" y="110" text-anchor="middle" fill="#8fcfa3" opacity=".7">RAM</text>
+</svg>

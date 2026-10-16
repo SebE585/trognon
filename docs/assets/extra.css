@@ -164,3 +164,31 @@
 .md-typeset details.journey-more > summary, .md-typeset details.journey-notebook > summary { background-color: transparent; }
 .md-typeset details.journey-more > summary::before, .md-typeset details.journey-notebook > summary::before,
 .md-typeset details.journey-more > summary::after, .md-typeset details.journey-notebook > summary::after { background-color: var(--md-accent-fg-color); }
+
+/* Journey: margin annotations on the notebook notes */
+.journey-annot { float: right; margin-left: .8rem; font-size: .62rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 0 .5em; border-radius: 3px; border: 1px solid currentColor; }
+.journey-annot-read { color: var(--md-default-fg-color--light); }
+.journey-annot-open { color: #8a6410; }
+.journey-annot-hyp { color: #a23220; }
+.journey-annot-corr { color: #1d4870; }
+[data-md-color-scheme="slate"] .journey-annot-open { color: #e0b650; }
+[data-md-color-scheme="slate"] .journey-annot-hyp { color: #f09a8c; }
+[data-md-color-scheme="slate"] .journey-annot-corr { color: #8ab4e0; }
+
+/* Journey: side panel (enhanced by javascripts/journey.js); the inline block is hidden once the panel exists */
+.journey-js details.journey-notebook { display: none; }
+.journey-panel-toggle { position: fixed; right: 0; top: 42%; z-index: 4; writing-mode: vertical-rl; padding: .9rem .45rem; border: 0; border-radius: 6px 0 0 6px; background: var(--md-accent-fg-color); color: var(--tr-btn-fg); font: inherit; font-weight: 600; cursor: pointer; }
+.journey-panel { position: fixed; top: 0; right: 0; z-index: 6; width: min(26rem, 100vw); height: 100vh; overflow-y: auto; background: var(--md-default-bg-color); border-left: 1px solid var(--md-default-fg-color--lightest); box-shadow: -6px 0 24px rgba(0,0,0,.18); transform: translateX(105%); transition: transform .2s ease; visibility: hidden; }
+.journey-panel.open { transform: translateX(0); visibility: visible; }
+.journey-panel__head { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: .7rem 1rem; background: var(--md-default-bg-color); border-bottom: 1px solid var(--md-default-fg-color--lightest); }
+.journey-panel__close { border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; background: var(--tr-surface); color: var(--md-default-fg-color); font: inherit; padding: .35rem .8rem; cursor: pointer; }
+.journey-panel__body { padding: .5rem 1rem 2rem; font-size: .76rem; }
+@media (max-width: 44rem) { .journey-panel { width: 100vw; } .journey-panel-toggle { top: auto; bottom: 1rem; right: 1rem; writing-mode: horizontal-tb; border-radius: 6px; padding: .6rem 1rem; } }
+@media (prefers-reduced-motion: reduce) { .journey-panel { transition: none; } }
+
+/* Journey: map of what we know (one tile per catalog entry) */
+.kmap { margin: 1rem 0; }
+.md-typeset .kmap-tile { display: inline-block; min-width: 1.9rem; margin: 0 .25rem .25rem 0; padding: .1rem .35rem; text-align: center; font-weight: 700; border-radius: 4px; color: #fff; text-decoration: none; }
+.md-typeset .kmap-complete { background: #356548; }
+.md-typeset .kmap-partial { background: #b07a1a; }
+.md-typeset .kmap-none { background: #6b7068; }

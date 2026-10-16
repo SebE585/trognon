@@ -15,7 +15,7 @@ You are exploring: [A 3GS in a drawer](start.md) → [The Grimoire](grimoire.md)
 
 The phone's boot stage, decrypted on the device: its peripheral tables, GPIO set-up and clock set-up.
 
-Each entry is a function or a table read in the decompiled binary. It records what was read, with its status; no Apple code is stored here.
+Each entry is a function or a table read in the decompiled binary. It records what was read, with its status; no Apple code is stored here. The notes themselves are written in English.
 
 ## iBSS clock-gate initialisation (set_gates(mask, on) at 0x8400dd04 and its wrapper)
 

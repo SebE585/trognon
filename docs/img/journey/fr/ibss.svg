@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 224" role="img" font-family="system-ui, sans-serif" font-size="11">
+<rect x="30" y="12" width="96" height="190" rx="14" fill="#f8f8f4" stroke="#202522" stroke-width="2"/>
+<rect x="40" y="36" width="76" height="132" rx="3" fill="#111613"/>
+<circle cx="78" cy="185" r="7" fill="none" stroke="#202522" stroke-width="1.5"/>
+<path d="M78 202 V214 H340 V152" fill="none" stroke="#356548" stroke-width="3"/>
+<rect x="290" y="70" width="100" height="82" rx="6" fill="#f8f8f4" stroke="#202522" stroke-width="2"/>
+<text x="340" y="116" text-anchor="middle" fill="#202522">Hôte</text>
+<polygon points="150,206 166,199 166,213" fill="#356548"/>
+<text x="176" y="203" fill="#202522">étape de démarrage</text>
+</svg>

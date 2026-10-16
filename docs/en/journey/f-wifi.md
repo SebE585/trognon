@@ -44,30 +44,44 @@ blocks are clocked before anything is started.
 
 </div>
 
-<details class="journey-notebook" markdown="1">
-<summary>Notebook: how we looked for the answer (3 notes)</summary>
+<details class="journey-notebook" markdown="1" data-label="Notebook" data-back="Back to the scene">
+<summary>Notebook: how we looked for the answer (5 notes)</summary>
 
-**Note 1 · EmbeddedIOP start-up path: _prepareFirmwareImage, start-IOP, start() middle, address translator** *(read in the code, not seen running on the phone)*
+<span class="journey-annot journey-annot-read">Read</span>**Note 001 · EmbeddedIOP start-up path: _prepareFirmwareImage, start-IOP, start() middle, address translator** *(read in the code, not seen running on the phone)*
 
 _prepareFirmwareImage stores at this+0xcc the result of casting to IOSlaveFirmware the service found with waitForService(nameMatching(name)), where name is the string property IOPFirmwareName of the driver (REQUIRE sites for source lines 297 and 299).
 
-Source: `EmbeddedIOP` (fingerprint `f7b66532a429`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/EmbeddedIOP/start_sequence.yaml)
+Source: `EmbeddedIOP` · analysed 2026-10-16 · fingerprint `f7b66532a429` · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/EmbeddedIOP/start_sequence.yaml)
 
-**Note 2 · EmbeddedIOP start-up path: _prepareFirmwareImage, start-IOP, start() middle, address translator** *(Open question)*
+<span class="journey-annot journey-annot-open">Open question</span>**Note 002 · EmbeddedIOP start-up path: _prepareFirmwareImage, start-IOP, start() middle, address translator**
 
 Meaning of the object-slot calls used throughout: slot +0x50 and +0x4c of the objects returned by allocateVisibleMemory (used here as an address getter and as 'inner descriptor'), +0x98 on a descriptor (physical-segment getter by its use: its result is passed to the provider slot +0x35c), +0x5c on the firmware descrip…
 
 *What would settle it:* read the slots in the kernelcache classes (IOMemoryDescriptor, IOBufferMemoryDescriptor) and EmbeddedIOP's own table
 
-Source: `EmbeddedIOP` (fingerprint `f7b66532a429`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/EmbeddedIOP/start_sequence.yaml)
+Source: `EmbeddedIOP` · analysed 2026-10-16 · fingerprint `f7b66532a429` · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/EmbeddedIOP/start_sequence.yaml)
 
-**Note 3 · AppleARM7M::startCPU(IOSlaveFirmware*)** *(Open question)*
+<span class="journey-annot journey-annot-open">Open question</span>**Note 003 · AppleARM7M::startCPU(IOSlaveFirmware*)**
 
 Indirect call at 0x80713686, firmware-object vtable slot +0x34c (arg: the IOSlaveFirmware).
 
 *What would settle it:* EMBIOP-SEQ-Q5
 
-Source: `AppleARM7M` (fingerprint `f286d9fb9b05`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleARM7M/startCPU.yaml)
+Source: `AppleARM7M` · analysed 2026-10-16 · fingerprint `f286d9fb9b05` · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleARM7M/startCPU.yaml)
+
+**Corrections**
+
+<span class="journey-annot journey-annot-corr">Correction</span>**Correction, 2026-10-16**
+
+~~Gate 0x27 read 0xF, so the coprocessor's clock was already on.~~
+
+Withdrawn: gate 0x27 is the NAND controller 1's, not the coprocessor's. The coprocessor's clock state is unknown. [The iBSS clock initialisation](../../research/2026-10-16-touch-n88-preconditions.md#the-ibss-clock-initialisation-static-2026-10-16)
+
+<span class="journey-annot journey-annot-corr">Correction</span>**Correction, 2026-10-16**
+
+~~Enabling the device tree's gate 0x10 alone did not make the SDIO block answer.~~
+
+Caveat: the device tree's gate numbers are not physical indexes, so that run may not have enabled the block's clock. [Hardware map: Wi-Fi and SDIO](../../en/03-hardware-map.md#wi-fi-and-sdio)
 
 </details>
 

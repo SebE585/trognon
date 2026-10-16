@@ -15,7 +15,7 @@ You are exploring: [A 3GS in a drawer](start.md) → [The Grimoire](grimoire.md)
 
 The kernel extension that starts the phone's embedded coprocessor (the IOP).
 
-Each entry is a function or a table read in the decompiled binary. It records what was read, with its status; no Apple code is stored here.
+Each entry is a function or a table read in the decompiled binary. It records what was read, with its status; no Apple code is stored here. The notes themselves are written in English.
 
 ## addr_adjust_by_version (working name, not Apple's)
 

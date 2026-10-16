@@ -15,7 +15,7 @@ You are exploring: [A 3GS in a drawer](start.md) → [The Grimoire](grimoire.md)
 
 The kernel extension that carries the coprocessor's firmware for this chip.
 
-Each entry is a function or a table read in the decompiled binary. It records what was read, with its status; no Apple code is stored here.
+Each entry is a function or a table read in the decompiled binary. It records what was read, with its status; no Apple code is stored here. The notes themselves are written in English.
 
 ## IOP_s5l8920x_firmware class registration (metaclass constructor, allocator, instance constructor head)
 

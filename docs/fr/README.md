@@ -13,6 +13,7 @@ l'iPhone 3GS, documentée jusqu'au registre, chaque affirmation étant liée à 
 
 [Comprendre le projet](01-boot-chain.md){ .md-button .md-button--primary }
 [Explorer le matériel](03-hardware-map.md){ .md-button }
+[Suivre le parcours guidé](journey/start.md){ .md-button }
 
 [English documentation](../en/README.md) · [Code source](https://github.com/SebE585/trognon)
 

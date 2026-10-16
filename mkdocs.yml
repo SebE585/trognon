@@ -34,7 +34,7 @@ theme:
     - search.highlight
     - content.code.copy
 extra_css: [assets/extra.css]
-extra_javascript: [javascripts/mermaid-palette.js]
+extra_javascript: [javascripts/mermaid-palette.js, javascripts/journey.js]
 markdown_extensions:
   - admonition
   - attr_list
@@ -70,6 +70,7 @@ nav:
       - 6. Support par puce: fr/06-chips.md
       - 7. Code modulaire: fr/07-code-layout.md
       - 8. Preuves: fr/08-evidence.md
+      - Parcours guidé: fr/journey/start.md
   - Research:
       - Index: research/index.md
       - A5/A6, 32-bit: research/2026-10-13-a5-a6-32bit.md

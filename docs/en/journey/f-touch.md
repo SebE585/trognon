@@ -44,28 +44,36 @@ not run), then a first check packet, to which a first reply byte of `0xD0` would
 
 </div>
 
-<details class="journey-notebook" markdown="1">
-<summary>Notebook: how we looked for the answer (3 notes)</summary>
+<details class="journey-notebook" markdown="1" data-label="Notebook" data-back="Back to the scene">
+<summary>Notebook: how we looked for the answer (4 notes)</summary>
 
-**Note 1 · bootloader check (CHECK packet)** *(read in the code, not seen running on the phone)*
+<span class="journey-annot journey-annot-read">Read</span>**Note 001 · bootloader check (CHECK packet)** *(read in the code, not seen running on the phone)*
 
 Builds a four-byte packet on the stack with the bytes 05 00 00 06 (offsets 0 to 3), logs "Sending CHECK packet, to see if device is in bootloader", and sends it through the SPI device object at this+0x54 with a four-byte receive buffer.
 
-Source: `AppleMultitouchSPI` (fingerprint `b3db0be99e24`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/check_packet_0x8056e4e8.yaml)
+Source: `AppleMultitouchSPI` · analysed 2026-10-16 · fingerprint `b3db0be99e24` · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/check_packet_0x8056e4e8.yaml)
 
-**Note 2 · AppleMultitouchSPI::bootloadTimerFiredHandler()** *(read in the code, not seen running on the phone)*
+<span class="journey-annot journey-annot-read">Read</span>**Note 002 · AppleMultitouchSPI::bootloadTimerFiredHandler()** *(read in the code, not seen running on the phone)*
 
 The routine at 0x8056e5d8 ("Checking if bootloaded (getting report info)") calls slot 0x3e8 with the report code 0xD3 and a four-byte buffer and returns whether the call succeeded.
 
-Source: `AppleMultitouchSPI` (fingerprint `b3db0be99e24`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/bootload_flow_0x8056e2c0.yaml)
+Source: `AppleMultitouchSPI` · analysed 2026-10-16 · fingerprint `b3db0be99e24` · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/bootload_flow_0x8056e2c0.yaml)
 
-**Note 3 · AppleMultitouchSPI::bootloadTimerFiredHandler()** *(Open question)*
+<span class="journey-annot journey-annot-open">Open question</span>**Note 003 · AppleMultitouchSPI::bootloadTimerFiredHandler()**
 
 Body of the bootload method itself (virtual slot 0x378 of the driver class, called up to three times), which sends the firmware: its packet format, its source and its size were not found; the strings 'PreconstructedBootloadPacketType' and 'A-Speed Firmware' belong to it.
 
 *What would settle it:* find slot 0x378 of the class table and read it; locate the property or file that carries the firmware
 
-Source: `AppleMultitouchSPI` (fingerprint `b3db0be99e24`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/bootload_flow_0x8056e2c0.yaml)
+Source: `AppleMultitouchSPI` · analysed 2026-10-16 · fingerprint `b3db0be99e24` · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/bootload_flow_0x8056e2c0.yaml)
+
+**Corrections**
+
+<span class="journey-annot journey-annot-corr">Correction</span>**Correction, 2026-10-16**
+
+~~A write to the device tree's clock gate 0x16 made the SPI block readable.~~
+
+Withdrawn: the block reads the same with no gate write, and its physical gate, 0x0A, was already on. [Which clock-gate numbers are physical](../../research/2026-10-16-touch-n88-preconditions.md#correction-which-clock-gate-numbers-are-physical)
 
 </details>
 
