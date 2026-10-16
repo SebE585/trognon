@@ -1,0 +1,53 @@
+{
+  "payload": "trace_touch_power.bin",
+  "sha256": "a918cd534f82211ce02f3c9a5d294dc3aa7958b838a068f148d237f05ccd46ef",
+  "bytes": 4536,
+  "soc": "s5l8920",
+  "nonce_sent": "9DC75D56",
+  "nonce_read": "9DC75D56",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "touch-power-dry-1"
+  },
+  "variables": {
+    "p11_before": "000000BE",
+    "p50_before": "00000011",
+    "gate_before": "00000000",
+    "rst_before": "00000212",
+    "cs_before": "00000212",
+    "guard_ok": "00000001",
+    "w4_ack": "00000001",
+    "w3_ack": "00000001",
+    "gate_on": "0000000F",
+    "p11_on": "000000FE",
+    "p50_on": "00000013",
+    "rst_released": "00000211",
+    "cs_released": "00000212",
+    "s_status": "00000000",
+    "s_pin": "00000003",
+    "s_setup": "00000008",
+    "s_clkdiv": "00000001",
+    "r50_ack": "00000001",
+    "r11_ack": "00000001",
+    "gate_end": "00000000",
+    "rst_end": "00000212",
+    "p11_end": "000000BE",
+    "p50_end": "00000011"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "2cfde17c27b2733b443e75d7f4d649ee2c2e7733",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T173428Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_touch_power.bin --evidence <repo>/evidence --vars p11_before,p50_before,gate_before,rst_before,cs_before,guard_ok,w4_ack,w3_ack,gate_on,p11_on,p50_on,rst_released,cs_released,s_status,s_pin,s_setup,s_clkdiv,r50_ack,r11_ack,gate_end,rst_end,p11_end,p50_end",
+  "screen_rows": 23
+}

@@ -454,6 +454,32 @@ Risks beyond those of W3 and W4: with the reset released the controller may star
 line, an interrupt this project does not read; a floating reset line could pick up noise for 15 ms; the gate and PMU states
 are restored at the end, a return to DFU resets them if the run is interrupted.
 
+## Power-up dry run done (STAGE 40, bundle `20261016T173428Z-trace_touch_power`)
+
+With the explicit go of the person holding the phone, the sequence prepared above ran (nonce confirmed) under its guard,
+with no SPI byte sent, and everything was restored:
+
+| Item | Before | During (supplies on, reset released, 35 ms in) | After restore |
+|---|---|---|---|
+| clock gate `0x16` | `0x0` | `0xF` | `0x0` |
+| PMU `0x11` / `0x50` | `0xBE` / `0x11` | `0xFE` / `0x13` | `0xBE` / `0x11` |
+| touch reset GPIO `14.01` register | `0x212` | **`0x211`** | `0x212` |
+| chip-select GPIO `13.00` register | `0x212` | `0x212` | not rechecked |
+| SPI1 STATUS / PIN / SETUP / CLKDIVIDER | `0 / 3 / 8 / 1` | `0 / 3 / 8 / 1` | n/a |
+
+All PMU writes were acknowledged and the phone was still in Recovery mode afterwards.
+
+What it shows: the whole sequence runs and is reversible; the SPI controller's idle registers do not change with the supplies on
+(as expected without a transfer); and **the reset line reads high once it is released** (register `0x211`: input, level 1,
+against `0x212` when driven low). A line that reads high after being released to an input is held up by something: a pull-up on the
+board, or the touch controller driving it. This run cannot tell which: the supplies were on, so it is not a control. What it
+does not show: that the controller is alive, powered, or out of reset (nothing was exchanged, and a pull-up would give the same
+reading), the polarity, or the unit of the driver's delay. The chip select stayed driven low throughout (it was not touched).
+
+A cheap control separates the two readings of the high level: release the reset line with **no** power applied. If it still
+reads high, there is a pull-up independent of the controller and this observation carries no information about the controller; if
+it reads low, the high level above came with the supplies, which would be a first sign of the controller itself.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values
@@ -465,7 +491,7 @@ come from the readings above; none of the write semantics was ever exercised on 
 | W2 (done, STAGE 38) | read only | `spi1` CONTROL, SETUP, STATUS, PIN, CLKDIVIDER, SPCNT, SPIDD at `0x82100000` (STAGE 37, second half) | not read | none needed | the reset state of the controller | none beyond W1 |
 | W3 (done, STAGE 39) | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (rebuilt as `(old & 0x19) | 0x02`; equal to `old | 0x02` only for this old value) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
 | W4 (done, STAGE 39) | touch LDO | PMU register `0x11`, `0xBE` to `0xFE` (set bit `0x40`), read-modify-write | `0xBE` | write `0xBE` | nothing visible alone except the read-back and possibly the controller's behaviour on SPI | powers a rail; if the index-to-rail reading is wrong, a different rail is switched |
-| W5 | reset line | SoC GPIO `14.01` released (logical 0, which the descriptor reads as level 1, or high impedance as the personality's flag suggests), then the driver's delay (`0xf`, unit unknown) | level `0` (asserted by the reading) | drive low again | a change on SPI/attention if the controller starts | the polarity rests on a code reading; the unit of the delay is unknown |
+| W5 (done in the dry run, STAGE 40) | reset line | SoC GPIO `14.01` released (logical 0, which the descriptor reads as level 1, or high impedance as the personality's flag suggests), then the driver's delay (`0xf`, unit unknown) | level `0` (asserted by the reading) | drive low again | a change on SPI/attention if the controller starts | the polarity rests on a code reading; the unit of the delay is unknown |
 | W6 | first SPI exchange | the CHECK packet `05 00 00 06` (reply first byte `0xD0` = bootloader), `spi1` registers, chip select `13.00`; if the `reg` reading above holds, word size 8 and a period of about 124 ns | n/a | n/a | any answer | requires the controller's register layout confirmed on this chip (CLKDIVIDER and PIN undecoded), the `reg` inference confirmed, and the bootloader protocol |
 
 The order that keeps the risk lowest is W1 and then W2, and stopping to read the result before
