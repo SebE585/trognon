@@ -1,0 +1,29 @@
+{
+  "payload": "trace_which_timer.bin",
+  "sha256": "1e86b53e951a4f14821fbf55fd110fc63e8a37102ba0d8e2b7499b8323fc7ef4",
+  "bytes": 3316,
+  "soc": "s5l8920",
+  "nonce_sent": "29ECC6ED",
+  "nonce_read": "29ECC6ED",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "which-timer-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "31dea319c40b03c9c52b75e7fa8bbb3c233c4c18",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T042218Z",
+  "command": "tools/run_payload.py tools/payloads/trace_which_timer.bin --wait 10 --evidence evidence",
+  "screen_rows": 23
+}

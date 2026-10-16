@@ -1,0 +1,29 @@
+{
+  "payload": "trace_gate_write.bin",
+  "sha256": "992f0ccbcfc2d09655504046440cd01c21441347eb1e124b7d2aad9b2ef4918f",
+  "bytes": 3104,
+  "soc": "s5l8920",
+  "nonce_sent": "BECF1A89",
+  "nonce_read": "BECF1A89",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "gate-write-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "31dea319c40b03c9c52b75e7fa8bbb3c233c4c18",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T042928Z",
+  "command": "tools/run_payload.py tools/payloads/trace_gate_write.bin --wait 10 --evidence evidence",
+  "screen_rows": 12
+}

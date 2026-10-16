@@ -31,6 +31,19 @@ STAGE_trace_ticks = 9
 STAGE_trace_tirq  = 10
 STAGE_trace_tirqc = 11
 STAGE_trace_buttons = 12
+STAGE_trace_nand    = 13
+STAGE_trace_nand_sweep = 14
+STAGE_trace_wifi_gpio  = 15
+STAGE_trace_wifi_reset = 16
+STAGE_trace_sdio_dump  = 17
+STAGE_trace_sdio_dump_b = 18
+STAGE_trace_sdio_cmd0  = 19
+STAGE_trace_which_timer = 20
+STAGE_trace_which_timer_b = 21
+STAGE_trace_sdio_init  = 22
+STAGE_trace_gate_write = 23
+STAGE_trace_write_test = 24
+STAGE_trace_dyn_clock16 = 25
 
 # Objects are built for one SoC. Without this stamp, `make SOC=other` would silently reuse objects built for
 # the previous chip. The stamp is rewritten only when SOC or the flags change.

@@ -1,0 +1,29 @@
+{
+  "payload": "trace_wifi_gpio.bin",
+  "sha256": "90cb25f2a566e15ce18e5efc3bd6e8a3e4c358a4f0d35b6a4b6309a843a21aad",
+  "bytes": 3064,
+  "soc": "s5l8920",
+  "nonce_sent": "CF616E1A",
+  "nonce_read": "CF616E1A",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "wifi-gpio-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "31dea319c40b03c9c52b75e7fa8bbb3c233c4c18",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261015T174417Z",
+  "command": "tools/run_payload.py tools/payloads/trace_wifi_gpio.bin --wait 10 --evidence evidence",
+  "screen_rows": 11
+}

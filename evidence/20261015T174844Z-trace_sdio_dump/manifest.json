@@ -1,0 +1,29 @@
+{
+  "payload": "trace_sdio_dump.bin",
+  "sha256": "416486c0d1e545169daa3e27e6602f6f67aca772e6d37f241723950e3811bd67",
+  "bytes": 3008,
+  "soc": "s5l8920",
+  "nonce_sent": "E0FFDB68",
+  "nonce_read": "E0FFDB68",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "sdio-dump-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "31dea319c40b03c9c52b75e7fa8bbb3c233c4c18",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261015T174844Z",
+  "command": "tools/run_payload.py tools/payloads/trace_sdio_dump.bin --wait 10 --evidence evidence",
+  "screen_rows": 24
+}

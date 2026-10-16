@@ -1,0 +1,29 @@
+{
+  "payload": "trace_nand.bin",
+  "sha256": "13a0ee0c5da61375b0fd19dca5b0965b057992f4ef20f924da4c9b1ab90ffc1f",
+  "bytes": 3276,
+  "soc": "s5l8920",
+  "nonce_sent": "30463598",
+  "nonce_read": "30463598",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "nand-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "31dea319c40b03c9c52b75e7fa8bbb3c233c4c18",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261015T171033Z",
+  "command": "tools/run_payload.py tools/payloads/trace_nand.bin --wait 10 --evidence evidence",
+  "screen_rows": 10
+}

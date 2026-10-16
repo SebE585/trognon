@@ -1,0 +1,29 @@
+{
+  "payload": "trace_write_test.bin",
+  "sha256": "35cccaa4bbf407bc43a67f9722aa934423f339d23489ae008de184379e7577f2",
+  "bytes": 3064,
+  "soc": "s5l8920",
+  "nonce_sent": "05601F7E",
+  "nonce_read": "05601F7E",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "write-test-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "31dea319c40b03c9c52b75e7fa8bbb3c233c4c18",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T043007Z",
+  "command": "tools/run_payload.py tools/payloads/trace_write_test.bin --wait 10 --evidence evidence",
+  "screen_rows": 11
+}

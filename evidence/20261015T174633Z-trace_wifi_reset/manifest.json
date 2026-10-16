@@ -1,0 +1,29 @@
+{
+  "payload": "trace_wifi_reset.bin",
+  "sha256": "1a2729229dc4f9d4566f5086620c9a98944b9c7d3667370f5326090a1e40ec75",
+  "bytes": 3088,
+  "soc": "s5l8920",
+  "nonce_sent": "5DA681C1",
+  "nonce_read": "5DA681C1",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "wifi-reset-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "31dea319c40b03c9c52b75e7fa8bbb3c233c4c18",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261015T174633Z",
+  "command": "tools/run_payload.py tools/payloads/trace_wifi_reset.bin --wait 10 --evidence evidence",
+  "screen_rows": 10
+}

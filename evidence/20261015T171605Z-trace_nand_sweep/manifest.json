@@ -1,0 +1,29 @@
+{
+  "payload": "trace_nand_sweep.bin",
+  "sha256": "9819d8f0c5e6df94a28f493cece9b581b28afdf1bfa1381b32ab44e309ff1a41",
+  "bytes": 3372,
+  "soc": "s5l8920",
+  "nonce_sent": "7C940EE3",
+  "nonce_read": "7C940EE3",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "nand-sweep-1"
+  },
+  "variables": {},
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "31dea319c40b03c9c52b75e7fa8bbb3c233c4c18",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261015T171605Z",
+  "command": "tools/run_payload.py tools/payloads/trace_nand_sweep.bin --wait 15 --evidence evidence",
+  "screen_rows": 23
+}

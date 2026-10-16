@@ -49,4 +49,35 @@
 #define SOC_TIMER_VIC0_BIT    6                             /* SOURCE: TIMER_IRQ 6, enabled by the iBSS (EN bit 6) */
 #define SOC_CLOCK_GATE_2C     0xBF100128
 
+/* NAND (H2FMI), bus 0 / CE0 only, read-only chip ID probe. SOURCE (OpeniBoot plat-s5l8920/h2fmi.c
+ * and includes/hardware/h2fmi.h), none of this read on the device yet. Offsets are relative to
+ * SOC_H2FMI0_BASE (H2FMI_REG macro in the source). Clock gate 0x26 = fmi0 (plat-s5l8920/h2fmi.c:217). */
+#define SOC_H2FMI0_BASE       0x81200000
+#define SOC_CLOCK_GATE_26     0xBF100110    /* CLOCK_GATE_BASE(0xBF100078) + 4*0x26, clock.h:29 */
+#define SOC_FMI_REG2_400      (SOC_H2FMI0_BASE + 0x400)   /* H2FMI_UNKREG2 */
+#define SOC_FMI_REG1_408      (SOC_H2FMI0_BASE + 0x408)   /* H2FMI_UNKREG1, timing cache */
+#define SOC_FMI_REG9_418      (SOC_H2FMI0_BASE + 0x418)   /* H2FMI_UNKREG9 */
+#define SOC_FMI_REG10_420     (SOC_H2FMI0_BASE + 0x420)   /* H2FMI_UNKREG10 */
+#define SOC_FMI_REG5_410      (SOC_H2FMI0_BASE + 0x410)   /* H2FMI_UNKREG5, command */
+#define SOC_FMI_REG6_444      (SOC_H2FMI0_BASE + 0x444)   /* H2FMI_UNKREG6, status/done */
+#define SOC_FMI_REG4_414      (SOC_H2FMI0_BASE + 0x414)   /* H2FMI_UNKREG4 */
+#define SOC_FMI_REG8_424      (SOC_H2FMI0_BASE + 0x424)   /* H2FMI_UNKREG8 */
+#define SOC_FMI_DATA_448      (SOC_H2FMI0_BASE + 0x448)   /* H2FMI_DATA */
+#define SOC_FMI_CHIPMASK_40C  (SOC_H2FMI0_BASE + 0x40c)   /* H2FMI_CHIP_MASK, fmi0 */
+#define SOC_FMI_REG3_814      (SOC_H2FMI0_BASE + 0x814)   /* H2FMI_UNKREG3 */
+/* CE 8-15 route their enable/disable mask to fmi1's own register (h2fmi_enable_chip()/
+ * h2fmi_disable_chip(), h2fmi.c:338-354), even while the command sequencer stays on fmi0
+ * for this sweep (h2fmi_init()'s own first call: h2fmi_reset_and_read_chipids(&fmi0, ...)
+ * loops chip 0..15, h2fmi.c:1926). Not yet read on the device. */
+#define SOC_H2FMI1_BASE       0x81300000
+#define SOC_FMI1_CHIPMASK_40C (SOC_H2FMI1_BASE + 0x40c)
+
+/* SDIO/Wi-Fi host controller. Base + size from the device's own decrypted device tree
+ * (/device-tree/arm-io/sdio, reg=0,0x1000; see docs/journal/2026-10-15.md), NOT from any
+ * OpeniBoot source (none exists for s5l8920). Internal register layout UNKNOWN: two
+ * incompatible candidates exist upstream (plat-s5l8900's simple CTRL/CMD/STATE layout vs
+ * plat-a4's SDHCI-standard BLK/CMD/RESP layout), neither confirmed for this SoC. */
+#define SOC_SDIO0_BASE        0x80000000
+#define SOC_CLOCK_GATE_10     0xBF1000B8    /* CLOCK_GATE_BASE(0xBF100078) + 4*0x10, device tree "clock-gates" */
+
 #endif
