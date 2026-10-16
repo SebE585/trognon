@@ -144,6 +144,39 @@ base ci-dessus) a été échantillonné, le bruit mesuré mains levées, puis ch
 balayage prend près de 3 minutes) a tué le point de contrôle USB ensuite ; un reset de port USB
 côté hôte (`dev.reset()`, pas besoin de DFU) l'a réveillé — voir [preuves](08-evidence.md).
 
+## Accéléromètre, adresse i2c0 `0x1d` (DEVICE, 2026-10-16)
+
+**Statut** : DEVICE, du premier coup. Tout ce qui suit vient du device tree déchiffré
+propre à cet appareil, puis d'une vraie transaction I2C bit-bang sur GPIO.
+
+**Ce qui est confirmé** : le device tree nomme un bus (`i2c0`, `compatible =
+"i2c,s5l8920x","iic,soft"` : logiciel, bit-bang, pas un contrôleur matériel dédié) avec
+SDA/SCL sur GPIO `04.01`/`04.00`, et un accéléromètre dessus (`compatible =
+"accelerometer,lis331dl","accelerometer,lis302dl"`) à l'adresse I2C `0x1d`. Une
+transaction I2C complète (START, adresse+écriture, registre `0x0F`, repeated START,
+adresse+lecture, un octet, STOP) a obtenu une vraie réponse : chaque bit d'acquittement
+est revenu à `1`, et l'octet lu était `0x3B` — exactement la valeur `WHO_AM_I` documentée
+du **LIS331DL** (la chaîne compatible LIS302DL de la même entrée du device tree aurait
+donné `0x3C` ; cet appareil est bien le LIS331DL).
+
+| Élément | Valeur | Statut |
+|---|---|---|
+| Bus | `i2c0`, SDA `04.01`, SCL `04.00` | le device tree donne le nom/les broches ; DEVICE : les deux lus au repos haut avant la transaction |
+| Adresse I2C | `0x1d` | propriété `reg` du device tree |
+| `WHO_AM_I` (registre `0x0F`) | `0x3B` | DEVICE : lecture I2C complète, les trois acquittements à `1` |
+
+**Ce qui reste hypothèse** : lire les vraies données d'axe (les trois accélérations), et
+le sens exact de la propriété `orientation` du device tree. Un compass (AKM8973S, adresse
+`0x1e`) et un second `compass1` (`0x1f`, sans propriété `interrupts`) partagent le même
+bus, device tree seul, pas encore sondés.
+
+**Comment reproduire** : `make trace_accel_i2c.bin` (voir `tools/payloads/`, STAGE 29).
+Lit d'abord le niveau de repos du bus et ne tente la transaction que s'il a l'air
+plausiblement tiré haut, pour qu'un mauvais câblage ne puisse pas ressembler à une
+réussite silencieuse.
+
+**Liens vers les preuves** : [dossier de preuve `20261016T101710Z-trace_accel_i2c`](08-evidence.md).
+
 ## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (DEVICE/HYPOTHÈSE mêlées, 2026-10-15/16)
 
 **Statut** : DEVICE/HYPOTHÈSE mêlées. Aucun code source OpeniBoot n'existe pour ce bloc sur

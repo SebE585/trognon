@@ -140,6 +140,38 @@ noise measured with hands off, then each button asked for in turn.
 close to 3 minutes) killed the USB control endpoint afterwards; a host-side USB port reset
 (`dev.reset()`, no DFU needed) revived it — see [evidence](08-evidence.md).
 
+## Accelerometer, i2c0 address `0x1d` (DEVICE, 2026-10-16)
+
+**Status**: DEVICE, first try. Everything below came from this device's own decrypted
+device tree, then a real bit-banged I2C transaction over GPIO.
+
+**What's confirmed**: the device tree names a bus (`i2c0`, `compatible = "i2c,s5l8920x",
+"iic,soft"`: software, bit-banged, not a dedicated hardware controller) with SDA/SCL on
+GPIO `04.01`/`04.00`, and an accelerometer on it (`compatible =
+"accelerometer,lis331dl","accelerometer,lis302dl"`) at I2C address `0x1d`. A full I2C
+transaction (START, address+write, register `0x0F`, repeated START, address+read, one
+byte, STOP) got a real answer: every ACK bit came back `1`, and the byte read back was
+`0x3B` — the documented `WHO_AM_I` value for the **LIS331DL** specifically (the LIS302DL
+compatible string in the same device tree entry would read `0x3C`; this device is the
+LIS331DL).
+
+| Item | Value | Status |
+|---|---|---|
+| Bus | `i2c0`, SDA `04.01`, SCL `04.00` | device tree gives the name/pins; DEVICE: both read idle-high before the transaction |
+| I2C address | `0x1d` | device tree `reg` property |
+| `WHO_AM_I` (register `0x0F`) | `0x3B` | DEVICE: full I2C read, all three ACKs `1` |
+
+**What remains hypothesis**: reading actual axis data (the three accelerations), and the
+`orientation` device-tree property's exact meaning. A compass (AKM8973S, address `0x1e`)
+and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, device tree
+only, not probed at all yet.
+
+**How to reproduce**: `make trace_accel_i2c.bin` (see `tools/payloads/`, STAGE 29). Reads
+the bus idle level first and only attempts the transaction if it looks plausibly
+pulled-up, so a mis-wired guess cannot look like a silent success.
+
+**Links to evidence**: [evidence bundle `20261016T101710Z-trace_accel_i2c`](08-evidence.md).
+
 ## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (mixed DEVICE/HYPOTHESIS, 2026-10-15/16)
 
 **Status**: mixed DEVICE/HYPOTHESIS. No OpeniBoot source exists for this block on the
