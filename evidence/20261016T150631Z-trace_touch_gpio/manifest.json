@@ -1,0 +1,35 @@
+{
+  "payload": "trace_touch_gpio.bin",
+  "sha256": "5a9f94883e7cee9187aadfe20e038e7a4861788ddab62e80c59d83e20008b5cc",
+  "bytes": 3136,
+  "soc": "s5l8920",
+  "nonce_sent": "3A997BC2",
+  "nonce_read": "3A997BC2",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "touch-gpio-1"
+  },
+  "variables": {
+    "touch_reset_raw": "00000212",
+    "touch_reset": "00000000",
+    "touch_cs_en_raw": "00000212",
+    "touch_cs_en": "00000000",
+    "bt_reset_control": "00000001"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "e41e7b2a9aa255c4964f7a056f03f7b3f3f35fc5",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T150631Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_touch_gpio.bin --evidence evidence --vars touch_reset_raw,touch_reset,touch_cs_en_raw,touch_cs_en,bt_reset_control",
+  "screen_rows": 10
+}

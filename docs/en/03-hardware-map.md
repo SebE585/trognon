@@ -16,9 +16,9 @@ inline render.
 | Timer block | Tick rate confirmed at 24 MHz | Timer interrupt not proven; IRQ-ack offsets and sequence not validated on this SoC | [Timer block](#timer-block-timer_base-0xbf100000-device-2026-10-15) |
 | NAND | Chip ID read on CE0/CE1 | CE2-CE15, bus 1, and any page access | [NAND](#nand-h2fmi0_base-0x81200000-device-2026-10-15) |
 | Buttons | All 5 buttons mapped by GPIO difference | Mapping found by observed difference, not by name | [Buttons](#buttons-same-gpio-base-as-above-device-2026-10-15) |
-| Accelerometer | Identifier read over a real I2C transaction | Exact chip model, axis data, `orientation` meaning | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
+| Accelerometer | Identifier read; powered up with a verified write; three axis bytes read once, magnitude about 1 g | Exact chip model, axis signs and physical orientation, whether values change with orientation | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
 | Wi-Fi/SDIO | Base address and GPIO lines confirmed; SDHCI layout confirmed in the IOP's own firmware | Which register window the IOP's SDHCI driver actually uses, and why CPU-side writes don't stick | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-mixed-devicehypothesis-2026-10-1516) |
-| Bluetooth | Reset/wake GPIO levels read | First UART response | [Bluetooth](#bluetooth-uart3-reset-1506-wake-1602-device-2026-10-16) |
+| Touch controller | Reset and chip-select GPIO levels read (one run) | Polarity, power and clock via the PMU, SPI transaction, any response | [Bluetooth](#bluetooth-uart3-reset-1506-wake-1602-device-2026-10-16) |
 
 **Reading the tags**: **DEVICE** means observed on this real phone (a read, or a write
 with its result read back) — never assume a DEVICE tag on one line of a section means
@@ -218,12 +218,36 @@ and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, d
 only, not probed at all yet — two device-tree nodes do not by themselves prove two separate
 physical chips.
 
+**Axis data (DEVICE, 2026-10-16, one run, phone not moved)**: `STAGE 31` powers the part up
+(first write to this device: `CTRL_REG1`), reads it back, then reads the status and the three
+axis bytes. The write landed (`CTRL_REG1` read back `0x47`: power-down bit cleared, X/Y/Z
+enabled, other bits at their reset state, the default ±2 g range assumed), every ACK flag was
+`1`, and the nonce was confirmed. Raw values: status `0xFF`, X `0x0B` (+11), Y `0xF7` (-9),
+Z `0x3A` (+58), signed 8-bit.
+
+| Item | Value | Status |
+|---|---|---|
+| `CTRL_REG1` after the write | `0x47` | DEVICE: read back, not assumed |
+| `STATUS_REG` | `0xFF` | DEVICE: all data-available and overrun bits set; not interpreted further |
+| X, Y, Z (signed counts) | +11, -9, +58 | DEVICE: one sample each |
+| Magnitude | about 59 counts | arithmetic on the three bytes |
+
+With the datasheet's nominal 18 mg per count at ±2 g (a datasheet figure, not measured here)
+that is about 1.07 g, with Z dominant: consistent with gravity on one axis, which says the
+chip is alive and the data is plausible. It does **not** say which physical face is up, the
+axis signs, or that the scale is right: one still sample cannot separate those.
+
+**Next observation**: repeat with the phone held in a different, known orientation and check
+that the dominant axis moves accordingly. Until then this is "plausible gravity vector", not
+a calibrated sensor.
+
 **How to reproduce**: build with `make trace_accel_i2c.bin` (see `tools/payloads/`, STAGE
-29), then run it on a device in DFU with `tools/go.sh tools/payloads/trace_accel_i2c.bin`.
+29), then run it on a device in DFU with `tools/go.sh tools/payloads/trace_accel_i2c.bin`. The axes
+run is `make trace_accel_axes.bin` (STAGE 31), run the same way.
 On that run it reads the bus idle level first and only attempts the transaction if it looks
 plausibly pulled-up, so a mis-wired guess cannot look like a silent success.
 
-**Links to evidence**: [evidence bundle `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), indexed on the [evidence page](08-evidence.md).
+**Links to evidence**: [evidence bundle `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c) and [`20261016T150615Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150615Z-trace_accel_axes), indexed on the [evidence page](08-evidence.md).
 
 ## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (mixed DEVICE/HYPOTHESIS, 2026-10-15/16)
 
@@ -316,6 +340,42 @@ then run it on a device in DFU with `tools/go.sh tools/payloads/trace_bt_gpio.bi
 pattern as the Wi-Fi reset/wake read (STAGE 15): plain reads, no write, no UART touched.
 
 **Links to evidence**: [evidence bundle `20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio), indexed on the [evidence page](08-evidence.md).
+
+## Touch controller, `spi1` (DEVICE for two GPIO levels, 2026-10-16)
+
+*The touch panel is read by a dedicated controller on an SPI bus.*
+
+**Status**: two pin levels read once. Nothing about the controller itself.
+
+**What's confirmed**: the device tree has `/device-tree/arm-io/spi1/multi-touch`
+(`compatible = "multi-touch,n88"`) with a reset line, a chip-select enable line, an
+interrupt, a power function and a clock-enable function (`tools/dt_dump.py`). The pin
+words use the notation of the other sections (port and pin are both hexadecimal digits of
+the word). A read-only payload read each GPIO register once, with the already-measured
+Bluetooth reset line read in the same run as a control (it read `1`, as before).
+
+| Item | Value | Status |
+|---|---|---|
+| Reset (`function-reset`) | pin word `0x1401` (14.01) | device tree gives the pin; DEVICE: register `0x00000212`, level `0` |
+| Chip-select enable (`function-enable_cs`) | pin word `0x1300` (13.00) | device tree gives the pin; DEVICE: register `0x00000212`, level `0` |
+| Control: Bluetooth reset (15.06) | register `0x00000213`, level `1` | DEVICE: same as the earlier run |
+| Power, clock enable | through the PMU (`pmu,d1755`) | device tree only, PMU never probed |
+| Attention line | interrupt `0xb4` on the GPIO interrupt controller | not read: that controller is treated as dangerous |
+
+The three registers differ only in bit 0. The meaning of the other bits (direction, function,
+data) is not established here, so no claim is made about whether these pins are inputs or are
+driven.
+
+**What remains hypothesis**: everything else. A level of `0` gives neither the polarity nor
+who drives the pin; it does not show that the controller is powered, clocked, out of reset
+or present. Power and clock sit behind the PMU, so the next preconditions to establish are
+the PMU access and the SPI controller, before any transaction.
+
+**How to reproduce**: build with `make trace_touch_gpio.bin` (see `tools/payloads/`, STAGE
+33), run it on a device in DFU with `tools/go.sh tools/payloads/trace_touch_gpio.bin`. Plain
+reads, nothing written, no SPI traffic.
+
+**Links to evidence**: [evidence bundle `20261016T150631Z-trace_touch_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150631Z-trace_touch_gpio), indexed on the [evidence page](08-evidence.md).
 
 ## Driver catalog
 

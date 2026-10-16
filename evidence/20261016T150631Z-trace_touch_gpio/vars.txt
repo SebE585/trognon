@@ -1,0 +1,5 @@
+touch_reset_raw=00000212
+touch_reset=00000000
+touch_cs_en_raw=00000212
+touch_cs_en=00000000
+bt_reset_control=00000001

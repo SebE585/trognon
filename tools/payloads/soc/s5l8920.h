@@ -145,4 +145,14 @@
 #define SOC_BT_RESET_IDX      (8 * 0x15 + 0x06)
 #define SOC_BT_WAKE_IDX       (8 * 0x16 + 0x02)
 
+/* Touch controller (DEVICE TREE, decoded 2026-10-16 with tools/dt_dump.py): node
+ * /device-tree/arm-io/spi1/multi-touch, compatible "multi-touch,n88". Pin words use the same
+ * encoding as above (high byte = port, low byte = pin, both hexadecimal): function-reset =
+ * 0x1401 -> 14.01, function-enable_cs = 0x1300 -> 13.00. Power (function-power_ldo) and the
+ * clock enable (function-clock_enable) go through the PMU, not through these GPIOs. The
+ * attention line is an interrupt (0xb4) on the GPIO interrupt controller, which this project
+ * treats as dangerous (see GPIOIC), so it is NOT read. Neither pin read on the device yet. */
+#define SOC_TOUCH_RESET_IDX   (8 * 0x14 + 0x01)
+#define SOC_TOUCH_CS_EN_IDX   (8 * 0x13 + 0x00)
+
 #endif

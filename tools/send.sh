@@ -10,6 +10,19 @@ if [ -z "${TROGNON_LIBUSB_PATH:-}" ] && [ -f /opt/homebrew/lib/libusb-1.0.dylib 
   export TROGNON_LIBUSB_PATH=/opt/homebrew/lib/libusb-1.0.dylib
 fi
 export PYTHONPATH=.
-cd "$IPWNDFU"
 shift
-exec python3 "$HERE/run_payload.py" "$PAYLOAD" "$@"
+# run_payload.py runs from the ipwndfu directory: make a relative --evidence DIR absolute first, or the
+# bundle lands inside ipwndfu (seen 2026-10-16).
+ARGS=""
+want_dir=0
+for a in "$@"; do
+  if [ "$want_dir" = 1 ]; then
+    case "$a" in /*) ;; *) a="$(pwd)/$a" ;; esac
+    want_dir=0
+  elif [ "$a" = "--evidence" ]; then
+    want_dir=1
+  fi
+  ARGS="$ARGS $(printf '%s' "$a" | sed "s/'/'\\\\''/g; s/^/'/; s/\$/'/")"
+done
+cd "$IPWNDFU"
+eval "exec python3 \"$HERE/run_payload.py\" \"$PAYLOAD\" $ARGS"

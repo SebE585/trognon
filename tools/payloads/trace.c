@@ -943,6 +943,30 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	result_hex("bt_wake", bt_wake);
 	fb_clean();
 #endif
+#if STAGE == 33
+	/* Touch controller reset (14.01) and chip-select enable (13.00), READ-ONLY. Nothing is
+	 * configured and nothing is written: each GPIO register is read once, and both the raw
+	 * word and its bit 0 are reported. The Bluetooth reset line, already read on the device
+	 * (STAGE 30: level 1), is read in the same run as a control, so a run that reads it
+	 * differently is flagged as not comparable. A level says nothing about polarity (active
+	 * high or low), nor about who drives the pin, nor that the controller works. The
+	 * attention line is an interrupt on the GPIO interrupt controller and is deliberately
+	 * not touched. */
+	at(4, 116, 0x00F0C040); puts_("STEP 33 TOUCH GPIO\n");
+	volatile u32 *gp = (volatile u32 *)SOC_GPIO_BASE;
+	u32 t_rst_raw = gp[SOC_TOUCH_RESET_IDX];
+	u32 t_cs_raw  = gp[SOC_TOUCH_CS_EN_IDX];
+	u32 bt_ctl    = gp[SOC_BT_RESET_IDX];
+	kv("RST_14.1 raw", t_rst_raw);
+	kv("CSEN_13.0 raw", t_cs_raw);
+	kv("BT_RST ctl raw", bt_ctl);
+	result_hex("touch_reset_raw", t_rst_raw);
+	result_hex("touch_reset", t_rst_raw & 1);
+	result_hex("touch_cs_en_raw", t_cs_raw);
+	result_hex("touch_cs_en", t_cs_raw & 1);
+	result_hex("bt_reset_control", bt_ctl & 1);
+	fb_clean();
+#endif
 #if STAGE == 31
 	/* Accelerometer axes: first real write to this device (CTRL_REG1, power it up and enable
 	 * X/Y/Z at +-2g/100Hz), then read the three 8-bit signed axis registers. Same safety pattern
@@ -1247,6 +1271,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "accel-axes-1", 1);
 #elif STAGE == 32
 	ENV_SET("trognon", "iop-vic-1", 1);
+#elif STAGE == 33
+	ENV_SET("trognon", "touch-gpio-1", 1);
 #elif STAGE == 5
 	ENV_SET("trognon", "regs-1", 1);
 #elif STAGE == 6
