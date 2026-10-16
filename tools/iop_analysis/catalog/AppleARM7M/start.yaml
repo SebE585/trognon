@@ -34,10 +34,13 @@ claims:
 hardware_tests:
   - name: trace_iop_regs (STAGE 26)
     claim_tested: "this+0x58 window (index 0) is mapped and readable from the main CPU"
+    execution_status: executed
     result: "all five probed offsets read 0x00000000, no data abort"
+    evidence: "evidence/20261016T093436Z-trace_iop_regs/"
   - name: trace_iop_vic (STAGE 32)
     claim_tested: "this+0x60 window (index 1) is mapped and readable from the main CPU"
-    result: "not yet run on hardware"
+    execution_status: planned
+    result: null
 
 publication:
   status: approved

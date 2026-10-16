@@ -27,8 +27,18 @@ claims:
       IOSlaveMemory (8), IOSlaveMemoryBuffer (16), IOSlaveEndpoint (56),
       IOSlaveCPU (80), IOSlaveFirmware (80), IOSlaveProcessor (104) bytes
       -- each size read as a literal loaded right before the shared
-      OSMetaClass constructor call. No loading/firmware logic found in
-      this kext's 2968 bytes of code beyond this registration pattern.
+      OSMetaClass constructor call.
+    status: device_disassembly_verified
+    evidence: "tools/iop_analysis/appleARM7M_notes.md#ioslaveprocessor-kext--tailles-exactes-des-6-classes-nouveau-2026-10-16-soir"
+  - id: IOSLAVE-INIT-002
+    text: >
+      No loading/firmware logic found within the reviewed_ranges above
+      (the init loop and the six constructor-call sites, ~230 of this
+      kext's 2968 __text bytes). This does NOT cover the kext's other
+      functions seen in the function list but not individually read
+      (0x80399848, 0x803998c0, 0x803998d8, 0x80399900 -- 120 bytes,
+      role unknown) -- the claim is bounded to what was actually read,
+      not the whole binary.
     status: device_disassembly_verified
     evidence: "tools/iop_analysis/appleARM7M_notes.md#ioslaveprocessor-kext--tailles-exactes-des-6-classes-nouveau-2026-10-16-soir"
 

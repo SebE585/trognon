@@ -3,8 +3,85 @@
   "binary_sha256": "abff4df9877f8c83a899de4f2308bca80f556478790b982d1823d39fd366a0c9",
   "date": "2026-10-16",
   "text_section_bytes": 2968,
+  "text_section_base": "0x80399000",
   "auto_recognized_bytes": 486,
   "auto_recognized_functions": 18,
-  "method": "r2 -e asm.bits=16 -qc 'aaa; aflj' IOSlaveProcessor.kext.bin, union of (addr, addr+size) ranges to avoid double-counting overlaps",
-  "note": "r2's automatic detection works much better on this binary than on AppleARM7M.kext.bin -- straightforward OSMetaClass boilerplate, no hand tracing needed."
+  "recognized_ranges": [
+    [
+      "0x80399000",
+      "0x80399018"
+    ],
+    [
+      "0x803993dc",
+      "0x803993f4"
+    ],
+    [
+      "0x8039942c",
+      "0x80399444"
+    ],
+    [
+      "0x8039947c",
+      "0x80399494"
+    ],
+    [
+      "0x803994cc",
+      "0x803994e4"
+    ],
+    [
+      "0x8039951c",
+      "0x80399534"
+    ],
+    [
+      "0x8039956c",
+      "0x80399584"
+    ],
+    [
+      "0x80399594",
+      "0x80399606"
+    ],
+    [
+      "0x80399848",
+      "0x80399856"
+    ],
+    [
+      "0x803998c0",
+      "0x803998d0"
+    ],
+    [
+      "0x803998d8",
+      "0x803998f2"
+    ],
+    [
+      "0x80399900",
+      "0x80399940"
+    ],
+    [
+      "0x80399a44",
+      "0x80399a52"
+    ],
+    [
+      "0x80399a74",
+      "0x80399a82"
+    ],
+    [
+      "0x80399aa4",
+      "0x80399ab2"
+    ],
+    [
+      "0x80399ad4",
+      "0x80399ae2"
+    ],
+    [
+      "0x80399b04",
+      "0x80399b12"
+    ],
+    [
+      "0x80399b34",
+      "0x80399b42"
+    ]
+  ],
+  "tool": "radare2",
+  "tool_version": "6.2.4 (git.6.2.4, 2026-10-05)",
+  "method": "r2 -e asm.bits=16 -qc 'aaa; aflj' IOSlaveProcessor.kext.bin, union of [addr, addr+size) ranges (half-open) to avoid double-counting overlaps",
+  "note": "r2's automatic detection works much better on this binary than on AppleARM7M.kext.bin -- straightforward OSMetaClass boilerplate, no hand tracing needed. This list INCLUDES the ranges this directory's module_init.yaml fiche reviewed (the init loop and six ctor calls) plus four ranges (0x80399848, 0x803998c0, 0x803998d8, 0x80399900) that fiche explicitly lists as seen-but-not-individually-read -- unlike AppleARM7M, tool and human coverage overlap here, so summing them naively would double-count."
 }

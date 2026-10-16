@@ -18,9 +18,10 @@ review:
 claims:
   - id: ARM7M-VIC-001
     text: >
-      A real virtual method (confirmed by a live xref from a vtable slot
-      at 0x807143f0, not dead code) takes one integer argument (0 or 1)
-      and writes a 32-bit word -- 8 if arg==0, 4 if arg==1 -- to
+      A method (statically referenced from a vtable slot at 0x807143f0 --
+      proof of a code reference pointing at it, not proof that this slot
+      is ever called at runtime) takes one integer argument (0 or 1) and
+      writes a 32-bit word -- 8 if arg==0, 4 if arg==1 -- to
       [this+0x60 + 0x18], i.e. to offset +0x18 of the window this project
       calls SOC_IOP_VIC_BASE (0xBF300000). Guarded by a call through
       this+0x7c both on entry and before returning (plausibly a lock).
@@ -30,7 +31,9 @@ claims:
 hardware_tests:
   - name: trace_iop_vic (STAGE 32)
     claim_tested: "offset +0x18 of SOC_IOP_VIC_BASE answers reads, and what it reads"
-    result: "not yet run on hardware -- payload reads only, confirmed-offset highlighted, see trace.c STAGE 32"
+    execution_status: planned
+    result: null
+    notes: "payload reads only, confirmed-offset highlighted, see trace.c STAGE 32"
 
 publication:
   status: approved

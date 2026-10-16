@@ -13,6 +13,30 @@ re-tracing xrefs. Load `fwFirmwareImage.r2` into `radare2` and the naming
 below is applied automatically (see that file's own header for the exact
 command).
 
+## `catalog/`: structured per-function fiches (pilot, 2026-10-16)
+
+`catalog/<Binary>/*.yaml` holds one structured fiche per examined function
+(confidence, exact bytes read, claims with their own evidence, hardware
+tests) for `AppleARM7M` and `IOSlaveProcessor` — a small pilot scope, not
+yet the whole IOP firmware. `gen_coverage.py` (`make iop-coverage`) reads
+the catalog, validates it (SHA-256 agreement with each binary's own
+`tool_coverage.json`, sane byte ranges, no duplicate claim ids, known status
+values), and publishes a coverage table plus an approved-claims list into
+`docs/snippets/iop-coverage.en.md`, included from the research report.
+
+**Every `*.yaml` file here is committed to this public repository and is as
+visible on GitHub as any other file in it.** A fiche's own
+`publication.status` (`approved` / `pending_review` / `excluded`) controls
+only what `gen_coverage.py` prints into the generated table — it is an
+editorial decision about what reaches the docs site, not an access
+restriction and not a legal certification. Never put anything in a
+committed fiche (a long verbatim excerpt, anything closer to a reproduction
+of Apple's code than a stated fact) that should not be public from the
+moment it's committed. See `gen_coverage.py`'s own module docstring for the
+full reasoning (ties to Article L122-6-1 on decompilation for
+interoperability, covered in
+[`docs/research/2026-10-13-legal-frame.md`](../../docs/research/2026-10-13-legal-frame.md)).
+
 ## What the firmware is
 
 A ~0x1b000-byte raw ARM32 binary (no Mach-O header of its own — it is a
