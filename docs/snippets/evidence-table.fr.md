@@ -28,3 +28,4 @@
 | [`20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio) | `trace_bt_gpio.bin` | `7db981c596a0` | `781ef201` | confirmé | 9 |
 | [`20261016T150615Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150615Z-trace_accel_axes) | `trace_accel_axes.bin` | `85d334480241` | `e41e7b2a` (dirty tree) | confirmé | 13 |
 | [`20261016T150631Z-trace_touch_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150631Z-trace_touch_gpio) | `trace_touch_gpio.bin` | `5a9f94883e7c` | `e41e7b2a` (dirty tree) | confirmé | 10 |
+| [`20261016T150844Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150844Z-trace_accel_axes) | `trace_accel_axes.bin` | `85d334480241` | `0c2e6e3f` | confirmé | 13 |
