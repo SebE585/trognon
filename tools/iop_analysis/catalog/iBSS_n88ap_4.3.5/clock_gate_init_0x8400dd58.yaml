@@ -22,8 +22,8 @@ review:
       text: "What the second part of the wrapper does (the loop at 0x8400dd70 over a 0x18-entry table at 0x84017e2c, with registers around 0xBF100070 and the bits 0x40000, 0x80000, 0x400, 0x800): it was read as instructions but not attributed to a function."
       proof_needed: "the register meanings at 0xBF100070 and below"
     - id: IBSS-CLK-Q2
-      text: "Which code turns on the remaining gates that read 0xF: 0x09 to 0x0D are explained (IBSS-CLK-004). Left open: 0x27 (the device tree's IOP number, read 0xF in STAGE 28) has no constant-argument caller; callers that read the gate from a structure (0x8400242c, 0x8400870e, 0x84007032) were not followed, and the drapeau passed with 0x19, 0x1a and 0x1b was not read."
-      proof_needed: "follow the three structure-driven callers and read the arguments of the constant callers"
+      text: "Which code turns on gate 0x27, which STAGE 28 read as 0xF although the clock initialisation turns it off: no caller in this image does (IBSS-CLK-005). Candidates: something outside the iBSS (the boot ROM or an earlier stage), or a read in STAGE 28 that was not of this gate. The flag passed with the constant callers 0x19, 0x1a and 0x1b was not read."
+      proof_needed: "the STAGE 47 survey (does 0x27 read 0xF at that point of the boot?), and the stage before the iBSS if its image can be read"
     - id: IBSS-CLK-Q3
       text: "Whether this routine's gate indexes are the ones of the device tree: it uses the physical register index (0xBF100078 + 4 * i), which is what the project reads; the device tree's numbers are another matter (see the numbering correction)."
       proof_needed: "the full gate survey (STAGE 47) compared with this routine's masks"
@@ -58,6 +58,16 @@ claims:
       as the clock initialisation's, and the iBSS turns all five on. Other callers pass constants: 0x08 (ten calls, in the 0x840089xx to 0x84008axx
       region, on and off), 0x19, 0x1a, 0x1b, 0x21, 0x22, 0x25 (twice), 0x26 (a routine at 0x8400fe3e), 0x2b and 0x2f; the meaning of each block is not
       established here (OpeniBoot puts a NAND controller at 0x26).
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-ibss-clock-initialisation-static-2026-10-16"
+
+  - id: IBSS-CLK-005
+    text: >
+      The three callers of the single-gate routine that take the gate from data were followed: 0x8400242c loops over the array at 0x840179b8
+      (first entries 1, 2, 3) and configures pads through gpio_configure with modes 2 and 0 (a UART-style pin initialisation); 0x8400870e
+      takes [table + 0x30] in a routine that sets the baud rate 0x1c200 (115200); 0x84007032 passes 0x19 in a routine that polls registers of
+      0x89000000. None passes 0x27. The only 0xBF100078 literals in the image are in the two gate routines (0x8400dcfc, 0x8400dd54) and one
+      at 0x8400e074 (not followed), so no direct write to the array outside them was found.
     status: device_disassembly_verified
     evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-ibss-clock-initialisation-static-2026-10-16"
 
