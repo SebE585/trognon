@@ -204,6 +204,31 @@ than scattered through the narrative under different wording:
    target — both for the SDHC-base question and for whether Trognon
    could ever load its own code onto the IOP (see "Two different goals"
    below).
+   **Addition (2026-10-16, late session)**: `AppleARM7M::start()`'s own
+   `REQUIRE`-gated assertion strings (not yet a full disassembly, see
+   `tools/iop_analysis/appleARM7M_notes.md` for the fiche) confirm it maps
+   *two* separate memory-mapped register windows from its provider, not
+   one — `mapDeviceMemoryWithIndex(0)` into `_arm7mRegisterMap` (the
+   already-probed `0x86300000` window, all five offsets zero as above)
+   and `mapDeviceMemoryWithIndex(1)` into a second one, `_vicRegisterMap`.
+   Cross-checked against the `iop` device-tree node's own `reg` property
+   (two address/size pairs, not one): the second pair is
+   `0x3F300000`/`0x1000`, which the same `arm-io` `ranges` rule used above
+   translates to CPU address **`0xBF300000`** — never read on the device.
+   The name (`_vicRegisterMap`, from the driver's own source) and the
+   address family (`0xBF1xxxxx` timer, `0xBF2xxxxx` VIC0-2, so
+   `0xBF3xxxxx` fits the same pattern) both point to a VIC-like interrupt
+   controller dedicated to the IOP core, but neither is a register read:
+   treat "IOP VIC" as a naming hypothesis, not a confirmed role. A
+   read-only probe of this window (same safety pattern as stages 26-28)
+   is the natural next step, not yet built.
+   Checked the obvious alternative framing from a different IOP kext
+   (`IOSlaveProcessor.kext.bin`, the generic base classes `IOSlaveCPU`/
+   `IOSlaveFirmware`/etc.) and found only OSMetaClass registration
+   boilerplate (class names and object sizes, no loading logic) — a
+   negative result worth recording so the same 2968 bytes are not
+   re-disassembled looking for something that is not there; see the same
+   fiche file for the sizes found.
 7. **The exact wire format of the host/IOP message struct.** Only the
    outer shape (opcode byte, pending flag, a vaddr/paddr pair) is known;
    the full byte-for-byte layout `sendIOPCommand`'s `cmd` argument uses

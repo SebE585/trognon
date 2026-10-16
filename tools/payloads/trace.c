@@ -1119,6 +1119,27 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	result_hex("iop118", r118);
 	fb_clean();
 #endif
+#if STAGE == 32
+	/* Second IOP register window, SOC_IOP_VIC_BASE = 0xBF300000 (see soc/s5l8920.h): decoded
+	 * tonight from the "iop" device tree node's own "reg" property (a second address/size pair,
+	 * not previously noticed), cross-checked against AppleARM7M::start()'s own
+	 * "_vicRegisterMap" field name. Read-only, no write, no layout assumed (unlike VIC0/1/2's
+	 * dump, this window's role is a naming hypothesis, not confirmed) -- same plain sequential
+	 * dump pattern as the early SDIO reads (STAGE 17/18), first 8 words. */
+	at(4, 116, 0x00F0C040); puts_("STEP 32 IOP VIC?\n");
+	volatile u32 *iopvic = (volatile u32 *)SOC_IOP_VIC_BASE;
+	u32 y32 = 134;
+	for (u32 i = 0; i < 8; i++) {
+		at(4, y32, 0x00A0B0C0);
+		puts_("+"); hex(i * 4); puts_(" "); hex(iopvic[i]);
+		putc_('\n'); fb_clean();
+		y32 += 18;
+	}
+	result_hex("vic00", iopvic[0]);
+	result_hex("vic04", iopvic[1]);
+	result_hex("vic08", iopvic[2]);
+	result_hex("vic0c", iopvic[3]);
+#endif
 #if STAGE == 4
 	/* Test 3: deliberate PREFETCH ABORT. A Thumb BKPT with the debug unit not in halt mode raises
 	 * a prefetch abort (IFSR = 0x2, "debug event"), with no memory fetch involved. Resume address
@@ -1195,6 +1216,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "bt-gpio-1", 1);
 #elif STAGE == 31
 	ENV_SET("trognon", "accel-axes-1", 1);
+#elif STAGE == 32
+	ENV_SET("trognon", "iop-vic-1", 1);
 #elif STAGE == 5
 	ENV_SET("trognon", "regs-1", 1);
 #elif STAGE == 6

@@ -90,6 +90,17 @@
  * firmware pointer, +0x114 size, +0x118 self-address. SOURCE (disassembly + device tree), not yet
  * read on the device. */
 #define SOC_IOP_REG_BASE      0x86300000
+/* Second register window for the same "iop" device tree node (its "reg" property has TWO
+ * address/size pairs, not one -- decoded 2026-10-16, late session, see
+ * tools/iop_analysis/appleARM7M_notes.md). Device tree value 0x3F300000, translated through
+ * arm-io's own "ranges" rule (+0x80000000 below 0x40000000, same rule already used for
+ * SOC_IOP_REG_BASE above) to this CPU address. AppleARM7M::start()'s own REQUIRE strings name
+ * the matching driver field "_vicRegisterMap" (mapDeviceMemoryWithIndex(1), index 0 being
+ * SOC_IOP_REG_BASE above) -- a real Apple name for the field, not our naming, but its exact
+ * register role (interrupt controller vs. something else) is NOT confirmed: the "VIC" in the
+ * name and the address family (0xBF1xxxxx timer, 0xBF2xxxxx VIC0-2, this one 0xBF3xxxxx) are
+ * circumstantial, not a register read. SOURCE only, never read on the device. */
+#define SOC_IOP_VIC_BASE      0xBF300000
 /* The "iop" device tree node's own clock-gates property (0x27 = 39), read-only check: is this
  * gate already enabled? CLOCK_GATE_BASE(0xBF100078) + 4*0x27. Not written anywhere in
  * AppleARM7M::start()'s own disassembly (checked 2026-10-16) -- if this reads enabled already,
