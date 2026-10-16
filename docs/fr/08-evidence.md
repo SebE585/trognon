@@ -13,6 +13,7 @@ Chaque exécution de `tools/send.sh` ou `tools/go.sh` écrit un répertoire sous
 |---|---|
 | `manifest.json` | le SHA-256 du payload, le commit git d'où il a été construit, si l'arbre était propre, le nonce envoyé et relu, le commit d'ipwndfu, la ligne de commande, le CPID de l'appareil (l'ECID n'est volontairement pas enregistré) |
 | `screen.txt` | le texte et la couleur exacts de chaque ligne de console affichée par le téléphone, **publiés par le payload lui-même par USB** : ni photo ni OCR |
+| `source.diff` | seulement quand l'arborescence des sources n'était **pas** propre au moment de l'exécution : les modifications non commitées de `tools/`, `include/` et `src/`, pour pouvoir reconstruire le payload (récupérer le commit, `git apply source.diff`, compiler). Absent des 54 premiers dossiers, dont 26 ont été enregistrés avec une arborescence modifiée |
 | `screen.png` | la console redessinée à partir de `screen.txt`. Une reconstruction, pas une photo du téléphone |
 | `vars.txt` | les valeurs supplémentaires publiées par le payload (`--vars`) |
 

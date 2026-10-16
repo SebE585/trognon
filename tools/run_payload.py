@@ -20,6 +20,7 @@ The outcome is also appended to a log (default ~/trognon-runs.log, override with
 import argparse, ast, datetime, hashlib, json, os, re, subprocess, sys, time
 import usb.core
 import recovery
+import bundle_source
 
 ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
 ap.add_argument('payload')
@@ -59,6 +60,13 @@ def log(outcome):
 def git(*a):
     try:
         return subprocess.run(['git', '-C', REPO] + list(a), capture_output=True, text=True, timeout=10).stdout.strip()
+    except Exception:
+        return ''
+
+def git_raw(*a):
+    """Like git(), without stripping: a patch needs its final newline."""
+    try:
+        return subprocess.run(['git', '-C', REPO] + list(a), capture_output=True, text=True, timeout=30).stdout
     except Exception:
         return ''
 
@@ -131,12 +139,18 @@ if args.evidence:
     out = os.path.join(args.evidence, '%s-%s' % (stamp, os.path.splitext(name)[0]))
     os.makedirs(out, exist_ok=True)
     ipw = os.environ.get('IPWNDFU', os.path.expanduser('~/tools/ipwndfu'))
+    git_block, source_patch = bundle_source.source_fields(
+        git('rev-parse', 'HEAD'), bool(git('status', '--porcelain', '--', 'tools', 'include', 'src')),
+        git_raw('diff', 'HEAD', '--', 'tools', 'include', 'src'),
+        [l for l in git('ls-files', '--others', '--exclude-standard', '--', 'tools', 'include', 'src').splitlines() if l])
+    for w in bundle_source.warnings(git_block):
+        print('WARNING: ' + w)
     manifest = {
         'payload': name, 'sha256': sha, 'bytes': len(base), 'soc': args.soc,
         'nonce_sent': nonce_hex, 'nonce_read': got, 'nonce_confirmed': True,
         'marker': {args.marker: after}, 'variables': extra,
         'device': {'cpid': cpid or None, 'note': 'ECID deliberately not recorded'},
-        'git': {'commit': git('rev-parse', 'HEAD'), 'dirty': bool(git('status', '--porcelain', '--', 'tools', 'include', 'src'))},
+        'git': git_block,
         'tools': {'ipwndfu_commit': subprocess.run(['git', '-C', ipw, 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip(),
                   'python': sys.version.split()[0], 'host': sys.platform},
         'time_utc': stamp,
@@ -144,6 +158,8 @@ if args.evidence:
         'screen_rows': len(rows),
     }
     json.dump(manifest, open(os.path.join(out, 'manifest.json'), 'w'), indent=2)
+    if source_patch:
+        open(os.path.join(out, 'source.diff'), 'w').write(source_patch)
     with open(os.path.join(out, 'screen.txt'), 'w') as f:
         for r in rows:
             f.write('%02d #%s %s\n' % (r['row'], r['fg'], r['text']))

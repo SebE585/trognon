@@ -13,6 +13,7 @@ Each run of `tools/send.sh` or `tools/go.sh` writes a directory under [`evidence
 |---|---|
 | `manifest.json` | the payload's SHA-256, the git commit it was built from, whether the tree was clean, the nonce sent and read back, the ipwndfu commit, the command line, the device CPID (the ECID is deliberately not recorded) |
 | `screen.txt` | the exact text and colour of every console row the phone displayed, **published by the payload itself over USB**: no photo, no OCR |
+| `source.diff` | only when the source tree was **not** clean at the run: the uncommitted changes of `tools/`, `include/` and `src/`, so the payload can be rebuilt (check out the commit, `git apply source.diff`, build). Absent from the first 54 bundles, 26 of which were recorded with a dirty tree |
 | `screen.png` | the console re-drawn from `screen.txt`. A reconstruction, not a photo of the phone |
 | `vars.txt` | extra values the payload published (`--vars`) |
 
@@ -25,7 +26,7 @@ The screen rows are published in full on every run (empty ones too) for the same
 --8<-- "docs/snippets/evidence-table.en.md"
 
 Regenerate this table with `make evidence-index`. Re-run the stages with `tools/evidence_all.sh` (device in DFU).
-To check a bundle: check out its commit, `make -C tools/payloads <payload>`, compare the SHA-256 with `manifest.json`
+To check a bundle: check out its commit (and apply `source.diff` if the bundle has one), `make -C tools/payloads <payload>`, compare the SHA-256 with `manifest.json`
 (the build is deterministic with the same toolchain), then read `screen.txt` against the claim.
 
 ## Claims and their bundle
