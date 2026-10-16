@@ -5,6 +5,31 @@
 [Open the diagram full-size](../img/soc-map.svg) — addresses and subtitles are small in an
 inline render.
 
+## At a glance
+
+| Component | Function obtained | Limit | Section |
+|---|---|---|---|
+| CPU/MMU | `MIDR`/`SCTLR`/`DACR` read; page tables confirmed sane | no code-level check beyond register reads | [CPU and MMU](#cpu-and-mmu-device) |
+| Display (CLCD) | framebuffer draws, confirmed by a visible fill; several status/timing registers read | panel init itself is the iBSS's, not ours; our own panel driver not written | [Display controller](#display-controller-clcd_base-0x85400000-device) |
+| GPIO and clock gates | base mapped, offsets answer; one pin toggle (panel reset) behaves as expected | most pins' roles unknown; `GPIOIC` untouched (dropped the USB link once) | [GPIO and clock gates](#gpio-and-clock-gates-device-partial) |
+| VIC0/1/2 | read-only survey of all three; a software-triggered IRQ proven to raise and be handled | which peripheral owns each of the 14 bits the iBSS left enabled is unknown | [Interrupt controllers](#interrupt-controllers-vic012-device-2026-10-15) |
+| Timer block | tick rate confirmed 24 MHz against the host clock; `STATE` registers read | a timer-sourced interrupt is **not proven**; the IRQ ack offsets are known wrong | [Timer block](#timer-block-timer_base-0xbf100000-device-2026-10-15) |
+| NAND | chip ID read on CE0/CE1 (Toshiba, matches the 32 GB label), geometry matched against OpeniBoot's table | CE2-CE15 give no identification response; bus 1 not swept; no page read, no program, no erase attempted | [NAND](#nand-h2fmi0_base-0x81200000-device-2026-10-15) |
+| Buttons | all 5 buttons mapped by GPIO difference, zero noise over 3 s hands-off | OpeniBoot's own names for this SoC were wrong; the sweep killed the USB control endpoint once (recovered without DFU) | [Buttons](#buttons-same-gpio-base-as-above-device-2026-10-15) |
+| Accelerometer | `WHO_AM_I` read `0x3B` over a real bit-banged I2C transaction, first try | exact chip model (LIS331DL vs LIS302DL) undetermined; axis data and the `orientation` property untested; compass/`compass1` not probed at all | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
+| Wi-Fi/SDIO | base address confirmed; reset/wake GPIO lines real, reset toggled and read back | every probed register reads `0` regardless of the register-layout hypothesis tried (SDHCI-standard never tried); IOP ownership is the leading explanation, not proven | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-mixed-devicehypothesis-2026-10-1516) |
+| Bluetooth | reset/wake GPIO levels read: reset `1`, wake `0` | read-only so far: no UART traffic attempted, chip presence/response unknown | [Bluetooth](#bluetooth-uart3-reset-1506-wake-1602-device-2026-10-16) |
+
+**Reading the tags**: **DEVICE** means observed on this real phone (a read, or a write
+with its result read back) — never assume a DEVICE tag on one line of a section means
+every claim on that line is proven; read the line itself. **SOURCE** means read in
+firmware or driver code, not yet checked here. **HYPOTHESIS** means our own reasoning,
+not confirmed either way. A tag next to a component name in the table above is never a
+checkmark: "DEVICE" on the accelerometer means the identifier byte came back, nothing
+about whether the axes work. "How to reproduce" in a section is the `make <payload>.bin`
+command that re-runs that exact check; "Links to evidence" is the bundle under
+[`evidence/`](08-evidence.md) with the raw screen output and build manifest.
+
 Base addresses alone, with no narrative, are kept in the stabilised
 [SoC memory map](../spec/soc-s5l8920.md) — look there for a quick address lookup; this
 page is where the reasoning and the evidence for each one live.

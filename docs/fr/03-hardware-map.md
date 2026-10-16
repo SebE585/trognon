@@ -5,6 +5,33 @@
 [Ouvrir le schéma en grand](../img/soc-map.svg) — adresses et sous-titres sont minuscules
 dans le rendu intégré.
 
+## En un coup d'œil
+
+| Composant | Fonction obtenue | Limite | Section |
+|---|---|---|---|
+| CPU/MMU | `MIDR`/`SCTLR`/`DACR` lus ; table de pages confirmée saine | aucune vérification au niveau code au-delà des lectures de registre | [CPU et MMU](#cpu-et-mmu-device) |
+| Affichage (CLCD) | le framebuffer dessine, confirmé par un remplissage visible ; plusieurs registres de statut/timing lus | l'init de dalle est celle de l'iBSS, pas la nôtre ; notre propre pilote de dalle n'est pas écrit | [Contrôleur d'affichage](#controleur-daffichage-clcd_base-0x85400000-device) |
+| GPIO et horloges | base mappée, les décalages répondent ; une bascule de broche (reset dalle) se comporte comme attendu | le rôle de la plupart des broches reste inconnu ; `GPIOIC` non touché (a fait tomber la liaison USB une fois) | [GPIO et horloges](#gpio-et-horloges-device-partiel) |
+| VIC0/1/2 | relevé en lecture seule des trois ; une IRQ déclenchée logiciellement prouvée levée et prise | quel périphérique possède chacun des 14 bits laissés actifs par l'iBSS reste inconnu | [Contrôleurs d'interruptions](#controleurs-dinterruptions-vic012-device-2026-10-15) |
+| Bloc timer | fréquence du tick confirmée à 24 MHz contre l'horloge du Mac ; registres `STATE` lus | une interruption source timer n'est **pas prouvée** ; les décalages d'acquittement IRQ sont connus comme faux | [Bloc timer](#bloc-timer-timer_base-0xbf100000-device-2026-10-15) |
+| NAND | identifiant lu sur CE0/CE1 (Toshiba, cohérent avec l'étiquette 32 Go), géométrie recoupée avec la table d'OpeniBoot | CE2 à CE15 ne donnent aucune réponse d'identification ; bus 1 pas balayé ; aucune lecture de page, programmation ou effacement tentés | [NAND](#nand-h2fmi0_base-0x81200000-device-2026-10-15) |
+| Boutons | les 5 boutons mappés par différence GPIO, zéro bruit sur 3 s mains levées | les noms d'OpeniBoot pour ce SoC étaient faux ; le balayage a tué le point de contrôle USB une fois (récupéré sans DFU) | [Boutons](#boutons-meme-base-gpio-que-ci-dessus-device-2026-10-15) |
+| Accéléromètre | `WHO_AM_I` lu `0x3B` via une vraie transaction I2C bit-bang, du premier coup | modèle exact de la puce (LIS331DL ou LIS302DL) indéterminé ; données d'axe et propriété `orientation` non testées ; compass/`compass1` pas sondés du tout | [Accéléromètre](#accelerometre-adresse-i2c0-0x1d-device-2026-10-16) |
+| Wi-Fi/SDIO | adresse de base confirmée ; lignes GPIO reset/réveil réelles, reset basculé et relu | tout registre sondé lit `0` quelle que soit l'hypothèse de disposition essayée (SDHCI standard jamais essayée) ; la possession par l'IOP est l'explication la plus probable, pas prouvée | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-devicehypothese-melees-2026-10-1516) |
+| Bluetooth | niveaux GPIO reset/réveil lus : reset `1`, réveil `0` | lecture seule pour l'instant : aucun trafic UART tenté, présence/réponse de la puce inconnue | [Bluetooth](#bluetooth-uart3-reset-1506-reveil-1602-device-2026-10-16) |
+
+**Lire les étiquettes** : **DEVICE** veut dire observé sur ce téléphone réel (une lecture,
+ou une écriture dont le résultat est relu) — ne jamais supposer que l'étiquette DEVICE sur
+une ligne de section prouve toutes les affirmations de cette ligne ; lire la ligne elle-même.
+**SOURCE** veut dire lu dans le code firmware ou pilote, pas encore vérifié ici.
+**HYPOTHESIS** veut dire notre propre raisonnement, pas confirmé dans un sens ou l'autre.
+Une étiquette à côté d'un nom de composant dans le tableau ci-dessus n'est jamais une coche :
+« DEVICE » sur l'accéléromètre veut dire que l'octet d'identifiant est revenu, rien sur le
+fonctionnement des axes. « Comment reproduire » dans une section est la commande
+`make <payload>.bin` qui rejoue exactement ce test ; « Liens vers les preuves » est le
+dossier sous [`evidence/`](08-evidence.md) avec la sortie écran brute et le manifeste de
+build.
+
 Les adresses de base seules, sans récit, sont tenues dans la
 [carte mémoire du SoC](../spec/soc-s5l8920.md) (en anglais, référence technique) — à
 consulter pour une recherche rapide d'adresse ; cette page-ci porte le raisonnement et les
