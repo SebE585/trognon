@@ -1,0 +1,44 @@
+{
+  "payload": "trace_compass_i2c.bin",
+  "sha256": "926c3d968f0fdd8676841566f89b0c4c27cd21b8d2e72c7ff6c60ca886bece62",
+  "bytes": 3708,
+  "soc": "s5l8920",
+  "nonce_sent": "48E1EE8E",
+  "nonce_read": "48E1EE8E",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "compass-i2c-1"
+  },
+  "variables": {
+    "scl_idle": "00000001",
+    "sda_idle": "00000001",
+    "aw_1c": "00000000",
+    "ar_1c": "00000000",
+    "b_1c": "00000000",
+    "aw_1d": "00000001",
+    "ar_1d": "00000001",
+    "b_1d": "00000000",
+    "aw_1e": "00000001",
+    "ar_1e": "00000001",
+    "b_1e": "00000000",
+    "aw_1f": "00000000",
+    "ar_1f": "00000000",
+    "b_1f": "00000000"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "e3a21fbb4c97e3f22ce8a171edd333f1109ad541",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T151941Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_compass_i2c.bin --evidence <repo>/evidence --vars scl_idle,sda_idle,aw_1c,ar_1c,b_1c,aw_1d,ar_1d,b_1d,aw_1e,ar_1e,b_1e,aw_1f,ar_1f,b_1f",
+  "screen_rows": 17
+}

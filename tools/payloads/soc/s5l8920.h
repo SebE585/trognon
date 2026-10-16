@@ -152,6 +152,11 @@
  * clock enable (function-clock_enable) go through the PMU, not through these GPIOs. The
  * attention line is an interrupt (0xb4) on the GPIO interrupt controller, which this project
  * treats as dangerous (see GPIOIC), so it is NOT read. Neither pin read on the device yet. */
+/* Magnetometer (DEVICE TREE, 2026-10-16, tools/dt_dump.py): /device-tree/arm-io/i2c0/compass and
+ * compass1, both compatible "compass,akm8973s", I2C addresses 0x1e and 0x1f, same bus as the
+ * accelerometer. Two nodes do not by themselves prove two chips. Not probed before STAGE 34. */
+#define SOC_COMPASS_I2C_ADDR0 0x1e
+#define SOC_COMPASS_I2C_ADDR1 0x1f
 #define SOC_TOUCH_RESET_IDX   (8 * 0x14 + 0x01)
 #define SOC_TOUCH_CS_EN_IDX   (8 * 0x13 + 0x00)
 

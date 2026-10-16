@@ -18,6 +18,7 @@ inline render.
 | Buttons | All 5 buttons mapped by GPIO difference | Mapping found by observed difference, not by name | [Buttons](#buttons-same-gpio-base-as-above-device-2026-10-15) |
 | Accelerometer | Identifier read; powered up with a verified write; all three axes read with both signs or a known direction: +X right edge, +Y top, +Z out of the screen, about 56 counts per g, offsets near +1.5 / -6 / +3 counts | Exact chip model, axis directions, scale and calibration | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
 | Wi-Fi/SDIO | Base address and GPIO lines confirmed; SDHCI layout confirmed in the IOP's own firmware | Which register window the IOP's SDHCI driver actually uses, and why CPU-side writes don't stick | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-mixed-devicehypothesis-2026-10-1516) |
+| Magnetometer | An I2C device acknowledges address `0x1e`; `0x1f` does not | Identity of the chip at `0x1e`, any register, any measurement | [Magnetometer](#magnetometer-i2c0-address-0x1e-device-2026-10-16) |
 | Touch controller | Reset and chip-select GPIO levels read (one run) | Polarity, power and clock via the PMU, SPI transaction, any response | [Bluetooth](#bluetooth-uart3-reset-1506-wake-1602-device-2026-10-16) |
 
 **Reading the tags**: **DEVICE** means observed on this real phone (a read, or a write
@@ -831,6 +832,43 @@ then run it on a device in DFU with `tools/go.sh tools/payloads/trace_bt_gpio.bi
 pattern as the Wi-Fi reset/wake read (STAGE 15): plain reads, no write, no UART touched.
 
 **Links to evidence**: [evidence bundle `20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio), indexed on the [evidence page](08-evidence.md).
+
+## Magnetometer, i2c0 address `0x1e` (DEVICE for presence, 2026-10-16)
+
+*The magnetometer measures the magnetic field, from which a compass heading can be computed.*
+
+**Status**: something answers at `0x1e`. Nothing is known yet about what it is.
+
+**What's confirmed**: the device tree has two nodes on `i2c0`, `compass` (address `0x1e`, with an
+interrupt) and `compass1` (`0x1f`, no interrupt), both `compass,akm8973s`. A read-only probe
+on the same bit-banged bus as the accelerometer tried four addresses with two minimal
+transactions each (address + write then stop; if acknowledged, address + read, one byte,
+stop), writing no register:
+
+| Address | Role in the run | Acknowledged (write / read) | Byte read |
+|---|---|---|---|
+| `0x1c` | negative control, no node | no / no | none |
+| `0x1d` | accelerometer, positive control (answered in the earlier runs) | yes / yes | `0x00` |
+| `0x1e` | `compass` node | **yes / yes** | `0x00` |
+| `0x1f` | `compass1` node | **no** / no | none |
+
+The controls behaved as expected, the bus was idle high before the probe, and the nonce was
+confirmed. So **one** device acknowledges at `0x1e`, and nothing acknowledges at `0x1f`: the
+second node does not correspond to a responding chip in this state, which is the caveat
+already noted (two device-tree nodes do not prove two chips). Why `0x1f` is silent (absent on
+this board, not powered, or a variant node) is not established.
+
+**What remains hypothesis**: that the device at `0x1e` is an AKM8973S. An acknowledged address
+says a device is there, not which one. The byte read, `0x00`, is a current-address read whose
+pointer was not set by us; it is not interpreted, and the accelerometer returned the same
+value in the same run, so it carries no identity. Identifying the chip needs a register map
+checked against the datasheet, which is not in this repository. After that, the AKM8973
+needs a configuration step before it measures anything; none was attempted.
+
+**How to reproduce**: build with `make trace_compass_i2c.bin` (see `tools/payloads/`, STAGE
+34), run it on a device in DFU with `tools/go.sh tools/payloads/trace_compass_i2c.bin`.
+
+**Links to evidence**: [evidence bundle `20261016T151941Z-trace_compass_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151941Z-trace_compass_i2c), indexed on the [evidence page](08-evidence.md).
 
 ## Touch controller, `spi1` (DEVICE for two GPIO levels, 2026-10-16)
 
