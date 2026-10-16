@@ -14,13 +14,16 @@ review:
     - ["0x8400e110", "0x8400e12c"]
   constant_ranges:
     - ["0x8400ddd0", "0x8400ddf0"]
+  resolved:
+    - id: IBSS-CLK-Q2-part1
+      by: "the SPI initialisation loop at 0x84007d24, see IBSS-CLK-004"
   unresolved:
     - id: IBSS-CLK-Q1
       text: "What the second part of the wrapper does (the loop at 0x8400dd70 over a 0x18-entry table at 0x84017e2c, with registers around 0xBF100070 and the bits 0x40000, 0x80000, 0x400, 0x800): it was read as instructions but not attributed to a function."
       proof_needed: "the register meanings at 0xBF100070 and below"
     - id: IBSS-CLK-Q2
-      text: "Which code turns on the gates that the survey read as 0xF but this routine leaves off (0x09 to 0x0D, 0x19, 0x27): the SPI and other drivers of the iBSS are the natural candidates, not read."
-      proof_needed: "callers of the single-gate routine near 0x8400dcc0 (the register base literal 0xBF100078 at 0x8400dd3c and 0x8400dd94)"
+      text: "Which code turns on the remaining gates that read 0xF: 0x09 to 0x0D are explained (IBSS-CLK-004). Left open: 0x27 (the device tree's IOP number, read 0xF in STAGE 28) has no constant-argument caller; callers that read the gate from a structure (0x8400242c, 0x8400870e, 0x84007032) were not followed, and the drapeau passed with 0x19, 0x1a and 0x1b was not read."
+      proof_needed: "follow the three structure-driven callers and read the arguments of the constant callers"
     - id: IBSS-CLK-Q3
       text: "Whether this routine's gate indexes are the ones of the device tree: it uses the physical register index (0xBF100078 + 4 * i), which is what the project reads; the device tree's numbers are another matter (see the numbering correction)."
       proof_needed: "the full gate survey (STAGE 47) compared with this routine's masks"
@@ -46,6 +49,17 @@ claims:
       and 0x31 read 0xF and the rest 0. The gates read so far disagree for some: 0x09 to 0x0D, 0x19 and 0x27 read 0xF, so something
       turned them on after this routine, while 0x15 to 0x17 read 0 as predicted.
     status: hypothesis
+
+  - id: IBSS-CLK-004
+    text: >
+      The single-gate routine 0x8400dcd4 (gate in r0, flag in r1, same array and bound, up to 0xBF100144) has 27 callers. The SPI initialisation
+      loop at 0x84007d24 runs over 5 buses (state structures of 0x54 bytes), and for each calls it with [table entry + 0x38] and flag 1, then
+      registers the interrupt [table entry + 0x3c]. So the gate field of the SPI table (0x09 to 0x0D) is the index into the same physical array
+      as the clock initialisation's, and the iBSS turns all five on. Other callers pass constants: 0x08 (ten calls, in the 0x840089xx to 0x84008axx
+      region, on and off), 0x19, 0x1a, 0x1b, 0x21, 0x22, 0x25 (twice), 0x26 (a routine at 0x8400fe3e), 0x2b and 0x2f; the meaning of each block is not
+      established here (OpeniBoot puts a NAND controller at 0x26).
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-ibss-clock-initialisation-static-2026-10-16"
 
 hardware_tests:
   - name: trace_gate_survey (STAGE 47), read-only survey of the 52 gate words

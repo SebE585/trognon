@@ -9,10 +9,13 @@ entry_code_address: null
 review:
   status: not_reviewed
   reviewed_ranges: []
-  unresolved:
+  resolved:
     - id: IBSS-TAB-Q1
-      text: "That the gate field of each table entry is the index passed to the clock-gate routine (whose base literal 0xBF100078 is at 0x8400dd3c, 0x8400dd94 and 0x8400e0b4): inferred from the layout, which matches OpenIBoot's SPI structure (base and register addresses, then gate and interrupt), not from reading the routine."
-      proof_needed: "disassemble the routine that uses 0xBF100078 and the one that reads these tables"
+      by: >
+        the SPI initialisation loop at 0x84007d24 (5 buses, table entry fetched by 0x84007c58) calls the single-gate routine 0x8400dcd4 with
+        [entry + 0x38] and flag 1, then registers the interrupt [entry + 0x3c] (2026-10-16, fiche clock_gate_init_0x8400dd58, IBSS-CLK-004): the gate
+        field is the index into the 0xBF100078 array, and 0x09 to 0x0D are the ones turned on.
+  unresolved:
     - id: IBSS-TAB-Q2
       text: "What the four platform pin ids 0x1605, 0x1506, 0x0806, 0x1102 (at 0x84017ac8) are for: the first two are the WLAN reset and Bluetooth reset pins of the device tree; 08.06 and 11.02 were not matched to a function."
       proof_needed: "the readers of that list"
