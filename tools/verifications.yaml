@@ -1,6 +1,6 @@
 # Independent checks of the evidence bundles: someone rebuilt a payload, or audited a claim, and recorded what they found.
 # A rebuild row is printed by tools/rebuild_bundle.py; a claim-audit row is written by hand (the first one below is the model). A mismatch or a failure to
-# reproduce is a result, not an error. If an AI assistant helped, say so in assisted_by and say in notes what was actually done.
+# reproduce is a result, not an error.
 # by: maintainer = run by the project's own maintainer, so not independent; any other handle is an independent check.
 verifications:
   - bundle: 20261015T050540Z-trace
@@ -437,8 +437,7 @@ verifications:
     kind: claim-audit
     date: "2026-10-17"
     by: maintainer
-    assisted_by: "Claude (AI assistant)"
     claim: "A full I2C transaction to address 0x1d was acknowledged; the identifier register read 0x3B."
     page: https://sebe585.github.io/trognon/en/03-hardware-map/#accelerometer
     result: match
-    notes: "Operations done: read manifest.json, screen.txt and vars.txt of the bundle, read the payload source at the commit the manifest names, and ran tools/rebuild_bundle.py (the commit rebuilds to the manifest hash). The bundle shows the RESULTS: the three files agree on three ACK flags at 1 and WHO_AM_I 0x3B (three records of one instrument, not three measurements) and the nonce came back identical. It does NOT record the address or the register: those are SOC_ACCEL_I2C_ADDR 0x1d and SOC_ACCEL_WHO_AM_I_REG 0x0F in tools/payloads/soc/s5l8920.h at that commit. So the claim holds on the bundle plus the source; the bundle alone would be inconclusive about the address. This gap was first noted by an external AI review."
+    notes: "Operations done: read manifest.json, screen.txt and vars.txt of the bundle, read the payload source at the commit the manifest names, and ran tools/rebuild_bundle.py (the commit rebuilds to the manifest hash). The bundle shows the RESULTS: the three files agree on three ACK flags at 1 and WHO_AM_I 0x3B (three records of one instrument, not three measurements) and the nonce came back identical. It does NOT record the address or the register: those are SOC_ACCEL_I2C_ADDR 0x1d and SOC_ACCEL_WHO_AM_I_REG 0x0F in tools/payloads/soc/s5l8920.h at that commit. So the claim holds on the bundle plus the source; the bundle alone would be inconclusive about the address."

@@ -106,15 +106,7 @@ class BreakdownTests(unittest.TestCase):
         self.assertIn("| **Total** | **1** |", text)
 
 
-class AssistedTests(unittest.TestCase):
-    def test_an_assisted_row_says_what_was_done(self):
-        self.assertTrue(any("what was actually done" in e for e in errs([row(assisted_by="an assistant", notes="")])))
-        self.assertEqual(errs([row(assisted_by="an assistant", notes="read the files, ran the tool")]), [])
-
-    def test_the_page_names_the_assistant_next_to_the_human(self):
-        r = row(by="alice", assisted_by="an assistant", notes="n")
-        self.assertIn("alice (assisted by an assistant)", vb.row_md(r))
-
+class AuditPageTests(unittest.TestCase):
     def test_the_audit_model_comes_from_the_data(self):
         a = row(kind="claim-audit", claim="THE CLAIM", page="p", result="match", notes="n")
         self.assertIn("THE CLAIM", "\n".join(vb.audit_example([row(), a])))

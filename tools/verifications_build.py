@@ -69,8 +69,6 @@ def check(rows, exists=None, commit_ok=commit_exists):
                     errors.append("%s: commit %s is not in the repository history" % (where, r["commit"]))
         if kind == "claim-audit" and not (r.get("claim") and r.get("page")):
             errors.append("%s: a claim audit quotes the claim and names its page" % where)
-        if r.get("assisted_by") and not r.get("notes"):
-            errors.append("%s: a row prepared with an assistant says in 'notes' what was actually done" % where)
         if r.get("result") in ("mismatch", "not-reproducible", "inconclusive") and not r.get("notes"):
             errors.append("%s: a %s result needs an explanation in 'notes'" % (where, r.get("result")))
     return errors
@@ -117,10 +115,9 @@ def recorded():
 def row_md(r):
     env = r.get("environment") or {}
     where = ("%s, %s" % (env.get("host", ""), env.get("toolchain", ""))).strip(", ") or "-"
-    by = r["by"] + (" (assisted by %s)" % r["assisted_by"] if r.get("assisted_by") else "")
     text = ("*Claim:* %s %s" % (r["claim"], r.get("notes", "")) if r["kind"] == "claim-audit" else (r.get("notes") or "")).replace("|", "\\|")
     return "| [`%s`](%s/tree/main/evidence/%s) | %s | %s | `%s` | %s | %s | %s |" % (
-        r["bundle"], REPO, r["bundle"], r["kind"], r["result"], (r.get("commit") or "-")[:10], where, by, text)
+        r["bundle"], REPO, r["bundle"], r["kind"], r["result"], (r.get("commit") or "-")[:10], where, r["by"], text)
 
 
 def audit_example(rows):
@@ -170,9 +167,6 @@ def render(rows, all_bundles, recorded_commit):
              "- **Agreement is not independence.** The three files come from one instrument in one run: their agreement is one record, not three measurements.",
              "- **Different guarantees.** The nonce shows that *this binary ran this time*; the hash ties the binary to a commit; the source at that commit gives the "
              "parameters; none of them shows what the signal looked like on the bus. Say which part each one supports.", "",
-             "### If an AI assistant helped", "",
-             "Put the human responsible in `by`, name the assistant in `assisted_by`, and say in `notes` what was actually done (which files were read, what was run). "
-             "An assistant's output is a proposal, not evidence: a result it did not obtain by reading or running something should be written as *absent*.", "",
              "See [Missions](missions.md) for these as first contributions.", ""]
     if ind:
         lines += ["## Independent checks", "", head] + [row_md(r) for r in ind] + [""]
