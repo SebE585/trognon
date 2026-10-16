@@ -46,7 +46,7 @@ To check a bundle: check out its commit, `make -C tools/payloads <payload>`, com
 | NAND chip ID, CE0/CE1 only (Toshiba) | `trace_nand`, `trace_nand_sweep` x2 | bundled |
 | Wi-Fi reset/wake GPIO read at `0` | `trace_wifi_gpio` | bundled |
 | Bluetooth reset/wake GPIO read: reset `1`, wake `0` | `trace_bt_gpio` | bundled |
-| Accelerometer powered up, `CTRL_REG1` read back `0x47`, axes +11 / -9 / +58 (one sample, phone not moved), then +19 / +47 / +8 after moving it, then +2 / -16 / +59 twice in a row at rest, then +3 / -6 / +59 twice flat screen up | `trace_accel_axes` x6 | bundled |
+| Accelerometer powered up, `CTRL_REG1` read back `0x47`, axes +11 / -9 / +58 (one sample, phone not moved), then +19 / +47 / +8 after moving it, then +2 / -16 / +59 twice in a row at rest, then +3 / -6 / +59 twice flat screen up, then +2 / -6 / -53 twice screen down | `trace_accel_axes` x8 | bundled |
 | Touch reset and chip-select enable GPIO levels both `0`, Bluetooth reset control `1` | `trace_touch_gpio` | bundled |
 | Wi-Fi reset GPIO toggled low/high, read back `1` | `trace_wifi_reset` | bundled |
 | SDIO register dump, two clock-gate hypotheses, all zero | `trace_sdio_dump`, `trace_sdio_dump_b` | bundled |
