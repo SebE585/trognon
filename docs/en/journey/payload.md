@@ -15,9 +15,10 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # Our code arrives
 
-![Our code lands in RAM, at 0x41000000.](../../img/journey/ram.svg){ .journey-visual }
-
-*Our code lands in RAM, at 0x41000000.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/ram.svg){ .journey-visual }
+<figcaption>Our code lands in RAM, at 0x41000000.</figcaption>
+</figure>
 
 How sure we are: <span class="tag tag-device">DEVICE</span>
 

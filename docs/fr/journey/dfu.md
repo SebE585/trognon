@@ -15,9 +15,10 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → **Le téléphone écoute :
 
 # Le téléphone écoute : le mode DFU
 
-![Écran noir. Le téléphone répond pourtant en USB.](../../img/journey/fr/cable.svg){ .journey-visual }
-
-*Écran noir. Le téléphone répond pourtant en USB.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/cable.svg){ .journey-visual }
+<figcaption>Écran noir. Le téléphone répond pourtant en USB.</figcaption>
+</figure>
 
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 

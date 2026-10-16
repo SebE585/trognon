@@ -15,9 +15,10 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # A crash you can read
 
-![A crash ends as a readable dump, not a reboot.](../../img/journey/crash.svg){ .journey-visual }
-
-*A crash ends as a readable dump, not a reboot.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/crash.svg){ .journey-visual }
+<figcaption>A crash ends as a readable dump, not a reboot.</figcaption>
+</figure>
 
 How sure we are: <span class="tag tag-device">DEVICE</span>
 

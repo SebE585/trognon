@@ -20,7 +20,7 @@ How sure we are: <span class="tag tag-hyp">HYPOTHESIS</span>
 ## What we know
 
 The reset and chip-select lines read as outputs driven low. Two PMU registers, read in the driver's code as the touch supply and clock enables, were written and restored.
-With the supply on, the released reset line reads high; with no supply it reads low. The SPI block's idle registers were
+With the two registers set, the released reset line reads high; with neither set, it reads low. The SPI block's idle registers were
 read and its clock was already on. A transfer test with no peripheral, using the kernel driver's recipe, moved no counter.
 
 ## What we guess

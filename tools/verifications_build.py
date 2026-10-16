@@ -87,6 +87,24 @@ def stats(rows, all_bundles, recorded_commit):
             "mismatch": len({r["bundle"] for r in rows if r["result"] == "mismatch"})}
 
 
+def breakdown(rows, all_bundles, recorded_commit):
+    """How the bundles stand, each counted once by its best verdict; the parts always add up to the number of bundles."""
+    best = {}
+    rank = {"match-recorded": 0, "match-later": 1, "mismatch": 2, "not-reproducible": 3}
+    for r in rows:
+        if r.get("kind") != "rebuild":
+            continue
+        if r["result"] == "match":
+            v = "match-recorded" if r.get("commit") == recorded_commit.get(r["bundle"]) else "match-later"
+        else:
+            v = r["result"]
+        if r["bundle"] not in best or rank[v] < rank[best[r["bundle"]]]:
+            best[r["bundle"]] = v
+    counts = {k: sum(1 for b in all_bundles if best.get(b) == k) for k in rank}
+    counts["unchecked"] = sum(1 for b in all_bundles if b not in best)
+    return counts
+
+
 def recorded():
     out = {}
     for b in bundles():
@@ -103,6 +121,7 @@ def row_md(r):
 
 def render(rows, all_bundles, recorded_commit):
     s = stats(rows, all_bundles, recorded_commit)
+    bd = breakdown(rows, all_bundles, recorded_commit)
     head = "| Bundle | Check | Result | Commit | Where | By | Notes |\n|---|---|---|---|---|---|---|"
     ind = [r for r in rows if independent(r)]
     own = [r for r in rows if not independent(r)]
@@ -111,11 +130,16 @@ def render(rows, all_bundles, recorded_commit):
              "someone rebuilds a payload and compares its hash with the bundle's manifest, or audits a claim against its bundle. "
              "A mismatch, or a bundle that cannot be reproduced, is a result and is recorded as such.", "",
              "## State", "",
-             "- **%d** bundles in [`evidence/`](%s/tree/main/evidence)." % (s["bundles"], REPO),
-             "- **%d** have been rebuilt to the exact hash of their manifest (by the maintainer, on one toolchain)." % s["rebuilt"],
-             "- **%d** of those rebuild only at a **later commit** than the one recorded, because they were produced from an uncommitted source tree; "
-             "new runs now save that tree as `source.diff`. **%d** cannot be rebuilt at all: the first run of a stage whose source changed afterwards." % (s["later"], s["failed"]),
-             "- **%d** bundles have been checked by someone other than the maintainer. **%d** mismatches recorded so far." % (s["independent"], s["mismatch"]), "",
+             "%d bundles in [`evidence/`](%s/tree/main/evidence), by the best result recorded for each:" % (s["bundles"], REPO), "",
+             "| Result | Bundles |", "|---|---|",
+             "| Rebuilt to the exact hash, at the commit its manifest records | %d |" % bd["match-recorded"],
+             "| Rebuilt to the exact hash, but only at a **later** commit (the run was recorded from an uncommitted source tree; new runs save it as `source.diff`) | %d |" % bd["match-later"],
+             "| Rebuilt to different bytes | %d |" % bd["mismatch"],
+             "| Not reproducible (the first run of a stage whose source changed afterwards) | %d |" % bd["not-reproducible"],
+             "| Not checked yet | %d |" % bd["unchecked"],
+             "| **Total** | **%d** |" % s["bundles"], "",
+             "**Independent checks: %d.** Every row counted above is the maintainer's, made on one toolchain (the project's own); a check by someone else "
+             "is listed separately below and is the only kind that adds independence." % s["independent"], "",
              "## Check a bundle yourself", "",
              "You need the repository with its history, `arm-none-eabi-gcc` and `make`; no phone.", "",
              "```sh", "python3 tools/rebuild_bundle.py evidence/<bundle> --search-later --by YOUR-GITHUB-HANDLE", "```", "",

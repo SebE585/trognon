@@ -15,9 +15,10 @@ You are exploring: **A 3GS in a drawer**
 
 # A 3GS in a drawer
 
-![Black screen. Nothing is connected.](../../img/journey/black.svg){ .journey-visual }
-
-*Black screen. Nothing is connected.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/black.svg){ .journey-visual }
+<figcaption>Black screen. Nothing is connected.</figcaption>
+</figure>
 
 You find an iPhone 3GS in a drawer. Its screen is black. You would like your own code to put something on it, and
 nothing written to the phone's storage.

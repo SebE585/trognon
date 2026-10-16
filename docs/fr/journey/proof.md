@@ -15,9 +15,10 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # La preuve qu'il a tourné
 
-![Le marqueur revient avec le même nonce.](../../img/journey/fr/check.svg){ .journey-visual }
-
-*Le marqueur revient avec le même nonce.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/check.svg){ .journey-visual }
+<figcaption>Le marqueur revient avec le même nonce.</figcaption>
+</figure>
 
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 

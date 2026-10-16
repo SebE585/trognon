@@ -15,9 +15,10 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # Une étape de démarrage modifiée
 
-![L'étape de démarrage modifiée voyage par USB.](../../img/journey/fr/ibss.svg){ .journey-visual }
-
-*L'étape de démarrage modifiée voyage par USB.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/ibss.svg){ .journey-visual }
+<figcaption>L'étape de démarrage modifiée voyage par USB.</figcaption>
+</figure>
 
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 

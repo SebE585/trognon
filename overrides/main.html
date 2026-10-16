@@ -2,6 +2,13 @@
 
 {#- The participation strip: every page offers an issue (a correction, an observation) and a pull request (the edit button), so that
     a reader who finds an error or has something to add is never at a dead end. -#}
+{#- The commit and the date of the build, also as a machine-readable tag, so a copy of a page can be dated. -#}
+{% block extrahead %}
+  {{ super() }}
+  <meta name="trognon-build-commit" content="{{ config.extra.build_commit }}">
+  <meta name="trognon-build-date" content="{{ config.extra.build_date }}">
+{% endblock %}
+
 {% block content %}
   {{ super() }}
   {% if page and page.url is defined and page.file and page.file.src_uri != "404.md" %}
@@ -21,6 +28,9 @@
         {% endif %}
         <li><a href="{{ config.site_url }}en/missions/">{{ 'Prendre une mission (en anglais)' if fr else 'Take a mission' }}</a></li>
       </ul>
+      <p class="page-actions__stamp">{{ 'État de la documentation au commit' if fr else 'State of the documentation at commit' }}
+        <a href="{{ repo }}/commit/{{ config.extra.build_commit }}">{{ config.extra.build_commit }}</a> ({{ config.extra.build_date }}){% if config.extra.build_dirty %} {{ '(modifications non commitées)' if fr else '(uncommitted changes)' }}{% endif %}.
+        {{ 'Une copie plus ancienne peut dire autre chose.' if fr else 'An older copy may say something else.' }}</p>
     </aside>
   {% endif %}
 {% endblock %}

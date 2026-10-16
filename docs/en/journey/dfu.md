@@ -15,9 +15,10 @@ You are exploring: [A 3GS in a drawer](start.md) → **The phone listens: DFU mo
 
 # The phone listens: DFU mode
 
-![Black screen. The phone answers over USB all the same.](../../img/journey/cable.svg){ .journey-visual }
-
-*Black screen. The phone answers over USB all the same.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/cable.svg){ .journey-visual }
+<figcaption>Black screen. The phone answers over USB all the same.</figcaption>
+</figure>
 
 How sure we are: <span class="tag tag-device">DEVICE</span>
 

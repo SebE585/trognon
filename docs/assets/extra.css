@@ -215,3 +215,14 @@
 .md-typeset .page-actions a { font-weight: 600; }
 /* A card set of four fits on one row on a wide page. */
 .md-typeset .grid.cards.four { grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr)); }
+
+/* Journey scenes: the picture sits beside the story on a wide screen, so the choices come up the page */
+.journey-figure { margin: 0 0 1rem; text-align: center; }
+.journey-figure figcaption { font-size: .72rem; font-style: italic; color: var(--md-default-fg-color--light); margin-top: .3rem; }
+.md-typeset .journey-trail ~ h2 { clear: both; }
+@media (min-width: 60em) {
+  .journey-figure { float: right; width: 16rem; margin: .3rem 0 1rem 1.6rem; }
+  .md-typeset .journey-figure img.journey-visual { max-height: none; width: 100%; }
+}
+@media (max-width: 59.99em) { .md-typeset .journey-figure img.journey-visual { max-height: 7.5rem; } }
+.md-typeset .page-actions .page-actions__stamp { margin: .8rem 0 0; font-size: .68rem; color: var(--md-default-fg-color--light); max-width: none; }

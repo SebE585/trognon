@@ -15,9 +15,10 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # Un plantage qu'on peut lire
 
-![Un plantage finit en vidage lisible, pas en redémarrage.](../../img/journey/fr/crash.svg){ .journey-visual }
-
-*Un plantage finit en vidage lisible, pas en redémarrage.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/crash.svg){ .journey-visual }
+<figcaption>Un plantage finit en vidage lisible, pas en redémarrage.</figcaption>
+</figure>
 
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 

@@ -15,9 +15,10 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # A patched boot stage
 
-![The patched boot stage travels over USB.](../../img/journey/ibss.svg){ .journey-visual }
-
-*The patched boot stage travels over USB.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/ibss.svg){ .journey-visual }
+<figcaption>The patched boot stage travels over USB.</figcaption>
+</figure>
 
 How sure we are: <span class="tag tag-device">DEVICE</span>
 

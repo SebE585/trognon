@@ -13,10 +13,18 @@ A published run is only as good as someone else's ability to check it. This page
 
 ## State
 
-- **54** bundles in [`evidence/`](https://github.com/SebE585/trognon/tree/main/evidence).
-- **52** have been rebuilt to the exact hash of their manifest (by the maintainer, on one toolchain).
-- **23** of those rebuild only at a **later commit** than the one recorded, because they were produced from an uncommitted source tree; new runs now save that tree as `source.diff`. **2** cannot be rebuilt at all: the first run of a stage whose source changed afterwards.
-- **0** bundles have been checked by someone other than the maintainer. **0** mismatches recorded so far.
+54 bundles in [`evidence/`](https://github.com/SebE585/trognon/tree/main/evidence), by the best result recorded for each:
+
+| Result | Bundles |
+|---|---|
+| Rebuilt to the exact hash, at the commit its manifest records | 29 |
+| Rebuilt to the exact hash, but only at a **later** commit (the run was recorded from an uncommitted source tree; new runs save it as `source.diff`) | 23 |
+| Rebuilt to different bytes | 0 |
+| Not reproducible (the first run of a stage whose source changed afterwards) | 2 |
+| Not checked yet | 0 |
+| **Total** | **54** |
+
+**Independent checks: 0.** Every row counted above is the maintainer's, made on one toolchain (the project's own); a check by someone else is listed separately below and is the only kind that adds independence.
 
 ## Check a bundle yourself
 

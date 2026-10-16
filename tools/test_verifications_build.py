@@ -82,5 +82,29 @@ class ShallowTests(unittest.TestCase):
         self.assertEqual(vb.check(rows, exists=lambda b: True, commit_ok=lambda c: True), [])
 
 
+class BreakdownTests(unittest.TestCase):
+    REC = {"B1": "c1", "B2": "c2", "B3": "c3", "B4": "c4"}
+
+    def test_each_bundle_is_counted_once_and_the_parts_add_up(self):
+        rows = [row(bundle="B1", commit="c1"), row(bundle="B2", commit="c9"),
+                row(bundle="B3", result="not-reproducible", commit=None, notes="x")]
+        bd = vb.breakdown(rows, ["B1", "B2", "B3", "B4"], self.REC)
+        self.assertEqual(bd, {"match-recorded": 1, "match-later": 1, "mismatch": 0, "not-reproducible": 1, "unchecked": 1})
+        self.assertEqual(sum(bd.values()), 4)
+
+    def test_the_best_result_wins_when_a_bundle_has_several_rows(self):
+        rows = [row(bundle="B1", result="not-reproducible", commit=None, notes="x"), row(bundle="B1", commit="c1")]
+        self.assertEqual(vb.breakdown(rows, ["B1"], self.REC)["match-recorded"], 1)
+
+    def test_a_claim_audit_does_not_count_as_a_rebuild(self):
+        rows = [row(bundle="B1", kind="claim-audit", claim="c", page="p")]
+        self.assertEqual(vb.breakdown(rows, ["B1"], self.REC)["unchecked"], 1)
+
+    def test_the_page_says_how_many_checks_are_independent(self):
+        text = vb.render([row(by="maintainer", bundle="B1", commit="abc123")], ["B1"], {"B1": "abc123"})
+        self.assertIn("Independent checks: 0", text)
+        self.assertIn("| **Total** | **1** |", text)
+
+
 if __name__ == "__main__":
     unittest.main()

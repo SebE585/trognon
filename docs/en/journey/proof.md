@@ -15,9 +15,10 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # Proof that it ran
 
-![The marker comes back with the same nonce.](../../img/journey/check.svg){ .journey-visual }
-
-*The marker comes back with the same nonce.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/check.svg){ .journey-visual }
+<figcaption>The marker comes back with the same nonce.</figcaption>
+</figure>
 
 How sure we are: <span class="tag tag-device">DEVICE</span>
 

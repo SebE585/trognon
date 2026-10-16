@@ -36,6 +36,8 @@ theme:
     - search.highlight
     - content.code.copy
     - content.action.edit
+hooks:
+  - hooks/build_info.py
 extra_css: [assets/extra.css]
 extra_javascript: [javascripts/mermaid-palette.js, javascripts/journey.js]
 markdown_extensions:

@@ -556,7 +556,9 @@ def page_for(g, n, route, nodes):
     lines += ["# %s" % n["title"], ""]
     if n.get("visual"):
         cap = VISUAL_CAPTIONS[lang][n["visual"]]
-        lines += ["![%s](../../%s){ .journey-visual }" % (cap, visual_rel(lang, n["visual"])), "", "*%s*" % cap, ""]
+        # Decorative alt text: the caption right under the picture says the same thing, and a reader should not hear it twice.
+        lines += ['<figure class="journey-figure" markdown="1">', "![](../../%s){ .journey-visual }" % visual_rel(lang, n["visual"]),
+                  "<figcaption>%s</figcaption>" % cap, "</figure>", ""]
     if n.get("tag"):
         lines += [T(lang, "how_sure") + tag_html(n["tag"]), ""]
     if n["kind"] == "grimoire":

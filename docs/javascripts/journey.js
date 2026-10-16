@@ -3,6 +3,10 @@
 (function () {
   "use strict";
   function init() {
+    // Heading permalinks are a mouse convenience: on a scene they would be five tab stops before the first choice.
+    if (document.querySelector(".journey-trail")) {
+      Array.prototype.forEach.call(document.querySelectorAll("a.headerlink"), function (a) { a.setAttribute("tabindex", "-1"); });
+    }
     var nb = document.querySelector("details.journey-notebook");
     if (!nb) return;
     var label = nb.getAttribute("data-label") || "Notebook";
@@ -51,7 +55,10 @@
     });
 
     document.body.appendChild(panel);
-    document.body.appendChild(toggle);
+    // The tab is fixed to the edge of the screen, so where it sits in the document only decides when the keyboard reaches it:
+    // right after the title, not after everything else.
+    var h1 = document.querySelector("article h1");
+    if (h1) h1.insertAdjacentElement("afterend", toggle); else document.body.appendChild(toggle);
     document.documentElement.classList.add("journey-js");
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();

@@ -15,9 +15,10 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # Le premier pixel
 
-![L'écran montre ce que le code dessine.](../../img/journey/fr/pixel.svg){ .journey-visual }
-
-*L'écran montre ce que le code dessine.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/pixel.svg){ .journey-visual }
+<figcaption>L'écran montre ce que le code dessine.</figcaption>
+</figure>
 
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 

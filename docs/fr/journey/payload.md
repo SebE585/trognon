@@ -15,9 +15,10 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # Notre code arrive
 
-![Notre code atterrit en RAM, à 0x41000000.](../../img/journey/fr/ram.svg){ .journey-visual }
-
-*Notre code atterrit en RAM, à 0x41000000.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/ram.svg){ .journey-visual }
+<figcaption>Notre code atterrit en RAM, à 0x41000000.</figcaption>
+</figure>
 
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 

@@ -15,9 +15,10 @@ Vous explorez : **Un 3GS dans un tiroir**
 
 # Un 3GS dans un tiroir
 
-![Écran noir. Rien n'est branché.](../../img/journey/fr/black.svg){ .journey-visual }
-
-*Écran noir. Rien n'est branché.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/black.svg){ .journey-visual }
+<figcaption>Écran noir. Rien n'est branché.</figcaption>
+</figure>
 
 Vous trouvez un iPhone 3GS dans un tiroir. Son écran est noir. Vous aimeriez que votre propre code y affiche quelque
 chose, sans rien écrire dans le stockage du téléphone.

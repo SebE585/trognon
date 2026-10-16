@@ -138,6 +138,15 @@ class AccessibilityTests(unittest.TestCase):
         self.assertNotIn("Missions on this binary", jb.grimoire_body(node, "en"))
 
 
+class SceneLayoutTests(unittest.TestCase):
+    def test_a_scene_picture_sits_in_a_figure_with_a_caption_and_decorative_alt(self):
+        g = {"lang": "en", "_src": "t.yaml", "title": "T", "start": "a", "nodes": [node("a", ["a"], kind="start", visual="black")]}
+        page = jb.render(g)["a.md"]
+        self.assertIn('<figure class="journey-figure" markdown="1">', page)
+        self.assertIn("![](../../img/journey/black.svg)", page)
+        self.assertIn("<figcaption>Black screen. Nothing is connected.</figcaption>", page)
+
+
 class FrenchWordingTests(unittest.TestCase):
     """Literal calques that were found in the French pages and fixed; they must not come back."""
     BANNED = ["au bord de ce que", "Retour au bord", "validations d'alimentation", "données du disque", "Demander quelque chose à voir",

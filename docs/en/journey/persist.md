@@ -15,9 +15,10 @@ You are exploring: [A 3GS in a drawer](start.md) → **Nothing is kept**
 
 # Nothing is kept
 
-![After a restart, the RAM is empty.](../../img/journey/empty.svg){ .journey-visual }
-
-*After a restart, the RAM is empty.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/empty.svg){ .journey-visual }
+<figcaption>After a restart, the RAM is empty.</figcaption>
+</figure>
 
 How sure we are: <span class="tag tag-device">DEVICE</span>
 

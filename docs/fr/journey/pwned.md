@@ -15,9 +15,10 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # Les contrôles de signature sont coupés
 
-![Contrôles de signature coupés : le téléphone accepte du code qu'Apple n'a pas signé.](../../img/journey/fr/unlocked.svg){ .journey-visual }
-
-*Contrôles de signature coupés : le téléphone accepte du code qu'Apple n'a pas signé.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/unlocked.svg){ .journey-visual }
+<figcaption>Contrôles de signature coupés : le téléphone accepte du code qu'Apple n'a pas signé.</figcaption>
+</figure>
 
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 

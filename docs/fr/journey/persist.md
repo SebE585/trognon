@@ -15,9 +15,10 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → **Rien n'est conservé**
 
 # Rien n'est conservé
 
-![Après un redémarrage, la RAM est vide.](../../img/journey/fr/empty.svg){ .journey-visual }
-
-*Après un redémarrage, la RAM est vide.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/empty.svg){ .journey-visual }
+<figcaption>Après un redémarrage, la RAM est vide.</figcaption>
+</figure>
 
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 

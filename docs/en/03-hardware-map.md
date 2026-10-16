@@ -623,7 +623,7 @@ It turns the contact of a finger into data sent to the processor, over an SPI bu
 
     - The reset and chip-select lines read as outputs driven low.
     - PMU registers read at I2C address `0x74`; two of them, read in the driver's code as the touch supply and clock enables, written and restored (that reading is static analysis, not an electrical measurement).
-    - Reset released with the supplies on reads high; with no supply, low.
+    - With the two PMU registers set (read as the supply and clock enables), the released reset line reads high; with neither set, low.
     - `spi1` idle registers read; its clock gate was already on.
     - A transfer self-test with no peripheral moved no counter.
 
@@ -670,8 +670,8 @@ about what the lines are connected to.
 
 **What remained hypothesis at that point**: everything else. A level of `0` gives neither the polarity nor
 who drives the pin; it does not show that the controller is powered, clocked, out of reset
-or present. Power and clock sit behind the PMU, so the next preconditions to establish are
-the PMU access and the SPI controller, before any transaction.
+or present. Power and clock were known to sit behind the PMU, so the preconditions to establish next were
+the PMU access and the SPI controller, before any transaction; the observations below went through them.
 
 **Later observations, same day** (details and caveats in
 [Touch controller preconditions](../research/2026-10-16-touch-n88-preconditions.md)):
@@ -688,9 +688,9 @@ the PMU access and the SPI controller, before any transaction.
   LDO's enable by a static reading of the PMU driver) and `0x50` from `0x11` to `0x13` (PMU GPIO 0, the touch
   clock enable by the same reading). The PMU accepted both and held them for 20 ms; no electrical effect was
   observed, and both were put back.
-- A dry run of the power-up sequence (STAGE 40) powered, clocked and released the reset of the touch controller for
-  about 35 ms with no SPI byte sent, then restored everything: the reset line read high once released (register
-  `0x211`). A pull-up on the board and the controller itself would give the same reading, so this is not yet an
+- A dry run of the candidate power-up sequence (STAGE 40) set the two PMU registers read as the touch supply and clock
+  enables, then released the reset line, for about 35 ms with no SPI byte sent, and restored everything: the reset line
+  read high once released (register `0x211`). A pull-up on the board and the controller itself would give the same reading, so this is not yet an
   observation of the controller. A control released the same line with no supply and it read low, so the high
   level came with the supplies (a pull-up to the touch rail, or the controller): the line is connected to something
   that the sequence powers. With the touch LDO alone (no clock enable, no SPI clock) the released line read low at

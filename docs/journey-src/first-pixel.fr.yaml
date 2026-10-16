@@ -174,8 +174,8 @@ nodes:
     tag: HYPOTHESIS
     know: |
       Les lignes de reset et de sélection de puce se lisent comme des sorties pilotées à l'état bas. Deux registres du PMU,
-      lus dans le code du pilote comme les commandes d'activation de l'alimentation et de l'horloge du tactile, ont été écrits puis restaurés. Avec l'alimentation, la ligne de reset relâchée se lit à
-      l'état haut ; sans alimentation, elle se lit à l'état bas. Les registres au repos du bloc SPI ont été lus et son horloge
+      lus dans le code du pilote comme les commandes d'activation de l'alimentation et de l'horloge du tactile, ont été écrits puis restaurés. Quand ces deux registres sont positionnés, la ligne de reset relâchée se lit à
+      l'état haut ; quand ni l'un ni l'autre ne l'est, elle se lit à l'état bas. Les registres au repos du bloc SPI ont été lus et son horloge
       était déjà active. Un test de transfert sans périphérique, avec la recette du pilote du noyau, n'a fait bouger aucun compteur.
     guess: |
       Les broches d'horloge et de données du SPI sont peut-être des broches dédiées qui n'ont besoin d'aucune configuration.

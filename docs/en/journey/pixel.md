@@ -15,9 +15,10 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # The first pixel
 
-![The screen shows what the code draws.](../../img/journey/pixel.svg){ .journey-visual }
-
-*The screen shows what the code draws.*
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/pixel.svg){ .journey-visual }
+<figcaption>The screen shows what the code draws.</figcaption>
+</figure>
 
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
