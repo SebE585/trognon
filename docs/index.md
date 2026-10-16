@@ -27,8 +27,6 @@ catches and survives three kinds of CPU exceptions. Everything below was observe
 Le premier code tourne sur un vrai iPhone 3GS : il dessine à l'écran et attrape trois types
 d'exceptions CPU sans planter. Tout ce qui suit a été observé sur l'appareil.
 
-![Capability ladder](img/capability-ladder.svg){ width="260" align=right }
-
 | Rung | Status |
 |---|---|
 | Run our code from DFU, nothing written to the phone | <span class="tag tag-device">DEVICE</span> |
@@ -38,6 +36,8 @@ d'exceptions CPU sans planter. Tout ce qui suit a été observé sur l'appareil.
 | Free-running tick (24 MHz, measured) and buttons (GPIO, mapped) | <span class="tag tag-device">DEVICE</span> |
 | Timer interrupt | <span class="tag tag-hyp">HYPOTHESIS</span>: a VIC0 line fires, not proven to be the timer |
 | Content over USB, storage, touch | <span class="tag tag-hyp">HYPOTHESIS</span> |
+
+![Capability ladder](img/capability-ladder.svg)
 
 ## By chip / Par puce
 

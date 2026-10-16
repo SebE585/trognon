@@ -8,6 +8,12 @@
   --md-primary-fg-color: #2B3A24;
   --md-accent-fg-color: #8DB84A;
 }
+/* Material's default table is display:inline-block, which lets a wide table's
+   preferred (max-content) width leak into its ancestors on narrow screens and
+   push the whole page wider than the viewport. Forcing block + its own
+   horizontal scroll keeps the overflow contained to the table itself. */
+.md-typeset table:not([class]) { display:block; overflow-x:auto; }
+
 .md-typeset .tag { display:inline-block; padding:0 .45em; border-radius:2px; font-size:.75em; font-weight:700; letter-spacing:.03em; color:#fff; }
 .md-typeset .tag-device { background:#3F6A24; }
 .md-typeset .tag-emu { background:#1D4870; }
