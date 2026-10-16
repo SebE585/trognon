@@ -96,4 +96,26 @@
  * something else (generic platform-bus matching, or it is simply not needed) accounts for it. */
 #define SOC_CLOCK_GATE_27     (0xBF100078 + 4 * 0x27)
 
+/* i2c0 bus (DEVICE TREE, decoded 2026-10-16, not yet read on the device): soft (bit-banged) I2C,
+ * compatible "i2c,s5l8920x","iic,soft". GPIO function codes for SDA/SCL use the same port.pin
+ * encoding already confirmed for the Wi-Fi reset/wake lines (high byte = port, low byte = pin,
+ * array index = 8*port+pin): function-iic_sda = 0x401 -> 04.01, function-iic_scl = 0x400 -> 04.00.
+ * The accelerometer (compatible "accelerometer,lis331dl","accelerometer,lis302dl") sits at I2C
+ * address 0x1d on this bus, device tree "reg" property; its WHO_AM_I register (0x0F on both
+ * LIS331DL and LIS302DL, datasheet SOURCE, not device tree) should read 0x3B (LIS331DL) or 0x3C
+ * (LIS302DL). A compass (AKM8973S, addr 0x1e) and a second compass1 (addr 0x1f, no interrupts
+ * property) share the same bus; not probed yet. */
+#define SOC_I2C0_SCL_IDX      (8 * 0x04 + 0x00)
+#define SOC_I2C0_SDA_IDX      (8 * 0x04 + 0x01)
+#define SOC_ACCEL_I2C_ADDR    0x1d
+#define SOC_ACCEL_WHO_AM_I_REG 0x0F
+
+/* Bluetooth (DEVICE TREE, decoded 2026-10-16): compatible "bluetooth,n88", transport is UART3
+ * (NOT SDIO -- a different, simpler path than Wi-Fi), transport-speed 0x2dc6c0 (3,000,000 baud).
+ * Reset and wake GPIO function codes, same encoding as above: function-bt_reset = 0x1506 ->
+ * 15.06, function-bt_wake = 0x1602 -> 16.02. The baseband node's own function-bt_reset is the
+ * same 0x1506 (shared physical line). Neither read on the device yet. */
+#define SOC_BT_RESET_IDX      (8 * 0x15 + 0x06)
+#define SOC_BT_WAKE_IDX       (8 * 0x16 + 0x02)
+
 #endif

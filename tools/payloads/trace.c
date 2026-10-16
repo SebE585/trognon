@@ -32,6 +32,65 @@
 #define STAGE 0
 #endif
 
+#if STAGE == 29
+/* Accelerometer probe over bit-banged i2c0 (decoded 2026-10-16 from the device tree, see
+ * soc/s5l8920.h for the full chain). This is the FIRST bit-bang on these two pins: STAGE 29
+ * reads their idle level with both held as inputs (no write at all) before doing anything
+ * else -- if there is no pull-up on this bus, that read-only step already tells us (both
+ * read 0 and stay 0), without risking a short. Only if that looks sane does it go on to a
+ * real I2C transaction (START, address+write, register address, repeated START,
+ * address+read, one byte, STOP) asking for the accelerometer's WHO_AM_I (register 0x0F).
+ * GPIO mode encoding is OpeniBoot's own gpio_custom_io() (plat-s5l8920/gpio.c):
+ * use_as_input = value 0x210 / mask 0x27E (releases the pin, no level forced -- this is what
+ * makes the open-drain emulation safe: we only ever drive LOW or let go, never drive HIGH),
+ * clear_output = value 0x212 / mask 0x27F (drive low). Bit timing is generous (~20 us/half-bit,
+ * well under I2C "standard mode" 100 kHz) using the already-confirmed 24.001 MHz free-running
+ * tick. Reversible by construction: an I2C bus is designed to be idle (both lines released)
+ * between transactions, which is exactly the state this leaves. Plain file-scope functions,
+ * not nested ones: a nested function under GCC needs a stack trampoline, which has no defined
+ * behaviour on this bare-metal, MMU-mapped, cacheable payload section. */
+static volatile u32 *i2c_tick29 = (volatile u32 *)(SOC_TIMER_BASE + 0x200);
+
+static void i2c_mode(volatile u32 *reg, u32 value, u32 mask) { *reg = (*reg & ~mask) | (value & mask); }
+static void i2c_release(volatile u32 *reg) { i2c_mode(reg, 0x210, 0x27E); }
+static void i2c_low(volatile u32 *reg)     { i2c_mode(reg, 0x212, 0x27F); }
+static u32  i2c_level(volatile u32 *reg)   { return *reg & 1; }
+static void i2c_delay(u32 us) { u32 t0 = *i2c_tick29; while (*i2c_tick29 - t0 < 24u * us) ; }
+
+static void i2c_start(volatile u32 *scl, volatile u32 *sda) {
+	i2c_release(sda); i2c_release(scl); i2c_delay(20);
+	i2c_low(sda); i2c_delay(20);
+	i2c_low(scl); i2c_delay(20);
+}
+static void i2c_stop(volatile u32 *scl, volatile u32 *sda) {
+	i2c_low(sda); i2c_delay(20);
+	i2c_release(scl); i2c_delay(20);
+	i2c_release(sda); i2c_delay(20);
+}
+static void i2c_wbit(volatile u32 *scl, volatile u32 *sda, u32 bit) {
+	if (bit) i2c_release(sda); else i2c_low(sda);
+	i2c_delay(20);
+	i2c_release(scl); i2c_delay(20);
+	i2c_low(scl); i2c_delay(20);
+}
+static u32 i2c_rbit(volatile u32 *scl, volatile u32 *sda) {
+	i2c_release(sda); i2c_delay(10);
+	i2c_release(scl); i2c_delay(20);
+	u32 b = i2c_level(sda);
+	i2c_low(scl); i2c_delay(20);
+	return b;
+}
+static u32 i2c_wbyte(volatile u32 *scl, volatile u32 *sda, u32 byte) {
+	for (int i = 7; i >= 0; i--) i2c_wbit(scl, sda, (byte >> i) & 1);
+	return !i2c_rbit(scl, sda);   /* ACK = slave pulls SDA low */
+}
+static u32 i2c_rbyte(volatile u32 *scl, volatile u32 *sda) {
+	u32 byte = 0;
+	for (int i = 0; i < 8; i++) byte = (byte << 1) | i2c_rbit(scl, sda);
+	i2c_wbit(scl, sda, 1);   /* master NACK: single-byte read, no more wanted */
+	return byte;
+}
+#endif
 
 __attribute__((section(".text.start"))) void payload_main(void)
 {
@@ -834,6 +893,56 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	result_hex("gate27", gate);
 	fb_clean();
 #endif
+#if STAGE == 29
+	at(4, 116, 0x00F0C040); puts_("STEP 29 ACCEL I2C\n");
+
+	volatile u32 *gp29  = (volatile u32 *)SOC_GPIO_BASE;
+	volatile u32 *scl29 = &gp29[SOC_I2C0_SCL_IDX];
+	volatile u32 *sda29 = &gp29[SOC_I2C0_SDA_IDX];
+
+	i2c_release(scl29); i2c_release(sda29); i2c_delay(20);
+	u32 scl_idle = i2c_level(scl29), sda_idle = i2c_level(sda29);
+	kv("SCL_IDLE", scl_idle);
+	kv("SDA_IDLE", sda_idle);
+	result_hex("scl_idle", scl_idle);
+	result_hex("sda_idle", sda_idle);
+
+	u32 who = 0, ack_aw = 0, ack_reg = 0, ack_ar = 0;
+	if (scl_idle && sda_idle) {   /* a pulled-up idle bus; anything else means this is not wired as expected */
+		i2c_start(scl29, sda29);
+		ack_aw  = i2c_wbyte(scl29, sda29, (SOC_ACCEL_I2C_ADDR << 1) | 0);
+		ack_reg = i2c_wbyte(scl29, sda29, SOC_ACCEL_WHO_AM_I_REG);
+		i2c_start(scl29, sda29);   /* repeated START */
+		ack_ar  = i2c_wbyte(scl29, sda29, (SOC_ACCEL_I2C_ADDR << 1) | 1);
+		who = i2c_rbyte(scl29, sda29);
+		i2c_stop(scl29, sda29);
+	} else {
+		puts_("BUS NOT IDLE HIGH, SKIPPED\n");
+	}
+	kv("ACK_ADDRW", ack_aw);
+	kv("ACK_REG  ", ack_reg);
+	kv("ACK_ADDRR", ack_ar);
+	kv("WHO_AM_I ", who);
+	result_hex("ack_addrw", ack_aw);
+	result_hex("ack_reg", ack_reg);
+	result_hex("ack_addrr", ack_ar);
+	result_hex("who_am_i", who);
+	fb_clean();
+#endif
+#if STAGE == 30
+	/* Bluetooth GPIO levels, read-only (same pattern as STAGE 15 for Wi-Fi reset/wake): just the
+	 * current level of the reset (15.06) and wake (16.02) lines, decoded tonight from the device
+	 * tree's "function-bt_reset"/"function-bt_wake" properties. No write, no UART touched. */
+	at(4, 116, 0x00F0C040); puts_("STEP 30 BT GPIO\n");
+	volatile u32 *gp = (volatile u32 *)SOC_GPIO_BASE;
+	u32 bt_reset = gp[SOC_BT_RESET_IDX] & 1;
+	u32 bt_wake  = gp[SOC_BT_WAKE_IDX] & 1;
+	kv("RESET_15.6", bt_reset);
+	kv("WAKE_16.2 ", bt_wake);
+	result_hex("bt_reset", bt_reset);
+	result_hex("bt_wake", bt_wake);
+	fb_clean();
+#endif
 #if STAGE == 27
 	/* iop_probe, step 1: close the mapping question before touching the IOP register window
 	 * again -- read the MMU's own L1 descriptor for VA SOC_IOP_REG_BASE (0x86300000) instead
@@ -971,6 +1080,10 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "iop-mmu-1", 1);
 #elif STAGE == 28
 	ENV_SET("trognon", "iop-clkgate-1", 1);
+#elif STAGE == 29
+	ENV_SET("trognon", "accel-i2c-1", 1);
+#elif STAGE == 30
+	ENV_SET("trognon", "bt-gpio-1", 1);
 #elif STAGE == 5
 	ENV_SET("trognon", "regs-1", 1);
 #elif STAGE == 6
