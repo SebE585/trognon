@@ -10,6 +10,8 @@ source: tools/bestiary.yaml
 
 *Wi-Fi et son coprocesseur* · **Blessée**
 
+**Objectif** (borné : l'atteindre ne veut pas dire que le bloc est compris) : Démarrer le coprocesseur et obtenir une réponse identifiée de la puce Wi-Fi.
+
 Une campagne est une créature plus un itinéraire. Les fronts ne sont pas indépendants : certains ne peuvent pas être attaqués avant qu'un autre soit compris. La disponibilité ci-dessous est calculée depuis les états du [Bestiaire](../bestiaire.md), pas saisie. Un front est **verrouillé** tant que chaque front dont il dépend n'est pas à terre (vu sur le téléphone). Verrouillé ne veut pas dire fermé : ce qui attend, c'est l'exécution sur le téléphone, et un front verrouillé peut encore être étudié dans le code. L'ordre est notre plan de travail, pas une exigence démontrée : il dit ce que nous essaierions en premier.
 
 La puce Wi-Fi se trouve derrière un coprocesseur que nous avons lu dans le firmware mais jamais démarré. L'itinéraire va de la compréhension de son horloge, à son démarrage, puis à la raison pour laquelle les écritures du processeur principal dans les registres Wi-Fi ne tiennent pas.
@@ -36,14 +38,14 @@ Vie : 5 sur 8
 
 - **Disponible** · Ouvert
 - Pour le faire tomber : on ne sait pas encore quelle exécution trancherait
-- L'attaquer : [Which object implements the clock-gate call?](../../en/missions.md) (sans téléphone) · [Do the clock mask registers mirror the gate words?](../../en/missions.md) (avec un téléphone, lecture seule)
+- L'attaquer : [Which object implements the clock-gate call?](../../en/missions.md#mission-s5l-clk-q1) (sans téléphone) · [Do the clock mask registers mirror the gate words?](../../en/missions.md#mission-s5l-clk-q2) (avec un téléphone, lecture seule)
 
 ### Étape 3. Comment le coprocesseur démarre : sa séquence, lue dans le firmware mais jamais exécutée par nous
 
 - **Verrouillé jusqu'à ce que ceci soit à terre : Quelle horloge physique alimente le coprocesseur** · Blessé : lu dans le code
 - Lecture : [`research/2026-10-16-wifi-iop-architecture.md`](../../research/2026-10-16-wifi-iop-architecture.md)
 - Pour le faire tomber : des écritures matérielles : le mainteneur seulement, une par une, après une description exacte et un go
-- L'attaquer : [Which class receives the coprocessor start call?](../../en/missions.md) (sans téléphone) · [What do the object-slot calls of the coprocessor start sequence do?](../../en/missions.md) (sans téléphone)
+- L'attaquer : [Which class receives the coprocessor start call?](../../en/missions.md#mission-arm7m-startcpu-q4) (sans téléphone) · [What do the object-slot calls of the coprocessor start sequence do?](../../en/missions.md#mission-embiop-seq-q1) (sans téléphone)
 
 ### Étape 4. Pourquoi les écritures du processeur principal dans les registres Wi-Fi ne tiennent pas
 

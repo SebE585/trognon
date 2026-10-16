@@ -14,6 +14,7 @@ their `needs` allow, what is available now and what waits, and which kind of run
 a front is locked while a front it needs is not down: what waits is the run on the phone, a locked front can still be studied in the code.
 """
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -37,15 +38,16 @@ TXT = {
     "en": {
         "title": "Bestiary", "lead": "Blocks of the phone we have not finished understanding, shown as creatures to face.",
         "intro": ("Each creature is a block of the phone. Its **fronts** are the precise points the [hardware map](03-hardware-map.md) still lists as open. "
-                  "The life bar is computed from them and nothing else: a front only goes down when a proof is attached to it. "
-                  "Nobody, the maintainer included, can lower a bar by writing a sentence. In the spirit of a barcode card, a creature is also a **code to find**: "
+                  "The life bar is computed from the states written in `tools/bestiary.yaml`: a front that is down must cite an evidence folder, and the generator "
+                  "checks that the cited line is really in it. What a measurement demonstrates is still decided by a human review, in a pull request. In the spirit of a barcode card, a creature is also a **code to find**: "
                   "each front is one slot of it, shown as `?` until a proof reveals it."),
         "rules_h": "How a front goes down", "rules": [
             "**Open**: nothing established. The bar is full for this front.",
             "**Wounded**: read in the firmware or in code (SOURCE), not yet seen working on the phone. Half a point of life is gone.",
             "**Down**: observed on the real phone (DEVICE), with an evidence folder you can open and rebuild. The point is gone.",
-            "A creature is **defeated** when every front is down. It is called *unspotted* while it is not even in the hardware map."],
-        "story": "The story behind it",
+            "A creature is **defeated** when every front is down. That means its **goal** is reached, not that the block is understood: new questions may appear after a victory.",
+            "It is called *unspotted* while it is not even in the hardware map."],
+        "story": "The story behind it", "goal": "Goal", "goal_note": "bounded: reaching it does not mean the block is understood",
         "camp": "Campaign", "camp_title": "Campaign: %s", "camp_lead": "The order in which to attack %s, and what each step needs.",
         "camp_intro": ("A campaign is a creature plus a route. The fronts are not independent: some cannot be attacked before another is understood. "
                        "Availability below is computed from the states in the [Bestiary](../bestiary.md), not typed in. A front is **locked** until every front it needs is down "
@@ -56,7 +58,7 @@ TXT = {
         "needs_h": "To bring it down", "dn": {"survey": "a run on a phone that only reads", "write": "hardware writes: the maintainer only, one at a time, after an exact description and a go",
                                                "unknown": "not known yet which run would settle it"},
         "bestiary_page": "../bestiary.md", "mission_page": "../missions.md", "ref_up": "../../",
-        "code": "Code", "found": "found", "slots": "slots", "digit": "Digit", "in_bundle": "read in",
+        "code": "Code", "found": "found", "slots": "slots", "fragment": "Fragment", "in_bundle": "read in",
         "code_note": "A creature is a code to find. Each front is one slot of it, shown as ? until a proof reveals it.",
         "life": "Life", "of": "of", "points": "points left", "state": {"open": "Open", "wounded": "Wounded: read in code", "down": "Down: seen on the phone"},
         "status": {"unspotted": "Unspotted", "intact": "Intact", "wounded": "Wounded", "defeated": "Defeated"},
@@ -69,15 +71,16 @@ TXT = {
     "fr": {
         "title": "Bestiaire", "lead": "Les blocs du téléphone que nous n'avons pas fini de comprendre, présentés comme des créatures à affronter.",
         "intro": ("Chaque créature est un bloc du téléphone. Ses **fronts** sont les points précis que la [carte matérielle](03-hardware-map.md) donne encore pour ouverts. "
-                  "La barre de vie se calcule à partir d'eux et de rien d'autre : un front ne tombe que si une preuve lui est attachée. "
-                  "Personne, mainteneur compris, ne peut baisser une barre en écrivant une phrase. À la manière d'une carte à code-barres, une créature est aussi un **code à trouver** : "
+                  "La barre de vie se calcule à partir des états écrits dans `tools/bestiary.yaml` : un front à terre doit citer un dossier de preuve, et le générateur "
+                  "vérifie que la ligne citée s'y trouve vraiment. Ce qu'une mesure démontre reste décidé par une relecture humaine, dans une pull request. À la manière d'une carte à code-barres, une créature est aussi un **code à trouver** : "
                   "chaque front en est un emplacement, affiché `?` tant qu'une preuve ne le révèle pas."),
         "rules_h": "Comment un front tombe", "rules": [
             "**Ouvert** : rien d'établi. La barre est pleine pour ce front.",
             "**Blessé** : lu dans le firmware ou dans du code (SOURCE), pas encore vu fonctionner sur le téléphone. Un demi-point de vie est parti.",
             "**À terre** : observé sur le vrai téléphone (DEVICE), avec un dossier de preuve que vous pouvez ouvrir et reconstruire. Le point est parti.",
-            "Une créature est **vaincue** quand tous ses fronts sont à terre. Elle est dite *non repérée* tant qu'elle n'est même pas dans la carte matérielle."],
-        "story": "L'histoire qui y mène",
+            "Une créature est **vaincue** quand tous ses fronts sont à terre. Cela veut dire que son **objectif** est atteint, pas que le bloc est compris : de nouvelles questions peuvent apparaître après une victoire.",
+            "Elle est dite *non repérée* tant qu'elle n'est même pas dans la carte matérielle."],
+        "story": "L'histoire qui y mène", "goal": "Objectif", "goal_note": "borné : l'atteindre ne veut pas dire que le bloc est compris",
         "camp": "Campagne", "camp_title": "Campagne : %s", "camp_lead": "L'ordre dans lequel attaquer %s, et ce dont chaque étape a besoin.",
         "camp_intro": ("Une campagne est une créature plus un itinéraire. Les fronts ne sont pas indépendants : certains ne peuvent pas être attaqués avant qu'un autre soit compris. "
                        "La disponibilité ci-dessous est calculée depuis les états du [Bestiaire](../bestiaire.md), pas saisie. Un front est **verrouillé** tant que chaque front dont il dépend "
@@ -88,7 +91,7 @@ TXT = {
         "needs_h": "Pour le faire tomber", "dn": {"survey": "une exécution sur un téléphone qui ne fait que lire", "write": "des écritures matérielles : le mainteneur seulement, une par une, après une description exacte et un go",
                                                    "unknown": "on ne sait pas encore quelle exécution trancherait"},
         "bestiary_page": "../bestiaire.md", "mission_page": "../../en/missions.md", "ref_up": "../../",
-        "code": "Code", "found": "trouvés", "slots": "emplacements", "digit": "Chiffre", "in_bundle": "lu dans",
+        "code": "Code", "found": "trouvés", "slots": "emplacements", "fragment": "Chiffre", "in_bundle": "lu dans",
         "code_note": "Une créature est un code à trouver. Chaque front en est un emplacement, affiché ? tant qu'une preuve ne le révèle pas.",
         "life": "Vie", "of": "sur", "points": "points restants", "state": {"open": "Ouvert", "wounded": "Blessé : lu dans le code", "down": "À terre : vu sur le téléphone"},
         "status": {"unspotted": "Non repérée", "intact": "Intacte", "wounded": "Blessée", "defeated": "Vaincue"},
@@ -134,6 +137,11 @@ def bar(left, total):
     return "▰" * filled + "▱" * (SEGMENTS - filled)
 
 
+def _norm(text):
+    """For comparing a displayed value with its proof line: no 0x prefix, spaces or case (0x212 is in 'raw 00000212')."""
+    return re.sub(r"0x|\s", "", str(text).lower())
+
+
 def _bundle_text(bundle):
     parts = []
     for name in ("screen.txt", "vars.txt"):
@@ -144,8 +152,8 @@ def _bundle_text(bundle):
 
 
 def code_strip(creature):
-    """One slot per front: the revealed digit, a check mark for a front that is down without one, a ? otherwise."""
-    return [f["digit"]["value"] if f.get("digit") else ("✓" if f["state"] == "down" else "?") for f in creature["fronts"]]
+    """One slot per front: the revealed code fragment, a check mark for a front that is down without one, a ? otherwise."""
+    return [f["fragment"]["value"] if f.get("fragment") else ("✓" if f["state"] == "down" else "?") for f in creature["fronts"]]
 
 
 def _campaign_errors(c):
@@ -216,6 +224,8 @@ def check(data, titles=None, bundles=None):
             errors.append("%s: duplicate creature id" % i)
         seen.add(i)
         for lang in ("en", "fr"):
+            if not (c.get("goal") or {}).get(lang):
+                errors.append("%s: a creature states its goal in both languages (%s is missing)" % (i, lang))
             if not (c.get("name") or {}).get(lang) or not (c.get("block") or {}).get(lang):
                 errors.append("%s: name and block need both languages (%s is missing)" % (i, lang))
         if c.get("story") and not (DOCS / "en" / "journey" / ("%s.md" % c["story"])).is_file():
@@ -238,12 +248,14 @@ def check(data, titles=None, bundles=None):
                         errors.append("%s: evidence bundle %r does not exist" % (where, b))
             elif f.get("evidence"):
                 errors.append("%s: only a front that is down carries evidence" % where)
-            d = f.get("digit")
+            d = f.get("fragment")
             if d:
                 if f.get("state") != "down":
-                    errors.append("%s: only a front that is down reveals a digit" % where)
+                    errors.append("%s: only a front that is down reveals a code fragment" % where)
                 elif not (d.get("value") and d.get("proof") and (d.get("label") or {}).get("en") and (d.get("label") or {}).get("fr")):
-                    errors.append("%s: a digit needs value, proof and a label in both languages" % where)
+                    errors.append("%s: a code fragment needs value, proof and a label in both languages" % where)
+                elif _norm(d["value"]) not in _norm(d["proof"]):
+                    errors.append("%s: the value %r does not appear in its proof line %r" % (where, d["value"], d["proof"]))
                 elif not any(d["proof"].lower() in _bundle_text(b).lower() for b in f.get("evidence", [])):
                     errors.append("%s: the proof line %r is in none of the front's bundles (screen.txt or vars.txt)" % (where, d["proof"]))
             if f.get("state") == "wounded":
@@ -276,6 +288,7 @@ def render(data, lang, titles=None, fr_anchors=None):
         left, total = life(c)
         st = status(c)
         lines += ["## %s" % c["name"][lang], "", "*%s* · **%s**" % (c["block"][lang], t["status"][st]), "",
+                  "**%s** (%s)%s%s" % (t["goal"], t["goal_note"], col, c["goal"][lang]), "",
                   '<p class="bestiary-bar" role="img" aria-label="%s%s%d %s %d %s">%s</p>' % (t["life"], col, left, t["of"], total, t["points"], bar(left, total)),
                   "", "%s%s%d %s %d" % (t["life"], col, left, t["of"], total), "",
                   '<p class="bestiary-code" role="img" aria-label="%s%s%d %s %d %s">%s</p>' % (
@@ -283,8 +296,8 @@ def render(data, lang, titles=None, fr_anchors=None):
                       " &nbsp;·&nbsp; ".join("<code>%s</code>" % v for v in code_strip(c))), ""]
         for f in c["fronts"]:
             line = "- **%s.** %s" % (t["state"][f["state"]], f["text"][lang])
-            if f.get("digit"):
-                line += " %s%s<code>%s</code> (%s)." % (t["digit"], col, f["digit"]["value"], f["digit"]["label"][lang])
+            if f.get("fragment"):
+                line += " %s%s<code>%s</code> (%s)." % (t["fragment"], col, f["fragment"]["value"], f["fragment"]["label"][lang])
             if f["state"] == "down":
                 line += " " + t["proof"] + col + ", ".join("[`%s`](%s/tree/main/evidence/%s)" % (b, REPO, b) for b in f["evidence"]) + "."
             if f["state"] == "wounded":
@@ -293,7 +306,7 @@ def render(data, lang, titles=None, fr_anchors=None):
             if f["state"] != "down":
                 ms = f.get("missions", [])
                 if ms:
-                    lines.append("    - %s%s%s" % (t["attack"], col, " · ".join("[%s](%s) (%s)" % (titles[m][0], t["missions_page"], t["unit"].get(titles[m][1], titles[m][1])) for m in ms)))
+                    lines.append("    - %s%s%s" % (t["attack"], col, " · ".join("[%s](%s#mission-%s) (%s)" % (titles[m][0], t["missions_page"], m.lower(), t["unit"].get(titles[m][1], titles[m][1])) for m in ms)))
                 else:
                     lines.append("    - %s [%s](%s/issues/new?template=mission.yml)." % (t["none"], t["propose"], REPO))
         if c.get("story"):
@@ -321,6 +334,7 @@ def render_campaign(c, lang, titles=None):
              "source: tools/bestiary.yaml", "---", "",
              "<!-- Generated by tools/bestiary_build.py from tools/bestiary.yaml. Do not edit by hand. -->", "",
              "# %s" % (t["camp_title"] % name), "", "*%s* · **%s**" % (c["block"][lang], t["status"][status(c)]), "",
+             "**%s** (%s)%s%s" % (t["goal"], t["goal_note"], col, c["goal"][lang]), "",
              t["camp_intro"], "", c["campaign_intro"][lang].strip(), "",
              '<p class="bestiary-bar" role="img" aria-label="%s%s%d %s %d %s">%s</p>' % (t["life"], col, left, t["of"], total, t["points"], bar(left, total)), "",
              "%s%s%d %s %d" % (t["life"], col, left, t["of"], total), "",
@@ -332,8 +346,8 @@ def render_campaign(c, lang, titles=None):
         kind, waits = avail[c["fronts"].index(f)]
         label = t["done"] if kind == "done" else (t["avail"] if kind == "available" else "%s %s" % (t["locked"], " ; ".join(w["text"][lang].rstrip(".") for w in waits)))
         lines += ["### %s %d. %s" % (t["step"], n, f["text"][lang].rstrip(".")), "", "- **%s** · %s" % (label, t["state"][f["state"]])]
-        if f.get("digit"):
-            lines.append("- %s%s<code>%s</code> (%s)" % (t["digit"], col, f["digit"]["value"], f["digit"]["label"][lang]))
+        if f.get("fragment"):
+            lines.append("- %s%s<code>%s</code> (%s)" % (t["fragment"], col, f["fragment"]["value"], f["fragment"]["label"][lang]))
         if f["state"] == "down":
             lines.append("- %s%s%s" % (t["proof"], col, ", ".join("[`%s`](%s/tree/main/evidence/%s)" % (b, REPO, b) for b in f["evidence"])))
         else:
@@ -342,7 +356,7 @@ def render_campaign(c, lang, titles=None):
             lines.append("- %s%s%s" % (t["needs_h"], col, t["dn"][f["down_needs"]]))
             ms = f.get("missions", [])
             if ms:
-                lines.append("- %s%s%s" % (t["attack"], col, " · ".join("[%s](%s) (%s)" % (titles[m][0], t["mission_page"], t["unit"].get(titles[m][1], titles[m][1])) for m in ms)))
+                lines.append("- %s%s%s" % (t["attack"], col, " · ".join("[%s](%s#mission-%s) (%s)" % (titles[m][0], t["mission_page"], m.lower(), t["unit"].get(titles[m][1], titles[m][1])) for m in ms)))
             else:
                 lines.append("- %s [%s](%s/issues/new?template=mission.yml)." % (t["none"], t["propose"], REPO))
         lines.append("")

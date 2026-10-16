@@ -10,6 +10,8 @@ source: tools/bestiary.yaml
 
 *Wi-Fi and its coprocessor* · **Wounded**
 
+**Goal** (bounded: reaching it does not mean the block is understood): Start the coprocessor and get an identified answer from the Wi-Fi chip.
+
 A campaign is a creature plus a route. The fronts are not independent: some cannot be attacked before another is understood. Availability below is computed from the states in the [Bestiary](../bestiary.md), not typed in. A front is **locked** until every front it needs is down (seen on the phone). Locked does not mean closed: what waits is the run on the phone, and a locked front can still be studied in the code. The order is our working plan, not a proven requirement: it says what we would try first.
 
 The Wi-Fi chip sits behind a coprocessor that we have read about in the firmware but never started. The route goes from understanding its clock, to starting it, to finding out why the main processor's writes to the Wi-Fi registers do not stick.
@@ -29,21 +31,21 @@ Life: 5 of 8
 ### Step 1. The base address and the GPIO lines of the Wi-Fi block
 
 - **Done** · Down: seen on the phone
-- Digit: <code>1</code> (The level of the reset line after it is released)
+- Fragment: <code>1</code> (The level of the reset line after it is released)
 - Proof: [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset)
 
 ### Step 2. Which physical clock gate feeds the coprocessor
 
 - **Available** · Open
 - To bring it down: not known yet which run would settle it
-- Attack it: [Which object implements the clock-gate call?](../missions.md) (no phone) · [Do the clock mask registers mirror the gate words?](../missions.md) (needs a phone, reads only)
+- Attack it: [Which object implements the clock-gate call?](../missions.md#mission-s5l-clk-q1) (no phone) · [Do the clock mask registers mirror the gate words?](../missions.md#mission-s5l-clk-q2) (needs a phone, reads only)
 
 ### Step 3. How the coprocessor is started: its start-up sequence, read in the firmware but never run by us
 
 - **Locked until this is down: Which physical clock gate feeds the coprocessor** · Wounded: read in code
 - Reading: [`research/2026-10-16-wifi-iop-architecture.md`](../../research/2026-10-16-wifi-iop-architecture.md)
 - To bring it down: hardware writes: the maintainer only, one at a time, after an exact description and a go
-- Attack it: [Which class receives the coprocessor start call?](../missions.md) (no phone) · [What do the object-slot calls of the coprocessor start sequence do?](../missions.md) (no phone)
+- Attack it: [Which class receives the coprocessor start call?](../missions.md#mission-arm7m-startcpu-q4) (no phone) · [What do the object-slot calls of the coprocessor start sequence do?](../missions.md#mission-embiop-seq-q1) (no phone)
 
 ### Step 4. Why writes from the main processor to the Wi-Fi registers do not stick
 

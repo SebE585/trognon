@@ -10,18 +10,21 @@ source: tools/bestiary.yaml
 
 Les blocs du téléphone que nous n'avons pas fini de comprendre, présentés comme des créatures à affronter.
 
-Chaque créature est un bloc du téléphone. Ses **fronts** sont les points précis que la [carte matérielle](03-hardware-map.md) donne encore pour ouverts. La barre de vie se calcule à partir d'eux et de rien d'autre : un front ne tombe que si une preuve lui est attachée. Personne, mainteneur compris, ne peut baisser une barre en écrivant une phrase. À la manière d'une carte à code-barres, une créature est aussi un **code à trouver** : chaque front en est un emplacement, affiché `?` tant qu'une preuve ne le révèle pas.
+Chaque créature est un bloc du téléphone. Ses **fronts** sont les points précis que la [carte matérielle](03-hardware-map.md) donne encore pour ouverts. La barre de vie se calcule à partir des états écrits dans `tools/bestiary.yaml` : un front à terre doit citer un dossier de preuve, et le générateur vérifie que la ligne citée s'y trouve vraiment. Ce qu'une mesure démontre reste décidé par une relecture humaine, dans une pull request. À la manière d'une carte à code-barres, une créature est aussi un **code à trouver** : chaque front en est un emplacement, affiché `?` tant qu'une preuve ne le révèle pas.
 
 ## Comment un front tombe
 
 - **Ouvert** : rien d'établi. La barre est pleine pour ce front.
 - **Blessé** : lu dans le firmware ou dans du code (SOURCE), pas encore vu fonctionner sur le téléphone. Un demi-point de vie est parti.
 - **À terre** : observé sur le vrai téléphone (DEVICE), avec un dossier de preuve que vous pouvez ouvrir et reconstruire. Le point est parti.
-- Une créature est **vaincue** quand tous ses fronts sont à terre. Elle est dite *non repérée* tant qu'elle n'est même pas dans la carte matérielle.
+- Une créature est **vaincue** quand tous ses fronts sont à terre. Cela veut dire que son **objectif** est atteint, pas que le bloc est compris : de nouvelles questions peuvent apparaître après une victoire.
+- Elle est dite *non repérée* tant qu'elle n'est même pas dans la carte matérielle.
 
 ## Le Chuchoteur
 
 *Wi-Fi et son coprocesseur* · **Blessée**
+
+**Objectif** (borné : l'atteindre ne veut pas dire que le bloc est compris) : Démarrer le coprocesseur et obtenir une réponse identifiée de la puce Wi-Fi.
 
 <p class="bestiary-bar" role="img" aria-label="Vie : 5 sur 8 points restants">▰▰▰▰▰▰▱▱▱▱</p>
 
@@ -31,9 +34,9 @@ Vie : 5 sur 8
 
 - **À terre : vu sur le téléphone.** L'adresse de base et les lignes GPIO du bloc Wi-Fi. Chiffre : <code>1</code> (Le niveau de la ligne de reset une fois relâchée). Preuve : [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset).
 - **Blessé : lu dans le code.** Comment le coprocesseur démarre : sa séquence, lue dans le firmware mais jamais exécutée par nous. Lecture : [`research/2026-10-16-wifi-iop-architecture.md`](../research/2026-10-16-wifi-iop-architecture.md).
-    - L'attaquer : [Which class receives the coprocessor start call?](../en/missions.md) (sans téléphone) · [What do the object-slot calls of the coprocessor start sequence do?](../en/missions.md) (sans téléphone)
+    - L'attaquer : [Which class receives the coprocessor start call?](../en/missions.md#mission-arm7m-startcpu-q4) (sans téléphone) · [What do the object-slot calls of the coprocessor start sequence do?](../en/missions.md#mission-embiop-seq-q1) (sans téléphone)
 - **Ouvert.** Quelle horloge physique alimente le coprocesseur.
-    - L'attaquer : [Which object implements the clock-gate call?](../en/missions.md) (sans téléphone) · [Do the clock mask registers mirror the gate words?](../en/missions.md) (avec un téléphone, lecture seule)
+    - L'attaquer : [Which object implements the clock-gate call?](../en/missions.md#mission-s5l-clk-q1) (sans téléphone) · [Do the clock mask registers mirror the gate words?](../en/missions.md#mission-s5l-clk-q2) (avec un téléphone, lecture seule)
 - **Ouvert.** Pourquoi les écritures du processeur principal dans les registres Wi-Fi ne tiennent pas.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 
@@ -47,6 +50,8 @@ Sa place dans la carte matérielle : [Wi-Fi et son coprocesseur](03-hardware-map
 
 *Contrôleur tactile* · **Blessée**
 
+**Objectif** (borné : l'atteindre ne veut pas dire que le bloc est compris) : Obtenir une réponse identifiée du contrôleur tactile.
+
 <p class="bestiary-bar" role="img" aria-label="Vie : 6 sur 8 points restants">▰▰▰▰▰▰▰▰▱▱</p>
 
 Vie : 6 sur 8
@@ -55,7 +60,7 @@ Vie : 6 sur 8
 
 - **À terre : vu sur le téléphone.** Les niveaux de ses lignes de reset et de sélection, et les registres d'alimentation qui ressemblent à ses commandes de tension et d'horloge. Chiffre : <code>0x212</code> (Le registre brut de sa ligne de reset). Preuve : [`20261016T150631Z-trace_touch_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150631Z-trace_touch_gpio), [`20261016T173946Z-trace_touch_ldo`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173946Z-trace_touch_ldo).
 - **Ouvert.** D'où vient son firmware.
-    - L'attaquer : [Where does the touch controller's firmware come from?](../en/missions.md) (sans téléphone) · [Does the touch driver class used by this model send the CHECK packet?](../en/missions.md) (sans téléphone)
+    - L'attaquer : [Where does the touch controller's firmware come from?](../en/missions.md#mission-mt-boot-q1) (sans téléphone) · [Does the touch driver class used by this model send the CHECK packet?](../en/missions.md#mission-mt-check-q1) (sans téléphone)
 - **Ouvert.** La polarité de ses lignes, et sa mise sous tension.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 - **Ouvert.** Toute transaction sur son bus, et toute réponse de sa part.
@@ -68,6 +73,8 @@ Sa place dans la carte matérielle : [Contrôleur tactile](03-hardware-map.md)
 ## Le Dormeur
 
 *Bluetooth* · **Blessée**
+
+**Objectif** (borné : l'atteindre ne veut pas dire que le bloc est compris) : Identifier la puce Bluetooth et obtenir un échange sur sa liaison.
 
 <p class="bestiary-bar" role="img" aria-label="Vie : 4 sur 6 points restants">▰▰▰▰▰▰▰▱▱▱</p>
 
@@ -87,6 +94,8 @@ Sa place dans la carte matérielle : [Bluetooth](03-hardware-map.md#bluetooth)
 
 *GPS* · **Non repérée**
 
+**Objectif** (borné : l'atteindre ne veut pas dire que le bloc est compris) : Trouver quel bloc, s'il y en a un, porte le GPS.
+
 <p class="bestiary-bar" role="img" aria-label="Vie : 2 sur 2 points restants">▰▰▰▰▰▰▰▰▰▰</p>
 
 Vie : 2 sur 2
@@ -99,6 +108,8 @@ Vie : 2 sur 2
 ## Le Coffre
 
 *Mémoire NAND* · **Blessée**
+
+**Objectif** (borné : l'atteindre ne veut pas dire que le bloc est compris) : Lire une page de la mémoire flash sur le téléphone.
 
 <p class="bestiary-bar" role="img" aria-label="Vie : 2 sur 4 points restants">▰▰▰▰▰▱▱▱▱▱</p>
 
@@ -118,6 +129,8 @@ Sa place dans la carte matérielle : [Mémoire NAND](03-hardware-map.md#nand)
 
 *Accéléromètre* · **Blessée**
 
+**Objectif** (borné : l'atteindre ne veut pas dire que le bloc est compris) : Nommer la puce et calibrer ses lectures.
+
 <p class="bestiary-bar" role="img" aria-label="Vie : 4 sur 6 points restants">▰▰▰▰▰▰▰▱▱▱</p>
 
 Vie : 4 sur 6
@@ -135,6 +148,8 @@ Sa place dans la carte matérielle : [Accéléromètre](03-hardware-map.md)
 ## L'Esprit-boussole
 
 *Magnétomètre* · **Blessée**
+
+**Objectif** (borné : l'atteindre ne veut pas dire que le bloc est compris) : Obtenir une vraie mesure du magnétomètre.
 
 <p class="bestiary-bar" role="img" aria-label="Vie : 4 sur 6 points restants">▰▰▰▰▰▰▰▱▱▱</p>
 

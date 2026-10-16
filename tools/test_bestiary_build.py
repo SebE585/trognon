@@ -17,7 +17,7 @@ def front(state="open", **kw):
 
 
 def creature(*fronts, section="nand", **kw):
-    c = {"id": "c", "name": {"en": "N", "fr": "N"}, "block": {"en": "B", "fr": "B"}, "section": section, "fronts": list(fronts)}
+    c = {"id": "c", "goal": {"en": "g", "fr": "g"}, "name": {"en": "N", "fr": "N"}, "block": {"en": "B", "fr": "B"}, "section": section, "fronts": list(fronts)}
     c.update(kw)
     return c
 
@@ -68,26 +68,35 @@ class ProofTests(unittest.TestCase):
         self.assertTrue(any("both languages" in e for e in bb.check({"creatures": [bad]}, titles=TITLES, bundles={B})))
 
 
-class DigitTests(unittest.TestCase):
+class FragmentTests(unittest.TestCase):
     def d(self, **kw):
         d = {"label": {"en": "l", "fr": "l"}, "value": "3B", "proof": "who_am_i=0000003B"}
         d.update(kw)
         return d
 
-    def test_a_digit_is_accepted_when_its_proof_line_is_in_the_bundle(self):
+    def test_a_fragment_is_accepted_when_its_proof_line_is_in_the_bundle(self):
         b = "20261016T101710Z-trace_accel_i2c"
-        self.assertEqual(bb.check({"creatures": [creature(front("down", evidence=[b], digit=self.d()))]}, titles=TITLES, bundles={b}), [])
+        self.assertEqual(bb.check({"creatures": [creature(front("down", evidence=[b], fragment=self.d()))]}, titles=TITLES, bundles={b}), [])
 
-    def test_a_digit_without_its_proof_in_the_bundle_is_refused(self):
+    def test_a_fragment_without_its_proof_in_the_bundle_is_refused(self):
         b = "20261016T101710Z-trace_accel_i2c"
-        e = bb.check({"creatures": [creature(front("down", evidence=[b], digit=self.d(proof="who_am_i=DEADBEEF")))]}, titles=TITLES, bundles={b})
+        e = bb.check({"creatures": [creature(front("down", evidence=[b], fragment=self.d(value="DEADBEEF", proof="who_am_i=DEADBEEF")))]}, titles=TITLES, bundles={b})
         self.assertTrue(any("in none of the front's bundles" in x for x in e))
 
-    def test_only_a_front_that_is_down_reveals_a_digit(self):
-        self.assertTrue(any("only a front that is down reveals" in x for x in errs(front("open", digit=self.d()))))
+    def test_the_value_shown_must_come_from_its_proof_line(self):
+        b = "20261016T101710Z-trace_accel_i2c"
+        e = bb.check({"creatures": [creature(front("down", evidence=[b], fragment=self.d(value="0x99")))]}, titles=TITLES, bundles={b})
+        self.assertTrue(any("does not appear in its proof line" in x for x in e))
 
-    def test_the_strip_shows_digits_checks_and_question_marks(self):
-        c = creature(front("down", digit={"value": "3B"}), front("down"), front("wounded", ref="x"), front("open"))
+    def test_a_value_matches_its_proof_whatever_the_prefix_or_the_padding(self):
+        self.assertIn(bb._norm("0x212"), bb._norm("RST_14.1 raw 00000212"))
+        self.assertIn(bb._norm("98 DE 95"), bb._norm("CHIPID 98 DE 95 32"))
+
+    def test_only_a_front_that_is_down_reveals_a_fragment(self):
+        self.assertTrue(any("only a front that is down reveals" in x for x in errs(front("open", fragment=self.d()))))
+
+    def test_the_strip_shows_fragments_checks_and_question_marks(self):
+        c = creature(front("down", fragment={"value": "3B"}), front("down"), front("wounded", ref="x"), front("open"))
         self.assertEqual(bb.code_strip(c), ["3B", "✓", "?", "?"])
 
 
@@ -136,6 +145,22 @@ class CampaignTests(unittest.TestCase):
         self.assertIn("Locked until this is down:", page)
         self.assertIn("hardware writes: the maintainer only", page)
         self.assertIn("Campagne", bb.render_campaign(c, "fr", titles=TITLES))
+
+
+class GoalTests(unittest.TestCase):
+    def test_a_creature_states_a_bounded_goal_in_both_languages(self):
+        c = creature(front("open"))
+        c["goal"] = {"en": "g"}
+        self.assertTrue(any("states its goal" in e for e in bb.check({"creatures": [c]}, titles=TITLES, bundles={B})))
+
+    def test_the_page_shows_the_goal_and_says_it_is_bounded(self):
+        page = bb.render({"creatures": [creature(front("open"))]}, "en", titles=TITLES)
+        self.assertIn("**Goal** (bounded", page)
+        self.assertIn("not that the block is understood", page)
+
+    def test_a_mission_link_goes_to_the_exact_mission(self):
+        c = creature(front("open", missions=["M-1"]))
+        self.assertIn("missions.md#mission-m-1", bb.render({"creatures": [c]}, "en", titles=TITLES))
 
 
 class StoryTests(unittest.TestCase):

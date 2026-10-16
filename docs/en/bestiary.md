@@ -10,18 +10,21 @@ source: tools/bestiary.yaml
 
 Blocks of the phone we have not finished understanding, shown as creatures to face.
 
-Each creature is a block of the phone. Its **fronts** are the precise points the [hardware map](03-hardware-map.md) still lists as open. The life bar is computed from them and nothing else: a front only goes down when a proof is attached to it. Nobody, the maintainer included, can lower a bar by writing a sentence. In the spirit of a barcode card, a creature is also a **code to find**: each front is one slot of it, shown as `?` until a proof reveals it.
+Each creature is a block of the phone. Its **fronts** are the precise points the [hardware map](03-hardware-map.md) still lists as open. The life bar is computed from the states written in `tools/bestiary.yaml`: a front that is down must cite an evidence folder, and the generator checks that the cited line is really in it. What a measurement demonstrates is still decided by a human review, in a pull request. In the spirit of a barcode card, a creature is also a **code to find**: each front is one slot of it, shown as `?` until a proof reveals it.
 
 ## How a front goes down
 
 - **Open**: nothing established. The bar is full for this front.
 - **Wounded**: read in the firmware or in code (SOURCE), not yet seen working on the phone. Half a point of life is gone.
 - **Down**: observed on the real phone (DEVICE), with an evidence folder you can open and rebuild. The point is gone.
-- A creature is **defeated** when every front is down. It is called *unspotted* while it is not even in the hardware map.
+- A creature is **defeated** when every front is down. That means its **goal** is reached, not that the block is understood: new questions may appear after a victory.
+- It is called *unspotted* while it is not even in the hardware map.
 
 ## The Whisperer
 
 *Wi-Fi and its coprocessor* · **Wounded**
+
+**Goal** (bounded: reaching it does not mean the block is understood): Start the coprocessor and get an identified answer from the Wi-Fi chip.
 
 <p class="bestiary-bar" role="img" aria-label="Life: 5 of 8 points left">▰▰▰▰▰▰▱▱▱▱</p>
 
@@ -29,11 +32,11 @@ Life: 5 of 8
 
 <p class="bestiary-code" role="img" aria-label="Code: 1 of 4 slots found"><code>1</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
 
-- **Down: seen on the phone.** The base address and the GPIO lines of the Wi-Fi block. Digit: <code>1</code> (The level of the reset line after it is released). Proof: [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset).
+- **Down: seen on the phone.** The base address and the GPIO lines of the Wi-Fi block. Fragment: <code>1</code> (The level of the reset line after it is released). Proof: [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset).
 - **Wounded: read in code.** How the coprocessor is started: its start-up sequence, read in the firmware but never run by us. Reading: [`research/2026-10-16-wifi-iop-architecture.md`](../research/2026-10-16-wifi-iop-architecture.md).
-    - Attack it: [Which class receives the coprocessor start call?](missions.md) (no phone) · [What do the object-slot calls of the coprocessor start sequence do?](missions.md) (no phone)
+    - Attack it: [Which class receives the coprocessor start call?](missions.md#mission-arm7m-startcpu-q4) (no phone) · [What do the object-slot calls of the coprocessor start sequence do?](missions.md#mission-embiop-seq-q1) (no phone)
 - **Open.** Which physical clock gate feeds the coprocessor.
-    - Attack it: [Which object implements the clock-gate call?](missions.md) (no phone) · [Do the clock mask registers mirror the gate words?](missions.md) (needs a phone, reads only)
+    - Attack it: [Which object implements the clock-gate call?](missions.md#mission-s5l-clk-q1) (no phone) · [Do the clock mask registers mirror the gate words?](missions.md#mission-s5l-clk-q2) (needs a phone, reads only)
 - **Open.** Why writes from the main processor to the Wi-Fi registers do not stick.
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 
@@ -47,15 +50,17 @@ Its place in the hardware map: [Wi-Fi and its coprocessor](03-hardware-map.md#wi
 
 *Touch controller* · **Wounded**
 
+**Goal** (bounded: reaching it does not mean the block is understood): Get an identified answer from the touch controller.
+
 <p class="bestiary-bar" role="img" aria-label="Life: 6 of 8 points left">▰▰▰▰▰▰▰▰▱▱</p>
 
 Life: 6 of 8
 
 <p class="bestiary-code" role="img" aria-label="Code: 1 of 4 slots found"><code>0x212</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
 
-- **Down: seen on the phone.** The levels of its reset and chip-select lines, and the power registers that look like its supply and clock enables. Digit: <code>0x212</code> (The raw register of its reset line). Proof: [`20261016T150631Z-trace_touch_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150631Z-trace_touch_gpio), [`20261016T173946Z-trace_touch_ldo`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173946Z-trace_touch_ldo).
+- **Down: seen on the phone.** The levels of its reset and chip-select lines, and the power registers that look like its supply and clock enables. Fragment: <code>0x212</code> (The raw register of its reset line). Proof: [`20261016T150631Z-trace_touch_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150631Z-trace_touch_gpio), [`20261016T173946Z-trace_touch_ldo`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173946Z-trace_touch_ldo).
 - **Open.** Where its firmware comes from.
-    - Attack it: [Where does the touch controller's firmware come from?](missions.md) (no phone) · [Does the touch driver class used by this model send the CHECK packet?](missions.md) (no phone)
+    - Attack it: [Where does the touch controller's firmware come from?](missions.md#mission-mt-boot-q1) (no phone) · [Does the touch driver class used by this model send the CHECK packet?](missions.md#mission-mt-check-q1) (no phone)
 - **Open.** The polarity of its lines, and powering it.
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 - **Open.** Any transaction on its bus, and any answer from it.
@@ -69,13 +74,15 @@ Its place in the hardware map: [Touch controller](03-hardware-map.md#touch-contr
 
 *Bluetooth* · **Wounded**
 
+**Goal** (bounded: reaching it does not mean the block is understood): Identify the Bluetooth chip and get one exchange over its link.
+
 <p class="bestiary-bar" role="img" aria-label="Life: 4 of 6 points left">▰▰▰▰▰▰▰▱▱▱</p>
 
 Life: 4 of 6
 
 <p class="bestiary-code" role="img" aria-label="Code: 1 of 3 slots found"><code>0</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
 
-- **Down: seen on the phone.** The levels of its reset and wake lines. Digit: <code>0</code> (The level of its wake line). Proof: [`20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio).
+- **Down: seen on the phone.** The levels of its reset and wake lines. Fragment: <code>0</code> (The level of its wake line). Proof: [`20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio).
 - **Open.** Which chip it is: it is known only from the device tree.
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 - **Open.** Its link to the processor (a UART, by the device tree) and any exchange over it.
@@ -86,6 +93,8 @@ Its place in the hardware map: [Bluetooth](03-hardware-map.md#bluetooth)
 ## The Unseen
 
 *GPS* · **Unspotted**
+
+**Goal** (bounded: reaching it does not mean the block is understood): Find out which block, if any, carries the GPS.
 
 <p class="bestiary-bar" role="img" aria-label="Life: 2 of 2 points left">▰▰▰▰▰▰▰▰▰▰</p>
 
@@ -100,13 +109,15 @@ Life: 2 of 2
 
 *NAND flash* · **Wounded**
 
+**Goal** (bounded: reaching it does not mean the block is understood): Read one page of the flash on the phone.
+
 <p class="bestiary-bar" role="img" aria-label="Life: 2 of 4 points left">▰▰▰▰▰▱▱▱▱▱</p>
 
 Life: 2 of 4
 
 <p class="bestiary-code" role="img" aria-label="Code: 1 of 2 slots found"><code>98 DE 95 32 7A 54</code> &nbsp;·&nbsp; <code>?</code></p>
 
-- **Down: seen on the phone.** The chip identifier on the first two chip-enable lines. Digit: <code>98 DE 95 32 7A 54</code> (The chip identifier, first chip). Proof: [`20261015T171033Z-trace_nand`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171033Z-trace_nand).
+- **Down: seen on the phone.** The chip identifier on the first two chip-enable lines. Fragment: <code>98 DE 95 32 7A 54</code> (The chip identifier, first chip). Proof: [`20261015T171033Z-trace_nand`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171033Z-trace_nand).
 - **Open.** The other chip-enable lines, the second bus, and any page access.
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 
@@ -118,13 +129,15 @@ Its place in the hardware map: [NAND flash](03-hardware-map.md#nand)
 
 *Accelerometer* · **Wounded**
 
+**Goal** (bounded: reaching it does not mean the block is understood): Name the chip and calibrate its readings.
+
 <p class="bestiary-bar" role="img" aria-label="Life: 4 of 6 points left">▰▰▰▰▰▰▰▱▱▱</p>
 
 Life: 4 of 6
 
 <p class="bestiary-code" role="img" aria-label="Code: 1 of 3 slots found"><code>0x3B</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
 
-- **Down: seen on the phone.** Its identifier, and axis readings in seven positions (about 56 counts per g on two axes). Digit: <code>0x3B</code> (The identifier byte). Proof: [`20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), [`20261016T150615Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150615Z-trace_accel_axes).
+- **Down: seen on the phone.** Its identifier, and axis readings in seven positions (about 56 counts per g on two axes). Fragment: <code>0x3B</code> (The identifier byte). Proof: [`20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), [`20261016T150615Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150615Z-trace_accel_axes).
 - **Open.** Which of the two compatible chips it is.
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 - **Open.** Calibrated offsets and any angular accuracy.
@@ -136,13 +149,15 @@ Its place in the hardware map: [Accelerometer](03-hardware-map.md#accelerometer)
 
 *Magnetometer* · **Wounded**
 
+**Goal** (bounded: reaching it does not mean the block is understood): Get one real measurement from the magnetometer.
+
 <p class="bestiary-bar" role="img" aria-label="Life: 4 of 6 points left">▰▰▰▰▰▰▰▱▱▱</p>
 
 Life: 4 of 6
 
 <p class="bestiary-code" role="img" aria-label="Code: 1 of 3 slots found"><code>0x1E</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
 
-- **Down: seen on the phone.** A device at 0x1e whose register readings are compatible with a known chip's documented reset state. Digit: <code>0x1E</code> (The address that answers). Proof: [`20261016T151941Z-trace_compass_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151941Z-trace_compass_i2c).
+- **Down: seen on the phone.** A device at 0x1e whose register readings are compatible with a known chip's documented reset state. Fragment: <code>0x1E</code> (The address that answers). Proof: [`20261016T151941Z-trace_compass_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151941Z-trace_compass_i2c).
 - **Open.** A measurement, which needs a set-up taken from the chip's own memory.
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 - **Open.** The role of the silent address 0x1f.

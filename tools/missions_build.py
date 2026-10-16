@@ -119,7 +119,7 @@ def issue_url(q):
 
 def card(m, qinfo):
     lvl, label = WORK[m["work"]]
-    out = ["- **%s**" % m["title"], ""]
+    out = ['- <span id="mission-%s"></span>**%s**' % (key(m).lower(), m["title"]), ""]
     badge = ('<span class="mission-level mission-level-0">First contribution</span> <span class="mission-state mission-state-open">Open to everyone, any number of times</span>'
              if m.get("recurring") else
              '<span class="mission-level mission-level-%d">%s</span> <span class="mission-state mission-state-%s">%s</span>' % (lvl, label, m["state"], STATE_LABEL[m["state"]]))
