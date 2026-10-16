@@ -84,8 +84,52 @@ document unnecessary — a live hypothesis, not yet proven).
 (it is real SDHCI hardware, convincingly) but **what numeric value is
 stored at `[dev+0]`, and who writes it there**. Neither `sdio_op2_alloc`
 nor any opcode handler disassembled so far *sets* this field — every one of
-them only reads and null-checks it. It must be initialised somewhere else
-(most likely the IOP's own channel-open/init code, not yet located).
+them only reads and null-checks it. It must be initialised somewhere else.
+
+### Three (really four) peer OS tasks, confirmed via the static task table (2026-10-16)
+
+A static task-creation table at `0xe848` (one 16-byte record per task:
+name pointer, entry point, stack size, priority) lists, in priority
+order:
+
+| Priority | Name | Entry point | Stack |
+|---|---|---|---|
+| 0 (highest) | `"iop"` | `0xafc` | `0x400` |
+| 5 | `"fmi0"` | `0x1114` | `0x400` |
+| 6 | `"fmi1"` | `0x1114` | `0x400` |
+| 3 | `"sdio"` | `0x1730` (= `sdio_message_loop`) | `0x400` |
+
+Confirms (again, from the firmware's own data, not inference) that NAND
+(`fmi0`/`fmi1`) and Wi-Fi (`sdio`) are peer tasks of a real small
+multitasking OS, all spawned the same way, with `"iop"` itself as the
+highest-priority (0) master/control task.
+
+### Promising lead (2026-10-16): the "iop control" master task's "install" command
+
+Found by following the firmware's own static task table (see "Three
+peer OS tasks" below) up to its highest-priority entry, `"iop"`
+(`fcn.00000afc`), which is a command dispatcher on a separate channel
+("iop control", not the per-peripheral "sdio message" one) for commands
+sent by **the host**. Its tags (4-byte values, decoded from the literal
+pool) are `"musr"`, `"inst"`, `" pon"`, `"dnps"`, `"nitt"`, `"pels"` --
+the `"inst"` case (`0x696e7374`, matched at `0xbb8`→`0xc64`) is the
+interesting one: it builds a per-client configuration struct by copying
+five 8-byte field-pairs from the received command (`+8`, `+0x10`, `+0x18`,
+`+0x20`, `+0x28`) plus two single words at `+0x30` (from a local set by
+the receive helper `fcn.000088ec`) and **`+0x34`, which is `arg_0h` — the
+"iop control" task's own third parameter, fixed at task-creation time, not
+something copied from the host's message.**
+
+This is the most promising candidate found so far for a fixed,
+boot-time-constant hardware base address being threaded into a per-channel
+config struct via a host-issued "install"/configure command -- but **not
+yet confirmed**: it hasn't been traced whether this specific struct, or
+this specific `+0x34` field, is the same memory later read as `[dev+0]` by
+the SDIO opcode handlers. Next step: find what value the "iop" task is
+actually created with as its 3rd parameter (requires finding the
+top-level task-creation call, and whatever boot-time table supplies that
+argument), and whether the "install" command's target struct address ends
+up aliased with a "sdio message" channel's own message slots.
 
 ### Earlier correction (2026-10-16, caught by a second review): "dev" is not a separate struct
 

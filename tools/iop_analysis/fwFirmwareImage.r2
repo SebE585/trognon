@@ -46,6 +46,27 @@ f sym.sdiodrv_completeCommand_inline @ 0x6724
 f sym.sdiodrv_performDMA_or_transferData @ 0x6898
 f sym.command_inhibited_check @ 0x6ac8
 
+# static task table at 0xe848 (16 bytes/task: name ptr, entry, stack,
+# priority), confirms fmi0/fmi1/sdio are peer OS tasks, "iop" is the
+# highest-priority (0) master/control task:
+f sym.task_iop_control @ 0xafc
+#   priority 0 "iop"  entry 0xafc   (iop_control_task, see below)
+#   priority 5 "fmi0" entry 0x1114
+#   priority 6 "fmi1" entry 0x1114
+#   priority 3 "sdio" entry 0x1730 (sdio_message_loop)
+
+# PROMISING LEAD for [dev+0]'s origin (2026-10-16): iop_control_task
+# (0xafc) is a dispatcher for HOST-sent commands on a separate "iop
+# control" channel. Its "inst" (install) case (tag 0x696e7374, matched at
+# 0xbb8 -> 0xc64) builds a per-client config struct, copying 5 field-pairs
+# from the received command, plus [r4+0x34] = arg_0h -- the iop_control
+# task's OWN third creation-time parameter, not copied from the host
+# message. This is the best candidate so far for a fixed, boot-time
+# hardware-base constant being threaded into a per-channel struct -- NOT
+# YET CONFIRMED to be the same memory later read as [dev+0] by the SDIO
+# opcode handlers. Next: find what value "iop" is created with as its 3rd
+# param, and whether "install"'s target struct aliases a sdio channel slot.
+
 # not yet disassembled this session, candidates for opcode 5's real
 # register access, and for sendCommand/performDMA's own sub-calls:
 #   0x6580, 0x63d0, 0x638c   (opcode 5 three sub-calls)

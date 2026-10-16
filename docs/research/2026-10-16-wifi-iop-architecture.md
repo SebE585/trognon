@@ -392,8 +392,20 @@ needed at all; a live hypothesis, not yet proven.
 convincingly) but **what numeric value is stored at `[dev+0]`, and who
 writes it**. Neither `sdio_op2_alloc` nor any opcode handler disassembled
 so far *sets* this field — every one of them only reads and null-checks it.
-It must be initialised elsewhere, most likely the IOP's own channel-open or
-boot-time init code, not yet located. `fcn.00006580`, `fcn.000063d0` and
+It must be initialised elsewhere. A promising lead: the firmware's own
+static task table (`0xe848`, one 16-byte record per task) confirms, from
+the firmware's own data rather than inference, that NAND (`fmi0`/`fmi1`)
+and Wi-Fi (`sdio`, entry point `sdio_message_loop`) are peer tasks of a real
+small OS, alongside a fourth, highest-priority task named `"iop"`
+(`0xafc`) — a dispatcher for commands the *host* sends on a separate "iop
+control" channel. Its `"inst"` ("install") command builds a per-client
+config struct, and the last field it copies in is **the "iop" task's own
+third creation-time parameter** — a fixed, boot-time constant, not
+something copied from the host's message. This is the best candidate so
+far for how a hardware base address could reach a per-channel struct, but
+it is **not yet confirmed** to be the same memory the SDIO handlers later
+read as `[dev+0]` — that connection, and what value "iop" is actually
+created with, remain to be traced. `fcn.00006580`, `fcn.000063d0` and
 `fcn.0000638c` (opcode 5's three sub-calls), and `sendCommand`/`performDMA`'s
 own further sub-calls (`0x6c70`, `0x6c90`, `0x6cf0`, `0x6c00`, `0x6f18`,
 `0x6804`, `0x6d50`, `0xa7d8`, `0x8dfc`) remain undisassembled and are the
