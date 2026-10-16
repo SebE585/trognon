@@ -11,6 +11,7 @@
 # A front that is down may also reveal a DIGIT of the creature's code: {label, value, proof}. `proof` is a line that must appear, as is, in the
 # screen.txt or vars.txt of one of the front's bundles, so a digit cannot be shown without being in the evidence. A front without a digit
 # still counts as down; its slot of the code shows a check mark.
+# `story` (optional) is the step of the guided path that tells where the problem comes from; the step opens onto the creature in return.
 # A creature with `campaign: true` also gets a campaign page (and then needs `campaign_intro` in both languages). On its fronts:
 #   id          a short id, unique in the creature (required on every front of a campaign)
 #   needs       ids of the fronts that come first in OUR WORKING ORDER (a plan, not a proven requirement); the front is locked while one is open
@@ -21,6 +22,7 @@ creatures:
     name: { en: "The Whisperer", fr: "Le Chuchoteur" }
     block: { en: "Wi-Fi and its coprocessor", fr: "Wi-Fi et son coprocesseur" }
     section: wi-fi-and-sdio
+    story: f-wifi
     campaign: true
     campaign_intro:
       en: "The Wi-Fi chip sits behind a coprocessor that we have read about in the firmware but never started. The route goes from understanding its clock, to starting it, to finding out why the main processor's writes to the Wi-Fi registers do not stick."
@@ -53,6 +55,7 @@ creatures:
     name: { en: "The Shy One", fr: "Le Timide" }
     block: { en: "Touch controller", fr: "Contrôleur tactile" }
     section: touch-controller
+    story: f-touch
     fronts:
       - state: down
         text: { en: "The levels of its reset and chip-select lines, and the power registers that look like its supply and clock enables.", fr: "Les niveaux de ses lignes de reset et de sélection, et les registres d'alimentation qui ressemblent à ses commandes de tension et d'horloge." }
@@ -91,6 +94,7 @@ creatures:
     name: { en: "The Vault", fr: "Le Coffre" }
     block: { en: "NAND flash", fr: "Mémoire NAND" }
     section: nand
+    story: f-nand
     fronts:
       - state: down
         text: { en: "The chip identifier on the first two chip-enable lines.", fr: "L'identifiant de la puce sur les deux premières lignes de sélection." }

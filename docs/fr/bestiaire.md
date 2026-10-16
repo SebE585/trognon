@@ -37,6 +37,8 @@ Vie : 5 sur 8
 - **Ouvert.** Pourquoi les écritures du processeur principal dans les registres Wi-Fi ne tiennent pas.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 
+L'histoire qui y mène : [Wi-Fi et son coprocesseur](journey/f-wifi.md)
+
 Campagne : [Campagne : Le Chuchoteur](campagnes/wifi.md)
 
 Sa place dans la carte matérielle : [Wi-Fi et son coprocesseur](03-hardware-map.md)
@@ -58,6 +60,8 @@ Vie : 6 sur 8
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 - **Ouvert.** Toute transaction sur son bus, et toute réponse de sa part.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
+
+L'histoire qui y mène : [Contrôleur tactile](journey/f-touch.md)
 
 Sa place dans la carte matérielle : [Contrôleur tactile](03-hardware-map.md)
 
@@ -105,6 +109,8 @@ Vie : 2 sur 4
 - **À terre : vu sur le téléphone.** L'identifiant de la puce sur les deux premières lignes de sélection. Chiffre : <code>98 DE 95 32 7A 54</code> (L'identifiant de la puce, première puce). Preuve : [`20261015T171033Z-trace_nand`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171033Z-trace_nand).
 - **Ouvert.** Les autres lignes de sélection, le second bus, et tout accès à une page.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
+
+L'histoire qui y mène : [Mémoire NAND](journey/f-nand.md)
 
 Sa place dans la carte matérielle : [Mémoire NAND](03-hardware-map.md#nand)
 

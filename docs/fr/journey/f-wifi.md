@@ -41,6 +41,8 @@ Il dirait quels blocs sont cadencés avant que rien ne soit démarré.
 
 *Ceci décrit une expérience, pas une procédure à suivre : une étape qui écrit dans le matériel du téléphone n'est exécutée qu'après une description écrite et une décision explicite.*
 
+**Affrontez-le.** Ce bloc est une créature du [Bestiaire](../bestiaire.md#le-chuchoteur), *Le Chuchoteur* : une barre de vie que seule une preuve fait baisser, et un code à trouver. [Suivre sa campagne](../campagnes/wifi.md).
+
 ## Et maintenant ?
 
 <div class="journey-choices" markdown>

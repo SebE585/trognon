@@ -51,4 +51,6 @@ Life: 5 of 8
 - To bring it down: not known yet which run would settle it
 - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 
+The story behind it: [Wi-Fi and its coprocessor](../journey/f-wifi.md)
+
 [Bestiary](../bestiary.md)

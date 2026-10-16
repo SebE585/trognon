@@ -51,4 +51,6 @@ Vie : 5 sur 8
 - Pour le faire tomber : on ne sait pas encore quelle exécution trancherait
 - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 
+L'histoire qui y mène : [Wi-Fi et son coprocesseur](../journey/f-wifi.md)
+
 [Bestiaire](../bestiaire.md)

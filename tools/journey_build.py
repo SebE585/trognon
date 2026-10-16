@@ -53,6 +53,8 @@ I18N = {
         "km_total": "%d entries, %d claims, %d open questions.",
         "km_row": "**%s** · %d entr%s · %d claim%s · %d open question%s",
         "back_grimoire": "Back to the Grimoire.", "kernel_side": "The kernel's side: %s (the Grimoire).",
+        "creature": "**Face it.** This block is a creature of the [Bestiary](%s), *%s*: a life bar that only proof lowers, and a code to find.",
+        "creature_camp": "[Follow its campaign](%s).",
         "screen_cap": "What the phone's screen showed in this run (evidence folder %s). The image is rebuilt from the payload's own screen buffer, not photographed.",
         "g_missions_hub": "**Want to help?** Each open question can be a mission you take: see the [missions](../missions.md).",
         "g_missions_head": "Missions on this binary", "g_missions_all": "All missions and how to take one",
@@ -82,6 +84,8 @@ I18N = {
         "km_total": "%d entrées, %d affirmations, %d questions ouvertes.",
         "km_row": "**%s** · %d entrée%s · %d affirmation%s · %d question%s ouverte%s",
         "back_grimoire": "Retour au Grimoire.", "kernel_side": "Ce que dit le noyau : %s (le Grimoire).",
+        "creature": "**Affrontez-le.** Ce bloc est une créature du [Bestiaire](%s), *%s* : une barre de vie que seule une preuve fait baisser, et un code à trouver.",
+        "creature_camp": "[Suivre sa campagne](%s).",
         "screen_cap": "Ce que l'écran du téléphone affichait pendant ce passage (dossier de preuve %s). L'image est reconstruite depuis le tampon d'écran du payload, pas photographiée.",
         "g_missions_hub": "**Envie d'aider ?** Chaque question ouverte peut devenir une mission : voir les [missions](../../en/missions.md) (en anglais).",
         "g_missions_head": "Missions sur ce binaire", "g_missions_all": "Toutes les missions et comment en prendre une (en anglais)",
@@ -177,6 +181,25 @@ def visual_rel(lang, name):
 
 
 # ---- loading ----------------------------------------------------------------------------------------------------------
+def creatures():
+    """{id: creature} of the Bestiary data, for the story steps that open onto a creature."""
+    f = ROOT / "tools" / "bestiary.yaml"
+    return {c["id"]: c for c in yaml.safe_load(f.read_text())["creatures"]} if f.is_file() else {}
+
+
+def creature_link_lines(n, lang):
+    """The 'face it' lines of a story step that names a creature: where it is in the Bestiary and, if it has one, its campaign."""
+    c = creatures().get(n.get("creature"))
+    if not c:
+        return []
+    name = c["name"][lang]
+    page, camp = ("../bestiary.md", "../campaigns/%s.md") if lang == "en" else ("../bestiaire.md", "../campagnes/%s.md")
+    out = [T(lang, "creature") % (page + "#" + slugify(name, "-"), name)]
+    if c.get("campaign"):
+        out[0] += " " + T(lang, "creature_camp") % (camp % c["id"])
+    return out + [""]
+
+
 def load(path):
     with open(path) as f:
         g = yaml.safe_load(f)
@@ -454,6 +477,8 @@ def check(g):
         for nid in n.get("notebook", []):
             if nid not in ITEMS:
                 errors.append("%s: notebook note %r is not in the approved catalog" % (i, nid))
+        if n.get("creature") and n["creature"] not in creatures():
+            errors.append("%s: creature %r is not in tools/bestiary.yaml" % (i, n["creature"]))
         if n.get("screen") and not (ROOT / "evidence" / n["screen"] / "screen.png").is_file():
             errors.append("%s: screen %r has no evidence/<bundle>/screen.png" % (i, n["screen"]))
         fig = n.get("figure")
@@ -582,6 +607,7 @@ def page_for(g, n, route, nodes):
     fig = n.get("figure")
     if fig:
         lines += ["![%s](../../%s)" % (fig["alt"], fig["src"]), "", "*%s*" % fig["caption"], ""]
+    lines += creature_link_lines(n, lang)
     lines += ["## " + T(lang, "next"), "", '<div class="journey-choices" markdown>', ""]
     for c in n["choices"]:
         hint = '<span class="journey-hint">%s</span>' % c["hint"] if c.get("hint") else ""

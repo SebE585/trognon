@@ -30,6 +30,24 @@ console buffer, <strong>not a photograph</strong>.</figcaption>
 
 </div>
 
+## Two ways in
+
+<div class="grid cards" markdown>
+
+- **Follow the story**
+
+    A guided path from a powered-off phone to the first pixel. You make choices, and every step says how sure we are.
+
+    [Start the story](en/journey/start.md){ .card-link }
+
+- **Take a problem**
+
+    Pick a creature: a block of the phone we have not finished understanding, and a code to find. Only a proof takes away its life.
+
+    [Open the Bestiary](en/bestiary.md){ .card-link }
+
+</div>
+
 ## What works today
 
 Everything here was observed on a real iPhone 3GS (S5L8920, Cortex-A8); each item points to its page, and [Evidence](en/08-evidence.md) ties every claim to a run.

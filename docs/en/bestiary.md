@@ -37,6 +37,8 @@ Life: 5 of 8
 - **Open.** Why writes from the main processor to the Wi-Fi registers do not stick.
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 
+The story behind it: [Wi-Fi and its coprocessor](journey/f-wifi.md)
+
 Campaign: [Campaign: The Whisperer](campaigns/wifi.md)
 
 Its place in the hardware map: [Wi-Fi and its coprocessor](03-hardware-map.md#wi-fi-and-sdio)
@@ -58,6 +60,8 @@ Life: 6 of 8
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 - **Open.** Any transaction on its bus, and any answer from it.
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
+
+The story behind it: [Touch controller](journey/f-touch.md)
 
 Its place in the hardware map: [Touch controller](03-hardware-map.md#touch-controller)
 
@@ -105,6 +109,8 @@ Life: 2 of 4
 - **Down: seen on the phone.** The chip identifier on the first two chip-enable lines. Digit: <code>98 DE 95 32 7A 54</code> (The chip identifier, first chip). Proof: [`20261015T171033Z-trace_nand`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171033Z-trace_nand).
 - **Open.** The other chip-enable lines, the second bus, and any page access.
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
+
+The story behind it: [NAND flash](journey/f-nand.md)
 
 Its place in the hardware map: [NAND flash](03-hardware-map.md#nand)
 

@@ -172,6 +172,7 @@ nodes:
 
   - id: f-touch
     kind: frontier
+    creature: touch
     screen: 20261016T225711Z-trace_spi1_selftest2
     title: "Touch: the controller has not answered"
     tag: HYPOTHESIS
@@ -201,6 +202,7 @@ nodes:
 
   - id: f-wifi
     kind: frontier
+    creature: wifi
     screen: 20261015T174633Z-trace_wifi_reset
     title: "Wi-Fi: the coprocessor has not been started"
     tag: HYPOTHESIS
@@ -234,6 +236,7 @@ nodes:
 
   - id: f-nand
     kind: frontier
+    creature: nand
     screen: 20261015T171033Z-trace_nand
     title: "Storage: only the chip's name"
     tag: HYPOTHESIS
