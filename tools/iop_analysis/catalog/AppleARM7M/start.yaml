@@ -1,0 +1,44 @@
+binary: AppleARM7M.kext.bin
+binary_sha256: f286d9fb9b05f3802dbe2bccef2a4e329bcddd41ee85748d7fadc0789a7fa2e1
+function_name_apple: "AppleARM7M::start(IOService*)"
+function_name_assigned: null
+decode_mode: thumb
+subsystem: iop_startup
+entry_code_address: null  # real prologue not isolated tonight; traced by context only
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x80713190", "0x8071326c"]
+  unresolved:
+    - "exact function entry/prologue address"
+    - "steps corresponding to REQUIRE lines 70, 71, 74, 78, 92 (lock alloc, iop-version read, provider cast) -- only line numbers known, not disassembled"
+    - "code after 0x8071326c (function-device_reset resolution, optional JTAG enable) not traced"
+
+claims:
+  - id: ARM7M-START-001
+    text: >
+      Maps two separate device-memory regions from the provider
+      (mapDeviceMemoryWithIndex(0) and (1), same vtable slot +0x208),
+      storing the IOMemoryMap objects at this+0x54 and this+0x5c, then
+      caches each one's virtual address (vtable+0x4c, getVirtualAddress())
+      at this+0x58 and this+0x60 respectively. Both this+0x58 and this+0x60
+      are passed together to the same "mapped I/O registers" log call.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-wifi-iop-architecture.md#the-missing-producer-everything-checked-for-the-real-sdhc-base-pointer"
+  - id: ARM7M-START-002
+    text: "this+0x50 holds the cached provider (AppleARMIODevice*)."
+    status: device_disassembly_verified
+    evidence: "tools/iop_analysis/appleARM7M_notes.md"
+
+hardware_tests:
+  - name: trace_iop_regs (STAGE 26)
+    claim_tested: "this+0x58 window (index 0) is mapped and readable from the main CPU"
+    result: "all five probed offsets read 0x00000000, no data abort"
+  - name: trace_iop_vic (STAGE 32)
+    claim_tested: "this+0x60 window (index 1) is mapped and readable from the main CPU"
+    result: "not yet run on hardware"
+
+publication:
+  status: approved
+  notes: "facts about register-window mapping and offsets, not a reproduction of Apple's source"

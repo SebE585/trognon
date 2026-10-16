@@ -1,0 +1,10 @@
+{
+  "binary": "AppleARM7M.kext.bin",
+  "binary_sha256": "f286d9fb9b05f3802dbe2bccef2a4e329bcddd41ee85748d7fadc0789a7fa2e1",
+  "date": "2026-10-16",
+  "text_section_bytes": 2048,
+  "auto_recognized_bytes": 132,
+  "auto_recognized_functions": 5,
+  "method": "r2 -e asm.bits=16 -qc 'aaa; aflj' AppleARM7M.kext.bin, union of (addr, addr+size) ranges to avoid double-counting overlaps",
+  "note": "r2's own automatic function detection (aa/aaa) badly undercounts this binary -- it missed start(), startCPU(), and the 0x80713510 method entirely, all three found tonight by hand (string/xref tracing, not aflj). 'Auto-recognized' is a tool-coverage floor, not a measure of what has actually been examined; see the per-function fiches in this directory for what a human actually read."
+}

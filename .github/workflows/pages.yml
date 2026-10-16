@@ -2,7 +2,7 @@ name: Pages
 on:
   push:
     branches: [main]
-    paths: ["docs/**", "mkdocs.yml", ".github/workflows/pages.yml", "evidence/**", "tools/evidence_index.py", "tools/write_build_commit.py", "Makefile"]
+    paths: ["docs/**", "mkdocs.yml", ".github/workflows/pages.yml", "evidence/**", "tools/evidence_index.py", "tools/write_build_commit.py", "tools/iop_analysis/catalog/**", "tools/iop_analysis/gen_coverage.py", "Makefile"]
   workflow_dispatch:
 permissions:
   contents: read

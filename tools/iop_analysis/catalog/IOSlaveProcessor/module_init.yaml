@@ -1,0 +1,39 @@
+binary: IOSlaveProcessor.kext.bin
+binary_sha256: abff4df9877f8c83a899de4f2308bca80f556478790b982d1823d39fd366a0c9
+function_name_apple: null   # compiler-generated module constructor, no C++ name
+function_name_assigned: "module init (OSMetaClass registration loop)"
+decode_mode: thumb
+subsystem: iop_class_registry
+entry_code_address: "0x80399594"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x80399594", "0x80399604"]    # the init loop itself
+    - ["0x803993dc", "0x803993f2"]    # IOSlaveMemoryBuffer ctor call
+    - ["0x8039942c", "0x80399442"]    # IOSlaveCPU ctor call
+    - ["0x8039947c", "0x80399492"]    # IOSlaveFirmware ctor call
+    - ["0x803994cc", "0x803994e2"]    # IOSlaveMemory ctor call
+    - ["0x8039951c", "0x80399532"]    # IOSlaveEndpoint ctor call
+    - ["0x8039956c", "0x80399582"]    # IOSlaveProcessor ctor call
+  unresolved:
+    - "the six tiny 'alloc' functions (0x80399a44 etc., 14 bytes each) not individually read, assumed to be generic OSObject::new-style allocators from their call position -- not verified"
+    - "0x80399848/0x803998c0/0x803998d8/0x80399900 (seen in the function list, not examined) -- role unknown"
+
+claims:
+  - id: IOSLAVE-INIT-001
+    text: >
+      This kext's module-load code registers six OSMetaClass instances --
+      IOSlaveMemory (8), IOSlaveMemoryBuffer (16), IOSlaveEndpoint (56),
+      IOSlaveCPU (80), IOSlaveFirmware (80), IOSlaveProcessor (104) bytes
+      -- each size read as a literal loaded right before the shared
+      OSMetaClass constructor call. No loading/firmware logic found in
+      this kext's 2968 bytes of code beyond this registration pattern.
+    status: device_disassembly_verified
+    evidence: "tools/iop_analysis/appleARM7M_notes.md#ioslaveprocessor-kext--tailles-exactes-des-6-classes-nouveau-2026-10-16-soir"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "class names (Apple's own strings) and sizes are facts, not a reproduction of implementation code -- the code itself is standard IOKit boilerplate, not distinctive"

@@ -55,10 +55,16 @@ diagrams:
 evidence-index:
 	python3 tools/evidence_index.py
 
+# Regenerate the IOP decompilation-coverage table from tools/iop_analysis/catalog/ (pilot,
+# 2026-10-16). Never needs the analysed binaries or r2 -- the catalog's own tool_coverage.json
+# files cache that, produced once locally.
+iop-coverage:
+	python3 tools/iop_analysis/gen_coverage.py
+
 # Build the site and run structural checks mkdocs --strict does not cover (external audit,
 # 2026-10-16): currently, exactly one <h1> per page. Run this, not a bare `mkdocs build`,
 # before trusting a docs change is safe to publish.
-docs-build: evidence-index
+docs-build: evidence-index iop-coverage
 	python3 tools/write_build_commit.py
 	mkdocs build --strict
 
@@ -67,3 +73,5 @@ docs-check: docs-build
 	python3 -I tools/check_internal_links.py
 	git diff --exit-code -- docs/snippets/evidence-table.en.md docs/snippets/evidence-table.fr.md || \
 	  { echo "docs-check: evidence-table.{en,fr}.md are stale -- run 'make evidence-index' and commit the result"; exit 1; }
+	git diff --exit-code -- docs/snippets/iop-coverage.en.md || \
+	  { echo "docs-check: iop-coverage.en.md is stale -- run 'make iop-coverage' and commit the result"; exit 1; }

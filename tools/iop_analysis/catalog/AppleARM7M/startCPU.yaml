@@ -1,0 +1,40 @@
+binary: AppleARM7M.kext.bin
+binary_sha256: f286d9fb9b05f3802dbe2bccef2a4e329bcddd41ee85748d7fadc0789a7fa2e1
+function_name_apple: "AppleARM7M::startCPU(IOSlaveFirmware*)"
+function_name_assigned: null
+decode_mode: thumb
+subsystem: iop_startup
+entry_code_address: "0x80713664"       # real instruction (push {r4,r5,r6,r7,lr})
+thumb_entry_pointer: "0x80713665"      # callable/vtable value, LSB=1 per ARM/Thumb convention
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x80713664", "0x807136c4"]
+  unresolved:
+    - "full body past ~0x807136c4 not traced tonight"
+    - "role of this+0x7c/0x80/0x84/0x88 touched early in this function -- plausibly _arm7mLock (a lock object, same external call 0x800670b0 seen in two other functions), not confirmed by name"
+    - "the fuller startCPU trace (base+0x100/0x110/0x114/0x118 writes) already exists in the research report, not re-verified here -- see evidence link"
+
+claims:
+  - id: ARM7M-STARTCPU-001
+    text: >
+      Real entry point located at 0x80713664 (Thumb pointer 0x80713665),
+      confirmed via its own "segLength >= md->getLength()" / AppleARM7M.cpp:155
+      REQUIRE string reference -- distinct from the pure-virtual-call trap
+      stub at 0x80713e80, which only loads the signature string's address.
+    status: device_disassembly_verified
+    evidence: "tools/iop_analysis/appleARM7M_notes.md"
+  - id: ARM7M-STARTCPU-002
+    text: >
+      Writes a hardware address and the firmware's raw bytes/length into
+      the index-0 register window (base+0x100, +0x110, +0x114, +0x118),
+      and performs a non-fatal status check before doing so.
+    status: source_verified
+    evidence: "docs/research/2026-10-16-wifi-iop-architecture.md#the-missing-producer-everything-checked-for-the-real-sdhc-base-pointer"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "facts about control flow and register offsets, not a reproduction of Apple's source"
