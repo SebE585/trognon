@@ -143,3 +143,10 @@
 
 /* A card set that should stack in a narrow column (component sheets). */
 .md-typeset .grid.cards.stack > ul { grid-template-columns: 1fr; }
+
+/* Guided journey */
+.journey-trail { font-size: .72rem; color: var(--md-default-fg-color--light); border-bottom: 1px solid var(--md-default-fg-color--lightest); padding-bottom: .5rem; margin-bottom: 1rem; }
+.journey-choices ul { list-style: none; margin: 0 0 1rem; padding: 0; }
+.journey-choices li { margin: .5rem 0; }
+.journey-choices li a { display: block; padding: .7rem 1rem; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; background: var(--tr-surface); font-weight: 600; }
+.journey-choices li a:hover { border-color: var(--md-accent-fg-color); }

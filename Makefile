@@ -9,7 +9,7 @@ SRC     := src/device_db.c src/serial_parse.c src/usb_probe.c src/chain.c src/cl
 OBJ     := $(SRC:.c=.o)
 BIN     := trognon
 
-.PHONY: all clean test test-sanitize diagrams evidence-index docs-build docs-check
+.PHONY: all clean test test-sanitize diagrams evidence-index docs-build docs-check journey journey-check
 
 all: $(BIN)
 
@@ -54,6 +54,14 @@ diagrams:
 	  D2_PAD=$(D2_PAD) python3 $(PAPER_FORGE)/diagrams/build.py $$PWD/$$f --no-pdf >/dev/null && \
 	  cp $(PAPER_FORGE)/diagrams/dist/$$n.svg docs/img/$$n.svg && echo "docs/img/$$n.svg"; done
 
+# Guided journey: docs/journey-src/*.yaml -> docs/<lang>/journey/*.md (generated pages; `journey-check` validates the graph).
+journey:
+	python3 -I tools/journey_build.py
+
+journey-check:
+	python3 -I tools/test_journey_build.py
+	python3 -I tools/journey_build.py --check
+
 evidence-index:
 	python3 tools/evidence_index.py
 
@@ -74,7 +82,7 @@ docs-build: evidence-index iop-coverage
 	python3 tools/write_build_commit.py
 	mkdocs build --strict
 
-docs-check: docs-build
+docs-check: docs-build journey-check
 	python3 -I tools/check_headings.py
 	python3 -I tools/check_internal_links.py
 	git diff --exit-code -- docs/snippets/evidence-table.en.md docs/snippets/evidence-table.fr.md || \

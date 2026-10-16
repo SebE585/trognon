@@ -16,6 +16,7 @@ documented to the register, with every claim tied to a run you can repeat.
 
 [Understand the project](en/01-boot-chain.md){ .md-button .md-button--primary }
 [Explore the hardware](en/03-hardware-map.md){ .md-button }
+[Take the guided path](en/journey/index.md){ .md-button }
 
 [Documentation française](fr/README.md) · [Source code](https://github.com/SebE585/trognon)
 

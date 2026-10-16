@@ -8,6 +8,7 @@ site_dir: site
 exclude_docs: |
   journal/
   diagrams/
+  journey-src/
   snippets/
 copyright: Documentation CC-BY-SA-4.0 · code GPL-2.0-only / MIT
 theme:
@@ -48,6 +49,7 @@ markdown_extensions:
         - { name: mermaid, class: mermaid, format: !!python/name:pymdownx.superfences.fence_code_format }
 nav:
   - Home: index.md
+  - Adventure: en/journey/index.md
   - English:
       - Overview: en/README.md
       - 1. Boot chain: en/01-boot-chain.md

@@ -1,0 +1,245 @@
+# Source of the guided journey "From a powered-off phone to the first pixel".
+# The pages under docs/en/journey/ are GENERATED from this file by tools/journey_build.py (make journey); do not edit them.
+# Rules enforced by tools/journey_build.py --check: every choice leads to an existing node, every node is reachable from the
+# start, no dead end (a frontier node ends in references), every reference points to an existing page and heading, every
+# evidence bundle exists, and a node tagged DEVICE names at least one bundle.
+title: "From a powered-off phone to the first pixel"
+lang: en
+start: start
+nodes:
+  - id: start
+    kind: start
+    title: "A 3GS in a drawer"
+    tag: null
+    text: |
+      Your iPhone 3GS is switched off. You want your own code to put something on its screen, with nothing written to the phone.
+
+      This is a guided path through what Trognon has actually observed. Each step says how sure we are, and the last
+      ones are the places where our knowledge stops. You can leave at any time for the [reference manual](../README.md).
+    choices:
+      - { text: "How do I get the phone to listen to me?", to: dfu }
+      - { text: "Will the phone keep my code?", to: persist }
+      - { text: "Shortcut: skip the path and open the Grimoire, what the phone's own software says.", to: grimoire }
+
+  - id: dfu
+    kind: step
+    title: "The phone listens: DFU mode"
+    tag: DEVICE
+    text: |
+      In DFU mode the phone's boot ROM waits for an image over USB instead of starting its system. The ROM of the 3GS
+      (S5L8920) has a known flaw, called limera1n, that lets a host turn the signature checks off. The exploit fails some of
+      the time and is simply repeated; no helper board is needed.
+    evidence: [20261015T050540Z-trace]
+    refs:
+      - { label: "Boot chain", page: en/01-boot-chain.md }
+    choices:
+      - { text: "What does the exploit give us?", to: pwned }
+      - { text: "Will the phone keep my code?", to: persist }
+
+  - id: pwned
+    kind: step
+    title: "Signature checks are off"
+    tag: DEVICE
+    text: |
+      After the exploit the boot ROM accepts an image that Apple did not sign. This state is called a pwned DFU. The tool
+      is `ipwndfu`, used as it is; the exploit itself is not ours.
+    evidence: [20261015T050540Z-trace]
+    refs:
+      - { label: "Boot chain: the path", page: en/01-boot-chain.md#the-path-device-2026-10-1415 }
+    choices:
+      - { text: "What do we send to the phone?", to: ibss }
+
+  - id: ibss
+    kind: step
+    title: "A patched boot stage"
+    tag: DEVICE
+    text: |
+      We send the phone's own boot stage (the iBSS), decrypted with the device's own key and patched so that the Recovery
+      command `run` jumps to our code. No Apple firmware is stored in this repository: it is taken from the owner's own phone.
+      The device then re-enumerates over USB as a Recovery device.
+    evidence: [20261015T050540Z-trace]
+    refs:
+      - { label: "Boot chain: patched iBSS", page: en/01-boot-chain.md#the-path-device-2026-10-1415 }
+    choices:
+      - { text: "How does our code get in?", to: payload }
+
+  - id: payload
+    kind: step
+    title: "Our code arrives"
+    tag: DEVICE
+    text: |
+      `send_data` copies raw Thumb code to `0x41000000` and `run` jumps to it. The code starts with the MMU and caches on, in
+      supervisor mode, with interrupts not masked.
+    evidence: [20261015T050540Z-trace]
+    refs:
+      - { label: "Boot chain: payload", page: en/01-boot-chain.md#the-path-device-2026-10-1415 }
+      - { label: "Memory layout used by the payloads", page: en/02-exception-console.md#memory-layout-used-by-the-payloads-device }
+    choices:
+      - { text: "How do I know my code really ran?", to: proof }
+      - { text: "Will the phone keep my code?", to: persist }
+
+  - id: proof
+    kind: step
+    title: "Proof that it ran"
+    tag: DEVICE
+    text: |
+      The code publishes a marker in a variable of the boot stage and the host reads it back. There is a trap: the boot stage
+      keeps its variables between runs, so a stale value can look like a result. Trognon therefore appends a random
+      32-bit number (a nonce) to every binary and writes an evidence folder only when the number comes back identical.
+    evidence: [20261015T050540Z-trace]
+    refs:
+      - { label: "Evidence: how a bundle is made", page: en/08-evidence.md }
+    choices:
+      - { text: "Show me something on the screen.", to: pixel }
+
+  - id: pixel
+    kind: step
+    title: "The first pixel"
+    tag: DEVICE
+    text: |
+      The screen is a framebuffer at `0x4fd00000`, 320 by 480 pixels. The display controller was already set up by the boot
+      stage, so our code only draws. Because the framebuffer is write-back, the code cleans the data cache after drawing, so
+      that a frozen processor still leaves a truthful screen.
+    figure: { src: img/console-exceptions.png, alt: "The exception console on the 3GS screen", caption: "The console, rebuilt from the payload's own buffer (not a photograph)." }
+    evidence: [20261015T050542Z-trace_regs, 20261015T050540Z-trace]
+    refs:
+      - { label: "Hardware map: display", page: en/03-hardware-map.md#display }
+    choices:
+      - { text: "What happens when my code crashes?", to: crash }
+
+  - id: crash
+    kind: step
+    title: "A crash you can read"
+    tag: DEVICE
+    text: |
+      The phone has no serial port we can reach and no debugger, so a crash would only reboot it. The console hooks the
+      processor's exception vectors, so an undefined instruction, a data abort, a prefetch abort or an interrupt ends in
+      a readable dump on the screen, then in a clean return. These four cases were observed on the phone.
+    evidence: [20261015T050540Z-trace, 20261015T050541Z-trace_irq]
+    refs:
+      - { label: "The on-screen exception console", page: en/02-exception-console.md }
+    choices:
+      - { text: "So where does our knowledge stop?", to: frontier }
+
+  - id: persist
+    kind: side
+    title: "Nothing is kept"
+    tag: DEVICE
+    text: |
+      Nothing survives a restart: the exploit and our code live in RAM and vanish at reboot. This is a tethered boot. When
+      the phone shows a logo, it has left Recovery and must be put back in DFU. Making the boot untethered on this chip is
+      a hypothesis; the research is written down but nothing has been shown on the phone.
+    evidence: [20261015T050540Z-trace]
+    refs:
+      - { label: "What is not persistent", page: en/01-boot-chain.md#what-is-not-persistent }
+      - { label: "Untethered boot (research note)", page: research/2026-10-13-untethered-boot.md }
+    choices:
+      - { text: "Back to the start of the path.", to: start }
+      - { text: "So where does our knowledge stop?", to: frontier }
+
+  - id: frontier
+    kind: frontier-hub
+    title: "Here our knowledge stops"
+    tag: HYPOTHESIS
+    text: |
+      Everything above was observed on the phone. Three areas are only partly known. For each one the next pages say what has
+      been observed, what is guessed, and what experiment would settle it.
+
+      These pages describe experiments, not procedures. A step that writes to the phone's hardware is only run after a
+      written description of the address, the value, the current state and the way back, and an explicit decision.
+    refs:
+      - { label: "Research index", page: research/index.md }
+    choices:
+      - { text: "The touch controller", to: f-touch }
+      - { text: "Wi-Fi and the coprocessor", to: f-wifi }
+      - { text: "Storage (the NAND flash)", to: f-nand }
+      - { text: "Open the Grimoire: the kernel's side of these questions.", to: grimoire }
+      - { text: "Back to the start of the path.", to: start }
+
+  - id: f-touch
+    kind: frontier
+    title: "Touch: the controller has not answered"
+    tag: HYPOTHESIS
+    know: |
+      The reset and chip-select lines read as outputs driven low. The supply and clock enables were written and restored.
+      With the supply on, the released reset line reads high; with no supply it reads low. The SPI block's idle registers were
+      read and its clock was already on. A transfer test with no peripheral, using the kernel driver's recipe, moved no counter.
+    guess: |
+      The SPI clock and data pads may be dedicated pins that need no configuration. The controller may need firmware loaded
+      before it answers. A high reset line could come from a board pull-up or from the controller itself.
+    next: |
+      Establish the SPI controller's transfer recipe with no peripheral (a second test, with OpeniBoot's recipe, is built and
+      not run), then a first check packet, to which a first reply byte of `0xD0` would mean the controller is in its loader.
+    grimoire: [AppleMultitouchSPI, AppleS5L8900X, AppleD1755]
+    evidence: [20261016T190939Z-trace_spi1_selftest, 20261016T173946Z-trace_touch_ldo, 20261016T174843Z-trace_spi1_nogate]
+    refs:
+      - { label: "Hardware map: touch controller", page: en/03-hardware-map.md#touch-controller }
+      - { label: "Touch controller preconditions", page: research/2026-10-16-touch-n88-preconditions.md }
+    choices:
+      - { text: "Another open question.", to: frontier }
+
+  - id: f-wifi
+    kind: frontier
+    title: "Wi-Fi: the coprocessor is not running"
+    tag: HYPOTHESIS
+    know: |
+      The Wi-Fi reset line was toggled and read back. Every probed register of the SDIO block reads zero and a written value is
+      never read back. The start-up sequence of the embedded coprocessor involved in this path was read in its firmware, and
+      that firmware uses the standard SDHCI register layout.
+    guess: |
+      The coprocessor may own the real SDIO window, with the main processor only posting messages to it. Which physical clock
+      gate belongs to the SDIO block, and to the coprocessor, is not known: the device tree's gate numbers are not the physical ones.
+    next: |
+      A read-only survey of all the clock gates and of the clock mask registers is built and not run. It would tell which
+      blocks are clocked before anything is started.
+    grimoire: [AppleARM7M, EmbeddedIOP, IOP_s5l8920x_firmware]
+    evidence: [20261015T174633Z-trace_wifi_reset, 20261016T043007Z-trace_write_test]
+    refs:
+      - { label: "Hardware map: Wi-Fi and SDIO", page: en/03-hardware-map.md#wi-fi-and-sdio }
+      - { label: "Wi-Fi and the coprocessor: architecture", page: research/2026-10-16-wifi-iop-architecture.md }
+    choices:
+      - { text: "Another open question.", to: frontier }
+
+  - id: f-nand
+    kind: frontier
+    title: "Storage: only the chip's name"
+    tag: HYPOTHESIS
+    know: |
+      The flash controller answered on two chip-enable lines and returned a chip identifier (Toshiba). Nothing else was read.
+    guess: |
+      No guess yet: the other chip-enable lines and the second bus have not been probed, so nothing is assumed about them.
+    next: |
+      A first page read through the controller. It has not been designed yet.
+    evidence: [20261015T171033Z-trace_nand]
+    refs:
+      - { label: "Hardware map: NAND", page: en/03-hardware-map.md#nand }
+    choices:
+      - { text: "Another open question.", to: frontier }
+
+  - id: grimoire
+    kind: grimoire-hub
+    title: "The Grimoire"
+    tag: null
+    text: |
+      The Grimoire is our set of reading notes on the phone's own system software: the kernel extensions and the boot stage,
+      decompiled from the owner's own firmware. Each entry says which function does what, which values it uses, what we
+      verified and every question we could not close. It is the shortcut for readers who want the kernel's side of the story
+      before, or instead of, the observations on the phone.
+
+      Nothing here is Apple's code: an entry records addresses, constants, structure and our conclusions. A claim
+      marked *device disassembly verified* was read in the code; it has not necessarily been seen working on the phone, and
+      the open questions say what proof is missing.
+    refs:
+      - { label: "How the analysis is organised", page: research/index.md }
+    choices:
+      - { text: "Back to the start of the path.", to: start }
+
+grimoire_blurbs:
+  AppleARM7M: "The kernel extension that starts the phone's embedded coprocessor (the IOP)."
+  IOSlaveProcessor: "A kernel extension of the coprocessor stack."
+  EmbeddedIOP: "The kernel extension that prepares the coprocessor's image and starts it."
+  IOP_s5l8920x_firmware: "The kernel extension that carries the coprocessor's firmware for this chip."
+  AppleD1755: "The kernel extension for the power-management chip, at I2C address `0x74`."
+  AppleS5L8900X: "The kernel extension for the SoC's own blocks: the SPI controller, the GPIO pads and the clocks."
+  AppleMultitouchSPI: "The kernel extension that talks to the touch controller over SPI."
+  iBSS_n88ap_4.3.5: "The phone's boot stage, decrypted on the device: its peripheral tables, GPIO set-up and clock set-up."
