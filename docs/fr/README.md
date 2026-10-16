@@ -117,7 +117,7 @@ Pas besoin d'un téléphone pour aider. Choisissez la porte qui vous convient.
 
 - **Prendre une mission**
 
-    Une question ouverte de l'analyse, avec ce qu'il faut et à quoi ressemble une bonne réponse.
+    Une question ouverte de l'analyse, avec ce qu'il faut et à quoi ressemble une bonne réponse. Ou choisissez une créature du [Bestiaire](bestiaire.md) : un bloc du téléphone encore à comprendre.
 
     [Missions](../en/missions.md){ .card-link }
 

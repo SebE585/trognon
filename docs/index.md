@@ -119,7 +119,7 @@ You do not need a phone to help. Pick the way in that suits you.
 
 - **Take a mission**
 
-    An open question of the analysis, with what you need and what a good answer looks like.
+    An open question of the analysis, with what you need and what a good answer looks like. Or pick a creature of the [Bestiary](en/bestiary.md): a block of the phone still to be understood.
 
     [Missions](en/missions.md){ .card-link }
 

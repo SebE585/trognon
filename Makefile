@@ -9,7 +9,7 @@ SRC     := src/device_db.c src/serial_parse.c src/usb_probe.c src/chain.c src/cl
 OBJ     := $(SRC:.c=.o)
 BIN     := trognon
 
-.PHONY: all clean test test-sanitize diagrams evidence-index docs-build docs-check journey journey-check missions missions-check project-check project-sync corpus corpus-check tools-check verifications cta-check cta-check-remote
+.PHONY: all clean test test-sanitize diagrams evidence-index docs-build docs-check journey journey-check missions missions-check project-check project-sync corpus corpus-check tools-check verifications bestiary bestiary-check cta-check cta-check-remote
 
 all: $(BIN)
 
@@ -65,6 +65,13 @@ journey-check:
 # Missions page: tools/iop_analysis/missions.yaml + the catalog -> docs/en/missions.md (generated).
 missions:
 	python3 -I tools/missions_build.py
+
+bestiary:
+	python3 -I tools/bestiary_build.py
+
+bestiary-check:
+	python3 -I tools/test_bestiary_build.py
+	python3 -I tools/bestiary_build.py --check
 
 missions-check:
 	python3 -I tools/test_missions_build.py
@@ -126,7 +133,7 @@ docs-build: evidence-index iop-coverage
 	python3 tools/write_build_commit.py
 	mkdocs build --strict
 
-docs-check: docs-build journey-check missions-check corpus-check tools-check cta-check
+docs-check: docs-build journey-check missions-check bestiary-check corpus-check tools-check cta-check
 	python3 -I tools/check_headings.py
 	python3 -I tools/check_internal_links.py
 	git diff --exit-code -- docs/snippets/evidence-table.en.md docs/snippets/evidence-table.fr.md || \

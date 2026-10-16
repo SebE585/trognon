@@ -65,6 +65,7 @@ nav:
       - 7. Modular code layout: en/07-code-layout.md
       - 8. Evidence: en/08-evidence.md
       - Missions: en/missions.md
+      - Bestiary: en/bestiary.md
       - Verifications: en/verifications.md
       - Guided path: en/journey/start.md
   - Français:
@@ -78,6 +79,7 @@ nav:
       - 7. Code modulaire: fr/07-code-layout.md
       - 8. Preuves: fr/08-evidence.md
       - Parcours guidé: fr/journey/start.md
+      - Bestiaire: fr/bestiaire.md
   - Research:
       - Index: research/index.md
       - A5/A6, 32-bit: research/2026-10-13-a5-a6-32bit.md

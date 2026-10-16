@@ -1,0 +1,102 @@
+# Bestiary: the blocks of the phone that are not fully understood, shown as creatures to face. docs/en/bestiary.md and
+# docs/fr/bestiaire.md are GENERATED from this file by tools/bestiary_build.py (make bestiary); `make bestiary-check` validates it.
+#
+# A creature is a block of the phone. Its "fronts" are the precise open points of the hardware map ("Remaining" column). The life bar is
+# COMPUTED from the fronts, never typed in, and a front only moves because a proof is attached to it:
+#   open     nothing established: no proof needed
+#   wounded  read in firmware or driver code (SOURCE), not yet seen on the phone: needs `ref`, a page of docs/ that holds the reading
+#   down     observed on the real phone (DEVICE): needs `evidence`, the bundle(s) under evidence/
+# `missions` lists mission ids of tools/iop_analysis/missions.yaml that attack the front (titles come from there). `section` is an anchor of
+# docs/en/03-hardware-map.md; a block that is not in the hardware map yet has none and is shown as unspotted.
+# Wording rule: a front says what is established or not, at the strength of its proof. Nothing here is a claim of its own.
+creatures:
+  - id: wifi
+    name: { en: "The Whisperer", fr: "Le Chuchoteur" }
+    block: { en: "Wi-Fi and its coprocessor", fr: "Wi-Fi et son coprocesseur" }
+    section: wi-fi-and-sdio
+    fronts:
+      - state: down
+        text: { en: "The base address and the GPIO lines of the Wi-Fi block.", fr: "L'adresse de base et les lignes GPIO du bloc Wi-Fi." }
+        evidence: [20261015T174633Z-trace_wifi_reset]
+      - state: wounded
+        text: { en: "How the coprocessor is started: its start-up sequence, read in the firmware but never run by us.", fr: "Comment le coprocesseur démarre : sa séquence, lue dans le firmware mais jamais exécutée par nous." }
+        ref: research/2026-10-16-wifi-iop-architecture.md
+        missions: [ARM7M-STARTCPU-Q4, EMBIOP-SEQ-Q1]
+      - state: open
+        text: { en: "Which physical clock gate feeds the coprocessor.", fr: "Quelle horloge physique alimente le coprocesseur." }
+        missions: [S5L-CLK-Q1, S5L-CLK-Q2]
+      - state: open
+        text: { en: "Why writes from the main processor to the Wi-Fi registers do not stick.", fr: "Pourquoi les écritures du processeur principal dans les registres Wi-Fi ne tiennent pas." }
+
+  - id: touch
+    name: { en: "The Shy One", fr: "Le Timide" }
+    block: { en: "Touch controller", fr: "Contrôleur tactile" }
+    section: touch-controller
+    fronts:
+      - state: down
+        text: { en: "The levels of its reset and chip-select lines, and the power registers that look like its supply and clock enables.", fr: "Les niveaux de ses lignes de reset et de sélection, et les registres d'alimentation qui ressemblent à ses commandes de tension et d'horloge." }
+        evidence: [20261016T150631Z-trace_touch_gpio, 20261016T173946Z-trace_touch_ldo]
+      - state: open
+        text: { en: "Where its firmware comes from.", fr: "D'où vient son firmware." }
+        missions: [MT-BOOT-Q1, MT-CHECK-Q1]
+      - state: open
+        text: { en: "The polarity of its lines, and powering it.", fr: "La polarité de ses lignes, et sa mise sous tension." }
+      - state: open
+        text: { en: "Any transaction on its bus, and any answer from it.", fr: "Toute transaction sur son bus, et toute réponse de sa part." }
+
+  - id: bluetooth
+    name: { en: "The Sleeper", fr: "Le Dormeur" }
+    block: { en: "Bluetooth", fr: "Bluetooth" }
+    section: bluetooth
+    fronts:
+      - state: down
+        text: { en: "The levels of its reset and wake lines.", fr: "Les niveaux de ses lignes de reset et de réveil." }
+        evidence: [20261016T124101Z-trace_bt_gpio]
+      - state: open
+        text: { en: "Which chip it is: it is known only from the device tree.", fr: "Quelle puce c'est : on ne la connaît que par le device tree." }
+      - state: open
+        text: { en: "Its link to the processor (a UART, by the device tree) and any exchange over it.", fr: "Sa liaison avec le processeur (un UART, d'après le device tree) et tout échange dessus." }
+
+  - id: gps
+    name: { en: "The Unseen", fr: "L'Invisible" }
+    block: { en: "GPS", fr: "GPS" }
+    fronts:
+      - state: open
+        text: { en: "Everything: it is not in the hardware map yet. Finding which block, if any, carries it is the first question.", fr: "Tout : il n'est pas encore dans la carte matérielle. Trouver quel bloc le porte, s'il y en a un, est la première question." }
+
+  - id: nand
+    name: { en: "The Vault", fr: "Le Coffre" }
+    block: { en: "NAND flash", fr: "Mémoire NAND" }
+    section: nand
+    fronts:
+      - state: down
+        text: { en: "The chip identifier on the first two chip-enable lines.", fr: "L'identifiant de la puce sur les deux premières lignes de sélection." }
+        evidence: [20261015T171033Z-trace_nand]
+      - state: open
+        text: { en: "The other chip-enable lines, the second bus, and any page access.", fr: "Les autres lignes de sélection, le second bus, et tout accès à une page." }
+
+  - id: accelerometer
+    name: { en: "The Twitcher", fr: "Le Frétillant" }
+    block: { en: "Accelerometer", fr: "Accéléromètre" }
+    section: accelerometer
+    fronts:
+      - state: down
+        text: { en: "Its identifier, and axis readings in seven positions (about 56 counts per g on two axes).", fr: "Son identifiant, et des lectures d'axes dans sept positions (environ 56 comptes par g sur deux axes)." }
+        evidence: [20261016T101710Z-trace_accel_i2c, 20261016T150615Z-trace_accel_axes]
+      - state: open
+        text: { en: "Which of the two compatible chips it is.", fr: "Laquelle des deux puces compatibles c'est." }
+      - state: open
+        text: { en: "Calibrated offsets and any angular accuracy.", fr: "Les décalages calibrés et toute précision angulaire." }
+
+  - id: magnetometer
+    name: { en: "The Compass Spirit", fr: "L'Esprit-boussole" }
+    block: { en: "Magnetometer", fr: "Magnétomètre" }
+    section: magnetometer
+    fronts:
+      - state: down
+        text: { en: "A device at 0x1e whose register readings are compatible with a known chip's documented reset state.", fr: "Un composant en 0x1e dont les lectures de registres sont compatibles avec l'état de reset documenté d'une puce connue." }
+        evidence: [20261016T151941Z-trace_compass_i2c]
+      - state: open
+        text: { en: "A measurement, which needs a set-up taken from the chip's own memory.", fr: "Une mesure, qui demande une configuration tirée de la mémoire propre de la puce." }
+      - state: open
+        text: { en: "The role of the silent address 0x1f.", fr: "Le rôle de l'adresse silencieuse 0x1f." }
