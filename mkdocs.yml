@@ -66,6 +66,7 @@ nav:
       - 7. Code modulaire: fr/07-code-layout.md
       - 8. Preuves: fr/08-evidence.md
   - Research:
+      - Index: research/index.md
       - A5/A6, 32-bit: research/2026-10-13-a5-a6-32bit.md
       - A7 to A11, mainline: research/2026-10-13-a7-a11-mainline.md
       - Legal frame: research/2026-10-13-legal-frame.md

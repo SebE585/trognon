@@ -35,8 +35,9 @@ d'exceptions CPU sans planter. Tout ce qui suit a été observé sur l'appareil.
 | Text and shapes on the screen | <span class="tag tag-device">DEVICE</span> |
 | UNDEF, data abort, prefetch abort with a readable dump | <span class="tag tag-device">DEVICE</span> |
 | Interrupts (software-triggered IRQ) | <span class="tag tag-device">DEVICE</span> |
-| Timer, then buttons | <span class="tag tag-source">SOURCE</span> next |
-| Buttons, content over USB, storage, touch | <span class="tag tag-hyp">HYPOTHESIS</span> |
+| Free-running tick (24 MHz, measured) and buttons (GPIO, mapped) | <span class="tag tag-device">DEVICE</span> |
+| Timer interrupt | <span class="tag tag-hyp">HYPOTHESIS</span>: a VIC0 line fires, not proven to be the timer |
+| Content over USB, storage, touch | <span class="tag tag-hyp">HYPOTHESIS</span> |
 
 ## By chip / Par puce
 
@@ -96,7 +97,7 @@ de puces, en réutilisant ce qui se reporte.* Colour code: <span class="tag tag-
 
 - **Research** (*Recherche*)
 
-    Dated surveys of A5 to A11, the legal frame, untethered boot. [Index](research/2026-10-14-pre-a5-limera1n.md)
+    Dated surveys of A5 to A11, the legal frame, untethered boot. [Index](research/index.md)
 
 </div>
 
