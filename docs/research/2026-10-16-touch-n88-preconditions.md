@@ -480,16 +480,28 @@ A cheap control separates the two readings of the high level: release the reset 
 reads high, there is a pull-up independent of the controller and this observation carries no information about the controller; if
 it reads low, the high level above came with the supplies, which would be a first sign of the controller itself.
 
-## Control for the reset reading, prepared (STAGE 41, not run)
+## Control for the reset reading, done (STAGE 41, bundle `20261016T173630Z-trace_touch_rst_ctl`)
 
-`STAGE 41` (`trace_touch_rst_ctl.bin`, built, **not run**) releases the touch reset line with **no supply applied**. Its only write
-is the reset GPIO register (`0x83000284`): `0x212` to `0x210`, read right after and 15 ms later, then back to `0x212`. The
-clock gate and the PMU registers are only read (the PMU reads send the register-number byte, as before). Guard: nothing is
-written unless the PMU registers read `0xBE` and `0x11`, the gate reads `0` and the reset register reads `0x212`. The disassembly
-shows no store to the clock gate and no PMU write (the PMU write helper is unused in this stage, which the compiler reports as a
-warning), and the only GPIO stores are the usual I2C pin drive and one release and one restore of the reset register. Reading: if
-the register reads `0x211` here too, a pull-up holds the line without the controller, and the STAGE 40 reading says nothing about the
-controller; if it reads `0x210`, the high level of STAGE 40 appeared only with the supplies on.
+With the explicit go of the person holding the phone, `STAGE 41` ran (nonce confirmed, guard passed). Its only write was the touch
+reset GPIO register (`0x83000284`): `0x212` to `0x210` (released to input), read at once and 15 ms later, then restored to `0x212`.
+The clock gate and the PMU registers were only read, and ended as found (gate `0`, `0xBE`, `0x11`). The phone was still in Recovery
+mode afterwards.
+
+| Reset register `0x83000284` | Supplies | Value | Level |
+|---|---|---|---|
+| released, at once | **none** | `0x210` | 0 |
+| released, 15 ms later | **none** | `0x210` | 0 |
+| released, 35 ms after the supplies went on (STAGE 40) | gate, PMU `0x11` and `0x50` | `0x211` | **1** |
+
+What it shows: with no supply, the released line reads low, so **there is no pull-up on the line that works without the touch
+supplies**. The high level of STAGE 40 appeared only with the supplies on. Something connected to that line is therefore powered by
+what the sequence enabled: a pull-up to the rail that the touch LDO feeds (which would also read high with no controller at all), or the
+controller driving the line itself. The control cannot tell those two apart. It also does not say which of the three supplies of STAGE
+40 (clock gate, PMU `0x11` bit `0x40`, PMU `0x50`) mattered, since they were applied together. It is a modest piece of support for the
+reading that the register bits written do power part of the touch domain; it is not evidence that the controller is alive.
+
+A narrower run would apply only the LDO (PMU `0x11`) and then release the reset, to see whether the LDO alone raises the line. That
+isolates the supply that is plausibly responsible and needs no SPI traffic.
 
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 

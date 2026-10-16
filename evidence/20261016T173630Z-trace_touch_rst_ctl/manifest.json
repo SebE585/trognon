@@ -1,0 +1,41 @@
+{
+  "payload": "trace_touch_rst_ctl.bin",
+  "sha256": "cbd3441ff43159246ef4cc5212c6257796ab702b58f7f2ea12fec93628a4a16c",
+  "bytes": 4036,
+  "soc": "s5l8920",
+  "nonce_sent": "EF508862",
+  "nonce_read": "EF508862",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "touch-rst-ctl-1"
+  },
+  "variables": {
+    "p11_before": "000000BE",
+    "p50_before": "00000011",
+    "gate_before": "00000000",
+    "rst_before": "00000212",
+    "guard_ok": "00000001",
+    "rst_rel_now": "00000210",
+    "rst_rel_15ms": "00000210",
+    "rst_end": "00000212",
+    "gate_end": "00000000",
+    "p11_end": "000000BE",
+    "p50_end": "00000011"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "1dd3fac321f35c989911cc4a6feeec5b3b3758e4",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T173630Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_touch_rst_ctl.bin --evidence <repo>/evidence --vars p11_before,p50_before,gate_before,rst_before,guard_ok,rst_rel_now,rst_rel_15ms,rst_end,gate_end,p11_end,p50_end",
+  "screen_rows": 18
+}

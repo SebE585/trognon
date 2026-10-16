@@ -48,3 +48,4 @@
 | [`20261016T165854Z-trace_spi1_gate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T165854Z-trace_spi1_gate) | `trace_spi1_gate.bin` | `b9cd2ffe480c` | `81549635` | confirmed | 17 |
 | [`20261016T173129Z-trace_pmu_w34`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173129Z-trace_pmu_w34) | `trace_pmu_w34.bin` | `efae2089242f` | `59d51e8c` | confirmed | 14 |
 | [`20261016T173428Z-trace_touch_power`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173428Z-trace_touch_power) | `trace_touch_power.bin` | `a918cd534f82` | `2cfde17c` | confirmed | 23 |
+| [`20261016T173630Z-trace_touch_rst_ctl`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173630Z-trace_touch_rst_ctl) | `trace_touch_rst_ctl.bin` | `cbd3441ff431` | `1dd3fac3` | confirmed | 18 |
