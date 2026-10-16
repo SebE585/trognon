@@ -1,0 +1,33 @@
+binary: AppleD1755.kext.bin
+binary_sha256: 8ae1f44ffc28f4e6873a75db18d603bf65b29ffe26f8803344e3079bc8836dfa
+function_name_apple: null
+function_name_assigned: "GPIO masked update (register 0x50+pin and per-pin 3-bit fields at 0x59..0x5b)"
+decode_mode: thumb
+subsystem: pmu_gpio
+entry_code_address: null
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x8075bc60", "0x8075bd54"]
+  unresolved:
+    - id: PMU-GPIOBITS-Q1
+      text: "Exact entry address and the full argument list (the prologue before 0x8075bc60 was not read); which caller uses the optional 3-bit field update and for what."
+      proof_needed: "read the prologue and the callers"
+
+claims:
+  - id: PMU-GPIOBITS-001
+    text: >
+      Under the lock at this+0x9c, for a pin <= 7 and a non-zero mask it reads register 0x50 + pin,
+      replaces the bits selected by the mask with the given value, and writes it back. If an extra
+      argument is non-zero it also reads the three bytes at register 0x59, treats them as a packed
+      24-bit word with a 3-bit field per pin (field position pin * 3), replaces the field and writes
+      the three bytes back.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "register numbers and masks"

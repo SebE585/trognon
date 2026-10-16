@@ -90,7 +90,7 @@ catalog work) registers one function class per tag, among them `AppleD1755PMULDO
 - **PMU GPIOs** (used for `function-clock_enable`, pin 0): eight PMU pins, each with a
   configuration register at `0x50` plus the pin number. The code that configures them mixes
   function bits, an input/output distinction and polarity; its bit meanings were not decoded, so
-  the clock-enable step is **not** recoverable from this reading yet.
+  the clock-enable step is only partly recoverable from this first reading; see the later section on the decoded GPIO functions.
 
 So powering the touch controller would involve at least a read-modify-write of PMU register
 `0x11` (bit `0x40`) and some configuration of PMU GPIO 0, plus the SoC reset line, the SPI
@@ -121,6 +121,49 @@ Applying the table's enable bits to the two bytes (same caveat) gives LDOs 0, 2,
 9 and 10 on, and LDOs 1, 5 and 11 off. The voltage registers `0x17`..`0x21` were not converted
 to millivolts: the conversion routine was not read, so any figure would be a guess. The PMU GPIO
 configuration bytes (`0x50`..`0x57`) were read raw for the same reason.
+
+## PMU GPIO and LDO functions, decoded (static, 2026-10-16)
+
+Catalog: `AppleD1755/` (`PMU-LDO-*`, `PMU-LDOINIT-*`, `PMU-GPIOFN-*`, `PMU-GPIOAPPLY-*`,
+`PMU-GPIOBITS-*`). Everything here is a reading of code that was not run on the device, except
+the register values quoted from the STAGE 36 run.
+
+**How a `function-*` property is laid out** (words after the property's own header): the code keeps a
+pointer to `[phandle, tag, word2, word3]`. For the LDO function the arguments are packed in
+`word2` (`0x0708020b`: byte 0 = LDO index, bit 0 of byte 1 = initial on/off, bytes 2 and 3 =
+a 15-bit value and one flag bit). For the GPIO function `word2` is the PMU pin number and `word3`
+is four bytes (`0x02000101` for the touch clock: `01 01 00 02`).
+
+**PMU GPIO configuration registers** (`0x50 + pin`, pins 0 to 7): the function that applies a
+configuration reads the register, optionally overlays two bytes (mask, value) from the PMU node's
+`gpio-pin-config` property (eight 4-byte entries; on this device only pin 5 is non-zero, so pin 0
+has no overlay), keeps bits `0x19`, then sets bit 1 (`0x02`) for function 1 or bit 2 (`0x04`) for
+function 2, and, when its polarity flag is zero, flips bit 1 if the upper bits `0xE0` are all zero
+(a message says polarity on an input is not supported). Another routine switches a pin between
+input (it sets `0x20`) and output (upper bits zero). A third updates a register with a mask and a
+value and can also update 3-bit per-pin fields packed in registers `0x59` to `0x5b`.
+
+**Reading for the touch clock enable** (`function-clock_enable`: pin 0, bytes `01 01 00 02`): the
+type byte (`+0xc`) is 1, so the default application is "function `0x00`, polarity flag `1`". A
+later "set" with a value calls the same routine with function `value != 0` and the same flag, which
+reads as: **asserting the clock enable sets bit 1 (`0x02`) of PMU register `0x50`**, and the flag
+being non-zero means active high. STAGE 36 read register `0x50` as `0x11` (bit 1 clear, upper bits
+zero), which reads as "configured as an output, level low". The asserted value would be `0x13`.
+This is a reading of about thirty instructions. The jump table (`PMU-GPIOAPPLY-003`) maps the type
+byte to: 0 an input direction, 1 an output direction, 2 and 3 a function taken from byte `+0xe` or
+`+0xf`; the touch clock's type is 1, which takes the function path when no explicit type is passed.
+Nothing was written.
+
+**The LDO function** (`0x8075bf34`): reads the descriptor, then calls the setter once with the
+index, the 15-bit value, the flag bit and the on/off bit taken from the descriptor (here `0`), and
+logs a failure with the index plus one. The device tree's `ldo-suspend-defaults` is the four bytes
+`00 40 00 00`: byte 1 has the bit `0x40`, the same bit as the touch LDO in register `0x11`. What the
+property controls (a set to switch off, or to keep on, in suspend) was not read.
+
+**The touch node's `reg`** (`0x0 0x7c 0x8010000 0x1388 0x2710 0x0 0x0 0x0`): not decoded. Two of the
+words, 5000 and 10000, resemble the 5 and 10 of the iDroid driver's `{83000, 5, 10}` SPI setting
+with the units changed from microseconds to nanoseconds; that is a numerical resemblance, not a
+finding, and the first words (`0x7c`, `0x8010000`) have no counterpart there.
 
 ## The SPI controller and its clock (STAGE 37, bundle `20261016T164825Z-trace_spi1_pre`)
 
@@ -162,6 +205,24 @@ decoded), the reset line (level `0`, polarity unknown). Each of these takes a wr
 | SPI controller | `spi1` at CPU address `0x82100000` (`reg 0x2100000` plus the `0x80000000` offset of `arm-io`) | clock gate `0x16` reads `0` (off) in STAGE 37; registers not read, deliberately |
 | Attention | interrupt `0xb4` on the GPIO interrupt controller | not read, the controller is treated as dangerous |
 | Firmware | a bootload path named in the driver's strings | open: whether it is needed here is not established; source in the IPSW not looked up |
+
+## Candidate write sequence (a proposal, nothing here is authorised or done)
+
+Each line is one write, to be proposed again, with its exact value, before it is made. The values
+come from the readings above; none of the write semantics was ever exercised on this device.
+
+| # | Write | Address and value | Current | How to undo | What it can show | Main risk |
+|---|---|---|---|---|---|---|
+| W1 | `spi1` clock gate | `0xBF100078 + 4 * 0x16` = `0xBF1000D0`, `0` to `0xF` (the pattern read on enabled gates) | `0` | write `0` | whether the gate takes the write (the only earlier gate-write test, STAGE 23, was uninformative: both gates already read `0xF`), then the idle registers of `spi1` become readable | enabling the clock of a block in an unknown state; the numbering of gates is the device tree's, not tested |
+| W2 | read only | `spi1` CONTROL, SETUP, STATUS, PIN, CLKDIVIDER, SPCNT, SPIDD at `0x82100000` (STAGE 37, second half) | not read | none needed | the reset state of the controller | none beyond W1 |
+| W3 | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (set bit `0x02`) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
+| W4 | touch LDO | PMU register `0x11`, `0xBE` to `0xFE` (set bit `0x40`), read-modify-write | `0xBE` | write `0xBE` | nothing visible alone except the read-back and possibly the controller's behaviour on SPI | powers a rail; if the index-to-rail reading is wrong, a different rail is switched |
+| W5 | reset line | SoC GPIO `14.01` released to high impedance, then the driver's delay (`0xf`, unit unknown) | level `0` | drive low again | a change on SPI/attention if the controller starts | the polarity and the unit of the delay are unknown |
+| W6 | first SPI exchange | `spi1` registers, chip select `13.00` | n/a | n/a | any answer | requires the controller's register layout confirmed on this chip, and the bootloader protocol |
+
+The order that keeps the risk lowest is W1 and then W2, and stopping to read the result before
+anything touches the PMU. The PMU writes (W3, W4) follow the driver's apparent order of power first
+and reset after, but the apparent order is a reading of strings, not of the control flow.
 
 ## What would move this forward
 

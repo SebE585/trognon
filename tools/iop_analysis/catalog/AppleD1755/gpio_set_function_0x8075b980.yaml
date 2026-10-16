@@ -1,0 +1,46 @@
+binary: AppleD1755.kext.bin
+binary_sha256: 8ae1f44ffc28f4e6873a75db18d603bf65b29ffe26f8803344e3079bc8836dfa
+function_name_apple: null
+function_name_assigned: "setGPIOFunction (the driver's own message says '_setGPIOFunction')"
+decode_mode: thumb
+subsystem: pmu_gpio
+entry_code_address: "0x8075b980"
+thumb_entry_pointer: "0x8075b981"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8075b980", "0x8075ba5c"]
+  unresolved:
+    - id: PMU-GPIOFN-Q1
+      text: "Meaning of the preserved bits 0x19 (bits 0, 3 and 4) of the configuration register, and of function values 1 and 2 beyond 'sets bit 1' and 'sets bit 2'."
+      proof_needed: "callers that pass function 2; the PMU datasheet, which is not available; behaviour on the device"
+    - id: PMU-GPIOFN-Q2
+      text: "Whether bit 1 is the output level in all configurations: the code flips it when the polarity flag is zero and the upper bits are zero, which reads as an inverted output, not as a level by itself."
+      proof_needed: "a controlled observation of a PMU GPIO whose effect can be seen from outside"
+
+claims:
+  - id: PMU-GPIOFN-001
+    text: >
+      Arguments (this, pin, function, polarity flag). pin > 7 returns the error 0xe00002c2. Under the
+      lock at this+0x9c it reads register 0x50 + pin; if the property gpio-pin-config was loaded
+      (this+0xac) it replaces the bits selected by byte 2 of that pin's 4-byte entry with byte 3; it
+      keeps bits 0x19; function 1 sets bit 0x02, function 2 sets bit 0x04, function 0 sets nothing,
+      other values log "unsupported function" and return the error; if the polarity flag is zero and
+      none of the bits 0xE0 is set it flips bit 0x02, otherwise it logs "tried to set polarity on
+      input, not supported"; it writes the register back.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
+
+hardware_tests:
+  - name: trace_pmu_read (STAGE 36), register 0x50
+    claim_tested: "PMU-GPIOFN-001: layout of the configuration register of pin 0"
+    execution_status: executed
+    result: >
+      Register 0x50 read 0x11: bit 1 and the bits 0xE0 are clear. Consistent with a pin that is not an
+      input and not asserted; the layout itself was not tested by changing the register.
+    evidence: "evidence/20261016T164348Z-trace_pmu_read/"
+
+publication:
+  status: approved
+  notes: "register layout as read in code"

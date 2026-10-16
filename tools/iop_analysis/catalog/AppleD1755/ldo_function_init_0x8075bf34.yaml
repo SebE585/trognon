@@ -1,0 +1,39 @@
+binary: AppleD1755.kext.bin
+binary_sha256: 8ae1f44ffc28f4e6873a75db18d603bf65b29ffe26f8803344e3079bc8836dfa
+function_name_apple: null
+function_name_assigned: "LDO function initialiser (applies the descriptor once)"
+decode_mode: thumb
+subsystem: pmu_ldo
+entry_code_address: "0x8075bf34"
+thumb_entry_pointer: "0x8075bf35"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8075bf34", "0x8075bfa4"]
+  constant_ranges:
+    - ["0x8075bfa4", "0x8075bfbc"]
+  unresolved:
+    - id: PMU-LDOINIT-Q1
+      text: "Bit 1 of the descriptor's second byte and the meaning of the 'flag' in bit 15 of the half-word: the function after this one tests bit 1 of that byte; neither was followed."
+      proof_needed: "read the function at 0x8075bfbc and the registration of the LDO function class"
+    - id: PMU-LDOINIT-Q2
+      text: "What the property ldo-suspend-defaults (00 40 00 00 on this device) controls."
+      proof_needed: "find the reader of ldo-suspend-defaults in AppleD1755"
+
+claims:
+  - id: PMU-LDOINIT-001
+    text: >
+      Reads the function descriptor (pointer at this+0x1c), calls the setter 0x8075bda4 once with: the
+      LDO index from byte 8, the 15-bit value from the half-word at offset 10 (mask 0x7fff), the flag
+      from bit 15 of that half-word, and 'on' from bit 0 of byte 9. If the setter returns an error it
+      logs "AppleD1755PMULDOFunction::%s: ldo%d failed first _setLDO" with the index plus one.
+      For the touch node's descriptor 0x0708020b: index 11, value 0x0708 (1800), flag 0, on 0.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "field offsets and one constant"

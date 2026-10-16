@@ -1,0 +1,57 @@
+binary: AppleD1755.kext.bin
+binary_sha256: 8ae1f44ffc28f4e6873a75db18d603bf65b29ffe26f8803344e3079bc8836dfa
+function_name_apple: null
+function_name_assigned: "GPIO function apply (default configuration and set)"
+decode_mode: thumb
+subsystem: pmu_gpio
+entry_code_address: "0x8075bb8c"
+thumb_entry_pointer: "0x8075bb8d"
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x8075bb8c", "0x8075bbbc"]
+    - ["0x8075bbc2", "0x8075bc58"]
+  unresolved:
+    - id: PMU-GPIOAPPLY-Q1
+      text: "The 'get' path (from 0x8075bc06 when an output pointer is given) returns a level computed from the configuration register and the polarity byte; the XOR logic was read but its result was not checked against a pin whose level is known."
+      proof_needed: "a controlled observation of a PMU GPIO whose effect is visible"
+    - id: PMU-GPIOAPPLY-Q2
+      text: "How a caller reaches the 'set with a value' path for the touch clock enable, and what the 'get' path (0x8075bc06 onward) returns."
+      proof_needed: "the function-call entry of the GPIO function class and the AppleMultitouchSPI power function"
+
+claims:
+  - id: PMU-GPIOAPPLY-001
+    text: >
+      The function keeps a descriptor pointer (this+0x1c) with the pin number as the word at offset 8 and
+      four bytes at offsets 0xc to 0xf. Called with no value and no output pointer it reads the type
+      byte at +0xc; for type 1 it calls the setter 0x8075b980 with function = byte +0xe and polarity
+      flag = (byte +0xd != 0).
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
+  - id: PMU-GPIOAPPLY-002
+    text: >
+      Called with a value, it calls the setter with function = (value != 0) and polarity flag =
+      (byte +0xd != 0). For the touch node's clock enable (pin 0, bytes 01 01 00 02) the default
+      application is therefore function 0 with flag 1, and a set with a non-zero value is function 1
+      with flag 1, which sets bit 0x02 of register 0x50.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
+
+  - id: PMU-GPIOAPPLY-003
+    text: >
+      The jump table is at 0x8075bbb8 (bytes 05 0a 12 1c, reached by a tbb at 0x8075bbb4) and indexes
+      the descriptor type 0 to 3 (larger values return the error 0xe00002c2): type 0 calls the
+      direction routine 0x8075ba74 with direction 1 (an input: it sets 0x20), type 1 with direction 2
+      (an output: the upper bits 0xE0 cleared), type 2 the setter with function = byte +0xe, and type
+      3 the setter with function = byte +0xf; the polarity flag is (byte +0xd != 0) in the last two.
+      When no explicit type is passed and the descriptor's own type byte is 1, the function takes the
+      type-2 path directly.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "offsets and control flow"

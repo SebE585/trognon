@@ -1,0 +1,71 @@
+binary: AppleD1755.kext.bin
+binary_sha256: 8ae1f44ffc28f4e6873a75db18d603bf65b29ffe26f8803344e3079bc8836dfa
+function_name_apple: null
+function_name_assigned: "setLDO (working name; the driver's own log text says '_setLDO')"
+decode_mode: thumb
+subsystem: pmu_ldo
+entry_code_address: "0x8075bda4"
+thumb_entry_pointer: "0x8075bda5"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8075bda4", "0x8075bf20"]
+  unresolved:
+    - id: PMU-LDO-Q1
+      text: "Body of the helper at 0x807618bc, which turns an offset in millivolts into a register code (called with the offset and the step)."
+      proof_needed: "disassemble 0x807618bc; then convert the voltage registers 0x17..0x21 read in STAGE 36 to millivolts"
+    - id: PMU-LDO-Q2
+      text: "Bodies of the register helpers 0x8075b2a8 (read) and 0x8075b1f8 (write) beyond their head: the read passes the register number to the I2C nub as a one-byte write followed by a read; the write path was not read."
+      proof_needed: "disassemble 0x8075b1f8"
+    - id: PMU-LDO-Q3
+      text: "Meaning of the secondary enable bit in register 0x22 (LDOs 0, 4 and 5 only), and of the 'flag A' argument that, when its bit 0 is set, skips the main enable update."
+      proof_needed: "callers of this function other than the LDO function initialiser; the PMU node's ldo-suspend-defaults"
+
+claims:
+  - id: PMU-LDO-001
+    text: >
+      The function takes (this, index, millivolts, flag A, on) and returns the error 0xe00002c2 when
+      index > 11. It works under the lock at this+0x9c (acquire at entry, release at exit).
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
+  - id: PMU-LDO-002
+    text: >
+      A table of twelve 8-byte entries at 0x80764174 (in __const) gives for each index: a minimum
+      (u16, mV), a step, a count, a mask, a secondary-enable mask, an enable register and an enable
+      bit mask. Entry 11 has minimum, step, count and mask all zero; its enable register is 0x11 and
+      its enable mask 0x40. Entries 0 to 10 use the registers 0x10 or 0x11 with masks from 0x08 to 0x80
+      and have a voltage table.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
+  - id: PMU-LDO-003
+    text: >
+      Voltage step: if millivolts is non-zero and the entry has a non-zero step, the value must lie in
+      [minimum, minimum + step * count] or the function returns the error; the register 0x17 + index
+      is then read, its masked field replaced by a code computed from (millivolts - minimum) and the
+      step, and written back. With a zero step (entry 11) the voltage step is skipped.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
+  - id: PMU-LDO-004
+    text: >
+      Enable step: unless bit 0 of flag A is set, the function reads the enable register of the entry,
+      clears the entry's mask, sets it again if 'on' is non-zero, and writes the register back
+      (new = (old & ~mask) | (on ? mask : 0)). For entries with a non-zero secondary-enable mask
+      (indices 0, 4, 5) the same read-modify-write is made first on register 0x22 using that mask,
+      gated by 'on' and bit 0 of flag A.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#pmu-gpio-and-ldo-functions-decoded-static-2026-10-16"
+
+hardware_tests:
+  - name: trace_pmu_read (STAGE 36), registers 0x10 and 0x11
+    claim_tested: "PMU-LDO-004: bit 0x40 of register 0x11 is the enable bit of LDO 11"
+    execution_status: executed
+    result: >
+      0x10 = 0xEB and 0x11 = 0xBE were read, so bit 0x40 of 0x11 is clear. This is consistent with the
+      LDO being off, under the rule that a set bit means on, which comes from this code and was not
+      verified by switching anything.
+    evidence: "evidence/20261016T164348Z-trace_pmu_read/"
+
+publication:
+  status: approved
+  notes: "register numbers, masks and control flow, no code reproduced"
