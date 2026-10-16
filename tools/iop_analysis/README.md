@@ -444,8 +444,8 @@ address, then linear disassembly from there). It:
 
 `[this+0x58]` is very plausibly the actual argument structure handed to
 whatever kernel primitive maps memory for and starts the second ARM
-core — this is the load-path code "Open questions" #6 asked for, now
-located and partially read.
+core — this is the load-path code the main report's "Open questions"
+(question 6) asked for, now located and partially read.
 
 **Checked and still not found**: `0xf018`/`0xf0a0`/`0xf0a4`/`0xa000`
 (the corrected `ConfigurationOffset`/`HeapBaseOffset`/`HeapSizeOffset`/

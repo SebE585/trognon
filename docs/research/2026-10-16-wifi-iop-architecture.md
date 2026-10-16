@@ -517,7 +517,8 @@ by pointer identity), and the kext contains no call resembling
 specific path** — the buffer-allocation and `sendIOPCommand`-transport
 code examined — not every conceivable host-side producer. Other command
 constructors, other virtual methods on the channel object (`this+0x24`,
-not itself disassembled — see "Open questions" #8), and pre-boot
+not itself disassembled — see ["Open questions"](#open-questions),
+question 8), and pre-boot
 configuration (see below, which turned out to be exactly this) remain
 outside this specific check's scope.
 
@@ -636,8 +637,9 @@ actually confirmed is the *consumer* side — the firmware reads and
 dereferences these two offsets at boot and feeds the result to its
 generic allocator. That strongly implies a producer exists, but the
 producer itself — which code writes `0xf0a0`/`0xf0a4` before this boot
-code runs, and when — has not been found or traced; see "Open questions"
-#6. Whether `AppleARM7M::startCPU`'s own computed size and hardware
+code runs, and when — has not been found or traced; see
+["Open questions"](#open-questions), question 6. Whether
+`AppleARM7M::startCPU`'s own computed size and hardware
 address (below) end up written into these same two offsets is plausible,
 not confirmed.
 
@@ -865,8 +867,9 @@ the live object's actual vtable pointer and its slots from a running
 system is far more reliable here than further static guessing, and is
 deferred to the hardware-testing phase.
 
-`IOSlaveCPU` and `IOSlaveFirmware` remain a direct hit on "Open questions"
-#6 (how `IOP_s5l8920x_firmware`'s bytes are loaded, verified, and
+`IOSlaveCPU` and `IOSlaveFirmware` remain a direct hit on
+["Open questions"](#open-questions), question 6 (how
+`IOP_s5l8920x_firmware`'s bytes are loaded, verified, and
 started) — not disassembled, but a named, concrete target.
 
 ## Two different goals, often conflated: commanding it vs. programming it
