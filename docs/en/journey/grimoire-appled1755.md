@@ -1,5 +1,5 @@
 ---
-title: AppleD1755
+title: "AppleD1755"
 hide:
   - navigation
   - toc
@@ -87,4 +87,4 @@ Entry `0x8075bda4` · Review: complete · 4 claims · 3 open questions
 
 </div>
 
-[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+<p class="journey-nav" markdown="1">[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

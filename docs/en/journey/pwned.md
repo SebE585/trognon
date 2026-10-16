@@ -1,5 +1,5 @@
 ---
-title: Signature checks are off
+title: "Signature checks are off"
 hide:
   - navigation
   - toc
@@ -13,6 +13,10 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # Signature checks are off
 
+![Signature checks off: the phone accepts code Apple did not sign.](../../img/journey/unlocked.svg){ .journey-visual }
+
+*Signature checks off: the phone accepts code Apple did not sign.*
+
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
 After the exploit the boot ROM accepts an image that Apple did not sign. This state is called a pwned DFU. The tool
@@ -22,12 +26,17 @@ is `ipwndfu`, used as it is; the exploit itself is not ours.
 
 <div class="journey-choices" markdown>
 
-- [What do we send to the phone?](ibss.md)
+- [Send something it will run<span class="journey-hint">The patched boot stage</span>](ibss.md)
 
 </div>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
 
 **Go deeper in the reference:** [Boot chain: the path](../../en/01-boot-chain.md#the-path-device-2026-10-1415)
 
 **Evidence:** [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace)
 
-[← Previous step](dfu.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](dfu.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

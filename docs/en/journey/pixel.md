@@ -1,5 +1,5 @@
 ---
-title: The first pixel
+title: "The first pixel"
 hide:
   - navigation
   - toc
@@ -12,6 +12,10 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 </div>
 
 # The first pixel
+
+![The screen shows what the code draws.](../../img/journey/pixel.svg){ .journey-visual }
+
+*The screen shows what the code draws.*
 
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
@@ -27,12 +31,17 @@ that a frozen processor still leaves a truthful screen.
 
 <div class="journey-choices" markdown>
 
-- [What happens when my code crashes?](crash.md)
+- [Break something on purpose<span class="journey-hint">What a crash looks like</span>](crash.md)
 
 </div>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
 
 **Go deeper in the reference:** [Hardware map: display](../../en/03-hardware-map.md#display)
 
 **Evidence:** [`20261015T050542Z-trace_regs`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050542Z-trace_regs) · [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace)
 
-[← Previous step](proof.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](proof.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

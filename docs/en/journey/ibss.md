@@ -1,5 +1,5 @@
 ---
-title: A patched boot stage
+title: "A patched boot stage"
 hide:
   - navigation
   - toc
@@ -13,6 +13,10 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # A patched boot stage
 
+![The patched boot stage travels over USB.](../../img/journey/ibss.svg){ .journey-visual }
+
+*The patched boot stage travels over USB.*
+
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
 We send the phone's own boot stage (the iBSS), decrypted with the device's own key and patched so that the Recovery
@@ -23,12 +27,17 @@ The device then re-enumerates over USB as a Recovery device.
 
 <div class="journey-choices" markdown>
 
-- [How does our code get in?](payload.md)
+- [Bring in our own code<span class="journey-hint">How it gets into the phone's memory</span>](payload.md)
 
 </div>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
 
 **Go deeper in the reference:** [Boot chain: patched iBSS](../../en/01-boot-chain.md#the-path-device-2026-10-1415)
 
 **Evidence:** [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace)
 
-[← Previous step](pwned.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](pwned.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

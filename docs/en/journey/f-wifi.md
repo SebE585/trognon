@@ -1,5 +1,5 @@
 ---
-title: Wi-Fi: the coprocessor is not running
+title: "Wi-Fi: the coprocessor is not running"
 hide:
   - navigation
   - toc
@@ -37,15 +37,47 @@ blocks are clocked before anything is started.
 
 <div class="journey-choices" markdown>
 
-- [Another open question.](frontier.md)
+- [Look at another open question<span class="journey-hint">Back to the edge of what we know</span>](frontier.md)
 - [The kernel's side: AppleARM7M (the Grimoire).](grimoire-applearm7m.md)
 - [The kernel's side: EmbeddedIOP (the Grimoire).](grimoire-embeddediop.md)
 - [The kernel's side: IOP_s5l8920x_firmware (the Grimoire).](grimoire-iop_s5l8920x_firmware.md)
 
 </div>
 
+<details class="journey-notebook" markdown="1">
+<summary>Notebook: how we looked for the answer (3 notes)</summary>
+
+**Note 1 · EmbeddedIOP start-up path: _prepareFirmwareImage, start-IOP, start() middle, address translator** *(read in the code, not seen running on the phone)*
+
+_prepareFirmwareImage stores at this+0xcc the result of casting to IOSlaveFirmware the service found with waitForService(nameMatching(name)), where name is the string property IOPFirmwareName of the driver (REQUIRE sites for source lines 297 and 299).
+
+Source: `EmbeddedIOP` (fingerprint `f7b66532a429`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/EmbeddedIOP/start_sequence.yaml)
+
+**Note 2 · EmbeddedIOP start-up path: _prepareFirmwareImage, start-IOP, start() middle, address translator** *(Open question)*
+
+Meaning of the object-slot calls used throughout: slot +0x50 and +0x4c of the objects returned by allocateVisibleMemory (used here as an address getter and as 'inner descriptor'), +0x98 on a descriptor (physical-segment getter by its use: its result is passed to the provider slot +0x35c), +0x5c on the firmware descrip…
+
+*What would settle it:* read the slots in the kernelcache classes (IOMemoryDescriptor, IOBufferMemoryDescriptor) and EmbeddedIOP's own table
+
+Source: `EmbeddedIOP` (fingerprint `f7b66532a429`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/EmbeddedIOP/start_sequence.yaml)
+
+**Note 3 · AppleARM7M::startCPU(IOSlaveFirmware*)** *(Open question)*
+
+Indirect call at 0x80713686, firmware-object vtable slot +0x34c (arg: the IOSlaveFirmware).
+
+*What would settle it:* EMBIOP-SEQ-Q5
+
+Source: `AppleARM7M` (fingerprint `f286d9fb9b05`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleARM7M/startCPU.yaml)
+
+</details>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
+
 **Go deeper in the reference:** [Hardware map: Wi-Fi and SDIO](../../en/03-hardware-map.md#wi-fi-and-sdio) · [Wi-Fi and the coprocessor: architecture](../../research/2026-10-16-wifi-iop-architecture.md)
 
 **Evidence:** [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset) · [`20261016T043007Z-trace_write_test`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T043007Z-trace_write_test)
 
-[← Previous step](frontier.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](frontier.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

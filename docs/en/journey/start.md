@@ -1,5 +1,5 @@
 ---
-title: A 3GS in a drawer
+title: "A 3GS in a drawer"
 hide:
   - navigation
   - toc
@@ -13,19 +13,25 @@ You are exploring: **A 3GS in a drawer**
 
 # A 3GS in a drawer
 
-Your iPhone 3GS is switched off. You want your own code to put something on its screen, with nothing written to the phone.
+![Black screen. Nothing is connected.](../../img/journey/black.svg){ .journey-visual }
 
-This is a guided path through what Trognon has actually observed. Each step says how sure we are, and the last
-ones are the places where our knowledge stops. You can leave at any time for the [reference manual](../README.md).
+*Black screen. Nothing is connected.*
+
+You find an iPhone 3GS in a drawer. Its screen is black. You would like your own code to put something on it, and
+nothing written to the phone.
+
+This is a guided path through what Trognon has actually observed on a phone like this one. Each step says how sure
+we are, and the last ones are the places where our knowledge stops. You can leave at any time for the
+[reference manual](../README.md), or look at the [map of the journey](index.md).
 
 ## Where to next?
 
 <div class="journey-choices" markdown>
 
-- [How do I get the phone to listen to me?](dfu.md)
-- [Will the phone keep my code?](persist.md)
-- [Shortcut: skip the path and open the Grimoire, what the phone's own software says.](grimoire.md)
+- [Look for a way in<span class="journey-hint">Understand DFU mode</span>](dfu.md)
+- [Check what will survive a power-off<span class="journey-hint">Understand why the boot is tethered</span>](persist.md)
+- [Open the Grimoire<span class="journey-hint">Read the analyses of the phone's own software directly</span>](grimoire.md)
 
 </div>
 
-[Map of the journey](index.md) · [Reference manual](../README.md)
+<p class="journey-nav" markdown="1">[Map of the journey](index.md) · [Reference manual](../README.md)</p>

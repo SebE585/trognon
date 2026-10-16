@@ -1,5 +1,5 @@
 ---
-title: AppleMultitouchSPI
+title: "AppleMultitouchSPI"
 hide:
   - navigation
   - toc
@@ -51,4 +51,4 @@ Entry `0x8056e4e8` · Review: complete · 2 claims · 3 open questions
 
 </div>
 
-[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+<p class="journey-nav" markdown="1">[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

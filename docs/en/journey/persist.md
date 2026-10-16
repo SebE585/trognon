@@ -1,5 +1,5 @@
 ---
-title: Nothing is kept
+title: "Nothing is kept"
 hide:
   - navigation
   - toc
@@ -13,6 +13,10 @@ You are exploring: [A 3GS in a drawer](start.md) → **Nothing is kept**
 
 # Nothing is kept
 
+![After a restart, the RAM is empty.](../../img/journey/empty.svg){ .journey-visual }
+
+*After a restart, the RAM is empty.*
+
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
 Nothing survives a restart: the exploit and our code live in RAM and vanish at reboot. This is a tethered boot. When
@@ -23,13 +27,18 @@ a hypothesis; the research is written down but nothing has been shown on the pho
 
 <div class="journey-choices" markdown>
 
-- [Back to the start of the path.](start.md)
-- [So where does our knowledge stop?](frontier.md)
+- [Go back to the drawer<span class="journey-hint">Return to the start of the path</span>](start.md)
+- [Go to the edge of what we know<span class="journey-hint">Where our knowledge stops</span>](frontier.md)
 
 </div>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
 
 **Go deeper in the reference:** [What is not persistent](../../en/01-boot-chain.md#what-is-not-persistent) · [Untethered boot (research note)](../../research/2026-10-13-untethered-boot.md)
 
 **Evidence:** [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace)
 
-[← Previous step](start.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](start.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

@@ -1,5 +1,5 @@
 ---
-title: IOP_s5l8920x_firmware
+title: "IOP_s5l8920x_firmware"
 hide:
   - navigation
   - toc
@@ -49,4 +49,4 @@ Entry `0x80480254` · Review: complete · 1 claim · 3 open questions
 
 </div>
 
-[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+<p class="journey-nav" markdown="1">[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

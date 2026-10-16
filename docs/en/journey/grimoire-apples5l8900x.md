@@ -1,5 +1,5 @@
 ---
-title: AppleS5L8900X
+title: "AppleS5L8900X"
 hide:
   - navigation
   - toc
@@ -128,4 +128,4 @@ Entry `0x8045ce50` · Review: complete · 2 claims · 2 open questions
 
 </div>
 
-[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+<p class="journey-nav" markdown="1">[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

@@ -150,3 +150,17 @@
 .journey-choices li { margin: .5rem 0; }
 .journey-choices li a { display: block; padding: .7rem 1rem; border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; background: var(--tr-surface); font-weight: 600; }
 .journey-choices li a:hover { border-color: var(--md-accent-fg-color); }
+
+.journey-hint { display: block; font-weight: 400; font-size: .72rem; color: var(--md-default-fg-color--light); margin-top: .15rem; }
+.md-typeset img.journey-visual { max-height: 12rem; padding: .4rem; }
+.journey-more, .journey-notebook { margin: 1rem 0; }
+.journey-notebook { border-left: 3px solid var(--md-accent-fg-color); background: var(--tr-surface); border-radius: 0 6px 6px 0; padding: .2rem .9rem; }
+.journey-notebook summary, .journey-more summary { cursor: pointer; font-weight: 600; }
+.journey-more { font-size: .76rem; color: var(--md-default-fg-color--light); }
+.journey-nav { font-size: .74rem; color: var(--md-default-fg-color--light); margin-top: 1.2rem; }
+/* The journey's collapsible blocks follow the palette instead of the theme's default blue. */
+.md-typeset details.journey-more, .md-typeset details.journey-notebook { border-color: var(--md-default-fg-color--lightest); box-shadow: none; }
+.md-typeset details.journey-notebook { border-left: 3px solid var(--md-accent-fg-color); }
+.md-typeset details.journey-more > summary, .md-typeset details.journey-notebook > summary { background-color: transparent; }
+.md-typeset details.journey-more > summary::before, .md-typeset details.journey-notebook > summary::before,
+.md-typeset details.journey-more > summary::after, .md-typeset details.journey-notebook > summary::after { background-color: var(--md-accent-fg-color); }

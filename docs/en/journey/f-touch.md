@@ -1,5 +1,5 @@
 ---
-title: Touch: the controller has not answered
+title: "Touch: the controller has not answered"
 hide:
   - navigation
   - toc
@@ -37,15 +37,45 @@ not run), then a first check packet, to which a first reply byte of `0xD0` would
 
 <div class="journey-choices" markdown>
 
-- [Another open question.](frontier.md)
+- [Look at another open question<span class="journey-hint">Back to the edge of what we know</span>](frontier.md)
 - [The kernel's side: AppleMultitouchSPI (the Grimoire).](grimoire-applemultitouchspi.md)
 - [The kernel's side: AppleS5L8900X (the Grimoire).](grimoire-apples5l8900x.md)
 - [The kernel's side: AppleD1755 (the Grimoire).](grimoire-appled1755.md)
 
 </div>
 
+<details class="journey-notebook" markdown="1">
+<summary>Notebook: how we looked for the answer (3 notes)</summary>
+
+**Note 1 · bootloader check (CHECK packet)** *(read in the code, not seen running on the phone)*
+
+Builds a four-byte packet on the stack with the bytes 05 00 00 06 (offsets 0 to 3), logs "Sending CHECK packet, to see if device is in bootloader", and sends it through the SPI device object at this+0x54 with a four-byte receive buffer.
+
+Source: `AppleMultitouchSPI` (fingerprint `b3db0be99e24`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/check_packet_0x8056e4e8.yaml)
+
+**Note 2 · AppleMultitouchSPI::bootloadTimerFiredHandler()** *(read in the code, not seen running on the phone)*
+
+The routine at 0x8056e5d8 ("Checking if bootloaded (getting report info)") calls slot 0x3e8 with the report code 0xD3 and a four-byte buffer and returns whether the call succeeded.
+
+Source: `AppleMultitouchSPI` (fingerprint `b3db0be99e24`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/bootload_flow_0x8056e2c0.yaml)
+
+**Note 3 · AppleMultitouchSPI::bootloadTimerFiredHandler()** *(Open question)*
+
+Body of the bootload method itself (virtual slot 0x378 of the driver class, called up to three times), which sends the firmware: its packet format, its source and its size were not found; the strings 'PreconstructedBootloadPacketType' and 'A-Speed Firmware' belong to it.
+
+*What would settle it:* find slot 0x378 of the class table and read it; locate the property or file that carries the firmware
+
+Source: `AppleMultitouchSPI` (fingerprint `b3db0be99e24`) · [open the entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/bootload_flow_0x8056e2c0.yaml)
+
+</details>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
+
 **Go deeper in the reference:** [Hardware map: touch controller](../../en/03-hardware-map.md#touch-controller) · [Touch controller preconditions](../../research/2026-10-16-touch-n88-preconditions.md)
 
 **Evidence:** [`20261016T190939Z-trace_spi1_selftest`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T190939Z-trace_spi1_selftest) · [`20261016T173946Z-trace_touch_ldo`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T173946Z-trace_touch_ldo) · [`20261016T174843Z-trace_spi1_nogate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T174843Z-trace_spi1_nogate)
 
-[← Previous step](frontier.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](frontier.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

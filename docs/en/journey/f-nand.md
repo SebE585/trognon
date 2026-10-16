@@ -1,5 +1,5 @@
 ---
-title: Storage: only the chip's name
+title: "Storage: only the chip's name"
 hide:
   - navigation
   - toc
@@ -33,12 +33,17 @@ A first page read through the controller. It has not been designed yet.
 
 <div class="journey-choices" markdown>
 
-- [Another open question.](frontier.md)
+- [Look at another open question<span class="journey-hint">Back to the edge of what we know</span>](frontier.md)
 
 </div>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
 
 **Go deeper in the reference:** [Hardware map: NAND](../../en/03-hardware-map.md#nand)
 
 **Evidence:** [`20261015T171033Z-trace_nand`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171033Z-trace_nand)
 
-[← Previous step](frontier.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](frontier.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

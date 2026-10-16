@@ -1,5 +1,5 @@
 ---
-title: Our code arrives
+title: "Our code arrives"
 hide:
   - navigation
   - toc
@@ -13,6 +13,10 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # Our code arrives
 
+![Our code lands in RAM, at 0x41000000.](../../img/journey/ram.svg){ .journey-visual }
+
+*Our code lands in RAM, at 0x41000000.*
+
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
 `send_data` copies raw Thumb code to `0x41000000` and `run` jumps to it. The code starts with the MMU and caches on, in
@@ -22,13 +26,18 @@ supervisor mode, with interrupts not masked.
 
 <div class="journey-choices" markdown>
 
-- [How do I know my code really ran?](proof.md)
-- [Will the phone keep my code?](persist.md)
+- [Make sure it really ran<span class="journey-hint">The marker and the nonce</span>](proof.md)
+- [Check what will survive a power-off<span class="journey-hint">Understand why the boot is tethered</span>](persist.md)
 
 </div>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
 
 **Go deeper in the reference:** [Boot chain: payload](../../en/01-boot-chain.md#the-path-device-2026-10-1415) · [Memory layout used by the payloads](../../en/02-exception-console.md#memory-layout-used-by-the-payloads-device)
 
 **Evidence:** [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace)
 
-[← Previous step](ibss.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](ibss.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

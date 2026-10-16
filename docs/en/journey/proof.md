@@ -1,5 +1,5 @@
 ---
-title: Proof that it ran
+title: "Proof that it ran"
 hide:
   - navigation
   - toc
@@ -13,6 +13,10 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # Proof that it ran
 
+![The marker comes back with the same nonce.](../../img/journey/check.svg){ .journey-visual }
+
+*The marker comes back with the same nonce.*
+
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
 The code publishes a marker in a variable of the boot stage and the host reads it back. There is a trap: the boot stage
@@ -23,12 +27,17 @@ keeps its variables between runs, so a stale value can look like a result. Trogn
 
 <div class="journey-choices" markdown>
 
-- [Show me something on the screen.](pixel.md)
+- [Ask for something to see<span class="journey-hint">Draw on the screen</span>](pixel.md)
 
 </div>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
 
 **Go deeper in the reference:** [Evidence: how a bundle is made](../../en/08-evidence.md)
 
 **Evidence:** [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace)
 
-[← Previous step](payload.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](payload.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

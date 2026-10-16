@@ -1,5 +1,5 @@
 ---
-title: The phone listens: DFU mode
+title: "The phone listens: DFU mode"
 hide:
   - navigation
   - toc
@@ -13,6 +13,10 @@ You are exploring: [A 3GS in a drawer](start.md) → **The phone listens: DFU mo
 
 # The phone listens: DFU mode
 
+![Black screen. The phone answers over USB all the same.](../../img/journey/cable.svg){ .journey-visual }
+
+*Black screen. The phone answers over USB all the same.*
+
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
 In DFU mode the phone's boot ROM waits for an image over USB instead of starting its system. The ROM of the 3GS
@@ -23,13 +27,18 @@ the time and is simply repeated; no helper board is needed.
 
 <div class="journey-choices" markdown>
 
-- [What does the exploit give us?](pwned.md)
-- [Will the phone keep my code?](persist.md)
+- [Use the flaw<span class="journey-hint">See what the exploit gives us</span>](pwned.md)
+- [Check what will survive a power-off<span class="journey-hint">Understand why the boot is tethered</span>](persist.md)
 
 </div>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
 
 **Go deeper in the reference:** [Boot chain](../../en/01-boot-chain.md)
 
 **Evidence:** [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace)
 
-[← Previous step](start.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](start.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

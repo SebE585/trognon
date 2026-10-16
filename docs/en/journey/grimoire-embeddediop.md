@@ -1,5 +1,5 @@
 ---
-title: EmbeddedIOP
+title: "EmbeddedIOP"
 hide:
   - navigation
   - toc
@@ -58,4 +58,4 @@ Review: not_reviewed · 1 claim · 2 open questions
 
 </div>
 
-[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+<p class="journey-nav" markdown="1">[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

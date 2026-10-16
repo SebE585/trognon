@@ -1,5 +1,5 @@
 ---
-title: IOSlaveProcessor
+title: "IOSlaveProcessor"
 hide:
   - navigation
   - toc
@@ -63,4 +63,4 @@ Entry `0x80399594` · Review: complete · 2 claims · 2 open questions
 
 </div>
 
-[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+<p class="journey-nav" markdown="1">[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

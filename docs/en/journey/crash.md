@@ -1,5 +1,5 @@
 ---
-title: A crash you can read
+title: "A crash you can read"
 hide:
   - navigation
   - toc
@@ -13,6 +13,10 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # A crash you can read
 
+![A crash ends as a readable dump, not a reboot.](../../img/journey/crash.svg){ .journey-visual }
+
+*A crash ends as a readable dump, not a reboot.*
+
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
 The phone has no serial port we can reach and no debugger, so a crash would only reboot it. The console hooks the
@@ -23,12 +27,17 @@ a readable dump on the screen, then in a clean return. These four cases were obs
 
 <div class="journey-choices" markdown>
 
-- [So where does our knowledge stop?](frontier.md)
+- [Go to the edge of what we know<span class="journey-hint">Where our knowledge stops</span>](frontier.md)
 
 </div>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
 
 **Go deeper in the reference:** [The on-screen exception console](../../en/02-exception-console.md)
 
 **Evidence:** [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace) · [`20261015T050541Z-trace_irq`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050541Z-trace_irq)
 
-[← Previous step](pixel.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](pixel.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

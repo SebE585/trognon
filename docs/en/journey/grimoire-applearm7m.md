@@ -1,5 +1,5 @@
 ---
-title: AppleARM7M
+title: "AppleARM7M"
 hide:
   - navigation
   - toc
@@ -93,4 +93,4 @@ Entry `0x80713510` · Review: complete · 1 claim · 2 open questions
 
 </div>
 
-[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+<p class="journey-nav" markdown="1">[← Previous step](grimoire.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

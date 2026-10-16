@@ -1,5 +1,5 @@
 ---
-title: Here our knowledge stops
+title: "Here our knowledge stops"
 hide:
   - navigation
   - toc
@@ -25,14 +25,19 @@ written description of the address, the value, the current state and the way bac
 
 <div class="journey-choices" markdown>
 
-- [The touch controller](f-touch.md)
-- [Wi-Fi and the coprocessor](f-wifi.md)
-- [Storage (the NAND flash)](f-nand.md)
-- [Open the Grimoire: the kernel's side of these questions.](grimoire.md)
-- [Back to the start of the path.](start.md)
+- [Follow a finger on the screen<span class="journey-hint">The touch controller</span>](f-touch.md)
+- [Follow the radio<span class="journey-hint">Wi-Fi and the coprocessor</span>](f-wifi.md)
+- [Follow the data on disk<span class="journey-hint">Storage, the NAND flash</span>](f-nand.md)
+- [Open the Grimoire<span class="journey-hint">The kernel's side of these questions</span>](grimoire.md)
+- [Go back to the drawer<span class="journey-hint">Return to the start of the path</span>](start.md)
 
 </div>
 
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
+
 **Go deeper in the reference:** [Research index](../../research/index.md)
 
-[← Previous step](crash.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](crash.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

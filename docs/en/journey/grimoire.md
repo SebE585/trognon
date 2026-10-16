@@ -1,5 +1,5 @@
 ---
-title: The Grimoire
+title: "The Grimoire"
 hide:
   - navigation
   - toc
@@ -34,10 +34,15 @@ the open questions say what proof is missing.
 - [IOP_s5l8920x_firmware (2 entries)](grimoire-iop_s5l8920x_firmware.md)
 - [IOSlaveProcessor (3 entries)](grimoire-ioslaveprocessor.md)
 - [iBSS_n88ap_4.3.5 (3 entries)](grimoire-ibss_n88ap_435.md)
-- [Back to the start of the path.](start.md)
+- [Go back to the drawer<span class="journey-hint">Return to the start of the path</span>](start.md)
 
 </div>
 
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
+
 **Go deeper in the reference:** [How the analysis is organised](../../research/index.md)
 
-[← Previous step](start.md) · [Map of the journey](index.md) · [Reference manual](../README.md)
+</details>
+
+<p class="journey-nav" markdown="1">[← Previous step](start.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

@@ -1,5 +1,5 @@
 ---
-title: From a powered-off phone to the first pixel
+title: "From a powered-off phone to the first pixel"
 hide:
   - navigation
   - toc
