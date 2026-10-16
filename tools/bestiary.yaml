@@ -8,9 +8,10 @@
 #   down     observed on the real phone (DEVICE): needs `evidence`, the bundle(s) under evidence/
 # `missions` lists mission ids of tools/iop_analysis/missions.yaml that attack the front (titles come from there). `section` is an anchor of
 # docs/en/03-hardware-map.md; a block that is not in the hardware map yet has none and is shown as unspotted.
-# A front that is down may also reveal a DIGIT of the creature's code: {label, value, proof}. `proof` is a line that must appear, as is, in the
-# screen.txt or vars.txt of one of the front's bundles, so a digit cannot be shown without being in the evidence. A front without a digit
+# A front that is down may also reveal a CODE FRAGMENT of the creature's code (a register value, an identifier): {label, value, proof}. `proof` is a line that must appear, as is, in the
+# screen.txt or vars.txt of one of the front's bundles, so a fragment cannot be shown without being in the evidence, and its `value` must itself appear in that line. A front without a fragment
 # still counts as down; its slot of the code shows a check mark.
+# `goal` (required, both languages) is the BOUNDED victory of the creature: reaching it does not mean the block is understood.
 # `story` (optional) is the step of the guided path that tells where the problem comes from; the step opens onto the creature in return.
 # A creature with `campaign: true` also gets a campaign page (and then needs `campaign_intro` in both languages). On its fronts:
 #   id          a short id, unique in the creature (required on every front of a campaign)
@@ -19,6 +20,7 @@
 # Wording rule: a front says what is established or not, at the strength of its proof. Nothing here is a claim of its own.
 creatures:
   - id: wifi
+    goal: { en: "Start the coprocessor and get an identified answer from the Wi-Fi chip.", fr: "Démarrer le coprocesseur et obtenir une réponse identifiée de la puce Wi-Fi." }
     name: { en: "The Whisperer", fr: "Le Chuchoteur" }
     block: { en: "Wi-Fi and its coprocessor", fr: "Wi-Fi et son coprocesseur" }
     section: wi-fi-and-sdio
@@ -32,7 +34,7 @@ creatures:
         state: down
         text: { en: "The base address and the GPIO lines of the Wi-Fi block.", fr: "L'adresse de base et les lignes GPIO du bloc Wi-Fi." }
         evidence: [20261015T174633Z-trace_wifi_reset]
-        digit: { label: { en: "The level of the reset line after it is released", fr: "Le niveau de la ligne de reset une fois relâchée" }, value: "1", proof: "RELEASED 00000001" }
+        fragment: { label: { en: "The level of the reset line after it is released", fr: "Le niveau de la ligne de reset une fois relâchée" }, value: "1", proof: "RELEASED 00000001" }
       - id: start
         needs: [clock]
         down_needs: write
@@ -52,6 +54,7 @@ creatures:
         text: { en: "Why writes from the main processor to the Wi-Fi registers do not stick.", fr: "Pourquoi les écritures du processeur principal dans les registres Wi-Fi ne tiennent pas." }
 
   - id: touch
+    goal: { en: "Get an identified answer from the touch controller.", fr: "Obtenir une réponse identifiée du contrôleur tactile." }
     name: { en: "The Shy One", fr: "Le Timide" }
     block: { en: "Touch controller", fr: "Contrôleur tactile" }
     section: touch-controller
@@ -60,7 +63,7 @@ creatures:
       - state: down
         text: { en: "The levels of its reset and chip-select lines, and the power registers that look like its supply and clock enables.", fr: "Les niveaux de ses lignes de reset et de sélection, et les registres d'alimentation qui ressemblent à ses commandes de tension et d'horloge." }
         evidence: [20261016T150631Z-trace_touch_gpio, 20261016T173946Z-trace_touch_ldo]
-        digit: { label: { en: "The raw register of its reset line", fr: "Le registre brut de sa ligne de reset" }, value: "0x212", proof: "RST_14.1 raw 00000212" }
+        fragment: { label: { en: "The raw register of its reset line", fr: "Le registre brut de sa ligne de reset" }, value: "0x212", proof: "RST_14.1 raw 00000212" }
       - state: open
         text: { en: "Where its firmware comes from.", fr: "D'où vient son firmware." }
         missions: [MT-BOOT-Q1, MT-CHECK-Q1]
@@ -70,6 +73,7 @@ creatures:
         text: { en: "Any transaction on its bus, and any answer from it.", fr: "Toute transaction sur son bus, et toute réponse de sa part." }
 
   - id: bluetooth
+    goal: { en: "Identify the Bluetooth chip and get one exchange over its link.", fr: "Identifier la puce Bluetooth et obtenir un échange sur sa liaison." }
     name: { en: "The Sleeper", fr: "Le Dormeur" }
     block: { en: "Bluetooth", fr: "Bluetooth" }
     section: bluetooth
@@ -77,13 +81,14 @@ creatures:
       - state: down
         text: { en: "The levels of its reset and wake lines.", fr: "Les niveaux de ses lignes de reset et de réveil." }
         evidence: [20261016T124101Z-trace_bt_gpio]
-        digit: { label: { en: "The level of its wake line", fr: "Le niveau de sa ligne de réveil" }, value: "0", proof: "bt_wake=00000000" }
+        fragment: { label: { en: "The level of its wake line", fr: "Le niveau de sa ligne de réveil" }, value: "0", proof: "bt_wake=00000000" }
       - state: open
         text: { en: "Which chip it is: it is known only from the device tree.", fr: "Quelle puce c'est : on ne la connaît que par le device tree." }
       - state: open
         text: { en: "Its link to the processor (a UART, by the device tree) and any exchange over it.", fr: "Sa liaison avec le processeur (un UART, d'après le device tree) et tout échange dessus." }
 
   - id: gps
+    goal: { en: "Find out which block, if any, carries the GPS.", fr: "Trouver quel bloc, s'il y en a un, porte le GPS." }
     name: { en: "The Unseen", fr: "L'Invisible" }
     block: { en: "GPS", fr: "GPS" }
     fronts:
@@ -91,6 +96,7 @@ creatures:
         text: { en: "Everything: it is not in the hardware map yet. Finding which block, if any, carries it is the first question.", fr: "Tout : il n'est pas encore dans la carte matérielle. Trouver quel bloc le porte, s'il y en a un, est la première question." }
 
   - id: nand
+    goal: { en: "Read one page of the flash on the phone.", fr: "Lire une page de la mémoire flash sur le téléphone." }
     name: { en: "The Vault", fr: "Le Coffre" }
     block: { en: "NAND flash", fr: "Mémoire NAND" }
     section: nand
@@ -99,11 +105,12 @@ creatures:
       - state: down
         text: { en: "The chip identifier on the first two chip-enable lines.", fr: "L'identifiant de la puce sur les deux premières lignes de sélection." }
         evidence: [20261015T171033Z-trace_nand]
-        digit: { label: { en: "The chip identifier, first chip", fr: "L'identifiant de la puce, première puce" }, value: "98 DE 95 32 7A 54", proof: "CHIPID 98 DE 95 32 7A 54" }
+        fragment: { label: { en: "The chip identifier, first chip", fr: "L'identifiant de la puce, première puce" }, value: "98 DE 95 32 7A 54", proof: "CHIPID 98 DE 95 32 7A 54" }
       - state: open
         text: { en: "The other chip-enable lines, the second bus, and any page access.", fr: "Les autres lignes de sélection, le second bus, et tout accès à une page." }
 
   - id: accelerometer
+    goal: { en: "Name the chip and calibrate its readings.", fr: "Nommer la puce et calibrer ses lectures." }
     name: { en: "The Twitcher", fr: "Le Frétillant" }
     block: { en: "Accelerometer", fr: "Accéléromètre" }
     section: accelerometer
@@ -111,13 +118,14 @@ creatures:
       - state: down
         text: { en: "Its identifier, and axis readings in seven positions (about 56 counts per g on two axes).", fr: "Son identifiant, et des lectures d'axes dans sept positions (environ 56 comptes par g sur deux axes)." }
         evidence: [20261016T101710Z-trace_accel_i2c, 20261016T150615Z-trace_accel_axes]
-        digit: { label: { en: "The identifier byte", fr: "L'octet d'identifiant" }, value: "0x3B", proof: "who_am_i=0000003B" }
+        fragment: { label: { en: "The identifier byte", fr: "L'octet d'identifiant" }, value: "0x3B", proof: "who_am_i=0000003B" }
       - state: open
         text: { en: "Which of the two compatible chips it is.", fr: "Laquelle des deux puces compatibles c'est." }
       - state: open
         text: { en: "Calibrated offsets and any angular accuracy.", fr: "Les décalages calibrés et toute précision angulaire." }
 
   - id: magnetometer
+    goal: { en: "Get one real measurement from the magnetometer.", fr: "Obtenir une vraie mesure du magnétomètre." }
     name: { en: "The Compass Spirit", fr: "L'Esprit-boussole" }
     block: { en: "Magnetometer", fr: "Magnétomètre" }
     section: magnetometer
@@ -125,7 +133,7 @@ creatures:
       - state: down
         text: { en: "A device at 0x1e whose register readings are compatible with a known chip's documented reset state.", fr: "Un composant en 0x1e dont les lectures de registres sont compatibles avec l'état de reset documenté d'une puce connue." }
         evidence: [20261016T151941Z-trace_compass_i2c]
-        digit: { label: { en: "The address that answers", fr: "L'adresse qui répond" }, value: "0x1E", proof: "aw_1e 00000001" }
+        fragment: { label: { en: "The address that answers", fr: "L'adresse qui répond" }, value: "0x1E", proof: "aw_1e 00000001" }
       - state: open
         text: { en: "A measurement, which needs a set-up taken from the chip's own memory.", fr: "Une mesure, qui demande une configuration tirée de la mémoire propre de la puce." }
       - state: open

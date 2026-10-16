@@ -34,7 +34,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
 <div class="grid cards" markdown>
 
-- **Rebuild a published run and compare its hash**
+- <span id="mission-fc-rebuild-bundle"></span>**Rebuild a published run and compare its hash**
 
     <span class="mission-level mission-level-0">First contribution</span> <span class="mission-state mission-state-open">Open to everyone, any number of times</span>
 
@@ -53,7 +53,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
     [See the Verifications page](https://sebe585.github.io/trognon/en/verifications/)
 
-- **Audit one DEVICE claim against its bundle**
+- <span id="mission-fc-audit-claim"></span>**Audit one DEVICE claim against its bundle**
 
     <span class="mission-level mission-level-0">First contribution</span> <span class="mission-state mission-state-open">Open to everyone, any number of times</span>
 
@@ -72,7 +72,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
     [Audit a claim: the model row and how](https://sebe585.github.io/trognon/en/verifications/#audit-a-claim)
 
-- **Read a page as a newcomer and say where you got lost**
+- <span id="mission-fc-newcomer-read"></span>**Read a page as a newcomer and say where you got lost**
 
     <span class="mission-level mission-level-0">First contribution</span> <span class="mission-state mission-state-open">Open to everyone, any number of times</span>
 
@@ -96,7 +96,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
 <div class="grid cards" markdown>
 
-- **Where does the touch controller's firmware come from?**
+- <span id="mission-mt-boot-q1"></span>**Where does the touch controller's firmware come from?**
 
     <span class="mission-level mission-level-1">Level 1 · static analysis</span> <span class="mission-state mission-state-open">Open</span>
 
@@ -117,7 +117,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/bootload_flow_0x8056e2c0.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+MT-BOOT-Q1&mission=MT-BOOT-Q1)
 
-- **Does the touch driver class used by this model send the CHECK packet?**
+- <span id="mission-mt-check-q1"></span>**Does the touch driver class used by this model send the CHECK packet?**
 
     <span class="mission-level mission-level-1">Level 1 · static analysis</span> <span class="mission-state mission-state-open">Open</span>
 
@@ -137,7 +137,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/check_packet_0x8056e4e8.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+MT-CHECK-Q1&mission=MT-CHECK-Q1)
 
-- **Which class receives the coprocessor start call?**
+- <span id="mission-arm7m-startcpu-q4"></span>**Which class receives the coprocessor start call?**
 
     <span class="mission-level mission-level-1">Level 1 · static analysis</span> <span class="mission-state mission-state-open">Open</span>
 
@@ -158,7 +158,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleARM7M/startCPU.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+ARM7M-STARTCPU-Q4&mission=ARM7M-STARTCPU-Q4)
 
-- **What do the object-slot calls of the coprocessor start sequence do?**
+- <span id="mission-embiop-seq-q1"></span>**What do the object-slot calls of the coprocessor start sequence do?**
 
     <span class="mission-level mission-level-1">Level 1 · static analysis</span> <span class="mission-state mission-state-open">Open</span>
 
@@ -178,7 +178,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/EmbeddedIOP/start_sequence.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+EMBIOP-SEQ-Q1&mission=EMBIOP-SEQ-Q1)
 
-- **Who else configures the pads in the boot stage?**
+- <span id="mission-ibss-gpio-q1"></span>**Who else configures the pads in the boot stage?**
 
     <span class="mission-level mission-level-1">Level 1 · static analysis</span> <span class="mission-state mission-state-open">Open</span>
 
@@ -199,7 +199,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/iBSS_n88ap_4.3.5/gpio_configure_0x84001354.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+IBSS-GPIO-Q1&mission=IBSS-GPIO-Q1)
 
-- **What is port 0x2e in the boot stage's pad routine?**
+- <span id="mission-ibss-gpio-q2"></span>**What is port 0x2e in the boot stage's pad routine?**
 
     <span class="mission-level mission-level-1">Level 1 · static analysis</span> <span class="mission-state mission-state-open">Open</span>
 
@@ -219,7 +219,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
     [Catalog entry](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/iBSS_n88ap_4.3.5/gpio_configure_0x84001354.yaml) · [Take this mission](https://github.com/SebE585/trognon/issues/new?template=mission.yml&title=Mission%3A+IBSS-GPIO-Q2&mission=IBSS-GPIO-Q2)
 
-- **What are pins 08.06 and 11.02 for?**
+- <span id="mission-ibss-tab-q2"></span>**What are pins 08.06 and 11.02 for?**
 
     <span class="mission-level mission-level-1">Level 1 · static analysis</span> <span class="mission-state mission-state-open">Open</span>
 
@@ -245,7 +245,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
 <div class="grid cards" markdown>
 
-- **Which object implements the clock-gate call?**
+- <span id="mission-s5l-clk-q1"></span>**Which object implements the clock-gate call?**
 
     <span class="mission-level mission-level-1">Level 1 · static analysis</span> <span class="mission-state mission-state-in-progress">In progress</span>
 
@@ -272,7 +272,7 @@ These need no skill in reading firmware and nothing to claim: anyone can do them
 
 <div class="grid cards" markdown>
 
-- **Do the clock mask registers mirror the gate words?**
+- <span id="mission-s5l-clk-q2"></span>**Do the clock mask registers mirror the gate words?**
 
     <span class="mission-level mission-level-2">Level 2 · a run that only reads</span> <span class="mission-state mission-state-blocked">Blocked</span>
 

@@ -39,9 +39,10 @@ or the campaign pages. What you can add, and what each needs:
 
 - **A front** (an open point of a creature), with `state`: `open` needs nothing; `wounded` needs `ref`, the page of `docs/` that holds the reading in
   the code; `down` needs `evidence`, the bundle(s) under `evidence/` that show it. A front only moves when its proof is attached.
-- **A digit** on a front that is down: `{label, value, proof}`. `proof` must be a line that appears as is in the `screen.txt` or `vars.txt` of the front's
-  bundles; the generator refuses it otherwise.
-- **A creature**: a block, with its names in English and French. The life bar is computed from the fronts and is never typed.
+- **A code fragment** on a front that is down (`fragment: {label, value, proof}`): a register value or an identifier. `proof` must be a line that appears
+  as is in the `screen.txt` or `vars.txt` of the front's bundles, and `value` must appear in that line; the generator refuses it otherwise.
+- **A creature**: a block, with its names and its bounded `goal` in English and French. The life bar is computed from the states of the fronts; what a
+  measurement demonstrates is decided by review, in the pull request.
 - **A campaign** (`campaign: true`, plus `campaign_intro` in both languages): every front gets an `id`, optionally `needs` (the fronts that come first in our
   working order, a plan and not a proven requirement) and, unless it is down, `down_needs` (`survey`, `write` or `unknown`: what would bring it down).
   A front is *locked* until every front it needs is down; locked fronts can still be studied in the code. Hardware writes stay with the maintainer.
