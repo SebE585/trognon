@@ -30,6 +30,40 @@ real owner never received a wake-up signal — not a wrong register, a wrong
 processor — but this causal link has not itself been traced; see "Known
 gaps" below.
 
+```mermaid
+flowchart LR
+    subgraph APP["Application CPU (Cortex-A8, ARMv7)"]
+        A1["Trognon payloads<br/>run here (Recovery/iBSS)"]
+        A2["AppleIOPSDIO driver<br/>sendIOPCommand()"]
+        A1 -. "direct MMIO writes:<br/>always read back 0" .-> SDHC
+        A2 -- "post message<br/>(opcode, vaddr, paddr)<br/>+ wait for reply" --> CH
+    end
+
+    CH["Shared command channel<br/>(IOSlaveProcessor)"]
+
+    subgraph IOP["Embedded IOP (second ARMv7 core)"]
+        I1["EmbeddedIOP firmware<br/>own scheduler, heap,<br/>exception handlers, VIC"]
+        I2["sdio message loop<br/>opcode switch (0-6)"]
+        I1 --- I2
+        I2 -- "case 3: sdiodrv_resetSDHC()<br/>(confirmed to touch hardware)" --> SDHC
+        I2 -- "h2fmi_iop_* " --> NAND["NAND controller"]
+        I2 -- "cdma.c" --> DMA["AES DMA engine"]
+    end
+
+    CH --> I2
+
+    SDHC["SDHC / Wi-Fi registers<br/>(0x80000000, device tree:<br/>sdio,s5l8920x)"]
+
+    style A1 fill:#e8f0fe,stroke:#4a76c9
+    style SDHC fill:#fde8e8,stroke:#c94a4a
+```
+
+*Established (solid, confirmed from the disassembled driver and firmware):
+the message channel exists, and the IOP's own `sdiodrv_resetSDHC` is the
+function that touches SDHC hardware. Still a hypothesis, not yet proven
+(dotted line): that the application CPU's direct path to those same
+registers is actually blocked — only that it reads back zero in practice.*
+
 ## How this was found: a second opinion, then a real disassembler
 
 After three clean, carefully isolated negatives from direct register
@@ -238,6 +272,41 @@ Case 3 of the same switch calls a function that references the
 actually touches hardware. Cases 1, 2, 4, 5 and 6 each call a different,
 not-yet-identified function (no directly linked debug string found in the
 time available this session).
+
+```mermaid
+flowchart TD
+    RECV["fcn.00001730 (message loop)<br/>blocking receive on 'sdio message' queue"]
+    OP["read opcode from message<br/>(offset +0)"]
+    SW{{"switch (opcode - 1),<br/>range check 0..6<br/>at 0x17bc"}}
+
+    RECV --> OP --> SW
+
+    SW -- "opcode 0<br/>(default / out of range)" --> C0
+    SW -- "opcode 1" --> C1["fcn.00001a58<br/>(not identified)"]
+    SW -- "opcode 2" --> C2["fcn.00001a24<br/>(not identified)"]
+    SW -- "opcode 3" --> C3["fcn.000019c4<br/>-> sdiodrv_resetSDHC<br/><b>touches hardware</b>"]
+    SW -- "opcode 4" --> C4["fcn.0000192c<br/>(not identified)"]
+    SW -- "opcode 5" --> C5["fcn.0000190c<br/>(not identified)"]
+    SW -- "opcode 6" --> C6["fcn.000018bc<br/>(not identified)"]
+
+    C0["<b>the PING</b><br/>log 'Connection established'<br/>write status = 0 (success)<br/><b>no register touched</b>"]
+
+    C0 --> LOOP["store status in reply field,<br/>loop back to RECV"]
+    C1 --> LOOP
+    C2 --> LOOP
+    C3 --> LOOP
+    C4 --> LOOP
+    C5 --> LOOP
+    C6 --> LOOP
+    LOOP --> RECV
+
+    style C0 fill:#fde8e8,stroke:#c94a4a
+    style C3 fill:#e8f8e8,stroke:#4ac97a
+```
+
+*The ping (opcode 0) and the reset (opcode 3) are two different, unrelated
+branches of the same switch — confirmed by disassembly, not inferred from
+the log message's wording.*
 
 Updated evidence table (format suggested by the review):
 
