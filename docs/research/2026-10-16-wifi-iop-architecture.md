@@ -339,11 +339,24 @@ is zero — not opcode-specific, the same guard in all seven):
   consistent with a data transfer (buffer, block size, block count,
   direction), not yet confirmed further.
 
-None of `fcn.00006580`, `fcn.000063d0`, `fcn.0000638c`, `fcn.000067f0` or
-`fcn.00006898` — the functions that would hold the real MMIO register
-accesses — were disassembled this session; that is the next concrete step
-for actually recovering the addresses the IOP itself uses. The host
-driver's own opcode numbering
+`fcn.00006580`, `fcn.000063d0` and `fcn.0000638c` (opcode 5's three
+sub-calls) were not disassembled this session. The opcode-4 (reset) path
+was followed five function levels deep instead
+(`fcn.000019c4` -> `fcn.00006c24`/`fcn.00006d04` -> the shared polling
+helper `fcn.000064b0` -> `fcn.00006e30`/`fcn.00006e44`), and **no literal
+hardware address was found anywhere along it**. Every one of these
+functions reads or writes a fixed byte/half-word offset of the *device
+struct* passed as its first argument (`[dev+0x2f]`, `[dev+0x34]`,
+`[dev+0x36]`) — building up what looks like a desired-register bitmask in
+software, not touching a hardware register directly. This is consistent
+with the address-is-parameterised theory (no address literal was found
+anywhere in either the raw firmware or its wrapper kext, beyond a plain
+kernel-API jump table in the latter), but it also means the actual MMIO
+write was not located: it is most likely applied somewhere else entirely —
+an interrupt handler, or a deferred/batched "commit pending register
+writes" routine neither `fcn.000067f0` (opcode 6) nor `fcn.00006898`
+(opcode 7) were checked for either — not in the direct call path from the
+switch. The host driver's own opcode numbering
 (`sendIOPCommand`'s special handling of "opcode 0", noted above as a
 plausible ping match) has not been reconciled with this IOP-side numbering
 — whether the host's opcode byte maps 1:1 to the IOP's, or through some
