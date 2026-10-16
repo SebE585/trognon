@@ -1,0 +1,62 @@
+binary: AppleS5L8900X.kext.bin
+binary_sha256: 5439f665a7531f36c0c869fd16e7a33e361e4f72232130fe5055b86a38985175
+function_name_apple: null
+function_name_assigned: "AppleS5L8900XClockController::start and its clock-gate function plumbing"
+decode_mode: thumb
+subsystem: soc_clock
+entry_code_address: "0x8045e750"
+thumb_entry_pointer: "0x8045e751"
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x8045e750", "0x8045e8b2"]
+    - ["0x8045e5d2", "0x8045e6a0"]
+    - ["0x8045da5c", "0x8045da78"]
+  constant_ranges: []
+  unresolved:
+    - id: S5L-CLK-Q1
+      text: "How a device-tree clock-gates number becomes a register: the clkG function object stores the controller (this+0x18) and the gate (this+0x1c) and calls a virtual method at slot 0x380 of the object's class. AppleS5L8900XClockController's own table (0x80463318) holds, at that slot, a base-class stub in the kernel (0x801d7c08: movs r0, 0; bx lr), so the object at this+0x18 is not shown to be the controller, or the real work is elsewhere."
+      proof_needed: "find where the function object's +0x18 and +0x1c fields are written (callers of the factory at 0x8045e504) and the class of the object stored there"
+    - id: S5L-CLK-Q2
+      text: "Whether CGCON0 and the following word (offsets 0x48 and 0x4c) are an aggregate view of the same per-gate words the iBSS uses at 0xBF100078 + 4 * i, and how a bit number (the device-tree gate) maps to an array index."
+      proof_needed: "a read of offsets 0x40 to 0x74 of the block next to the 52 gate words (STAGE 47, built, not run)"
+
+claims:
+  - id: S5L-CLK-001
+    text: >
+      The device tree's arm-io node carries function-clock_gate, 8 bytes: a phandle word and the selector 0x636c6b47 ("clkG" as a four-character code).
+      AppleS5L8900XIO::start fails with "can't find 'function-clock_gate', update Device Tree" without it. A factory at 0x8045e504 compares the requested
+      selector with 0x636c6b47 and, for it, allocates a 0x1c-byte object whose constructor (0x8045e140) installs the vtable 0x804632b8 (the class named
+      AppleS5L8900XClockControllerFunctionClockGate); other selectors build the sibling function classes (assert-reset, turbo, performance advice).
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#where-the-iop-clock-gate-is-search-2026-10-16"
+  - id: S5L-CLK-002
+    text: >
+      AppleS5L8900XClockController::start reads the device-tree properties clock-gate-defaults and clock-gate-suspend as 64-bit masks (two 32-bit
+      words, stored at this+0x15c/0x160 and this+0x7a4/0x7a8) and writes them to the controller with the register-write virtual method (slot 0x374)
+      at register offsets 0x48 and 0x4c, after masking the first with 0x7fcfffff. A warning string names the register "CGCON0" ("warning: asserting
+      CGCON0 0x%08lx"). So the kernel's gating interface is a pair of 32-bit mask registers, one bit per gate number, not the per-gate words
+      that the iBSS programs; neither property is present in this device tree (the node dump found only function-clock_gate).
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#where-the-iop-clock-gate-is-search-2026-10-16"
+  - id: S5L-CLK-003
+    text: >
+      The device tree's clock-gates numbers of this phone range from 0x10 to 0x3b: dart0 0x2d, dart1 0x33, sdio 0x10, sha1 0x11, ceata 0x12,
+      flash-controller0 0x13 and 0x14, spi0..2 0x15..0x17, uart0..4 0x1a..0x1e, pke 0x1f, i2c0 0x20, i2c2 0x22, pwm 0x23, otgphyctrl 0x24,
+      usb-complex 0x25, iop 0x27, clcd 0x2a and 0x36, i2s0..2 0x39..0x3b. They exceed the 52 gate words the iBSS handles, and map to the iBSS and
+      OpeniBoot's physical indexes by no constant offset (spi 0x15 to 9; the NAND controller 0x13 to 0x26; i2c0 0x20 to 0x13). The device tree used is
+      N88AP (iPhone2,1).
+    status: source_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#where-the-iop-clock-gate-is-search-2026-10-16"
+
+hardware_tests:
+  - name: trace_gate_survey (STAGE 47), offsets 0x40 to 0x74 and the 52 gate words
+    claim_tested: "S5L-CLK-002 and S5L-CLK-Q2"
+    execution_status: planned
+    result: null
+    evidence: null
+
+publication:
+  status: approved
+  notes: "register offsets, selector value and property names"

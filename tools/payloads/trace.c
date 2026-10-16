@@ -1463,6 +1463,20 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	}
 	kv("ON", on47); kv("MASK LO", lo47); kv("MASK HI", hi47);
 	result_hex("n_on", on47); result_hex("mask_lo", lo47); result_hex("mask_hi", hi47);
+	/* The kernel's clock controller applies 64-bit gate masks through two registers at offsets 0x48 and 0x4C of the same block
+	 * (the message "asserting CGCON0" in AppleS5L8900XClockController). Read-only, fault-tolerant, offsets 0x40 to 0x74. */
+	volatile u32 *cc47 = (volatile u32 *)SOC_TIMER_BASE;
+	SC->quiet = 1;
+	for (u32 o = 0x40; o <= 0x74; o += 4) {
+		u32 before = SC->hit, v = 0;
+		SC->expected = 1;
+		asm volatile("adr.w r1, 1f\n\tstr r1, [%2]\n\tldr %0, [%1]\n1:"
+			     : "+r"(v) : "r"(&cc47[o / 4]), "r"(&SC->resume) : "r1", "memory");
+		SC->expected = 0;
+		char nm[4] = { 'c', "0123456789ABCDEF"[(o >> 4) & 0xF], "0123456789ABCDEF"[o & 0xF], 0 };
+		result_hex(nm, (SC->hit == before) ? v : 0xDEAD0000);
+	}
+	SC->quiet = 0;
 	fb_clean();
 #endif
 #if STAGE == 43
