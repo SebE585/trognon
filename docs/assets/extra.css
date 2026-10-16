@@ -1,18 +1,57 @@
+/* Palette: titanium and amber, light and dark. The evidence tags below keep their own colours. */
 :root, [data-md-color-scheme="default"] {
-  --md-primary-fg-color: #3F6A24;
-  --md-primary-fg-color--light: #8DB84A;
-  --md-primary-fg-color--dark: #2B3A24;
-  --md-accent-fg-color: #A23220;
+  --md-primary-fg-color: #1e293b;
+  --md-primary-fg-color--light: #334155;
+  --md-primary-fg-color--dark: #0f172a;
+  --md-accent-fg-color: #b45309;
+  --md-typeset-a-color: #b45309;
+  --md-code-bg-color: #f1f5f9;
+  --tr-btn-bg: #b45309;
+  --tr-btn-fg: #ffffff;
 }
 [data-md-color-scheme="slate"] {
-  --md-primary-fg-color: #2B3A24;
-  --md-accent-fg-color: #8DB84A;
+  --md-default-bg-color: #0f172a;
+  --md-default-bg-color--light: #1e293b;
+  --md-default-bg-color--lighter: #273449;
+  --md-code-bg-color: #172033;
+  --md-primary-fg-color: #1e293b;
+  --md-primary-fg-color--light: #334155;
+  --md-primary-fg-color--dark: #0b1220;
+  --md-accent-fg-color: #f59e0b;
+  --md-typeset-a-color: #fbbf24;
+  --tr-btn-bg: #f59e0b;
+  --tr-btn-fg: #0f172a;
 }
+
+/* Typography: the default headings are very thin; make them readable, and keep lines short. */
+.md-typeset { font-size: .82rem; line-height: 1.7; }
+.md-typeset h1, .md-typeset h2, .md-typeset h3, .md-typeset h4 { font-weight: 650; letter-spacing: -.01em; color: var(--md-default-fg-color); }
+.md-typeset h1 { font-size: 2.1em; margin-bottom: .8em; }
+.md-typeset h2 { margin-top: 2.2em; padding-bottom: .3em; border-bottom: 1px solid var(--md-default-fg-color--lightest); }
+.md-typeset p, .md-typeset li { max-width: 78ch; }
+.md-typeset table p, .md-typeset .grid.cards p { max-width: none; }
+
+/* Buttons: filled accent for the primary one, outlined for the others, readable in both modes. */
+.md-typeset .md-button { color: var(--md-accent-fg-color); border: 2px solid var(--md-accent-fg-color); border-radius: 6px; font-weight: 600; }
+.md-typeset .md-button:hover, .md-typeset .md-button:focus { background: var(--md-accent-fg-color); border-color: var(--md-accent-fg-color); color: var(--tr-btn-fg); }
+.md-typeset .md-button--primary { background: var(--tr-btn-bg); border-color: var(--tr-btn-bg); color: var(--tr-btn-fg); }
+.md-typeset .md-button--primary:hover, .md-typeset .md-button--primary:focus { filter: brightness(1.1); background: var(--tr-btn-bg); border-color: var(--tr-btn-bg); color: var(--tr-btn-fg); }
+
+/* Cards and admonitions: a thin border, rounded, a soft hover. */
+.md-typeset .grid.cards > ul > li, .md-typeset .admonition {
+  border: 1px solid var(--md-default-fg-color--lightest); border-radius: 8px;
+}
+.md-typeset .grid.cards > ul > li:hover { border-color: var(--md-accent-fg-color); box-shadow: 0 2px 10px rgba(0,0,0,.12); }
+[data-md-color-scheme="slate"] .md-typeset .grid.cards > ul > li { background-color: rgba(30, 41, 59, 0.5); border-color: rgba(255,255,255,.08); }
+[data-md-color-scheme="slate"] .md-typeset .admonition { border-color: rgba(255,255,255,.08); }
+
 /* Material's default table is display:inline-block, which lets a wide table's
    preferred (max-content) width leak into its ancestors on narrow screens and
    push the whole page wider than the viewport. Forcing block + its own
    horizontal scroll keeps the overflow contained to the table itself. */
-.md-typeset table:not([class]) { display:block; overflow-x:auto; }
+.md-typeset table:not([class]) { display:block; overflow-x:auto; width:100%; }
+.md-typeset table:not([class]) th { font-weight:650; }
+.md-typeset table:not([class]) tbody tr:hover { background: var(--md-default-fg-color--lightest); }
 
 .md-typeset .tag { display:inline-block; padding:0 .45em; border-radius:2px; font-size:.75em; font-weight:700; letter-spacing:.03em; color:#fff; }
 .md-typeset .tag-device { background:#3F6A24; }
