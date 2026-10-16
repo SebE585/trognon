@@ -297,7 +297,15 @@ bit (when the node has `internal-cs`) or the `function-spi_cs<n>` object called 
 `0` at the end. The `spi1` node has no `internal-cs` property, so its chip select is the GPIO `13.00`
 function, not the PIN register. What `1` and `0` mean as pin levels depends on that GPIO function's own
 flags (`0x10001` on `spi1`'s property, `0x101` on the touch node's `function-enable_cs`), which were not
-decoded. The receive and DMA branches, the interrupt handler and the register at `0x4c` were not read.
+decoded.
+
+The interrupt service routine (`SPI-ISR-*`) reads as a full-duplex byte pump: each pass it reads STATUS, drains the
+receive FIFO through RXDATA (`0x20`), stores or discards the bytes (a skip count discards the bytes clocked in
+while the command is being sent), refills the transmit FIFO through TXDATA (`0x10`) with the command bytes and
+then `0xFF` filler bytes to clock a reply out, and writes the STATUS value it read back to STATUS (which reads as
+write-one-to-clear, not tested). At the end SETUP is rewritten without the start bits. So a transaction is a
+write of N bytes followed by a read of M bytes clocked with `0xFF`. The DMA branch and the register at `0x4c`
+were not read.
 
 Two observations in the touch driver itself (`AppleMultitouchSPI`, strings and a few instructions, not a
 traced path):

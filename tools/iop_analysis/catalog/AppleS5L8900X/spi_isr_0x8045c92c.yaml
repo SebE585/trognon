@@ -1,0 +1,49 @@
+binary: AppleS5L8900X.kext.bin
+binary_sha256: 5439f665a7531f36c0c869fd16e7a33e361e4f72232130fe5055b86a38985175
+function_name_apple: null
+function_name_assigned: "SPI interrupt service (FIFO drain and refill) and transfer finish"
+decode_mode: thumb
+subsystem: spi_controller
+entry_code_address: "0x8045c92c"
+thumb_entry_pointer: "0x8045c92d"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8045c92c", "0x8045ca90"]
+  unresolved:
+    - id: SPI-ISR-Q1
+      text: "Which controller slots 0x394 and 0x398 are the TX-free and RX-count accessors: from the four small status accessors at 0x8045cabc..0x8045cb28 and the use of the results here they read as TX-free (slot 0x394) and RX-count (slot 0x398); the slot-to-function mapping was not read from the table."
+      proof_needed: "read the controller's method table (the class's own vtable)"
+    - id: SPI-ISR-Q2
+      text: "How this routine is reached (the interrupt registration in start) and what the second loop's 0x100 SETUP bit enables; the 0x100 bit is cleared on completion."
+      proof_needed: "the interrupt-source setup in start; OpeniBoot's SPISETUP_UNKN2 (bit 8) is the same bit"
+
+claims:
+  - id: SPI-ISR-001
+    text: >
+      Loop: read STATUS (0x08); take two counts from it through the accessors (slot 0x394 then slot 0x398);
+      first drain the receive FIFO: for each of the RX-count entries read RXDATA (0x20), store the byte at the
+      receive pointer this+0x110 and decrement the remaining-receive count this+0x104 if that count is
+      non-zero, otherwise decrement the skip count this+0x108 (the byte is discarded); then refill the
+      transmit FIFO for as many entries as the TX-free count: send the next byte of the transmit buffer
+      (this+0x10c) to TXDATA (0x10) while the remaining-transmit count this+0xfc is non-zero, otherwise send
+      0xFF while the dummy count this+0x100 is non-zero. The STATUS value read is written back to STATUS
+      (0x08) each pass. It loops while any of the counts this+0xfc, +0x104, +0x108 is non-zero.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+  - id: SPI-ISR-002
+    text: >
+      When all counts are zero, the routine clears bit 0x100 in the saved SETUP extra bits (this+0xd4), keeps
+      only bit 0x200000 of them when spi-version is not 0, and writes SETUP (0x04) with those bits ORed with
+      this+0xd0; it returns 1. The separate finish routine at 0x8045ca4c writes SETUP with this+0xd0 and STATUS
+      with this+0xac, sets the completion byte this+0xe0 to 1, stores 0 as the command result and wakes the
+      waiting thread through slot 0x94 of the command gate.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "register offsets and counters"

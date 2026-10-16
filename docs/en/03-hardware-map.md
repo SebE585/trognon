@@ -462,9 +462,11 @@ Bluetooth reset line read in the same run as a control (it read `1`, as before).
 | Power, clock enable | through the PMU (`pmu,d1755`) | device tree only, PMU never probed |
 | Attention line | interrupt `0xb4` on the GPIO interrupt controller | not read: that controller is treated as dangerous |
 
-The three registers differ only in bit 0. The meaning of the other bits (direction, function,
-data) is not established here, so no claim is made about whether these pins are inputs or are
-driven.
+The three registers differ only in bit 0. The project's own I2C routines (STAGE 29 and 31, which worked on
+this phone) write `0x212` to drive a pin low and `0x210` to release it, so by the same layout `0x212` reads
+as a pin set as an output and driven low, and `0x213` as an output driven high. That is an inference from
+the layout those routines rely on, not a direct test on these pins, and it says nothing about polarity or
+about what the lines are connected to.
 
 **What remains hypothesis**: everything else. A level of `0` gives neither the polarity nor
 who drives the pin; it does not show that the controller is powered, clocked, out of reset
