@@ -79,6 +79,7 @@ nav:
       - Wi-Fi/IOP architecture: research/2026-10-16-wifi-iop-architecture.md
       - IOP start-up to first sign of life: research/2026-10-16-iop-boot-to-life.md
       - Bring-up dependency map, touch and GPS: research/2026-10-16-bringup-dependency-map.md
+      - Touch controller preconditions: research/2026-10-16-touch-n88-preconditions.md
   - Reference:
       - SoC memory map (S5L8920): spec/soc-s5l8920.md
   - Notes:
