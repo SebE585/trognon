@@ -503,6 +503,20 @@ reading that the register bits written do power part of the touch domain; it is 
 A narrower run would apply only the LDO (PMU `0x11`) and then release the reset, to see whether the LDO alone raises the line. That
 isolates the supply that is plausibly responsible and needs no SPI traffic.
 
+## LDO-only run, prepared (STAGE 42, not run)
+
+`STAGE 42` (`trace_touch_ldo.bin`, built, **not run**) applies **only the touch LDO** and then releases the reset, to see which of
+the three supplies of STAGE 40 raised the line. Writes: PMU `0x11` `0xBE` to `0xFE` (and back), and the reset GPIO register
+(`0x83000284`) `0x212` to `0x210` (and back). The clock gate and PMU `0x50` are not written. Sequence: guard (PMU `0x11` reads `0xBE`,
+`0x50` reads `0x11`, the gate reads `0`, the reset register reads `0x212`), LDO on, wait 20 ms, release the reset, read at once and
+after 15 ms (the reset and chip-select registers), restore the reset then the LDO, read everything back. The disassembly shows no
+store to the clock gate, the source has two PMU writes both to register `0x11`, and the only GPIO helper calls are the I2C pins plus
+one release and one restore of `0x83000284`. No SPI byte is sent.
+
+Reading: if the line reads `0x211` with the LDO alone, the LDO's rail is enough (a pull-up to that rail, or the controller); if it
+reads `0x210`, the clock enable or the SPI clock gate matters, or the LDO needs longer than 20 ms. A reading between the two is noted as
+it is.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values
