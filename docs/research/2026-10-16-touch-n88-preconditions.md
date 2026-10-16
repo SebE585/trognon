@@ -96,6 +96,32 @@ So powering the touch controller would involve at least a read-modify-write of P
 `0x11` (bit `0x40`) and some configuration of PMU GPIO 0, plus the SoC reset line, the SPI
 controller and its clock. Only the first is decoded. Nothing was written to the PMU.
 
+## PMU registers as read on the device (STAGE 36, bundle `20261016T164348Z-trace_pmu_read`)
+
+A read-only run read 22 PMU registers at `0x74` (random reads: write the register number,
+repeated start, read one byte). All 22 transactions were fully acknowledged, the bytes differ from
+one register to the next, and the nonce was confirmed: the register-pointer protocol read from the
+driver works as read. State of the phone at this point of the boot (iBSS patched, kernel never
+started):
+
+| Register | Value | Binary |
+|---|---|---|
+| `0x10` | `0xEB` | `11101011` |
+| `0x11` | `0xBE` | `10111110` |
+| `0x17`..`0x22` | `8A 06 8A B8 6A F0 4F B6 44 BA D7 C0` | not decoded |
+| `0x50`..`0x57` | `11 D8 09 1A D8 98 D9 E0` | not decoded |
+
+**What this says about the touch LDO**: bit `0x40` of register `0x11` is **0**. Under the static
+reading (set means on), LDO index 11 is off, which is what the initialiser's default suggested.
+That is one reading of one register at one moment, interpreted with a rule taken from code that
+was not run; it does not show that the touch controller is the load of that LDO (that comes from
+the device tree), nor that clearing is "off" electrically.
+
+Applying the table's enable bits to the two bytes (same caveat) gives LDOs 0, 2, 3, 4, 6, 7, 8,
+9 and 10 on, and LDOs 1, 5 and 11 off. The voltage registers `0x17`..`0x21` were not converted
+to millivolts: the conversion routine was not read, so any figure would be a guess. The PMU GPIO
+configuration bytes (`0x50`..`0x57`) were read raw for the same reason.
+
 ## Preconditions, with their state
 
 | Precondition | Source | State |
@@ -115,8 +141,7 @@ In increasing order of risk, each step read-only until the previous one gave a r
 1. (Done for the LDO) read the PMU driver for the register its LDO function writes and the
    meaning of `0x0708020b`; still to do for the PMU GPIO that gates the clock. Static, no risk.
 1b. Read the PMU registers `0x10`, `0x11`, `0x17`..`0x22` and `0x50`..`0x57` over I2C
-   (`STAGE 36`, prepared, not run) to see their present values, which would show whether LDO 11
-   is currently off. Read-only transactions on `i2c0`.
+   (`STAGE 36`, done: bit `0x40` of `0x11` reads `0`). Read-only transactions on `i2c0`.
 2. Read the clock gate of `spi1` and the controller's idle registers at `0x82100000`. This is the
    same kind of read as the IOP and GPIO probes.
 3. Only then consider a PMU write to power the controller, which changes a power rail and
