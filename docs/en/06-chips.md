@@ -58,7 +58,7 @@ address, the display path and the iBSS patch offsets: they are re-read on each c
 - OpeniBoot/iDroid is the code we read for addresses, and it is dormant since 2022
   (**SOURCE**, [research](../research/2026-10-14-microkernel-3gs.md)).
 - **NAND**: identified, geometry and capacity confirmed (Toshiba, 32 GB, two dies on CE0/CE1) —
-  [hardware map](03-hardware-map.md#nand-h2fmi0_base-0x81200000-device-2026-10-15).
+  [hardware map](03-hardware-map.md#nand).
 - **Wi-Fi/SDIO** (BCM4325): address, clock-gate, IRQ and the reset/wake GPIO lines are known
   and the reset line has been toggled, but every register in the block still reads back `0`.
   The leading explanation is architectural, not a wrong offset: a second, embedded processor

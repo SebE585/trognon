@@ -111,12 +111,12 @@
 @media (max-width:40em) { .tl-item { flex-direction:column; gap:.2rem; } .tl-year { flex:none; } }
 
 /* Home: hero with a phone frame */
-.home-hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 2.5rem; align-items: center; padding: 1.5rem 0 1rem; }
-.home-hero h1 { font-size: 3.2rem; margin: 0 0 .4rem; }
+.home-hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 2rem; align-items: center; padding: .2rem 0 0; }
+.home-hero h1 { font-size: 3rem; margin: 0 0 .3rem; }
 .home-hero__text p { font-size: 1.05rem; max-width: 34rem; }
 .home-hero figure.phone { margin: 0; text-align: center; }
 .home-hero figure.phone img {
-  display: block; margin: 0 auto; width: min(100%, 240px); height: auto;
+  display: block; margin: 0 auto; width: min(100%, 190px); height: auto;
   border: 10px solid #0b1220; border-radius: 28px; background: #000;
   box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.08);
 }
@@ -129,3 +129,14 @@
 [data-md-color-scheme="slate"] .md-typeset .md-button { color: #8fcfa3; }
 [data-md-color-scheme="slate"] .md-typeset .md-button--primary { color: #171a18; }
 [data-md-color-scheme="slate"] .home-hero figure.phone img { border-color: #3a423d; }
+
+/* Cards: the status and the link always sit at the bottom, in the same place. */
+.md-typeset .grid.cards > ul > li { display: flex; flex-direction: column; }
+.md-typeset .grid.cards > ul > li > p:last-child { margin-top: auto; padding-top: .4rem; }
+.md-typeset .card-link { font-weight: 600; }
+.md-typeset .tag + .card-link { margin-left: .5rem; }
+.md-typeset img.card-icon { display: block; margin: 0 0 .5rem; height: 1.7rem; width: auto; max-height: none; background: none; padding: 0; box-shadow: none; border-radius: 0; }
+[data-md-color-scheme="slate"] .md-typeset img.card-icon { background: none; padding: 0; box-shadow: none; filter: brightness(1.25); }
+/* Diagrams on the ivory page: frame them as figures instead of bare white rectangles. */
+.md-typeset img[src$=".svg"]:not(.card-icon) { border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; padding: .6rem; background: #fff; }
+.md-typeset h2 { margin-top: 1.8em; }

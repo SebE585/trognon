@@ -58,7 +58,7 @@ les adresses, le chemin d'affichage et les offsets de patch de l'iBSS : on les r
 - OpeniBoot/iDroid est le code lu pour les adresses, dormant depuis 2022
   (**SOURCE**, [recherche](../research/2026-10-14-microkernel-3gs.md)).
 - **NAND** : identifié, géométrie et capacité confirmées (Toshiba, 32 Go, deux matrices sur
-  CE0/CE1) — [carte matérielle](03-hardware-map.md#nand-h2fmi0_base-0x81200000-device-2026-10-15).
+  CE0/CE1) — [carte matérielle](03-hardware-map.md#nand).
 - **Wi-Fi/SDIO** (BCM4325) : adresse, clock-gate, IRQ et les lignes GPIO de reset/réveil sont
   connues, la ligne de reset a été basculée, mais tout registre du bloc lit toujours `0`.
   L'explication la plus probable est architecturale, pas un mauvais décalage : un second

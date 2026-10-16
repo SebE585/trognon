@@ -9,16 +9,16 @@ dans le rendu intégré.
 
 | Composant | Obtenu | Reste à faire | Section |
 |---|---|---|---|
-| CPU/MMU | Registres de contrôle et descripteurs de table de pages relevés | aucune vérification au niveau code au-delà des lectures de registre | [CPU et MMU](#cpu-et-mmu-device) |
-| Affichage (CLCD) | le framebuffer dessine, confirmé par un remplissage visible | l'init de dalle est celle de l'iBSS ; pas de pilote qui soit le nôtre | [Contrôleur d'affichage](#controleur-daffichage-clcd_base-0x85400000-device) |
-| GPIO et horloges | base mappée, plusieurs décalages lus | le rôle de la plupart des broches reste inconnu ; `GPIOIC` non relu depuis qu'il a fait tomber la liaison USB | [GPIO et horloges](#gpio-et-horloges-device-partiel) |
-| VIC0/1/2 | relevé en lecture seule complet ; une IRQ logicielle levée et prise | quel périphérique possède chacun des 14 bits activés | [Contrôleurs d'interruptions](#controleurs-dinterruptions-vic012-device-2026-10-15) |
-| Bloc timer | fréquence du tick confirmée à 24 MHz | interruption timer pas prouvée ; décalages et séquence d'acquittement IRQ non validés sur ce SoC | [Bloc timer](#bloc-timer-timer_base-0xbf100000-device-2026-10-15) |
-| NAND | identifiant lu sur CE0/CE1 | CE2 à CE15, bus 1, et tout accès de page | [NAND](#nand-h2fmi0_base-0x81200000-device-2026-10-15) |
-| Boutons | les 5 boutons mappés par différence GPIO | mapping trouvé par différence observée, pas par le nom | [Boutons](#boutons-meme-base-gpio-que-ci-dessus-device-2026-10-15) |
-| Accéléromètre | identifiant lu via une vraie transaction I2C | modèle exact de la puce, données d'axe, sens de `orientation` | [Accéléromètre](#accelerometre-adresse-i2c0-0x1d-device-2026-10-16) |
-| Wi-Fi/SDIO | adresse de base et lignes GPIO confirmées ; disposition SDHCI confirmée dans le firmware de l'IOP lui-même | quelle fenêtre de registres le pilote SDHCI de l'IOP utilise réellement, et pourquoi les écritures côté CPU ne tiennent pas | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-devicehypothese-melees-2026-10-1516) |
-| Bluetooth | niveaux GPIO reset/réveil lus | première réponse UART | [Bluetooth](#bluetooth-uart3-reset-1506-reveil-1602-device-2026-10-16) |
+| CPU/MMU | Registres de contrôle et descripteurs de table de pages relevés | aucune vérification au niveau code au-delà des lectures de registre | [CPU et MMU](#cpu-et-mmu) |
+| Affichage (CLCD) | le framebuffer dessine, confirmé par un remplissage visible | l'init de dalle est celle de l'iBSS ; pas de pilote qui soit le nôtre | [Contrôleur d'affichage](#affichage) |
+| GPIO et horloges | base mappée, plusieurs décalages lus | le rôle de la plupart des broches reste inconnu ; `GPIOIC` non relu depuis qu'il a fait tomber la liaison USB | [GPIO et horloges](#gpio-et-horloges) |
+| VIC0/1/2 | relevé en lecture seule complet ; une IRQ logicielle levée et prise | quel périphérique possède chacun des 14 bits activés | [Contrôleurs d'interruptions](#controleurs-dinterruptions) |
+| Bloc timer | fréquence du tick confirmée à 24 MHz | interruption timer pas prouvée ; décalages et séquence d'acquittement IRQ non validés sur ce SoC | [Bloc timer](#timer) |
+| NAND | identifiant lu sur CE0/CE1 | CE2 à CE15, bus 1, et tout accès de page | [NAND](#nand) |
+| Boutons | les 5 boutons mappés par différence GPIO | mapping trouvé par différence observée, pas par le nom | [Boutons](#boutons) |
+| Accéléromètre | identifiant lu via une vraie transaction I2C | modèle exact de la puce, données d'axe, sens de `orientation` | [Accéléromètre](#accelerometre) |
+| Wi-Fi/SDIO | adresse de base et lignes GPIO confirmées ; disposition SDHCI confirmée dans le firmware de l'IOP lui-même | quelle fenêtre de registres le pilote SDHCI de l'IOP utilise réellement, et pourquoi les écritures côté CPU ne tiennent pas | [Wi-Fi/SDIO](#wi-fi-et-sdio) |
+| Bluetooth | niveaux GPIO reset/réveil lus | première réponse UART | [Bluetooth](#bluetooth) |
 
 **Lire les étiquettes** : **DEVICE** veut dire observé sur ce téléphone réel (une lecture,
 ou une écriture dont le résultat est relu) — ne jamais supposer que l'étiquette DEVICE sur
@@ -46,7 +46,9 @@ quelques sections écrivent délibérément sur le matériel (bascule GPIO, inte
 commande d'identifiant NAND) et le disent explicitement à chaque fois. « Pas d'écriture
 persistante » (rien d'enregistré en flash) n'est pas la même affirmation que « aucune écriture ».
 
-## CPU et MMU (DEVICE)
+## CPU et MMU
+
+**DEVICE**
 
 *Le cœur CPU et son unité de gestion mémoire : ce qui exécute le code et comment il voit la mémoire.*
 
@@ -57,7 +59,9 @@ persistante » (rien d'enregistré en flash) n'est pas la même affirmation que 
 | `DACR` | `0x00000003` | domaine 0 manager, autres domaines sans accès |
 | Table de pages | sections de 1 Mio, toutes en domaine 0 | rien de non mappé aux index 1..0xfff |
 
-## Contrôleur d'affichage, `CLCD_BASE = 0x85400000` (DEVICE)
+## Affichage
+
+Base `0x85400000` (`CLCD_BASE`) · **DEVICE**
 
 *Le bloc CLCD pilote l'écran physique à partir du framebuffer en RAM.*
 
@@ -75,7 +79,9 @@ La dalle est pilotée en MIPI DSI (ligne de reset probablement GPIO `0x500`) : l
 initialisé par l'iBSS, c'est pourquoi on peut simplement dessiner. Écrire notre propre init de dalle
 est un chantier bien plus gros (**HYPOTHESIS**, voir `pinot_init` d'OpenIBoot).
 
-## GPIO et horloges (DEVICE, partiel)
+## GPIO et horloges
+
+**DEVICE**, partiel
 
 *Le GPIO lit ou pilote des broches individuelles ; un clock gate active ou coupe l'horloge d'un périphérique.*
 
@@ -94,7 +100,9 @@ Valeurs lues à l'œil sur l'écran ; largeur de champ supposée à 8 chiffres h
 (cause non déterminée). Non retentée depuis cet incident. À tenir pour dangereux tant que ce
 n'est pas compris.
 
-## Contrôleurs d'interruptions VIC0/1/2 (DEVICE, 2026-10-15)
+## Contrôleurs d'interruptions
+
+VIC0/1/2 · **DEVICE** · 2026-10-15
 
 *Le VIC transmet les demandes d'interruption d'un périphérique au CPU.*
 
@@ -118,7 +126,9 @@ Relevé en lecture seule. Tous les registres ont répondu, sans abort.
 
 Les registres du timer sont la partie la moins comprise d'OpenIBoot (son propre commentaire dit qu'ils sont copiés d'un SoC plus ancien).
 
-## Bloc timer, `TIMER_BASE = 0xBF100000` (DEVICE, 2026-10-15)
+## Timer
+
+Base `0xBF100000` (`TIMER_BASE`) · **DEVICE** · 2026-10-15
 
 *Des compteurs libres et un état par timer, utilisés pour le chronométrage et, potentiellement, des interruptions périodiques.*
 
@@ -149,7 +159,9 @@ Les registres du timer sont la partie la moins comprise d'OpenIBoot (son propre 
   d'environnement lue par `getenv`, donc sans photo. Deux échantillons dans deux invocations séparées : un
   processus ne peut pas garder l'appareil à travers une pause (la deuxième connexion échoue).
 
-## NAND, `H2FMI0_BASE = 0x81200000` (DEVICE, 2026-10-15)
+## NAND
+
+Base `0x81200000` (`H2FMI0_BASE`) · **DEVICE** · 2026-10-15
 
 *Le contrôleur NAND parle aux puces flash qui portent l'image iOS propre à cet appareil.*
 
@@ -169,7 +181,9 @@ seule, ni programmation ni effacement ; la même prudence que ce projet applique
 (`tools/boot.sh` n'appelle jamais `flash_nor()`) s'applique ici aussi, avec une marge plus
 grande, puisque le NAND porte l'image iOS de l'appareil.
 
-## Boutons, même base GPIO que ci-dessus (DEVICE, 2026-10-15)
+## Boutons
+
+Même base GPIO que ci-dessus · **DEVICE** · 2026-10-15
 
 *Les boutons physiques sont de simples broches GPIO, lues comme n'importe quelle autre entrée.*
 
@@ -190,7 +204,9 @@ base ci-dessus) a été échantillonné, le bruit mesuré mains levées, puis ch
 balayage prend près de 3 minutes) a tué le point de contrôle USB ensuite ; un reset de port USB
 côté hôte (`dev.reset()`, pas besoin de DFU) l'a réveillé — voir [preuves](08-evidence.md).
 
-## Accéléromètre, adresse i2c0 `0x1d` (DEVICE, 2026-10-16)
+## Accéléromètre
+
+Adresse `i2c0` `0x1d` · **DEVICE** · 2026-10-16
 
 *L'accéléromètre signale le mouvement/l'orientation sur un bus I2C deux fils.*
 
@@ -232,7 +248,9 @@ qu'un mauvais câblage ne puisse pas ressembler à une réussite silencieuse.
 
 **Liens vers les preuves** : [dossier de preuve `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), indexé sur la [page Preuves](08-evidence.md).
 
-## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (DEVICE/HYPOTHÈSE mêlées, 2026-10-15/16)
+## Wi-Fi et SDIO
+
+Base `0x80000000` (`SDIO0_BASE`) · **DEVICE** / **HYPOTHÈSE** mêlées · 2026-10-15/16
 
 *SDIO est le protocole de bus que la plupart des puces Wi-Fi embarquées utilisent ; sur ce
 SoC, il pourrait être médié par un second processeur embarqué plutôt que piloté directement.*
@@ -298,7 +316,9 @@ une observation de comptage, circonscrite, pas une affirmation que le coprocesse
 conçu pour le NAND ni que le Wi-Fi y serait secondaire : aucune preuve dans un sens ou l'autre
 sur l'intention de conception d'origine.
 
-## Bluetooth, UART3, reset `15.06` / réveil `16.02` (DEVICE, 2026-10-16)
+## Bluetooth
+
+UART3 · reset `15.06` · réveil `16.02` · **DEVICE** · 2026-10-16
 
 *Le Bluetooth ici est une radio séparée sur sa propre liaison UART, pas le bus SDIO de la puce Wi-Fi.*
 

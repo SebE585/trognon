@@ -37,27 +37,39 @@ Everything here was observed on a real iPhone 3GS (S5L8920, Cortex-A8); each ite
 
 - **Our code runs from DFU**
 
-    Nothing is written to the phone. [Boot chain](en/01-boot-chain.md) <span class="tag tag-device">DEVICE</span>
+    Nothing is written to the phone.
+
+    <span class="tag tag-device">DEVICE</span> [Boot chain](en/01-boot-chain.md){ .card-link }
 
 - **It draws and survives crashes**
 
-    Text on the screen; three kinds of CPU exception caught and dumped readably. [Exception console](en/02-exception-console.md) <span class="tag tag-device">DEVICE</span>
+    Text on the screen; three kinds of CPU exception caught and dumped readably.
+
+    <span class="tag tag-device">DEVICE</span> [Exception console](en/02-exception-console.md){ .card-link }
 
 - **Interrupts, a clock and buttons**
 
-    A software interrupt taken, a 24 MHz tick, five buttons mapped by GPIO. [Hardware map](en/03-hardware-map.md) <span class="tag tag-device">DEVICE</span>
+    A software interrupt taken, a 24 MHz tick, five buttons mapped by GPIO.
+
+    <span class="tag tag-device">DEVICE</span> [Hardware map](en/03-hardware-map.md#interrupt-controllers){ .card-link }
 
 - **An accelerometer that answers**
 
-    Powered up, axes read in several positions, about 56 counts per g. [Hardware map](en/03-hardware-map.md) <span class="tag tag-device">DEVICE</span>
+    Powered up, axes read in several positions, about 56 counts per g.
+
+    <span class="tag tag-device">DEVICE</span> [Accelerometer](en/03-hardware-map.md#accelerometer){ .card-link }
 
 - **A NAND chip identified**
 
-    Toshiba, read on two chip-enable lines; no page access yet. [Hardware map](en/03-hardware-map.md) <span class="tag tag-device">DEVICE</span>
+    Toshiba, read on two chip-enable lines; no page access yet.
+
+    <span class="tag tag-device">DEVICE</span> [NAND](en/03-hardware-map.md#nand){ .card-link }
 
 - **Not yet: touch, Wi-Fi, storage**
 
-    Being worked out, see below. [Research](research/index.md) <span class="tag tag-hyp">HYPOTHESIS</span>
+    Being worked out, see below.
+
+    <span class="tag tag-hyp">HYPOTHESIS</span> [Research](research/index.md){ .card-link }
 
 </div>
 
@@ -65,24 +77,30 @@ Everything here was observed on a real iPhone 3GS (S5L8920, Cortex-A8); each ite
 
 <div class="grid cards" markdown>
 
-- **Understand**
+- ![](img/icons/understand.svg){ .card-icon } **Understand**
 
-    From DFU to our code in RAM, and what each stage is. [Boot chain](en/01-boot-chain.md)
+    From DFU to our code in RAM, and what each stage is.
 
-- **Explore the components**
+    [Boot chain](en/01-boot-chain.md){ .card-link }
 
-    Which registers and chips are verified, which are not. [Hardware map](en/03-hardware-map.md)
+- ![](img/icons/explore.svg){ .card-icon } **Explore the components**
 
-- **Reproduce**
+    Which registers and chips are verified, which are not.
 
-    The exact command, commit and raw output behind each claim. [Evidence](en/08-evidence.md)
+    [Hardware map](en/03-hardware-map.md){ .card-link }
+
+- ![](img/icons/reproduce.svg){ .card-icon } **Reproduce**
+
+    The exact command, commit and raw output behind each claim.
+
+    [Evidence](en/08-evidence.md){ .card-link }
 
 </div>
 
 ## Research in progress
 
 - **Touch controller.** Its reset line and power sequence have been observed on the device; no byte has been exchanged with it yet. The transfer recipe of the SPI controller is being established.
-- **Wi-Fi and the coprocessor.** The start-up sequence of the coprocessor that runs the Wi-Fi stack has been read in the firmware; the coprocessor is not running yet.
+- **Wi-Fi and the coprocessor.** The start-up sequence of the coprocessor involved in the SDIO and Wi-Fi path has been read in the firmware; that coprocessor is not running yet, and its role in the Wi-Fi chain is not established.
 
 The dated notes are in the [research index](research/index.md).
 

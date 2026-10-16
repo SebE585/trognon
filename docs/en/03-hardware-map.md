@@ -9,17 +9,17 @@ inline render.
 
 | Component | Obtained | Remaining | Section |
 |---|---|---|---|
-| CPU/MMU | Control registers and page-table descriptors read | No code-level check beyond register reads | [CPU and MMU](#cpu-and-mmu-device) |
-| Display (CLCD) | Framebuffer draws, confirmed by a visible fill | Panel init is the iBSS's; no driver of our own | [Display controller](#display-controller-clcd_base-0x85400000-device) |
-| GPIO and clock gates | Base mapped, several offsets read | Most pins' roles unknown; `GPIOIC` not re-read since it dropped the USB link | [GPIO and clock gates](#gpio-and-clock-gates-device-partial) |
-| VIC0/1/2 | Full read-only survey; a software IRQ raised and handled | Which peripheral owns each of the 14 enabled bits | [Interrupt controllers](#interrupt-controllers-vic012-device-2026-10-15) |
-| Timer block | Tick rate confirmed at 24 MHz | Timer interrupt not proven; IRQ-ack offsets and sequence not validated on this SoC | [Timer block](#timer-block-timer_base-0xbf100000-device-2026-10-15) |
-| NAND | Chip ID read on CE0/CE1 | CE2-CE15, bus 1, and any page access | [NAND](#nand-h2fmi0_base-0x81200000-device-2026-10-15) |
-| Buttons | All 5 buttons mapped by GPIO difference | Mapping found by observed difference, not by name | [Buttons](#buttons-same-gpio-base-as-above-device-2026-10-15) |
-| Accelerometer | Identifier read; powered up with a verified write; axes read in seven positions; directions and a scale (56 counts per g on two axes) come out of them, the Y direction conditional on one stated position | Chip model (LIS331DL or LIS302DL), calibrated offsets, angular accuracy | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
-| Wi-Fi/SDIO | Base address and GPIO lines confirmed; SDHCI layout confirmed in the IOP's own firmware | Which register window the IOP's SDHCI driver actually uses, and why CPU-side writes don't stick | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-mixed-devicehypothesis-2026-10-1516) |
-| Magnetometer | A device at `0x1e` gives 12 register readings compatible with an AK8973's documented reset state; `0x1f` is silent; the `i2c0` scan found no additional responder | A measurement (needs EEPROM-derived setup), the role of `0x1f` | [Magnetometer](#magnetometer-i2c0-address-0x1e-device-for-presence-2026-10-16) |
-| Touch controller | Reset and chip-select GPIO levels read; PMU registers read, and the two registers read as the touch LDO enable and clock enable written and restored; `spi1` clock gate written and restored, its idle registers read | Polarity, powering the controller, any SPI transaction, any response | [Touch controller](#touch-controller-spi1-device-for-two-gpio-levels-2026-10-16) |
+| CPU/MMU | Control registers and page-table descriptors read | No code-level check beyond register reads | [CPU and MMU](#cpu-and-mmu) |
+| Display (CLCD) | Framebuffer draws, confirmed by a visible fill | Panel init is the iBSS's; no driver of our own | [Display controller](#display) |
+| GPIO and clock gates | Base mapped, several offsets read | Most pins' roles unknown; `GPIOIC` not re-read since it dropped the USB link | [GPIO and clock gates](#gpio-and-clock-gates) |
+| VIC0/1/2 | Full read-only survey; a software IRQ raised and handled | Which peripheral owns each of the 14 enabled bits | [Interrupt controllers](#interrupt-controllers) |
+| Timer block | Tick rate confirmed at 24 MHz | Timer interrupt not proven; IRQ-ack offsets and sequence not validated on this SoC | [Timer block](#timer) |
+| NAND | Chip ID read on CE0/CE1 | CE2-CE15, bus 1, and any page access | [NAND](#nand) |
+| Buttons | All 5 buttons mapped by GPIO difference | Mapping found by observed difference, not by name | [Buttons](#buttons) |
+| Accelerometer | Identifier read; powered up with a verified write; axes read in seven positions; directions and a scale (56 counts per g on two axes) come out of them, the Y direction conditional on one stated position | Chip model (LIS331DL or LIS302DL), calibrated offsets, angular accuracy | [Accelerometer](#accelerometer) |
+| Wi-Fi/SDIO | Base address and GPIO lines confirmed; SDHCI layout confirmed in the IOP's own firmware | Which register window the IOP's SDHCI driver actually uses, and why CPU-side writes don't stick | [Wi-Fi/SDIO](#wi-fi-and-sdio) |
+| Magnetometer | A device at `0x1e` gives 12 register readings compatible with an AK8973's documented reset state; `0x1f` is silent; the `i2c0` scan found no additional responder | A measurement (needs EEPROM-derived setup), the role of `0x1f` | [Magnetometer](#magnetometer) |
+| Touch controller | Reset and chip-select GPIO levels read; PMU registers read, and the two registers read as the touch LDO enable and clock enable written and restored; `spi1` clock gate written and restored, its idle registers read | Polarity, powering the controller, any SPI transaction, any response | [Touch controller](#touch-controller) |
 
 **Reading the tags**: **DEVICE** means observed on this real phone (a read, or a write
 with its result read back) — never assume a DEVICE tag on one line of a section means
@@ -45,7 +45,9 @@ resetting the phone — but not all: a few sections deliberately write to the ha
 explicitly where they occur. "No persistent write" (nothing stored to flash) is not the
 same claim as "no write at all".
 
-## CPU and MMU (DEVICE)
+## CPU and MMU
+
+**DEVICE**
 
 *The CPU core and its memory-management unit: what runs the code and how it sees memory.*
 
@@ -58,7 +60,9 @@ same claim as "no write at all".
 
 **Links to evidence**: none dedicated. `MIDR`, `SCTLR`, `DACR` and the page-table walk come from earlier runs that are **not bundled** (see the claims table in [Evidence](08-evidence.md)); the bundle [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace) shows exception handling on this CPU, which is a different claim.
 
-## Display controller, `CLCD_BASE = 0x85400000` (DEVICE)
+## Display
+
+Base `0x85400000` (`CLCD_BASE`) · **DEVICE**
 
 *The CLCD block drives the physical screen from the framebuffer in RAM.*
 
@@ -78,7 +82,9 @@ Writing our own panel init is a much larger job (**HYPOTHESIS**, see OpenIBoot `
 
 **Links to evidence**: [`20261015T050542Z-trace_regs`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050542Z-trace_regs).
 
-## GPIO and clock gates (DEVICE, partial)
+## GPIO and clock gates
+
+**DEVICE**, partial
 
 *GPIO reads or drives individual pins; a clock gate turns a peripheral's clock on or off.*
 
@@ -93,7 +99,9 @@ Values read by eye from the screen; field widths were assumed to be 8 hex digits
 
 **Links to evidence**: [`20261015T050542Z-trace_regs`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050542Z-trace_regs), [`20261015T164529Z-trace_buttons`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T164529Z-trace_buttons), [`20261016T042928Z-trace_gate_write`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042928Z-trace_gate_write), [`20261016T164825Z-trace_spi1_pre`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T164825Z-trace_spi1_pre), [`20261016T174843Z-trace_spi1_nogate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T174843Z-trace_spi1_nogate).
 
-## Full GPIO register survey (DEVICE, 2026-10-16, bundle `20261016T174429Z-trace_gpio_survey`)
+## GPIO survey
+
+**DEVICE** · 2026-10-16 · bundle `20261016T174429Z-trace_gpio_survey`
 
 *A read-only dump of the configuration word of every GPIO pad, 47 ports of 8 pins.*
 
@@ -176,7 +184,9 @@ is brought up.
 `GPIOIC` (`0x39A00000`): the one read tried so far dropped the USB link (cause
 undetermined). Not retried since that incident. Treat as dangerous until understood.
 
-## Interrupt controllers VIC0/1/2 (DEVICE, 2026-10-15)
+## Interrupt controllers
+
+VIC0/1/2 · **DEVICE** · 2026-10-15
 
 *The VIC routes a peripheral's interrupt request to the CPU.*
 
@@ -202,7 +212,9 @@ Timer registers are the least understood part of OpenIBoot (its own comment says
 
 **Links to evidence**: [`20261015T050543Z-trace_vic`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050543Z-trace_vic), [`20261015T050541Z-trace_irq`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050541Z-trace_irq).
 
-## Timer block, `TIMER_BASE = 0xBF100000` (DEVICE, 2026-10-15)
+## Timer
+
+Base `0xBF100000` (`TIMER_BASE`) · **DEVICE** · 2026-10-15
 
 *Free-running counters and per-timer state, used for timing and, potentially, periodic
 interrupts.*
@@ -236,7 +248,9 @@ interrupts.*
 
 **Links to evidence**: [`20261015T050544Z-trace_timer`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050544Z-trace_timer), [`20261016T042218Z-trace_which_timer`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042218Z-trace_which_timer), [`20261016T042306Z-trace_which_timer_b`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T042306Z-trace_which_timer_b).
 
-## NAND, `H2FMI0_BASE = 0x81200000` (DEVICE, 2026-10-15)
+## NAND
+
+Base `0x81200000` (`H2FMI0_BASE`) · **DEVICE** · 2026-10-15
 
 *The NAND controller talks to the flash chips that hold the device's own iOS image.*
 
@@ -257,7 +271,9 @@ applies here too, with a larger margin, since NAND holds the device's own iOS im
 
 **Links to evidence**: [`20261015T171033Z-trace_nand`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171033Z-trace_nand), [`20261015T171514Z-trace_nand_sweep`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171514Z-trace_nand_sweep), [`20261015T171605Z-trace_nand_sweep`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T171605Z-trace_nand_sweep).
 
-## Buttons, same GPIO base as above (DEVICE, 2026-10-15)
+## Buttons
+
+Same GPIO base as above · **DEVICE** · 2026-10-15
 
 *Physical buttons are just GPIO pins, read like any other input line.*
 
@@ -279,7 +295,9 @@ close to 3 minutes) killed the USB control endpoint afterwards; a host-side USB 
 
 **Links to evidence**: [`20261015T164529Z-trace_buttons`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T164529Z-trace_buttons).
 
-## Accelerometer, i2c0 address `0x1d` (DEVICE, 2026-10-16)
+## Accelerometer
+
+`i2c0` address `0x1d` · **DEVICE** · 2026-10-16
 
 *The accelerometer reports motion/orientation over a two-wire I2C bus.*
 
@@ -372,7 +390,9 @@ device in DFU with `tools/go.sh`. Every STAGE 31 run was confirmed by its nonce.
   the readings were "enough to compute a tilt angle to a few degrees" was removed: no angular
   error was measured.
 
-## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (mixed DEVICE/HYPOTHESIS, 2026-10-15/16)
+## Wi-Fi and SDIO
+
+Base `0x80000000` (`SDIO0_BASE`) · mixed **DEVICE** / **HYPOTHESIS** · 2026-10-15/16
 
 *SDIO is the bus protocol most embedded Wi-Fi chips use; on this SoC it may be mediated by a
 second, embedded processor rather than driven directly.*
@@ -433,7 +453,9 @@ analysis finds NAND the dominant subsystem by debug-string count in the IOP's fi
 a scoped, string-count observation, not a claim that the coprocessor was designed for NAND or
 that Wi-Fi is secondary to it; no evidence either way on original design intent exists.
 
-## Bluetooth, UART3, reset `15.06` / wake `16.02` (DEVICE, 2026-10-16)
+## Bluetooth
+
+UART3 · reset `15.06` · wake `16.02` · **DEVICE** · 2026-10-16
 
 *Bluetooth here is a separate radio on its own UART link, not the Wi-Fi chip's SDIO bus.*
 
@@ -464,7 +486,9 @@ pattern as the Wi-Fi reset/wake read (STAGE 15): plain reads, no write, no UART 
 
 **Links to evidence**: [evidence bundle `20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio), indexed on the [evidence page](08-evidence.md).
 
-## Magnetometer, i2c0 address `0x1e` (DEVICE for presence, 2026-10-16)
+## Magnetometer
+
+`i2c0` address `0x1e` · **DEVICE** for presence · 2026-10-16
 
 *The magnetometer measures the magnetic field, from which a compass heading can be computed.*
 
@@ -533,7 +557,9 @@ was not scanned.
 
 **Links to evidence**: [evidence bundle `20261016T151941Z-trace_compass_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151941Z-trace_compass_i2c) and [`20261016T152515Z-trace_i2c_scan`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T152515Z-trace_i2c_scan), indexed on the [evidence page](08-evidence.md).
 
-## Touch controller, `spi1` (DEVICE for two GPIO levels, 2026-10-16)
+## Touch controller
+
+`spi1` · **DEVICE** for two GPIO levels · 2026-10-16
 
 *The touch panel is read by a dedicated controller on an SPI bus.*
 
