@@ -26,7 +26,7 @@ The screen rows are published in full on every run (empty ones too) for the same
 --8<-- "docs/snippets/evidence-table.en.md"
 
 Regenerate this table with `make evidence-index`. Re-run the stages with `tools/evidence_all.sh` (device in DFU).
-To check a bundle: check out its commit (and apply `source.diff` if the bundle has one), `make -C tools/payloads <payload>`, compare the SHA-256 with `manifest.json`
+Independent checks are recorded on the [Verifications](verifications.md) page. To check a bundle: check out its commit (and apply `source.diff` if the bundle has one), `make -C tools/payloads <payload>`, compare the SHA-256 with `manifest.json`
 (the build is deterministic with the same toolchain), then read `screen.txt` against the claim.
 
 ## Claims and their bundle

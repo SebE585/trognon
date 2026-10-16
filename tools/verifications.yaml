@@ -1,0 +1,434 @@
+# Independent checks of the evidence bundles: someone rebuilt a payload, or audited a claim, and recorded what they found.
+# Rows are produced by tools/rebuild_bundle.py (see the Verifications page); a mismatch or a failure is a result, not an error.
+# by: maintainer = run by the project's own maintainer, so not independent; any other handle is an independent check.
+verifications:
+  - bundle: 20261015T050540Z-trace
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: e57856c9294554f4c9223dae9a1e06b7e101b37f
+    notes: ""
+  - bundle: 20261015T050540Z-trace_pabt
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: e57856c9294554f4c9223dae9a1e06b7e101b37f
+    notes: ""
+  - bundle: 20261015T050541Z-trace_irq
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: e57856c9294554f4c9223dae9a1e06b7e101b37f
+    notes: ""
+  - bundle: 20261015T050542Z-trace_regs
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: e57856c9294554f4c9223dae9a1e06b7e101b37f
+    notes: ""
+  - bundle: 20261015T050543Z-trace_vic
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: e57856c9294554f4c9223dae9a1e06b7e101b37f
+    notes: ""
+  - bundle: 20261015T050544Z-trace_timer
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: e57856c9294554f4c9223dae9a1e06b7e101b37f
+    notes: ""
+  - bundle: 20261015T164529Z-trace_buttons
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 31dea319c40b03c9c52b75e7fa8bbb3c233c4c18
+    notes: ""
+  - bundle: 20261015T171033Z-trace_nand
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261015T171514Z-trace_nand_sweep
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: not-reproducible
+    notes: "No commit that was tried rebuilds this exact payload."
+  - bundle: 20261015T171605Z-trace_nand_sweep
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261015T174417Z-trace_wifi_gpio
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261015T174633Z-trace_wifi_reset
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261015T174844Z-trace_sdio_dump
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261015T175220Z-trace_sdio_dump_b
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T041608Z-trace_sdio_cmd0
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T042218Z-trace_which_timer
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T042306Z-trace_which_timer_b
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T042851Z-trace_sdio_init
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T042928Z-trace_gate_write
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T043007Z-trace_write_test
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T043545Z-trace_dyn_clock16
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 61da9350b94c3a865c56786279554ba597e6358f
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T093436Z-trace_iop_regs
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: f9ce741c59164c2de4793001bd99ba699add6ab6
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T094340Z-trace_iop_probe_mmu
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: e3eb03d415944b0bd32ce09dcc9cea68a777ab0b
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T094945Z-trace_iop_clkgate
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: e3eb03d415944b0bd32ce09dcc9cea68a777ab0b
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T101710Z-trace_accel_i2c
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: f5d53bb24bf30d3f6f2b2821eb7c6cd2efd8c719
+    notes: ""
+  - bundle: 20261016T124101Z-trace_bt_gpio
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 781ef201e4664f2a61451ba94d2ec19588a70341
+    notes: ""
+  - bundle: 20261016T150615Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: e41e7b2a9aa255c4964f7a056f03f7b3f3f35fc5
+    notes: ""
+  - bundle: 20261016T150631Z-trace_touch_gpio
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 0c2e6e3f0a8f160d955ec443bef23ff9b6446316
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T150844Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 0c2e6e3f0a8f160d955ec443bef23ff9b6446316
+    notes: ""
+  - bundle: 20261016T150944Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 2fb3cb2a860165ef1ebec825a423221d78f50753
+    notes: ""
+  - bundle: 20261016T150947Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 2fb3cb2a860165ef1ebec825a423221d78f50753
+    notes: ""
+  - bundle: 20261016T151058Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 77c5c6923803cbeb9d43bb52d3a9d72c34e5114d
+    notes: ""
+  - bundle: 20261016T151101Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 77c5c6923803cbeb9d43bb52d3a9d72c34e5114d
+    notes: ""
+  - bundle: 20261016T151159Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 691dd17e3064088e3d4e9402731f3bde073fb925
+    notes: ""
+  - bundle: 20261016T151202Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 691dd17e3064088e3d4e9402731f3bde073fb925
+    notes: ""
+  - bundle: 20261016T151312Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: a53e0ef3daa1859ef99d1b29ede573257c4be71d
+    notes: ""
+  - bundle: 20261016T151315Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: a53e0ef3daa1859ef99d1b29ede573257c4be71d
+    notes: ""
+  - bundle: 20261016T151438Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 4de27be5141ec5c6076a8b07dbd246527acda367
+    notes: ""
+  - bundle: 20261016T151441Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 4de27be5141ec5c6076a8b07dbd246527acda367
+    notes: ""
+  - bundle: 20261016T151540Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: f7a7bfa7612d055b9ea8778ff0458aaf80c066b6
+    notes: ""
+  - bundle: 20261016T151542Z-trace_accel_axes
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: f7a7bfa7612d055b9ea8778ff0458aaf80c066b6
+    notes: ""
+  - bundle: 20261016T151941Z-trace_compass_i2c
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: d426b5621b85689a56d09f4e35a753081ac00ce7
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T152515Z-trace_i2c_scan
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: c3a9fa63f24e39d2a63e0b11aa9bf3f4ac72604b
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T164348Z-trace_pmu_read
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: ed774c3eed04e4ab06c2b53cb787353ecdafcc0d
+    notes: ""
+  - bundle: 20261016T164825Z-trace_spi1_pre
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: a2500a6c9a931b51847ce90dae5c8f5342fbba55
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T165854Z-trace_spi1_gate
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 81549635bb8ed57a0dfcd744bdcd177572931514
+    notes: ""
+  - bundle: 20261016T173129Z-trace_pmu_w34
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 59d51e8c57a01fb7a139d7c077a69a5dad3809c2
+    notes: ""
+  - bundle: 20261016T173428Z-trace_touch_power
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 2cfde17c27b2733b443e75d7f4d649ee2c2e7733
+    notes: ""
+  - bundle: 20261016T173630Z-trace_touch_rst_ctl
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 1dd3fac321f35c989911cc4a6feeec5b3b3758e4
+    notes: ""
+  - bundle: 20261016T173946Z-trace_touch_ldo
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: e956c3268dafd94de649584984de4d90683c4d40
+    notes: ""
+  - bundle: 20261016T174411Z-trace_gpio_survey
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: not-reproducible
+    notes: "No commit that was tried rebuilds this exact payload."
+  - bundle: 20261016T174429Z-trace_gpio_survey
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 2497ba789e937d8c06b3058f39d5acb7bcb1278d
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T174843Z-trace_spi1_nogate
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: 7828b0c3db87ede79787ce11e2379ab7210aecf8
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."
+  - bundle: 20261016T190939Z-trace_spi1_selftest
+    kind: rebuild
+    date: "2026-10-16"
+    by: maintainer
+    environment: { host: "Darwin arm64", toolchain: "arm-none-eabi-gcc (GCC) 16.2.0" }
+    result: match
+    commit: fd410193b827584a636aadbafd76cf8906f6b211
+    notes: "Recorded with a dirty tree and no source.diff; rebuilds only at this later commit."

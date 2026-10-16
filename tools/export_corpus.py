@@ -28,7 +28,7 @@ FORBIDDEN = ("CLAUDE", "MEMORY.md", "TODO.md", "AGENTS.md", "docs/journal/", ".c
 GROUPS = {
     "reference": ("README.md", "CONTRIBUTING.md", "docs/index.md", "docs/en/0", "docs/en/README.md"),
     "research": ("docs/research/", "docs/spec/"),
-    "journey-and-missions": ("docs/en/journey/", "docs/en/missions.md"),
+    "journey-and-missions": ("docs/en/journey/", "docs/en/missions.md", "docs/en/verifications.md"),
 }
 FR_GROUPS = {"reference-fr": ("docs/fr/README.md", "docs/fr/0"), "journey-fr": ("docs/fr/journey/",)}
 

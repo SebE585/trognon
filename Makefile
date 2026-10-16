@@ -9,7 +9,7 @@ SRC     := src/device_db.c src/serial_parse.c src/usb_probe.c src/chain.c src/cl
 OBJ     := $(SRC:.c=.o)
 BIN     := trognon
 
-.PHONY: all clean test test-sanitize diagrams evidence-index docs-build docs-check journey journey-check missions missions-check project-check project-sync corpus corpus-check tools-check
+.PHONY: all clean test test-sanitize diagrams evidence-index docs-build docs-check journey journey-check missions missions-check project-check project-sync corpus corpus-check tools-check verifications
 
 all: $(BIN)
 
@@ -84,6 +84,13 @@ corpus:
 
 tools-check:
 	python3 -I tools/test_bundle_source.py
+	python3 -I tools/test_rebuild_bundle.py
+	python3 -I tools/test_verifications_build.py
+	python3 -I tools/verifications_build.py --check
+
+# Regenerate the Verifications page after adding rows to tools/verifications.yaml.
+verifications:
+	python3 -I tools/verifications_build.py
 
 corpus-check:
 	python3 -I tools/test_export_corpus.py
