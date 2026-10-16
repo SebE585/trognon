@@ -570,7 +570,35 @@ was not scanned.
 
 *Figure 3 — The touch controller and what reaches it. The reset and chip-select levels, the power-supply enable and the PMU registers were exercised from the CPU; the clock and data pads of `spi1` are not identified, and no byte has been exchanged. Dashed lines were not exercised.*
 
-*The touch panel is read by a dedicated controller on an SPI bus.*
+It turns the contact of a finger into data sent to the processor, over an SPI bus.
+
+<div class="grid cards stack" markdown>
+
+- **Observed on the phone** <span class="tag tag-device">DEVICE</span>
+
+    - The reset and chip-select lines read as outputs driven low.
+    - PMU registers read at I2C address `0x74`; the touch supply and clock enables written and restored.
+    - Reset released with the supplies on reads high; with no supply, low.
+    - `spi1` idle registers read; its clock gate was already on.
+    - A transfer self-test with no peripheral moved no counter.
+
+- **Established by analysis** <span class="tag tag-source">SOURCE</span>
+
+    - A multi-touch driver class is selected for this model (a software attribution).
+    - The driver's check packet is `05 00 00 06`; a first reply byte `0xD0` means the controller is in its loader.
+    - Chip select is a GPIO call (`13.00`), not a pin of the SPI block.
+    - The supply is a PMU regulator and the clock a PMU pin.
+
+- **Still unknown** <span class="tag tag-hyp">HYPOTHESIS</span>
+
+    - Whether the controller answers at all, and whether it needs firmware loaded first.
+    - Which pads carry the SPI clock and data, and whether they need configuring.
+    - The transfer recipe of the SPI controller on this chip.
+    - The SPI source clock frequency, and the polarity of the chip-select call.
+
+</div>
+
+The detail, the registers and the evidence follow.
 
 **Status**: the reset and chip-select levels, the PMU registers, the supply enable and the release of the reset line have been observed or exercised on the phone (details below); the SPI controller's idle registers were read and a transfer self-test was run with no peripheral. **No byte has been exchanged with the touch controller**, and nothing yet shows that it is present, powered by this sequence or answering.
 

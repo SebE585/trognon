@@ -140,3 +140,6 @@
 /* Diagrams on the ivory page: frame them as figures instead of bare white rectangles. */
 .md-typeset img[src$=".svg"]:not(.card-icon) { border: 1px solid var(--md-default-fg-color--lightest); border-radius: 6px; padding: .6rem; background: #fff; }
 .md-typeset h2 { margin-top: 1.8em; }
+
+/* A card set that should stack in a narrow column (component sheets). */
+.md-typeset .grid.cards.stack > ul { grid-template-columns: 1fr; }
