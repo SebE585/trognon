@@ -246,6 +246,68 @@ orientation (not recorded precisely: held by hand, which face was up was not not
 | 1, as first held | +11 | -9 | +58 | Z | about 59 |
 | 2, after moving it | +19 | +47 | +8 | Y | about 51 |
 | 3 and 4, phone resting, two consecutive runs | +2 | -16 | +59 | Z | about 61 (both) |
+| 5 and 6, flat, screen up (stated by the person holding it), two runs | +3 | -6 | +59 | Z | about 59 (both) |
+
+The dominant axis moved from Z to Y with the phone, which is what a gravity vector does and
+what a stuck or constant output would not do. Runs 3 and 4 (bundles `20261016T150944Z` and
+`20261016T150947Z`, phone left resting, which face was up not recorded) returned exactly the
+same three bytes, so the readout is repeatable at rest at this resolution. Z dominant again
+with Y at -16 counts means a slight tilt or a different resting position from run 1.
+
+Taken together, the magnitude at rest is about 60 counts (59 and 61 in the two resting
+positions), and the 51 of run 2 is the outlier, taken while the phone was being moved; that
+is the likeliest cause and was not tested. At the nominal 18 mg per count, 60 counts is
+about 1.1 g, a little above 1 g: the scale or the offsets may differ from the datasheet's
+typical values, and nothing here measures them.
+
+What this still does not give: the direction of each axis relative to the case, the actual
+scale and offsets, or any calibration. No axis-to-face mapping is claimed.
+
+**Axis direction, first piece (runs 5 and 6, bundles `20261016T151058Z`, `20261016T151101Z`)**:
+flat with the screen up, Z read +59 and X, Y read +3 and -6, identically twice. If the part
+follows the usual convention for a static accelerometer (it reports +1 g along the axis that
+points up), then +Z points out of the screen. That convention was not checked here: the
+direct test is the same measurement screen down, where Z should read about -59. X and Y
+directions are still open.
+
+**Next observation**: screen down, then each edge in turn, still, two runs each.
+
+**What remains hypothesis**: which of the two compatible-string chips (LIS331DL vs LIS302DL)
+is actually present, reading actual axis data (the three accelerations), and the
+`orientation` device-tree property's exact meaning. A compass (AKM8973S, address `0x1e`)
+and a second `compass1` (`0x1f`, no `interrupts` property) share the same bus, device tree
+only, not probed at all yet — two device-tree nodes do not by themselves prove two separate
+physical chips.
+
+**Axis data (DEVICE, 2026-10-16, one run, phone not moved)**: `STAGE 31` powers the part up
+(first write to this device: `CTRL_REG1`), reads it back, then reads the status and the three
+axis bytes. The write landed (`CTRL_REG1` read back `0x47`: power-down bit cleared, X/Y/Z
+enabled, other bits at their reset state, the default ±2 g range assumed), every ACK flag was
+`1`, and the nonce was confirmed. Raw values: status `0xFF`, X `0x0B` (+11), Y `0xF7` (-9),
+Z `0x3A` (+58), signed 8-bit.
+
+| Item | Value | Status |
+|---|---|---|
+| `CTRL_REG1` after the write | `0x47` | DEVICE: read back, not assumed |
+| `STATUS_REG` | `0xFF` | DEVICE: all data-available and overrun bits set; not interpreted further |
+| X, Y, Z (signed counts) | +11, -9, +58 | DEVICE: one sample each |
+| Magnitude | about 59 counts | arithmetic on the three bytes |
+
+With the datasheet's nominal 18 mg per count at ±2 g (a datasheet figure, not measured here)
+that is about 1.07 g, with Z dominant: consistent with gravity on one axis, which says the
+chip is alive and the data is plausible. It does **not** say which physical face is up, the
+axis signs, or that the scale is right: one still sample cannot separate those.
+
+**Second run, phone moved (DEVICE, same day, bundle `20261016T150844Z-trace_accel_axes`)**: the
+same payload, the same register readback (`0x47`), after the phone was moved to another
+orientation (not recorded precisely: held by hand, which face was up was not noted).
+
+| Run | X | Y | Z | Dominant axis | Magnitude (counts) |
+|---|---|---|---|---|---|
+| 1, as first held | +11 | -9 | +58 | Z | about 59 |
+| 2, after moving it | +19 | +47 | +8 | Y | about 51 |
+| 3 and 4, phone resting, two consecutive runs | +2 | -16 | +59 | Z | about 61 (both) |
+| 5 and 6, flat, screen up (stated by the person holding it), two runs | +3 | -6 | +59 | Z | about 59 (both) |
 
 The dominant axis moved from Z to Y with the phone, which is what a gravity vector does and
 what a stuck or constant output would not do. Runs 3 and 4 (bundles `20261016T150944Z` and
