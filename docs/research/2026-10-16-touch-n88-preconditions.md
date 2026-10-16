@@ -202,9 +202,40 @@ decoded), the reset line (level `0`, polarity unknown). Each of these takes a wr
 | Clock enable | `function-clock_enable` through the PMU, pin 0 | device tree and a partial reading of the PMU GPIO code; bit meanings of registers `0x50`..`0x57` not decoded |
 | Reset | GPIO `14.01` | level read `0` once; polarity not established; the personality has a `reset-deassert-high-z` flag whose effect was not read |
 | Chip select | GPIO `13.00` (`function-enable_cs`) plus the SPI controller's own select | level read `0` once; role not established |
-| SPI controller | `spi1` at CPU address `0x82100000` (`reg 0x2100000` plus the `0x80000000` offset of `arm-io`) | clock gate `0x16` reads `0` (off) in STAGE 37; registers not read, deliberately |
+| SPI controller | `spi1` at CPU address `0x82100000` (`reg 0x2100000` plus the `0x80000000` offset of `arm-io`) | clock gate `0x16` reads `0` (off) in STAGE 37; with the gate set to `0xF` for a moment (STAGE 38) its idle registers read without a stall (SETUP `0x8`, PIN `0x3`, CLKDIV `1`, others `0`), then the gate was restored |
 | Attention | interrupt `0xb4` on the GPIO interrupt controller | not read, the controller is treated as dangerous |
 | Firmware | a bootload path named in the driver's strings | open: whether it is needed here is not established; source in the IPSW not looked up |
+
+## W1 and W2 done (STAGE 38, bundle `20261016T165854Z-trace_spi1_gate`)
+
+With the explicit go of the person holding the phone, a payload made two writes, both to the
+`spi1` clock-gate register `0xBF1000D0` (`0xBF100078 + 4 * 0x16`), and nothing else: the register
+read `0x00000000`; it was written with `0x0000000F` and read back `0x0000000F`; the idle registers
+of `spi1` were then read; the register was written back to `0x00000000` and read `0x00000000`. The
+nonce was confirmed and the phone was still reachable in Recovery mode afterwards.
+
+| Register (offset from `0x82100000`) | Value read with the gate on |
+|---|---|
+| CONTROL `0x00` | `0x00000000` |
+| SETUP `0x04` | `0x00000008` |
+| STATUS `0x08` | `0x00000000` |
+| PIN `0x0C` | `0x00000003` |
+| CLKDIVIDER `0x30` | `0x00000001` |
+| SPCNT `0x34` | `0x00000000` |
+| SPIDD `0x38` | `0x00000000` |
+
+What it shows: the write to a clock gate takes (0 to `0xF`, and back), which was not known before
+(STAGE 23 had started from gates already at `0xF`); the block answers reads without stalling the
+bus once its clock is on; the device tree's gate number `0x16` does gate a block at `0x82100000`
+or at least a block whose registers are then readable (a gate that clocked a different block
+could not be told apart from this alone, but the reads came from `0x82100000`). Values that are not
+all zero and not all ones are what a live register block returns.
+
+What it does not show: that this register layout is the one of this chip (it comes from OpeniBoot's
+header for the S5L89xx family). In that header SETUP bit 3 is the master bit, and SETUP reads `0x8`,
+which is consistent with a controller in master mode but is not a test of it. The meaning of PIN
+`0x3` and CLKDIVIDER `1` was not decoded. Nothing was configured, and the clock was left off as
+found.
 
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
@@ -213,8 +244,8 @@ come from the readings above; none of the write semantics was ever exercised on 
 
 | # | Write | Address and value | Current | How to undo | What it can show | Main risk |
 |---|---|---|---|---|---|---|
-| W1 | `spi1` clock gate | `0xBF100078 + 4 * 0x16` = `0xBF1000D0`, `0` to `0xF` (the pattern read on enabled gates) | `0` | write `0` | whether the gate takes the write (the only earlier gate-write test, STAGE 23, was uninformative: both gates already read `0xF`), then the idle registers of `spi1` become readable | enabling the clock of a block in an unknown state; the numbering of gates is the device tree's, not tested |
-| W2 | read only | `spi1` CONTROL, SETUP, STATUS, PIN, CLKDIVIDER, SPCNT, SPIDD at `0x82100000` (STAGE 37, second half) | not read | none needed | the reset state of the controller | none beyond W1 |
+| W1 (done, STAGE 38) | `spi1` clock gate | `0xBF100078 + 4 * 0x16` = `0xBF1000D0`, `0` to `0xF` (the pattern read on enabled gates) | `0` | write `0` | whether the gate takes the write (the only earlier gate-write test, STAGE 23, was uninformative: both gates already read `0xF`), then the idle registers of `spi1` become readable | enabling the clock of a block in an unknown state; the numbering of gates is the device tree's, not tested |
+| W2 (done, STAGE 38) | read only | `spi1` CONTROL, SETUP, STATUS, PIN, CLKDIVIDER, SPCNT, SPIDD at `0x82100000` (STAGE 37, second half) | not read | none needed | the reset state of the controller | none beyond W1 |
 | W3 | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (set bit `0x02`) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
 | W4 | touch LDO | PMU register `0x11`, `0xBE` to `0xFE` (set bit `0x40`), read-modify-write | `0xBE` | write `0xBE` | nothing visible alone except the read-back and possibly the controller's behaviour on SPI | powers a rail; if the index-to-rail reading is wrong, a different rail is switched |
 | W5 | reset line | SoC GPIO `14.01` released to high impedance, then the driver's delay (`0xf`, unit unknown) | level `0` | drive low again | a change on SPI/attention if the controller starts | the polarity and the unit of the delay are unknown |

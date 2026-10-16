@@ -1,0 +1,41 @@
+{
+  "payload": "trace_spi1_gate.bin",
+  "sha256": "b9cd2ffe480cd6db4e9cfa6dbf304de0e7554bee67d6d0871713b963dd61320d",
+  "bytes": 3516,
+  "soc": "s5l8920",
+  "nonce_sent": "3E6E9D23",
+  "nonce_read": "3E6E9D23",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "spi1-gate-1"
+  },
+  "variables": {
+    "g_before": "00000000",
+    "g_after_write": "0000000F",
+    "gate_took": "00000001",
+    "s_ctrl": "00000000",
+    "s_setup": "00000008",
+    "s_status": "00000000",
+    "s_pin": "00000003",
+    "s_clkdiv": "00000001",
+    "s_cnt": "00000000",
+    "s_idd": "00000000",
+    "g_restored": "00000000"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "81549635bb8ed57a0dfcd744bdcd177572931514",
+    "dirty": false
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T165854Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_spi1_gate.bin --evidence <repo>/evidence --vars g_before,g_after_write,gate_took,s_ctrl,s_setup,s_status,s_pin,s_clkdiv,s_cnt,s_idd,g_restored",
+  "screen_rows": 17
+}

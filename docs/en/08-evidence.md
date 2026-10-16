@@ -47,6 +47,7 @@ To check a bundle: check out its commit, `make -C tools/payloads <payload>`, com
 | Wi-Fi reset/wake GPIO read at `0` | `trace_wifi_gpio` | bundled |
 | Bluetooth reset/wake GPIO read: reset `1`, wake `0` | `trace_bt_gpio` | bundled |
 | Accelerometer powered up, `CTRL_REG1` read back `0x47`, axes +11 / -9 / +58 (one sample, phone not moved), then +19 / +47 / +8 after moving it, then +2 / -16 / +59 twice in a row at rest, then +3 / -6 / +59 twice flat screen up, then +2 / -6 / -53 twice screen down, then +57 / -7 / +6 and +58 / -6 / +6 on the left edge, then -55 / -6 / -5 and -54 / -7 / -4 on the right edge, then +3 / -60 / +11 and +4 / -61 / +11 on the top edge | `trace_accel_axes` x14 | bundled |
+| `spi1` clock gate `0x16` written `0` to `0xF` and back (takes); idle registers of `spi1` read: SETUP `0x8`, PIN `0x3`, CLKDIV `1`, CONTROL/STATUS/SPCNT/SPIDD `0` | `trace_spi1_gate` | bundled |
 | Clock gates `0x09`..`0x0D` read `0xF`; `0x15`, `0x16`, `0x17` (device tree SPI gates) read `0`; `spi1` registers deliberately not read | `trace_spi1_pre` | bundled |
 | PMU registers `0x10`, `0x11`, `0x17`..`0x22`, `0x50`..`0x57` read over I2C (22 acknowledged reads); bit `0x40` of `0x11` is `0` | `trace_pmu_read` | bundled |
 | Bus scan of `i2c0`: `0x1d`, `0x1e`, `0x39`, `0x74` acknowledge, no additional responder detected; AK8973 registers `0xC0`..`0xC4`, `0xE0`..`0xE6` read as the datasheet's reset state | `trace_i2c_scan` | bundled |

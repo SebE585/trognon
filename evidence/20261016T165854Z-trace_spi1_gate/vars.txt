@@ -1,0 +1,11 @@
+g_before=00000000
+g_after_write=0000000F
+gate_took=00000001
+s_ctrl=00000000
+s_setup=00000008
+s_status=00000000
+s_pin=00000003
+s_clkdiv=00000001
+s_cnt=00000000
+s_idd=00000000
+g_restored=00000000
