@@ -28,6 +28,7 @@ the payload hash, the commit, and a random number that must come back identical,
 - **No Apple firmware, keys or extracted binaries** in a contribution. Extract what you need from your own copy of the firmware, on your own machine.
 - **No hardware write** unless it was described beforehand (address, value, current state, way back) and agreed.
 - **Say no more than the evidence shows.** The documentation tags every statement `DEVICE`, `SOURCE` or `HYPOTHESIS`; keep to that.
+- **Say when an AI assistant helped.** Name it in the pull request and say what you checked yourself: an assistant's output is a proposal, not evidence, and review treats it as such.
 - English for everything a contributor sees in the repository.
 
 ## Checks

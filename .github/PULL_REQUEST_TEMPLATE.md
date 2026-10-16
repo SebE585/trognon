@@ -17,4 +17,5 @@
 - [ ] No Apple firmware, keys or extracted binaries are added.
 - [ ] No step writes to a phone's hardware unless it was described beforehand and the maintainer agreed.
 - [ ] `make docs-check` and `make iop-coverage` pass (CI runs both).
+- [ ] If an AI assistant helped prepare this, the description says which one and what I verified myself (an assistant's output is a proposal, not evidence).
 - [ ] I have the right to submit this under the project's licences (code GPL-2.0-only or MIT as marked per file, documentation CC-BY-SA-4.0).
