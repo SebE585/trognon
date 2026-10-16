@@ -16,7 +16,7 @@ inline render.
 | Timer block | Tick rate confirmed at 24 MHz | Timer interrupt not proven; IRQ-ack offsets and sequence not validated on this SoC | [Timer block](#timer-block-timer_base-0xbf100000-device-2026-10-15) |
 | NAND | Chip ID read on CE0/CE1 | CE2-CE15, bus 1, and any page access | [NAND](#nand-h2fmi0_base-0x81200000-device-2026-10-15) |
 | Buttons | All 5 buttons mapped by GPIO difference | Mapping found by observed difference, not by name | [Buttons](#buttons-same-gpio-base-as-above-device-2026-10-15) |
-| Accelerometer | Identifier read; powered up with a verified write; axes read in two orientations, dominant axis moved Z to Y, magnitude about 1 g | Exact chip model, axis directions, scale and calibration | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
+| Accelerometer | Identifier read; powered up with a verified write; axes read in two orientations plus a repeatable resting reading, dominant axis moved Z to Y, magnitude about 60 counts at rest | Exact chip model, axis directions, scale and calibration | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
 | Wi-Fi/SDIO | Base address and GPIO lines confirmed; SDHCI layout confirmed in the IOP's own firmware | Which register window the IOP's SDHCI driver actually uses, and why CPU-side writes don't stick | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-mixed-devicehypothesis-2026-10-1516) |
 | Touch controller | Reset and chip-select GPIO levels read (one run) | Polarity, power and clock via the PMU, SPI transaction, any response | [Bluetooth](#bluetooth-uart3-reset-1506-wake-1602-device-2026-10-16) |
 
@@ -245,13 +245,22 @@ orientation (not recorded precisely: held by hand, which face was up was not not
 |---|---|---|---|---|---|
 | 1, as first held | +11 | -9 | +58 | Z | about 59 |
 | 2, after moving it | +19 | +47 | +8 | Y | about 51 |
+| 3 and 4, phone resting, two consecutive runs | +2 | -16 | +59 | Z | about 61 (both) |
 
 The dominant axis moved from Z to Y with the phone, which is what a gravity vector does and
-what a stuck or constant output would not do. That is the check that was open. What it still
-does not give: the direction of each axis relative to the case, the scale (the two magnitudes
-differ by about 14 %, which can come from hand motion, a tilt between samples or noise on
-one 8-bit sample each, and was not investigated), or any calibration. The orientation
-was not controlled, so no axis-to-face mapping is claimed.
+what a stuck or constant output would not do. Runs 3 and 4 (bundles `20261016T150944Z` and
+`20261016T150947Z`, phone left resting, which face was up not recorded) returned exactly the
+same three bytes, so the readout is repeatable at rest at this resolution. Z dominant again
+with Y at -16 counts means a slight tilt or a different resting position from run 1.
+
+Taken together, the magnitude at rest is about 60 counts (59 and 61 in the two resting
+positions), and the 51 of run 2 is the outlier, taken while the phone was being moved; that
+is the likeliest cause and was not tested. At the nominal 18 mg per count, 60 counts is
+about 1.1 g, a little above 1 g: the scale or the offsets may differ from the datasheet's
+typical values, and nothing here measures them.
+
+What this still does not give: the direction of each axis relative to the case, the actual
+scale and offsets, or any calibration. No axis-to-face mapping is claimed.
 
 **Next observation**: hold the phone still in known positions (flat face up, flat face down,
 on each edge), several samples each, to get the axis directions and a scale estimate.
@@ -292,7 +301,7 @@ run is `make trace_accel_axes.bin` (STAGE 31), run the same way.
 On that run it reads the bus idle level first and only attempts the transaction if it looks
 plausibly pulled-up, so a mis-wired guess cannot look like a silent success.
 
-**Links to evidence**: [evidence bundle `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c) and [`20261016T150615Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150615Z-trace_accel_axes) and [`20261016T150844Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150844Z-trace_accel_axes), indexed on the [evidence page](08-evidence.md).
+**Links to evidence**: [evidence bundle `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c) and [`20261016T150615Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150615Z-trace_accel_axes) and [`20261016T150844Z-trace_accel_axes`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T150844Z-trace_accel_axes), plus `20261016T150944Z` and `20261016T150947Z` in the same directory, indexed on the [evidence page](08-evidence.md).
 
 ## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (mixed DEVICE/HYPOTHESIS, 2026-10-15/16)
 
