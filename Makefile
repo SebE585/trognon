@@ -9,7 +9,7 @@ SRC     := src/device_db.c src/serial_parse.c src/usb_probe.c src/chain.c src/cl
 OBJ     := $(SRC:.c=.o)
 BIN     := trognon
 
-.PHONY: all clean test test-sanitize diagrams evidence-index docs-build docs-check journey journey-check missions missions-check project-check project-sync
+.PHONY: all clean test test-sanitize diagrams evidence-index docs-build docs-check journey journey-check missions missions-check project-check project-sync corpus corpus-check
 
 all: $(BIN)
 
@@ -78,6 +78,13 @@ project-check:
 project-sync:
 	python3 -I tools/project_sync.py --apply
 
+# A dated, public-only export of the documentation (for an LLM test, a notebook or a retrieval index). Written to build/corpus/ (not committed).
+corpus:
+	python3 -I tools/export_corpus.py
+
+corpus-check:
+	python3 -I tools/test_export_corpus.py
+
 evidence-index:
 	python3 tools/evidence_index.py
 
@@ -98,7 +105,7 @@ docs-build: evidence-index iop-coverage
 	python3 tools/write_build_commit.py
 	mkdocs build --strict
 
-docs-check: docs-build journey-check missions-check
+docs-check: docs-build journey-check missions-check corpus-check
 	python3 -I tools/check_headings.py
 	python3 -I tools/check_internal_links.py
 	git diff --exit-code -- docs/snippets/evidence-table.en.md docs/snippets/evidence-table.fr.md || \

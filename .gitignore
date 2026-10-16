@@ -13,3 +13,6 @@ __pycache__/
 /tests/san_serial
 /tests/san_chain
 *.dSYM/
+
+# Generated corpus exports (tools/export_corpus.py)
+build/
