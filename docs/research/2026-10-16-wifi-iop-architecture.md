@@ -212,15 +212,52 @@ because only the IOP can" remains the leading hypothesis, not a proven
 fact, and the two softened bullets above should be read as open questions,
 not settled ones.
 
+### The ping handler, traced: it does not activate hardware
+
+Following a detailed six-step plan (from the same review) for rebuilding
+the IOP dialogue, step 2 was completed: the ping's own handler, inside the
+IOP's *raw* firmware image (not the ARMv7 Mach-O wrapper kext that merely
+carries it — a distinct 0x1b000-byte section, starting with a genuine ARM32
+exception vector table, confirmed byte-for-byte: `0e0000ea` decodes as a
+`B` instruction), was located (via `radare2`, cross-referencing the "Ping
+received" string) and disassembled in full.
+
+It is a message-processing loop (a queue named `"sdio message"`) that reads
+an incoming message's opcode field and switches on 7 cases (0-6). **Case 0
+— the ping — logs the "Connection established" string, writes a success
+status back into the message's response field, and returns to wait for the
+next message. Nothing else.** No register access, no call into any
+`sdiodrv_*` function. This directly answers the determining question
+flagged above: **the ping does not initialise the SDHC hardware; it only
+acknowledges a logical connection.** The earlier hypothesis assuming a
+direct causal link between the ping and hardware activation is wrong as
+stated.
+
+Case 3 of the same switch calls a function that references the
+`sdiodrv_resetSDHC` string — this, not the ping, is the opcode that
+actually touches hardware. Cases 1, 2, 4, 5 and 6 each call a different,
+not-yet-identified function (no directly linked debug string found in the
+time available this session).
+
+Updated evidence table (format suggested by the review):
+
+| Claim | Status |
+|---|---|
+| The IOP is running | Confirmed — real ARMv7 firmware, a genuine vector table, a message-processing loop |
+| The transport works | Partial — the message's opcode/status fields are understood; the full shared-buffer format is not |
+| The ping activates the SDHC | **Disproven** — the ping handler never touches a register |
+| The SDHC works | Not tested — opcode 3 (reset) has not been sent from a payload |
+
 What would be needed to actually drive Wi-Fi from Trognon's own payloads:
-either trace that ping handler and the IOP message-channel wire format
-precisely enough to construct and send a valid one (the command/message
-structure seen in `sendIOPCommand`, plus whatever the real low-level
-kickoff write at `this+0x24`'s vtable `+0x84` does — a separate class, not
-yet located or disassembled), or disassemble the IOP firmware itself far
-enough to replicate its own init sequence directly (a genuinely separate
-CPU's code, a project of its own). Neither was attempted this session; this
-is a deliberate stopping point, not an unfinished attempt.
+the message-channel wire format precisely enough to construct and send both
+the ping (opcode 0, now known to be a no-op connection handshake) *and*
+opcode 3 (the one that actually calls into `sdiodrv_resetSDHC`) — the
+command/message structure seen in `sendIOPCommand`, plus whatever the real
+low-level kickoff write at `this+0x24`'s vtable `+0x84` does on the host
+side (a separate class, not yet located or disassembled). Sending only the
+ping, as the architecture doc first assumed might be enough, is now known
+to be insufficient on its own. Not attempted this session; this is a
+deliberate stopping point, not an unfinished attempt.
 
 ## Tooling notes, for reproducibility
 
