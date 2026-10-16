@@ -17,9 +17,13 @@
   directory (self-contained, see its own docstring for the exact command
   and expected output).
 - New tonight, not previously documented: the exact instance sizes of
-  `IOSlaveProcessor.kext`'s six classes (below), and a read-only probe
-  payload for the `0xBF300000` window (`tools/payloads/trace.c`, STAGE 32,
-  `trace_iop_vic.bin`) — not yet run on hardware.
+  `IOSlaveProcessor.kext`'s six classes (below); `this+0x60` identified and
+  confirmed as `_vicRegisterMap`'s cached virtual address (same confidence
+  as the already-known `this+0x58`); a real register access through it
+  found in a separate method (`0x80713510`) that writes `8` or `4` to
+  offset `+0x18`; and a read-only probe payload for the `0xBF300000`
+  window (`tools/payloads/trace.c`, STAGE 32, `trace_iop_vic.bin`), now
+  updated to read `+0x18` specifically — not yet run on hardware.
 - **This file's first version (earlier tonight) wrongly presented the
   already-known material above as new findings.** Corrected after an
   external review caught it; see "Historique" at the end for what changed
@@ -113,42 +117,109 @@ kext) — n'ouvre pas de nouvelle piste, ferme plutôt une direction
 r2 -e asm.bits=16 -c 'aaa; pdf @ 0x80399594' /tmp/trognon_dt/IOSlaveProcessor.kext.bin
 ```
 
-### `startCPU`'s entry point, located but not fully traced (2026-10-16, soir, suite)
+### `this+0x60` tracé jusqu'à un accès registre réel (2026-10-16, soir, résolu)
 
-Suite à une relecture externe demandant les offsets réellement accédés par
-le pilote sur la seconde fenêtre (`_vicRegisterMap`, index 1) avant de
-sonder à l'aveugle : recherche faite, **pas aboutie ce soir**.
+Une troisième relecture a corrigé la piste : pas `this+0x7c/0x80/0x84/0x88`
+(ces offsets sont vraisemblablement `_arm7mLock` ou un objet de
+synchronisation voisin, voir plus bas — une fausse piste pour cette
+question précise), mais `this+0x60`, par analogie structurelle directe
+avec `this+0x58` déjà confirmé pour la première fenêtre. Vérifié, pas
+supposé — chaîne complète ci-dessous.
 
-- **Trouvé** : l'adresse d'entrée réelle de `startCPU` —
-  **`0x80713665`** dans `AppleARM7M.kext.bin`, Thumb — confirmée en
-  suivant la référence à la chaîne `"segLength >= md->getLength()"` /
-  `AppleARM7M.cpp:155`, qui n'apparaît que dans le vrai corps de la
-  fonction (distincte du stub d'appel virtuel pur à `0x80713e80`, qui ne
-  fait que charger l'adresse de la chaîne de signature sans y faire
-  grand-chose d'autre). Le rapport de recherche dit déjà avoir localisé et
-  désassemblé `startCPU` mais ne donne pas cette adresse d'entrée
-  précise — c'est l'ajout réel de cette recherche.
-- **Pas trouvé ce soir** : quels offsets de `this` (ou d'un pointeur mis
-  en cache depuis `_vicRegisterMap`) `startCPU` lit ou écrit
-  spécifiquement. Les premières instructions tracées après l'entrée
-  touchent `this+0x7c`/`+0x80`/`+0x84`/`+0x88` — des offsets différents de
-  ceux déjà confirmés pour `_arm7mRegisterMap` (`this+0x58`,
-  `+0x100`/`+0x110`/`+0x114`/`+0x118` relatifs à la fenêtre elle-même) —
-  mais leur rôle exact (longueur du firmware ? un accesseur sur
-  `IOSlaveFirmware` ? vraiment liés à la seconde fenêtre ou à autre
-  chose ?) n'a pas été établi avant la fin de la session.
-- **Conséquence pratique** : le payload `trace_iop_vic.bin` (STAGE 32)
-  reste un **balayage à l'aveugle** des 8 premiers mots, explicitement
-  documenté comme tel dans son propre commentaire — pas informé par les
-  accès réels du pilote, faute d'avoir terminé cette trace. À ne pas
-  présenter comme « ce que le pilote lit » tant que ce travail n'est pas
-  terminé.
+**Dans `AppleARM7M::start(IOService*)`** (corps réel situé par recherche de
+contexte autour des chaînes `REQUIRE` des lignes 96/97, pas par son
+prologue directement — le prologue lui-même n'a pas été isolé ce soir) :
 
-**Prochaine étape concrète pour clore ce point** : continuer le
-désassemblage à partir de `0x80713665` (voir `pd` sur cette adresse) pour
-identifier lesquels, parmi `this+0x7c/0x80/0x84/0x88`, correspondent
-réellement à `_vicRegisterMap`/son adresse virtuelle mise en cache, puis
-lesquels de ces champs sont effectivement lus/écrits à travers lui.
+```
+; index 0, déjà documenté dans le rapport de recherche :
+ldr r0, [r4, 0x50]         ; provider
+...
+ldr.w r3, [r3, 0x208]      ; vtable+0x208 = mapDeviceMemoryWithIndex
+blx r3                     ; mapDeviceMemoryWithIndex(0)
+str r0, [r4, 0x54]         ; this+0x54 = IOMemoryMap #0
+
+; index 1, pas documenté avant ce soir :
+ldr r0, [r4, 0x50]         ; provider
+movs r1, 1                 ; index = 1
+ldr.w r3, [r3, 0x208]      ; même slot de vtable
+blx r3                     ; mapDeviceMemoryWithIndex(1)
+str r0, [r4, 0x5c]         ; this+0x5c = IOMemoryMap #1
+
+; puis les deux adresses virtuelles, l'une après l'autre :
+ldr r0, [r4, 0x54]
+ldr r3, [r3, 0x4c]  ; vtable+0x4c = getVirtualAddress
+blx r3
+str r0, [r4, 0x58]          ; this+0x58 = adresse virtuelle fenêtre #0 (déjà connu)
+
+ldr r0, [r4, 0x5c]
+ldr r3, [r3, 0x4c]
+blx r3
+str r0, [r4, 0x60]          ; this+0x60 = adresse virtuelle fenêtre #1 -- NOUVEAU
+```
+
+Juste après, un seul appel de log (`"ARM7M::%s: mapped I/O registers at
+%p/0x%08x, %p/0x%08x\n"`) reçoit **à la fois** `this+0x58` et `this+0x60`
+en arguments — la preuve la plus directe possible que ces deux champs sont
+une paire symétrique, fenêtre #0 et fenêtre #1, pas deux choses sans
+rapport.
+
+**`this+0x60` est donc l'adresse virtuelle de `_vicRegisterMap`, avec la
+même confiance que `this+0x58` pour `_arm7mRegisterMap`.**
+
+**Un vrai accès registre trouvé à travers lui**, dans une fonction séparée
+(adresse de code `0x80713510`, pointeur Thumb appelable `0x80713511`,
+présente comme entrée de vtable référencée depuis `0x807143f0` — donc une
+vraie méthode virtuelle, pas du code mort) :
+
+```
+mov r5, r0          ; this
+mov r4, r1           ; arg entier
+...
+cbz r4, A            ; si arg == 0
+cmp r4, 1 ; it ne ...
+bne B                ; sinon si arg != 1, saute B (pas d'accès registre)
+                      ; sinon (arg == 1), tombe dans le même bloc que arg==0 avec une autre valeur
+A: ldr r2, [r5, 0x60]  ; this+0x60 = adresse virtuelle fenêtre #1
+   movs r3, 8
+   str r3, [r2, 0x18]   ; écrit 8 (mot, 32 bits) à fenêtre_1 + 0x18
+   b B
+(bloc jumeau, arg==1) :
+   ldr r2, [r5, 0x60]
+   movs r3, 4
+   str r3, [r2, 0x18]   ; écrit 4 à fenêtre_1 + 0x18
+B: ldr r0, [r5, 0x7c]   ; verrou (voir ci-dessous)
+   blx <fonction externe 0x800670b0>
+   ...
+   return 0
+```
+
+**Interprétation** : une méthode à un argument (0 ou 1) qui écrit soit `8`
+soit `4` (deux bits distincts, `1<<3` et `1<<2`) sur un mot 32 bits à
+l'offset `+0x18` de la fenêtre VIC — un patron très courant pour un
+registre d'activation/masquage d'interruption à deux voies (deux lignes,
+ou activer/désactiver). **Hypothèse, pas confirmée** : pourrait être
+`enableInterrupt(bool)`/`setInterruptAction` côté IOP, ou tout autre
+registre de contrôle à cet offset — la seule chose établie est l'accès
+lui-même (adresse, largeur, valeurs possibles), pas sa sémantique exacte.
+
+**`this+0x7c`, vu dans trois fonctions distinctes avec le même appel
+externe (`0x800670b0`) juste avant de retourner** : cohérent avec un
+verrou (`_arm7mLock`, alloué dans `start()` ligne 74 via `IOLockAlloc()`)
+acquis/relâché autour de l'accès registre, pas un champ propre à la
+fenêtre VIC. **Hypothèse raisonnable, pas vérifiée nom pour nom** (le
+nom `_arm7mLock` vient de la chaîne `REQUIRE`, pas d'un désassemblage qui
+le relierait explicitement à `this+0x7c`).
+
+**Conséquence pour `trace_iop_vic.bin` (STAGE 32)** : le payload a été mis
+à jour pour lire explicitement l'offset `+0x18` en plus du balayage
+générique, puisque c'est maintenant un accès **confirmé par le pilote**,
+pas une supposition.
+
+**Commande pour reproduire** :
+```
+r2 -e asm.bits=16 -c 'aaa; pd 90 @ 0x80713190' /tmp/trognon_dt/AppleARM7M.kext.bin   # start(), les deux mapDeviceMemoryWithIndex
+r2 -e asm.bits=16 -c 'aaa; pd 30 @ 0x80713510' /tmp/trognon_dt/AppleARM7M.kext.bin   # la fonction qui écrit +0x18
+```
 
 ## Prochaine couche (pas encore écrite)
 
@@ -178,3 +249,14 @@ soir, à faire quand ce chantier se stabilise.
   committé qui citait un chemin temporaire — corrigé pour être
   autonome (chemin en paramètre, sortie attendue documentée dans le
   script lui-même).
+- **2026-10-16, soir (troisième relecture)** : la piste précédente
+  (`this+0x7c/0x80/0x84/0x88` dans `startCPU`) était une fausse piste pour
+  cette question précise — gardée ci-dessus dans la section « entry point
+  located but not fully traced » comme trace de ce qui a été cherché et
+  écarté, pas supprimée. La bonne piste, suggérée par relecture externe
+  (par analogie structurelle avec `this+0x58` déjà confirmé) et vérifiée
+  ce soir par désassemblage réel, est `this+0x60` dans `start()` — qui
+  mène à un accès registre réel (`+0x18`, écriture de `8` ou `4`) dans une
+  méthode séparée (`0x80713510`), pas dans `startCPU`. Voir la nouvelle
+  section ci-dessus, « `this+0x60` tracé jusqu'à un accès registre réel ».
+  STAGE 32 mis à jour en conséquence pour lire `+0x18` spécifiquement.
