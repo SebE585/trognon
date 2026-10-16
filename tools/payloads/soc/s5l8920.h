@@ -145,6 +145,18 @@
 #define SOC_BT_RESET_IDX      (8 * 0x15 + 0x06)
 #define SOC_BT_WAKE_IDX       (8 * 0x16 + 0x02)
 
+/* spi1 (DEVICE TREE, tools/dt_dump.py, 2026-10-16): reg 0x2100000 -> CPU 0x82100000, size 0x1000;
+ * clock-gates = 0x16 (22); interrupt 0x1c; function-spi_cs0 = pin word 0x1300 (GPIO 13.00);
+ * compatible "spi,s5l8920x" "spi,s5l8720x" "spi,s5l8900x". The OpeniBoot source for this SoC family
+ * says SPI1's clock gate is 0xA, which disagrees with the device tree: STAGE 37 reads both.
+ * Register offsets from OpeniBoot plat-s5l8900 spi.h (family layout, not checked on this chip):
+ * CONTROL 0x00, SETUP 0x04, STATUS 0x08, PIN 0x0C, TXDATA 0x10, RXDATA 0x20, CLKDIVIDER 0x30,
+ * SPCNT 0x34, SPIDD 0x38. RXDATA and TXDATA are never read by the probe (a FIFO read may pop). */
+#define SOC_SPI1_BASE         0x82100000
+#define SOC_CLOCK_GATE_BASE   0xBF100078
+#define SOC_SPI1_GATE_DT      0x16
+#define SOC_SPI1_GATE_OPENIBOOT 0x0A
+
 /* Touch controller (DEVICE TREE, decoded 2026-10-16 with tools/dt_dump.py): node
  * /device-tree/arm-io/spi1/multi-touch, compatible "multi-touch,n88". Pin words use the same
  * encoding as above (high byte = port, low byte = pin, both hexadecimal): function-reset =

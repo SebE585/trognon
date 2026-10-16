@@ -122,6 +122,35 @@ Applying the table's enable bits to the two bytes (same caveat) gives LDOs 0, 2,
 to millivolts: the conversion routine was not read, so any figure would be a guess. The PMU GPIO
 configuration bytes (`0x50`..`0x57`) were read raw for the same reason.
 
+## The SPI controller and its clock (STAGE 37, bundle `20261016T164825Z-trace_spi1_pre`)
+
+The `spi1` node gives `reg 0x2100000` (CPU `0x82100000`), `clock-gates = 0x16`, interrupt `0x1c`,
+two DMA channels, `function-spi_cs0` = GPIO `13.00` (the same pin word as the touch node's
+`function-enable_cs`), and the compatible list `spi,s5l8920x`, `spi,s5l8720x`, `spi,s5l8900x`; the
+last one is the match of `AppleS5L8900XSPIController`, the controller class named in the
+kernelcache. A read-only run read the clock-gate registers (`0xBF100078 + 4 * gate`, the layout
+already used for the IOP gate `0x27`, which read `0x0000000F`):
+
+| Gate | Source | Value read |
+|---|---|---|
+| `0x15`, `0x16`, `0x17` | device tree: `spi0`, `spi1`, `spi2` | `0`, `0`, `0` |
+| `0x09`..`0x0D` | OpeniBoot `plat-s5l8920` header: SPI0..SPI4 | `0xF` each |
+| `0x18`, `0x19` | next gates in the device tree order (`0x1a` is `uart0`) | `0xF` each |
+
+The device tree numbers its gates in the order of the blocks (`sdio` `0x10`, `sha1` `0x11`,
+`ceata` `0x12`, `flash-controller0` `0x13` and `0x14`, then the three SPI blocks, then the UARTs),
+and the same formula read the IOP gate correctly. The OpeniBoot header for this SoC family gives
+different numbers (SPI1 = `0xA`). The device tree is taken as the better-supported source for this
+phone, which makes the three SPI gates **off** at this point of the boot; this is a reading of
+two sources that disagree, not a test of which one names the SPI clock. The probe skips the
+`spi1` register reads when gate `0x16` is not enabled, because a read of an unclocked block may
+stall the bus (this project lost its USB link once to such a read); it skipped them, so **no
+`spi1` register was read**.
+
+Everything needed for a first exchange is therefore still off or unread: the SPI clock gate
+(`0`), the touch LDO (bit `0x40` of PMU register `0x11` is `0`), the PMU clock-enable GPIO (not
+decoded), the reset line (level `0`, polarity unknown). Each of these takes a write. None was made.
+
 ## Preconditions, with their state
 
 | Precondition | Source | State |
@@ -130,7 +159,7 @@ configuration bytes (`0x50`..`0x57`) were read raw for the same reason.
 | Clock enable | `function-clock_enable` through the PMU, pin 0 | device tree and a partial reading of the PMU GPIO code; bit meanings of registers `0x50`..`0x57` not decoded |
 | Reset | GPIO `14.01` | level read `0` once; polarity not established; the personality has a `reset-deassert-high-z` flag whose effect was not read |
 | Chip select | GPIO `13.00` (`function-enable_cs`) plus the SPI controller's own select | level read `0` once; role not established |
-| SPI controller | `spi1` at CPU address `0x82100000` (`reg 0x2100000` plus the `0x80000000` offset of `arm-io`) | not read; its clock gate was not read either |
+| SPI controller | `spi1` at CPU address `0x82100000` (`reg 0x2100000` plus the `0x80000000` offset of `arm-io`) | clock gate `0x16` reads `0` (off) in STAGE 37; registers not read, deliberately |
 | Attention | interrupt `0xb4` on the GPIO interrupt controller | not read, the controller is treated as dangerous |
 | Firmware | a bootload path named in the driver's strings | open: whether it is needed here is not established; source in the IPSW not looked up |
 
@@ -142,10 +171,11 @@ In increasing order of risk, each step read-only until the previous one gave a r
    meaning of `0x0708020b`; still to do for the PMU GPIO that gates the clock. Static, no risk.
 1b. Read the PMU registers `0x10`, `0x11`, `0x17`..`0x22` and `0x50`..`0x57` over I2C
    (`STAGE 36`, done: bit `0x40` of `0x11` reads `0`). Read-only transactions on `i2c0`.
-2. Read the clock gate of `spi1` and the controller's idle registers at `0x82100000`. This is the
-   same kind of read as the IOP and GPIO probes.
-3. Only then consider a PMU write to power the controller, which changes a power rail and
-   deserves its own explicit go.
+2. (Done for the gate) read the clock gate of `spi1`: it is `0`. The controller's idle registers at
+   `0x82100000` cannot be read safely until the gate is on.
+3. Writes, each deserving its own explicit go and an exact description first: the `spi1` clock gate,
+   the PMU register `0x11` bit `0x40` (touch LDO), the PMU clock-enable GPIO once decoded, and the
+   reset line.
 4. A first SPI exchange, with the attention line read through a GPIO level if its pin can be
    identified, never through the interrupt controller.
 

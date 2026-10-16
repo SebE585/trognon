@@ -44,3 +44,4 @@
 | [`20261016T151941Z-trace_compass_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151941Z-trace_compass_i2c) | `trace_compass_i2c.bin` | `926c3d968f0f` | `e3a21fbb` (dirty tree) | confirmed | 17 |
 | [`20261016T152515Z-trace_i2c_scan`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T152515Z-trace_i2c_scan) | `trace_i2c_scan.bin` | `4a6b5f7b8c8b` | `d426b562` (dirty tree) | confirmed | 23 |
 | [`20261016T164348Z-trace_pmu_read`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T164348Z-trace_pmu_read) | `trace_pmu_read.bin` | `56b92e1c98fa` | `ed774c3e` | confirmed | 25 |
+| [`20261016T164825Z-trace_spi1_pre`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T164825Z-trace_spi1_pre) | `trace_spi1_pre.bin` | `cdd6c1c87107` | `c0350807` (dirty tree) | confirmed | 19 |

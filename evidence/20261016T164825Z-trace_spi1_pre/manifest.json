@@ -1,0 +1,48 @@
+{
+  "payload": "trace_spi1_pre.bin",
+  "sha256": "cdd6c1c87107ab9dc413c604ebf6968db68f85ae744aba5b1a1fd51e14b34b0d",
+  "bytes": 3484,
+  "soc": "s5l8920",
+  "nonce_sent": "8350DFB2",
+  "nonce_read": "8350DFB2",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "spi1-pre-1"
+  },
+  "variables": {
+    "spi_read": "00000000",
+    "s_ctrl": "<unset: [Errno 32] Pipe error>",
+    "s_setup": "<unset: [Errno 32] Pipe error>",
+    "s_status": "<unset: [Errno 32] Pipe error>",
+    "s_pin": "<unset: [Errno 32] Pipe error>",
+    "s_clkdiv": "<unset: [Errno 32] Pipe error>",
+    "s_cnt": "<unset: [Errno 32] Pipe error>",
+    "s_idd": "<unset: [Errno 32] Pipe error>",
+    "g09": "0000000F",
+    "g0a": "0000000F",
+    "g0b": "0000000F",
+    "g0c": "0000000F",
+    "g0d": "0000000F",
+    "g15": "00000000",
+    "g16": "00000000",
+    "g17": "00000000",
+    "g18": "0000000F",
+    "g19": "0000000F"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "c0350807527c4713dc19303fcf1532b651172f71",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T164825Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_spi1_pre.bin --evidence <repo>/evidence --vars spi_read,s_ctrl,s_setup,s_status,s_pin,s_clkdiv,s_cnt,s_idd,g09,g0a,g0b,g0c,g0d,g15,g16,g17,g18,g19",
+  "screen_rows": 19
+}
