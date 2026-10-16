@@ -65,6 +65,7 @@ STAGE_trace_gpio_survey = 43
 STAGE_trace_spi1_nogate = 44
 STAGE_trace_spi1_selftest = 45
 STAGE_trace_spi1_selftest2 = 46
+STAGE_trace_gate_survey = 47
 
 # Objects are built for one SoC. Without this stamp, `make SOC=other` would silently reuse objects built for
 # the previous chip. The stamp is rewritten only when SOC or the flags change.

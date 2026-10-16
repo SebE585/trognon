@@ -1447,6 +1447,24 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	}
 	fb_clean();
 #endif
+#if STAGE == 47
+	/* READ-ONLY survey of all 52 clock-gate words (0xBF100078 + 4 * i, i = 0 to 0x33, the range the decrypted iBSS's clock
+	 * initialisation at 0x8400dd04 loops over). Nothing is written. Purpose: test the prediction made from that routine
+	 * (catalog iBSS_n88ap_4.3.5/clock_gate_init_0x8400dd58) that gates 0, 0x18, 0x24, 0x2C, 0x2D and 0x31 are the ones
+	 * it leaves on, and learn which others were turned on afterwards (already seen on: 0x09 to 0x0D, 0x19, 0x27). */
+	at(4, 116, 0x00F0C040); puts_("STEP 47 CLOCK GATE SURVEY\n");
+	volatile u32 *cg47 = (volatile u32 *)SOC_CLOCK_GATE_BASE;
+	u32 on47 = 0, hi47 = 0, lo47 = 0;
+	for (u32 i = 0; i < 0x34; i++) {
+		u32 v = cg47[i];
+		char nm[4] = { 'g', "0123456789ABCDEF"[(i >> 4) & 0xF], "0123456789ABCDEF"[i & 0xF], 0 };
+		result_hex(nm, v);
+		if ((v & 0xF) == 0xF) { if (i < 32) lo47 |= 1u << i; else hi47 |= 1u << (i - 32); on47++; }
+	}
+	kv("ON", on47); kv("MASK LO", lo47); kv("MASK HI", hi47);
+	result_hex("n_on", on47); result_hex("mask_lo", lo47); result_hex("mask_hi", hi47);
+	fb_clean();
+#endif
 #if STAGE == 43
 	/* READ-ONLY survey of every GPIO pin register (376 words at SOC_GPIO_BASE + 4 * (8 * port + pin)), the full 32-bit
 	 * word of each, with the same fault-tolerant read as STAGE 12 (an access that aborts is recorded, not fatal).
@@ -2048,6 +2066,8 @@ __attribute__((section(".text.start"))) void payload_main(void)
 	ENV_SET("trognon", "spi1-selftest-1", 1);
 #elif STAGE == 46
 	ENV_SET("trognon", "spi1-selftest-2", 1);
+#elif STAGE == 47
+	ENV_SET("trognon", "gate-survey-1", 1);
 #elif STAGE == 5
 	ENV_SET("trognon", "regs-1", 1);
 #elif STAGE == 6

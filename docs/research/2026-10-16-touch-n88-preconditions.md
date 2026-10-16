@@ -615,6 +615,23 @@ not show: why. A controller left disabled by `CONTROL` 0 fits (OpeniBoot sets `C
 excluded. STAGE 46 (OpeniBoot's recipe: `CONTROL` 0 then 1, `PIN` 2, `CONTROL |= 4 | 8`, `SETUP |= 0x200100`, `0x4C` as the transmit count) is built
 (`trace_spi1_selftest2.bin`) but **has not been run**: the phone's battery ran flat and it no longer enumerates.
 
+## The iBSS clock initialisation (static, 2026-10-16)
+
+Catalog: `iBSS_n88ap_4.3.5/clock_gate_init_0x8400dd58.yaml` (`IBSS-CLK-*`). The decrypted iBSS has a routine (`0x8400dd04`) that takes a 64-bit mask and a flag
+and, for each set bit `i` from 0 to `0x33`, sets (flag nonzero) or clears the low nibble of the word at `0xBF100078 + 4 * i`. Its wrapper (`0x8400dd58`) calls it
+twice: gates `0x00`, `0x18`, `0x24`, `0x2C`, `0x2D` and `0x31` on, then every other gate of the 52 off. The same code path stores the base
+frequency `0x16E3600` (24 000 000) before calling it, which is the only place the 24 MHz figure appears in this image (the device-tree-independent source of the
+"24 MHz" assumed in the SPI divider arithmetic; whether it is the SPI source clock is not shown).
+
+What this gives, and what it does not:
+
+- It confirms the physical meaning of the gate register array: 52 words, a low nibble `0xF` or `0`, indexed by the number the iBSS uses.
+- **Prediction, not an observation:** after this routine, only those six gates are on, unless something turns more on later. The gates read so far agree for
+  `0x15` to `0x17` (read `0`) and disagree for `0x09` to `0x0D`, `0x19` and `0x27` (read `0xF`): something turned those on afterwards. Which code did is open (`IBSS-CLK-Q2`).
+- Notably, `0x15` to `0x17`, the device tree's SPI gates, are among those the routine turns off, and the iBSS's own SPI gates (`0x09` to `0x0B`) are not in the list it
+  leaves on. The numbering correction above stands; this adds a second reason to distrust the device tree's numbers as physical indexes, without proving it.
+- A read-only survey of all 52 words (`trace_gate_survey.bin`, STAGE 47) is built and **not run**; its result would confirm or refute the prediction.
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values

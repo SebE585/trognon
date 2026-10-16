@@ -1,0 +1,59 @@
+binary: ibss_decrypted.bin
+binary_sha256: 9bd13fbd99aa8f05ee4e3df7452c6412111f5d9a4369384133e58fe1f1edbac9
+function_name_apple: null
+function_name_assigned: "iBSS clock-gate initialisation (set_gates(mask, on) at 0x8400dd04 and its wrapper)"
+decode_mode: thumb
+subsystem: iboot_platform
+entry_code_address: "0x8400dd58"
+thumb_entry_pointer: "0x8400dd59"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8400dd04", "0x8400ddd0"]
+    - ["0x8400e110", "0x8400e12c"]
+  constant_ranges:
+    - ["0x8400ddd0", "0x8400ddf0"]
+  unresolved:
+    - id: IBSS-CLK-Q1
+      text: "What the second part of the wrapper does (the loop at 0x8400dd70 over a 0x18-entry table at 0x84017e2c, with registers around 0xBF100070 and the bits 0x40000, 0x80000, 0x400, 0x800): it was read as instructions but not attributed to a function."
+      proof_needed: "the register meanings at 0xBF100070 and below"
+    - id: IBSS-CLK-Q2
+      text: "Which code turns on the gates that the survey read as 0xF but this routine leaves off (0x09 to 0x0D, 0x19, 0x27): the SPI and other drivers of the iBSS are the natural candidates, not read."
+      proof_needed: "callers of the single-gate routine near 0x8400dcc0 (the register base literal 0xBF100078 at 0x8400dd3c and 0x8400dd94)"
+    - id: IBSS-CLK-Q3
+      text: "Whether this routine's gate indexes are the ones of the device tree: it uses the physical register index (0xBF100078 + 4 * i), which is what the project reads; the device tree's numbers are another matter (see the numbering correction)."
+      proof_needed: "the full gate survey (STAGE 47) compared with this routine's masks"
+
+claims:
+  - id: IBSS-CLK-001
+    text: >
+      The routine at 0x8400dd04 takes a 64-bit mask (r1:r0) and a flag (r2). For each bit i from 0 to 0x33 (52 gates) that is set it
+      sets (flag nonzero: OR 0xF) or clears (flag zero: AND NOT 0xF) the word at 0xBF100078 + 4 * i, leaving the other bits of the word.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-ibss-clock-initialisation-static-2026-10-16"
+  - id: IBSS-CLK-002
+    text: >
+      The wrapper at 0x8400dd58 calls it twice: with the mask lo 0x01000001, hi 0x00021030 and flag 1 (gates 0x00, 0x18, 0x24,
+      0x2C, 0x2D, 0x31 on), then with the complement 0xFEFFFFFE / 0xFFFDEFCF and flag 0 (every other gate in 0 to 0x33 off). It is
+      called from 0x8400deec and, after the base frequency 0x16E3600 (24 000 000) is stored at 0x8401b410 + 0x64 and a clock set-up
+      routine is called, from 0x8400e124.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-ibss-clock-initialisation-static-2026-10-16"
+  - id: IBSS-CLK-003
+    text: >
+      Prediction (hypothesis, not an observation): if nothing else changed the gates afterwards, gates 0x00, 0x18, 0x24, 0x2C, 0x2D
+      and 0x31 read 0xF and the rest 0. The gates read so far disagree for some: 0x09 to 0x0D, 0x19 and 0x27 read 0xF, so something
+      turned them on after this routine, while 0x15 to 0x17 read 0 as predicted.
+    status: hypothesis
+
+hardware_tests:
+  - name: trace_gate_survey (STAGE 47), read-only survey of the 52 gate words
+    claim_tested: "IBSS-CLK-003"
+    execution_status: planned
+    result: null
+    evidence: null
+
+publication:
+  status: approved
+  notes: "register layout, mask constants and addresses"
