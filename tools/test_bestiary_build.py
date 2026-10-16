@@ -91,6 +91,53 @@ class DigitTests(unittest.TestCase):
         self.assertEqual(bb.code_strip(c), ["3B", "✓", "?", "?"])
 
 
+def cfront(i, state="open", **kw):
+    kw.setdefault("down_needs", "unknown")
+    return front(state, id=i, **kw)
+
+
+def camp(*fronts, **kw):
+    c = creature(*fronts, campaign=True, campaign_intro={"en": "i", "fr": "i"})
+    c.update(kw)
+    return c
+
+
+class CampaignTests(unittest.TestCase):
+    def chk(self, c):
+        return bb.check({"creatures": [c]}, titles=TITLES, bundles={B})
+
+    def test_the_route_respects_needs_and_keeps_the_file_order_otherwise(self):
+        c = camp(cfront("a", needs=["b"]), cfront("b"), cfront("c"))
+        self.assertEqual([f["id"] for f in bb.route(c)], ["b", "a", "c"])
+
+    def test_a_cycle_is_refused(self):
+        self.assertTrue(any("cycle" in e for e in self.chk(camp(cfront("a", needs=["b"]), cfront("b", needs=["a"])))))
+
+    def test_an_unknown_or_self_need_is_refused(self):
+        self.assertTrue(any("not a front id" in e for e in self.chk(camp(cfront("a", needs=["zz"])))))
+        self.assertTrue(any("needs itself" in e for e in self.chk(camp(cfront("a", needs=["a"])))))
+
+    def test_a_front_is_locked_until_every_need_is_down(self):
+        c = camp(cfront("a", "down", evidence=[B]), cfront("b", "wounded", ref="en/03-hardware-map.md"), cfront("c", needs=["a"]), cfront("d", needs=["b"]))
+        av = bb.availability(c)
+        self.assertEqual([av[k][0] for k in range(4)], ["done", "available", "available", "locked"])
+
+    def test_a_campaign_needs_ids_down_needs_and_an_intro(self):
+        self.assertTrue(any("needs an id" in e for e in self.chk(camp(front("open", down_needs="unknown")))))
+        self.assertTrue(any("down_needs" in e for e in self.chk(camp(front("open", id="a")))))
+        self.assertTrue(any("intro" in e for e in self.chk(camp(cfront("a"), campaign_intro={"en": "i"}))))
+        self.assertTrue(any("down_needs must be" in e for e in self.chk(camp(cfront("a", down_needs="magic")))))
+        self.assertEqual(self.chk(camp(cfront("a"), cfront("b", needs=["a"]))), [])
+
+    def test_the_page_names_the_next_move_the_locks_and_what_brings_a_front_down(self):
+        c = camp(cfront("a"), cfront("b", needs=["a"], down_needs="write"))
+        page = bb.render_campaign(c, "en", titles=TITLES)
+        self.assertIn("## Next move", page)
+        self.assertIn("Locked until this is down:", page)
+        self.assertIn("hardware writes: the maintainer only", page)
+        self.assertIn("Campagne", bb.render_campaign(c, "fr", titles=TITLES))
+
+
 class RenderTests(unittest.TestCase):
     def data(self):
         return {"creatures": [creature(front("down", evidence=[B]), front("open", missions=["M-1"]), front("open"))]}

@@ -37,6 +37,8 @@ Life: 5 of 8
 - **Open.** Why writes from the main processor to the Wi-Fi registers do not stick.
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
 
+Campaign: [Campaign: The Whisperer](campaigns/wifi.md)
+
 Its place in the hardware map: [Wi-Fi and its coprocessor](03-hardware-map.md#wi-fi-and-sdio)
 
 ## The Shy One
