@@ -18,8 +18,8 @@ nodes:
       étape dit à quel point nous sommes sûrs, et les dernières sont les endroits où notre connaissance s'arrête. Vous
       pouvez partir à tout moment vers le [manuel de référence](../README.md), ou regarder la [carte du parcours](index.md).
     choices:
-      - { text: "Chercher une porte d'entrée", hint: "Comprendre le mode DFU", to: dfu }
-      - { text: "Vérifier ce qui survivra à l'extinction", hint: "Comprendre pourquoi le démarrage est captif", to: persist }
+      - { text: "Chercher un moyen d'entrer", hint: "Comprendre le mode DFU", to: dfu }
+      - { text: "Vérifier ce qui survit à l'extinction du téléphone", hint: "Comprendre pourquoi le démarrage est captif", to: persist }
       - { text: "Ouvrir le Grimoire", hint: "Lire directement les analyses du logiciel du téléphone", to: grimoire }
 
   - id: dfu
@@ -35,8 +35,8 @@ nodes:
     refs:
       - { label: "Chaîne de démarrage", page: fr/01-boot-chain.md }
     choices:
-      - { text: "Utiliser la faille", hint: "Voir ce que l'exploit nous donne", to: pwned }
-      - { text: "Vérifier ce qui survivra à l'extinction", hint: "Comprendre pourquoi le démarrage est captif", to: persist }
+      - { text: "Utiliser la faille", hint: "Voir ce que l'exploit permet", to: pwned }
+      - { text: "Vérifier ce qui survit à l'extinction du téléphone", hint: "Comprendre pourquoi le démarrage est captif", to: persist }
 
   - id: pwned
     kind: step
@@ -50,7 +50,7 @@ nodes:
     refs:
       - { label: "Chaîne de démarrage : le chemin", page: fr/01-boot-chain.md#le-chemin-device-2026-10-1415 }
     choices:
-      - { text: "Envoyer quelque chose qu'il exécutera", hint: "L'étape de démarrage modifiée", to: ibss }
+      - { text: "Lui envoyer quelque chose à exécuter", hint: "L'étape de démarrage modifiée", to: ibss }
 
   - id: ibss
     kind: step
@@ -81,7 +81,7 @@ nodes:
       - { label: "Plan mémoire des payloads", page: fr/02-exception-console.md#plan-memoire-des-payloads-device }
     choices:
       - { text: "S'assurer qu'il a vraiment tourné", hint: "Le marqueur et le nonce", to: proof }
-      - { text: "Vérifier ce qui survivra à l'extinction", hint: "Comprendre pourquoi le démarrage est captif", to: persist }
+      - { text: "Vérifier ce qui survit à l'extinction du téléphone", hint: "Comprendre pourquoi le démarrage est captif", to: persist }
 
   - id: proof
     kind: step
@@ -97,7 +97,7 @@ nodes:
     refs:
       - { label: "Preuves : comment un dossier est fait", page: fr/08-evidence.md }
     choices:
-      - { text: "Demander quelque chose à voir", hint: "Dessiner à l'écran", to: pixel }
+      - { text: "Faire apparaître quelque chose à l'écran", hint: "Le premier pixel", to: pixel }
 
   - id: pixel
     kind: step
@@ -106,14 +106,14 @@ nodes:
     visual: pixel
     text: |
       L'écran est un framebuffer en `0x4fd00000`, de 320 par 480 pixels. Le contrôleur d'affichage avait déjà été réglé par
-      l'étape de démarrage : notre code ne fait que dessiner. Comme le framebuffer est en écriture différée, le code purge le
+      l'étape de démarrage : notre code ne fait que dessiner. Comme le framebuffer est en écriture différée, le code nettoie le
       cache de données après avoir dessiné, pour qu'un processeur figé laisse tout de même un écran fidèle.
     figure: { src: img/console-exceptions.png, alt: "La console d'exceptions sur l'écran du 3GS", caption: "La console, reconstituée depuis le tampon du payload (pas une photographie)." }
     evidence: [20261015T050542Z-trace_regs, 20261015T050540Z-trace]
     refs:
       - { label: "Carte matérielle : affichage", page: fr/03-hardware-map.md#affichage }
     choices:
-      - { text: "Casser quelque chose exprès", hint: "À quoi ressemble un plantage", to: crash }
+      - { text: "Provoquer un plantage", hint: "À quoi ressemble un plantage lisible", to: crash }
 
   - id: crash
     kind: step
@@ -129,7 +129,7 @@ nodes:
     refs:
       - { label: "La console d'exceptions à l'écran", page: fr/02-exception-console.md }
     choices:
-      - { text: "Aller au bord de ce que nous savons", hint: "Là où notre connaissance s'arrête", to: frontier }
+      - { text: "Voir où s'arrête notre connaissance", hint: "Les questions encore ouvertes", to: frontier }
 
   - id: persist
     kind: side
@@ -146,7 +146,7 @@ nodes:
       - { label: "Démarrage non captif (note de recherche, en anglais)", page: research/2026-10-13-untethered-boot.md }
     choices:
       - { text: "Retourner au tiroir", hint: "Revenir au début du parcours", to: start }
-      - { text: "Aller au bord de ce que nous savons", hint: "Là où notre connaissance s'arrête", to: frontier }
+      - { text: "Voir où s'arrête notre connaissance", hint: "Les questions encore ouvertes", to: frontier }
 
   - id: frontier
     kind: frontier-hub
@@ -163,9 +163,9 @@ nodes:
       - { label: "Index de la recherche (en anglais)", page: research/index.md }
     choices:
       - { text: "Suivre un doigt sur l'écran", hint: "Le contrôleur tactile", to: f-touch }
-      - { text: "Suivre la radio", hint: "Le Wi-Fi et le coprocesseur", to: f-wifi }
-      - { text: "Suivre les données du disque", hint: "Le stockage, la mémoire flash NAND", to: f-nand }
-      - { text: "Ouvrir le Grimoire", hint: "Le côté noyau de ces questions", to: grimoire }
+      - { text: "Suivre le signal radio", hint: "Le Wi-Fi et le coprocesseur", to: f-wifi }
+      - { text: "Suivre les données stockées", hint: "Le stockage : la mémoire flash NAND", to: f-nand }
+      - { text: "Ouvrir le Grimoire", hint: "Ce que dit le noyau sur ces questions", to: grimoire }
       - { text: "Retourner au tiroir", hint: "Revenir au début du parcours", to: start }
 
   - id: f-touch
@@ -174,7 +174,7 @@ nodes:
     tag: HYPOTHESIS
     know: |
       Les lignes de reset et de sélection de puce se lisent comme des sorties pilotées à l'état bas. Deux registres du PMU,
-      lus dans le code du pilote comme les validations d'alimentation et d'horloge du tactile, ont été écrits puis restaurés. Avec l'alimentation, la ligne de reset relâchée se lit à
+      lus dans le code du pilote comme les commandes d'activation de l'alimentation et de l'horloge du tactile, ont été écrits puis restaurés. Avec l'alimentation, la ligne de reset relâchée se lit à
       l'état haut ; sans alimentation, elle se lit à l'état bas. Les registres au repos du bloc SPI ont été lus et son horloge
       était déjà active. Un test de transfert sans périphérique, avec la recette du pilote du noyau, n'a fait bouger aucun compteur.
     guess: |
@@ -197,7 +197,7 @@ nodes:
       - { label: "Carte matérielle : contrôleur tactile (en anglais)", page: en/03-hardware-map.md#touch-controller }
       - { label: "Préconditions du contrôleur tactile (en anglais)", page: research/2026-10-16-touch-n88-preconditions.md }
     choices:
-      - { text: "Regarder une autre question ouverte", hint: "Retour au bord de ce que nous savons", to: frontier }
+      - { text: "Voir une autre question ouverte", hint: "Retour à la liste des questions ouvertes", to: frontier }
 
   - id: f-wifi
     kind: frontier
@@ -230,7 +230,7 @@ nodes:
       - { label: "Carte matérielle : Wi-Fi et SDIO", page: fr/03-hardware-map.md#wi-fi-et-sdio }
       - { label: "Le Wi-Fi et le coprocesseur : architecture (en anglais)", page: research/2026-10-16-wifi-iop-architecture.md }
     choices:
-      - { text: "Regarder une autre question ouverte", hint: "Retour au bord de ce que nous savons", to: frontier }
+      - { text: "Voir une autre question ouverte", hint: "Retour à la liste des questions ouvertes", to: frontier }
 
   - id: f-nand
     kind: frontier
@@ -247,7 +247,7 @@ nodes:
     refs:
       - { label: "Carte matérielle : NAND", page: fr/03-hardware-map.md#nand }
     choices:
-      - { text: "Regarder une autre question ouverte", hint: "Retour au bord de ce que nous savons", to: frontier }
+      - { text: "Voir une autre question ouverte", hint: "Retour à la liste des questions ouvertes", to: frontier }
 
   - id: grimoire
     kind: grimoire-hub
@@ -257,7 +257,7 @@ nodes:
       Le Grimoire est notre ensemble de notes de lecture sur le logiciel système du téléphone : les extensions du noyau et
       l'étape de démarrage, décompilées depuis le firmware de son propriétaire. Chaque entrée dit quelle fonction fait quoi,
       quelles valeurs elle emploie, ce que nous avons vérifié et chaque question que nous n'avons pas pu clore. C'est le
-      raccourci pour les lecteurs qui veulent le côté noyau de l'histoire avant, ou à la place, des observations sur le téléphone.
+      raccourci pour les lecteurs qui veulent lire le système lui-même avant, ou à la place, des observations sur le téléphone.
 
       Rien ici n'est du code d'Apple : une entrée consigne des adresses, des constantes, une structure et nos conclusions. Une
       affirmation marquée *device disassembly verified* a été lue dans le code ; elle n'a pas forcément été vue fonctionner sur le

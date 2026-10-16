@@ -21,7 +21,7 @@ Chaque entrée est une fonction ou une table lue dans le binaire décompilé. El
 
 ## GPIO function apply (default configuration and set)
 
-Entrée `0x8075bb8c` · Relecture : partial · 3 affirmations · 2 questions ouvertes
+Point d'entrée `0x8075bb8c` · Relecture : partielle · 3 affirmations · 2 questions ouvertes
 
 - **PMU-GPIOAPPLY-001** (device disassembly verified): The function keeps a descriptor pointer (this+0x1c) with the pin number as the word at offset 8 and four bytes at offsets 0xc to 0xf.
 - **PMU-GPIOAPPLY-002** (device disassembly verified): Called with a value, it calls the setter with function = (value != 0) and polarity flag = (byte +0xd != 0).
@@ -34,7 +34,7 @@ Entrée `0x8075bb8c` · Relecture : partial · 3 affirmations · 2 questions ouv
 
 ## GPIO masked update (register 0x50+pin and per-pin 3-bit fields at 0x59..0x5b)
 
-Relecture : partial · 1 affirmation · 1 question ouverte
+Relecture : partielle · 1 affirmation · 1 question ouverte
 
 - **PMU-GPIOBITS-001** (device disassembly verified): Under the lock at this+0x9c, for a pin <= 7 and a non-zero mask it reads register 0x50 + pin, replaces the bits selected by the mask with the given value, and writes it back.
 
@@ -44,7 +44,7 @@ Relecture : partial · 1 affirmation · 1 question ouverte
 
 ## setGPIOFunction (the driver's own message says '_setGPIOFunction')
 
-Entrée `0x8075b980` · Relecture : complete · 1 affirmation · 3 questions ouvertes
+Point d'entrée `0x8075b980` · Relecture : complète · 1 affirmation · 3 questions ouvertes
 
 - **PMU-GPIOFN-001** (device disassembly verified): Arguments (this, pin, function, polarity flag).
 
@@ -56,7 +56,7 @@ Entrée `0x8075b980` · Relecture : complete · 1 affirmation · 3 questions ouv
 
 ## LDO function initialiser (applies the descriptor once)
 
-Entrée `0x8075bf34` · Relecture : complete · 1 affirmation · 2 questions ouvertes
+Point d'entrée `0x8075bf34` · Relecture : complète · 1 affirmation · 2 questions ouvertes
 
 - **PMU-LDOINIT-001** (device disassembly verified): Reads the function descriptor (pointer at this+0x1c), calls the setter 0x8075bda4 once with: the LDO index from byte 8, the 15-bit value from the half-word at offset 10 (mask 0x7fff), the flag from bit 15 of that half-word, and '…
 
@@ -67,7 +67,7 @@ Entrée `0x8075bf34` · Relecture : complete · 1 affirmation · 2 questions ouv
 
 ## setLDO (working name; the driver's own log text says '_setLDO')
 
-Entrée `0x8075bda4` · Relecture : complete · 4 affirmations · 3 questions ouvertes
+Point d'entrée `0x8075bda4` · Relecture : complète · 4 affirmations · 3 questions ouvertes
 
 - **PMU-LDO-001** (device disassembly verified): The function takes (this, index, millivolts, flag A, on) and returns the error 0xe00002c2 when index > 11.
 - **PMU-LDO-002** (device disassembly verified): A table of twelve 8-byte entries at 0x80764174 (in __const) gives for each index: a minimum (u16, mV), a step, a count, a mask, a secondary-enable mask, an enable register and an enable bit mask.

@@ -21,7 +21,7 @@ Chaque entrée est une fonction ou une table lue dans le binaire décompilé. El
 
 ## addr_adjust_by_version (working name, not Apple's)
 
-Entrée `0x80713020` · Relecture : complete · 1 affirmation · 1 question ouverte
+Point d'entrée `0x80713020` · Relecture : complète · 1 affirmation · 1 question ouverte
 
 - **ARM7M-ADDR-001** (device disassembly verified): A method (referenced from the table slot at 0x807143f8) takes one 32-bit argument and branches on this+0x64 (the iop-version value).
 
@@ -31,7 +31,7 @@ Entrée `0x80713020` · Relecture : complete · 1 affirmation · 1 question ouve
 
 ## AppleARM7M metaclass constructor
 
-Entrée `0x8071347c` · Relecture : complete · 1 affirmation · 0 questions ouvertes
+Point d'entrée `0x8071347c` · Relecture : complète · 1 affirmation · 0 questions ouvertes
 
 - **ARM7M-META-001** (device disassembly verified): The metaclass constructor registers the name "AppleARM7M" with superclass metaclass object 0x8039ab10 (IOSlaveCPU's, per the module init of IOSlaveProcessor.kext) and instance size 0x90 (144 bytes), and stores 0x80714048 as the m…
 
@@ -39,7 +39,7 @@ Entrée `0x8071347c` · Relecture : complete · 1 affirmation · 0 questions ouv
 
 ## AppleARM7M::start(IOService*)
 
-Relecture : partial · 2 affirmations · 3 questions ouvertes
+Relecture : partielle · 2 affirmations · 3 questions ouvertes
 
 - **ARM7M-START-001** (device disassembly verified): Maps two separate device-memory regions from the provider (mapDeviceMemoryWithIndex(0) and (1), same vtable slot +0x208), storing the IOMemoryMap objects at this+0x54 and this+0x5c, then caches each one's virtual address (vtable+…
 - **ARM7M-START-002** (device disassembly verified): this+0x50 holds the cached provider (AppleARMIODevice*).
@@ -52,7 +52,7 @@ Relecture : partial · 2 affirmations · 3 questions ouvertes
 
 ## AppleARM7M::startCPU(IOSlaveFirmware*)
 
-Entrée `0x80713664` · Relecture : complete · 6 affirmations · 11 questions ouvertes
+Point d'entrée `0x80713664` · Relecture : complète · 6 affirmations · 11 questions ouvertes
 
 - **ARM7M-STARTCPU-001** (device disassembly verified): Real entry point located at 0x80713664 (Thumb pointer 0x80713665), confirmed via its own "segLength >= md->getLength()" / AppleARM7M.cpp:155 REQUIRE string reference -- distinct from the pure-virtual-call trap stub at 0x80713e80,…
 - **ARM7M-STARTCPU-002** (device disassembly verified): Programs the index-0 register window (this+0x58) with, in this order: +0x100 <- 0x10; a readback of +0x100 tested for bit 1; +0x118 <- the constant 0x86300000; +0x110 <- the value stored at this+0x88 (result of an md vtable call,…
@@ -77,7 +77,7 @@ Entrée `0x80713664` · Relecture : complete · 6 affirmations · 11 questions o
 
 ## vic_write_0x18 (working name, not Apple's)
 
-Entrée `0x80713510` · Relecture : complete · 1 affirmation · 2 questions ouvertes
+Point d'entrée `0x80713510` · Relecture : complète · 1 affirmation · 2 questions ouvertes
 
 - **ARM7M-VIC-001** (device disassembly verified): A method (statically referenced from a vtable slot at 0x807143f0 -- proof of a code reference pointing at it, not proof that this slot is ever called at runtime) takes one integer argument (0 or 1) and writes a 32-bit word -- 8 i…
 

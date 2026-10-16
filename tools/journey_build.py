@@ -62,7 +62,7 @@ I18N = {
     },
     "fr": {
         "exploring": "Vous explorez : ", "how_sure": "Degré de certitude : ", "next": "Et maintenant ?",
-        "k_know": "Ce que nous savons", "k_guess": "Ce que nous supposons", "k_next": "Ce qui trancherait",
+        "k_know": "Ce que nous savons", "k_guess": "Ce que nous supposons", "k_next": "Ce qui permettrait de trancher",
         "experiment": "*Ceci décrit une expérience, pas une procédure à suivre : une étape qui écrit dans le matériel du téléphone n'est exécutée qu'après une description écrite et une décision explicite.*",
         "deeper": "**Aller plus loin dans la référence :** ", "evidence": "**Preuves :** ", "proof_ref": "Preuves et référence",
         "prev": "← Étape précédente", "map": "Carte du parcours", "manual": "Manuel de référence",
@@ -70,17 +70,17 @@ I18N = {
         "annot_read": "Lu", "annot_open": "Question ouverte", "annot_hyp": "Hypothèse", "annot_corr": "Correction",
         "st_device_disassembly_verified": "lu dans le code, pas vu fonctionner sur le téléphone",
         "st_source_verified": "lu dans une source, pas vu fonctionner sur le téléphone", "st_hypothesis": "hypothèse",
-        "settle": "Ce qui trancherait :",
+        "settle": "Ce qui permettrait de trancher :",
         "source": "Source : `%s` · analysé le %s · empreinte `%s` · [ouvrir la fiche](%s)",
         "corr_head": "Correction, %s", "corr_notes": "Corrections",
         "g_intro": "Chaque entrée est une fonction ou une table lue dans le binaire décompilé. Elle consigne ce qui a été lu, avec son statut ; aucun code d'Apple n'est stocké ici. Les notes elles-mêmes sont rédigées en anglais.",
-        "g_meta": "Relecture : %s · %d affirmation%s · %d question%s ouverte%s", "g_entry": "Entrée `%s` · ", "g_open": "Ouverte", "g_full": "Fiche complète",
+        "g_meta": "Relecture : %s · %d affirmation%s · %d question%s ouverte%s", "g_entry": "Point d'entrée `%s` · ", "g_open": "Ouverte", "g_full": "Fiche complète",
         "km_title": "Carte de ce que nous savons",
         "km_intro": "Une tuile par entrée. La couleur est l'état de relecture ; le nombre est celui des questions qui restent ouvertes.",
         "km_legend": "Légende : ✓ relue (vert), ◐ relue en partie (ambre), ○ non relue (gris) ; le nombre est celui des questions ouvertes.",
         "km_total": "%d entrées, %d affirmations, %d questions ouvertes.",
         "km_row": "**%s** · %d entrée%s · %d affirmation%s · %d question%s ouverte%s",
-        "back_grimoire": "Retour au Grimoire.", "kernel_side": "Côté noyau : %s (le Grimoire).",
+        "back_grimoire": "Retour au Grimoire.", "kernel_side": "Ce que dit le noyau : %s (le Grimoire).",
         "g_missions_hub": "**Envie d'aider ?** Chaque question ouverte peut devenir une mission : voir les [missions](../../en/missions.md) (en anglais).",
         "g_missions_head": "Missions sur ce binaire", "g_missions_all": "Toutes les missions et comment en prendre une (en anglais)",
         "rv_complete": "relue", "rv_partial": "relue en partie", "rv_none": "non relue", "q_open": "question(s) ouverte(s)",
@@ -342,10 +342,13 @@ def grimoire_body(n, lang):
         claims = y.get("claims") or []
         open_q = review.get("unresolved") or []
         out += ["## %s" % fiche_title(y), ""]
+        state = review.get("status", "unknown")
+        if lang == "fr":
+            state = {"complete": "complète", "partial": "partielle", "not_reviewed": "non relue", "unknown": "inconnue"}.get(state, state)
         if lang == "en":
-            meta = T(lang, "g_meta") % (review.get("status", "unknown"), len(claims), plural(len(claims)), len(open_q), plural(len(open_q)))
+            meta = T(lang, "g_meta") % (state, len(claims), plural(len(claims)), len(open_q), plural(len(open_q)))
         else:
-            meta = T(lang, "g_meta") % (review.get("status", "unknown"), len(claims), plural(len(claims)), len(open_q), plural(len(open_q)), plural(len(open_q)))
+            meta = T(lang, "g_meta") % (state, len(claims), plural(len(claims)), len(open_q), plural(len(open_q)), plural(len(open_q)))
         if y.get("entry_code_address"):
             meta = T(lang, "g_entry") % y["entry_code_address"] + meta
         out += [meta, ""]

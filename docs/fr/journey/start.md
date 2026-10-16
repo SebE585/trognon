@@ -30,8 +30,8 @@ pouvez partir à tout moment vers le [manuel de référence](../README.md), ou r
 
 <div class="journey-choices" markdown>
 
-- [Chercher une porte d'entrée<span class="journey-hint">Comprendre le mode DFU</span>](dfu.md)
-- [Vérifier ce qui survivra à l'extinction<span class="journey-hint">Comprendre pourquoi le démarrage est captif</span>](persist.md)
+- [Chercher un moyen d'entrer<span class="journey-hint">Comprendre le mode DFU</span>](dfu.md)
+- [Vérifier ce qui survit à l'extinction du téléphone<span class="journey-hint">Comprendre pourquoi le démarrage est captif</span>](persist.md)
 - [Ouvrir le Grimoire<span class="journey-hint">Lire directement les analyses du logiciel du téléphone</span>](grimoire.md)
 
 </div>

@@ -26,7 +26,7 @@ d'autre n'a été lu.
 
 Pas encore de supposition : les autres lignes de sélection et le second bus n'ont pas été sondés, donc rien n'est présumé à leur sujet.
 
-## Ce qui trancherait
+## Ce qui permettrait de trancher
 
 Une première lecture de page par le contrôleur. Elle n'a pas encore été conçue.
 
@@ -36,7 +36,7 @@ Une première lecture de page par le contrôleur. Elle n'a pas encore été con�
 
 <div class="journey-choices" markdown>
 
-- [Regarder une autre question ouverte<span class="journey-hint">Retour au bord de ce que nous savons</span>](frontier.md)
+- [Voir une autre question ouverte<span class="journey-hint">Retour à la liste des questions ouvertes</span>](frontier.md)
 
 </div>
 

@@ -29,8 +29,8 @@ En mode DFU, la ROM de démarrage du téléphone attend une image par USB au lie
 
 <div class="journey-choices" markdown>
 
-- [Utiliser la faille<span class="journey-hint">Voir ce que l'exploit nous donne</span>](pwned.md)
-- [Vérifier ce qui survivra à l'extinction<span class="journey-hint">Comprendre pourquoi le démarrage est captif</span>](persist.md)
+- [Utiliser la faille<span class="journey-hint">Voir ce que l'exploit permet</span>](pwned.md)
+- [Vérifier ce qui survit à l'extinction du téléphone<span class="journey-hint">Comprendre pourquoi le démarrage est captif</span>](persist.md)
 
 </div>
 

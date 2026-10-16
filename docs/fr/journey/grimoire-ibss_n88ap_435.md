@@ -21,7 +21,7 @@ Chaque entrée est une fonction ou une table lue dans le binaire décompilé. El
 
 ## iBSS clock-gate initialisation (set_gates(mask, on) at 0x8400dd04 and its wrapper)
 
-Entrée `0x8400dd58` · Relecture : complete · 6 affirmations · 2 questions ouvertes
+Point d'entrée `0x8400dd58` · Relecture : complète · 6 affirmations · 2 questions ouvertes
 
 - **IBSS-CLK-001** (device disassembly verified): The routine at 0x8400dd04 takes a 64-bit mask (r1:r0) and a flag (r2).
 - **IBSS-CLK-002** (device disassembly verified): The wrapper at 0x8400dd58 calls it twice: with the mask lo 0x01000001, hi 0x00021030 and flag 1 (gates 0x00, 0x18, 0x24, 0x2C, 0x2D, 0x31 on), then with the complement 0xFEFFFFFE / 0xFFFDEFCF and flag 0 (every other gate in 0 to…
@@ -37,7 +37,7 @@ Entrée `0x8400dd58` · Relecture : complete · 6 affirmations · 2 questions ou
 
 ## iBSS gpio_configure(pin id, mode) and its per-pad default table
 
-Entrée `0x84001354` · Relecture : complete · 3 affirmations · 4 questions ouvertes
+Point d'entrée `0x84001354` · Relecture : complète · 3 affirmations · 4 questions ouvertes
 
 - **IBSS-GPIO-001** (device disassembly verified): The routine takes a pin id (port in bits 15 to 8, pin in bits 2 to 0) and a mode 0 to 7.
 - **IBSS-GPIO-002** (device disassembly verified): Mode 4 reads a 16-bit entry at 0x84017690 + 2 * index (index = 8 * port + pin) and uses its low ten bits: a table of per-pad default configurations (376 entries read here).
@@ -52,7 +52,7 @@ Entrée `0x84001354` · Relecture : complete · 3 affirmations · 4 questions ou
 
 ## iBSS peripheral tables (SPI, I2C0, platform pin list): data read, no code
 
-Relecture : not_reviewed · 2 affirmations · 2 questions ouvertes
+Relecture : non relue · 2 affirmations · 2 questions ouvertes
 
 - **IBSS-TAB-001** (source verified): A table of SPI controllers at 0x84017b50 holds, per bus, the register addresses of the block (0x82000000, 0x82100000, 0x82200000 and their offsets 0x04, 0x08, 0x0c, 0x10, 0x20, 0x30, 0x34, 0x38 ... 0x4c), then two words: SPI0 gat…
 - **IBSS-TAB-002** (source verified): A table at 0x8401905c holds for I2C0 the pin ids 0x400 and 0x401 (the SCL and SDA pads the project drives by bit banging), the word 0x13, and the register addresses 0x83200000, 0x83200008, 0x8320000c ... The device tree's clock-g…

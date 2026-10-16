@@ -21,7 +21,7 @@ Chaque entrée est une fonction ou une table lue dans le binaire décompilé. El
 
 ## EmbeddedIOP start-up path: _prepareFirmwareImage, start-IOP, start() middle, address translator
 
-Entrée `0x80767cb4` · Relecture : partial · 6 affirmations · 7 questions ouvertes
+Point d'entrée `0x80767cb4` · Relecture : partielle · 6 affirmations · 7 questions ouvertes
 
 - **EMBIOP-SEQ-001** (device disassembly verified): _prepareFirmwareImage stores at this+0xcc the result of casting to IOSlaveFirmware the service found with waitForService(nameMatching(name)), where name is the string property IOPFirmwareName of the driver (REQUIRE sites for sour…
 - **EMBIOP-SEQ-002** (device disassembly verified): The firmware kext's slot +0x350 returns the constant 0x80481000 (the image base) and its slot +0x34c the descriptor of IOP-GETMD-001.
@@ -42,7 +42,7 @@ Entrée `0x80767cb4` · Relecture : partial · 6 affirmations · 7 questions ouv
 
 ## EmbeddedIOP: survey by strings (no function read yet)
 
-Relecture : not_reviewed · 1 affirmation · 2 questions ouvertes
+Relecture : non relue · 1 affirmation · 2 questions ouvertes
 
 - **EMBIOP-001** (source verified): This kext (bundle com.apple.driver.EmbeddedIOP, source tree EmbeddedIOP-20.4) contains strings naming EmbeddedIOP::start, EmbeddedIOP::_prepareFirmwareImage(), EmbeddedIOP::_iopLocateFirmwareVariableWithProperty, a lookup of a fi…
 

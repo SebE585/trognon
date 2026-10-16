@@ -18,7 +18,7 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → **Le Grimoire**
 Le Grimoire est notre ensemble de notes de lecture sur le logiciel système du téléphone : les extensions du noyau et
 l'étape de démarrage, décompilées depuis le firmware de son propriétaire. Chaque entrée dit quelle fonction fait quoi,
 quelles valeurs elle emploie, ce que nous avons vérifié et chaque question que nous n'avons pas pu clore. C'est le
-raccourci pour les lecteurs qui veulent le côté noyau de l'histoire avant, ou à la place, des observations sur le téléphone.
+raccourci pour les lecteurs qui veulent lire le système lui-même avant, ou à la place, des observations sur le téléphone.
 
 Rien ici n'est du code d'Apple : une entrée consigne des adresses, des constantes, une structure et nos conclusions. Une
 affirmation marquée *device disassembly verified* a été lue dans le code ; elle n'a pas forcément été vue fonctionner sur le

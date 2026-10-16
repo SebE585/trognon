@@ -29,7 +29,7 @@ Le coprocesseur possède peut-être la vraie fenêtre SDIO, le processeur princi
 On ne sait pas quelle porte d'horloge physique appartient au bloc SDIO, ni au coprocesseur : les numéros de portes du
 device tree ne sont pas les numéros physiques.
 
-## Ce qui trancherait
+## Ce qui permettrait de trancher
 
 Un relevé en lecture seule de toutes les portes d'horloge et des registres de masque d'horloge est construit et non lancé.
 Il dirait quels blocs sont cadencés avant que rien ne soit démarré.
@@ -40,10 +40,10 @@ Il dirait quels blocs sont cadencés avant que rien ne soit démarré.
 
 <div class="journey-choices" markdown>
 
-- [Regarder une autre question ouverte<span class="journey-hint">Retour au bord de ce que nous savons</span>](frontier.md)
-- [Côté noyau : AppleARM7M (le Grimoire).](grimoire-applearm7m.md)
-- [Côté noyau : EmbeddedIOP (le Grimoire).](grimoire-embeddediop.md)
-- [Côté noyau : IOP_s5l8920x_firmware (le Grimoire).](grimoire-iop_s5l8920x_firmware.md)
+- [Voir une autre question ouverte<span class="journey-hint">Retour à la liste des questions ouvertes</span>](frontier.md)
+- [Ce que dit le noyau : AppleARM7M (le Grimoire).](grimoire-applearm7m.md)
+- [Ce que dit le noyau : EmbeddedIOP (le Grimoire).](grimoire-embeddediop.md)
+- [Ce que dit le noyau : IOP_s5l8920x_firmware (le Grimoire).](grimoire-iop_s5l8920x_firmware.md)
 
 </div>
 
@@ -60,7 +60,7 @@ Source : `EmbeddedIOP` · analysé le 2026-10-16 · empreinte `f7b66532a429` · 
 
 Meaning of the object-slot calls used throughout: slot +0x50 and +0x4c of the objects returned by allocateVisibleMemory (used here as an address getter and as 'inner descriptor'), +0x98 on a descriptor (physical-segment getter by its use: its result is passed to the provider slot +0x35c), +0x5c on the firmware descrip…
 
-*Ce qui trancherait :* read the slots in the kernelcache classes (IOMemoryDescriptor, IOBufferMemoryDescriptor) and EmbeddedIOP's own table
+*Ce qui permettrait de trancher :* read the slots in the kernelcache classes (IOMemoryDescriptor, IOBufferMemoryDescriptor) and EmbeddedIOP's own table
 
 Source : `EmbeddedIOP` · analysé le 2026-10-16 · empreinte `f7b66532a429` · [ouvrir la fiche](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/EmbeddedIOP/start_sequence.yaml)
 
@@ -68,7 +68,7 @@ Source : `EmbeddedIOP` · analysé le 2026-10-16 · empreinte `f7b66532a429` · 
 
 Indirect call at 0x80713686, firmware-object vtable slot +0x34c (arg: the IOSlaveFirmware).
 
-*Ce qui trancherait :* EMBIOP-SEQ-Q5
+*Ce qui permettrait de trancher :* EMBIOP-SEQ-Q5
 
 Source : `AppleARM7M` · analysé le 2026-10-16 · empreinte `f286d9fb9b05` · [ouvrir la fiche](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleARM7M/startCPU.yaml)
 

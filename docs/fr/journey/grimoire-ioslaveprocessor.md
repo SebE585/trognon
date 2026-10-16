@@ -21,7 +21,7 @@ Chaque entrée est une fonction ou une table lue dans le binaire décompilé. El
 
 ## class tables survey (pointer tables, destructor sizes, metaclass arguments)
 
-Relecture : partial · 4 affirmations · 3 questions ouvertes
+Relecture : partielle · 4 affirmations · 3 questions ouvertes
 
 - **IOSLAVE-TABLES-001** (device disassembly verified): FACTS. In the second entry of each instance table of this kext, the size passed to the delete call is 8 (table 0x8039a4cc), 0x10 (0x80399c88), 0x38 (0x8039a588), 0x50 (0x80399d48 and 0x8039a110) and 0x68 (0x8039a678).
 - **IOSLAVE-TABLES-002** (device disassembly verified): FACT. Three functions at 0x80399728, 0x8039974c and 0x80399764 store the table 0x8039a678 and then call a base function (the pattern of destructors), and the first passes 0x68 to a delete call.
@@ -36,7 +36,7 @@ Relecture : partial · 4 affirmations · 3 questions ouvertes
 
 ## field_0x58_getter (working name, not Apple's)
 
-Entrée `0x8039901c` · Relecture : complete · 1 affirmation · 1 question ouverte
+Point d'entrée `0x8039901c` · Relecture : complète · 1 affirmation · 1 question ouverte
 
 - **IOSLAVE-GETTER-001** (device disassembly verified): A two-byte-instruction function that returns the 32-bit field at offset +0x58 of its object (ldr r0,[r0,#0x58]; bx lr).
 
@@ -46,7 +46,7 @@ Entrée `0x8039901c` · Relecture : complete · 1 affirmation · 1 question ouve
 
 ## module init (OSMetaClass registration loop)
 
-Entrée `0x80399594` · Relecture : complete · 2 affirmations · 2 questions ouvertes
+Point d'entrée `0x80399594` · Relecture : complète · 2 affirmations · 2 questions ouvertes
 
 - **IOSLAVE-INIT-001** (device disassembly verified): This kext's module-load code registers six OSMetaClass instances -- IOSlaveMemory (8), IOSlaveMemoryBuffer (16), IOSlaveEndpoint (56), IOSlaveCPU (80), IOSlaveFirmware (80), IOSlaveProcessor (104) bytes -- each size read as a lit…
 - **IOSLAVE-INIT-002** (device disassembly verified): No loading/firmware logic found within the reviewed_ranges above (the init loop and the six constructor-call sites, ~230 of this kext's 2968 __text bytes).

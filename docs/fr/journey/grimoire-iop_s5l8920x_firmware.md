@@ -21,7 +21,7 @@ Chaque entrée est une fonction ou une table lue dans le binaire décompilé. El
 
 ## IOP_s5l8920x_firmware class registration (metaclass constructor, allocator, instance constructor head)
 
-Entrée `0x80480328` · Relecture : partial · 2 affirmations · 1 question ouverte
+Point d'entrée `0x80480328` · Relecture : partielle · 2 affirmations · 1 question ouverte
 
 - **IOP-CLASS-001** (device disassembly verified): The metaclass constructor registers the class name "IOP_s5l8920x_firmware" with superclass metaclass object 0x8039aaf8 (IOSlaveFirmware's, per the module init of IOSlaveProcessor.kext) and instance size 0x54 (84 bytes), then stor…
 - **IOP-CLASS-002** (device disassembly verified): The allocator (entry of the metaclass table 0x804805c0 at offset +0x44) allocates 0x54 bytes and calls the instance constructor 0x804802b4, which calls the IOSlaveFirmware base constructor 0x803997c5 and stores 0x80480614 as the…
@@ -32,7 +32,7 @@ Entrée `0x80480328` · Relecture : partial · 2 affirmations · 1 question ouve
 
 ## firmware_memory_descriptor_getter (working name, not Apple's)
 
-Entrée `0x80480254` · Relecture : complete · 1 affirmation · 3 questions ouvertes
+Point d'entrée `0x80480254` · Relecture : complète · 1 affirmation · 3 questions ouvertes
 
 - **IOP-GETMD-001** (device disassembly verified): A lazy getter: if the field at this+0x50 is zero, it calls the external function 0x801ea699 with (0x80481000, 0x1b000, 3), stores the result at this+0x50, calls the result's vtable slot +0xa0 with (result, 0), and returns this+0x…
 

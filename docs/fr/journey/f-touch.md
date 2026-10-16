@@ -20,7 +20,7 @@ Degré de certitude : <span class="tag tag-hyp">HYPOTHESIS</span>
 ## Ce que nous savons
 
 Les lignes de reset et de sélection de puce se lisent comme des sorties pilotées à l'état bas. Deux registres du PMU,
-lus dans le code du pilote comme les validations d'alimentation et d'horloge du tactile, ont été écrits puis restaurés. Avec l'alimentation, la ligne de reset relâchée se lit à
+lus dans le code du pilote comme les commandes d'activation de l'alimentation et de l'horloge du tactile, ont été écrits puis restaurés. Avec l'alimentation, la ligne de reset relâchée se lit à
 l'état haut ; sans alimentation, elle se lit à l'état bas. Les registres au repos du bloc SPI ont été lus et son horloge
 était déjà active. Un test de transfert sans périphérique, avec la recette du pilote du noyau, n'a fait bouger aucun compteur.
 
@@ -30,7 +30,7 @@ Les broches d'horloge et de données du SPI sont peut-être des broches dédiée
 Le contrôleur a peut-être besoin qu'on charge un firmware avant de répondre. Un niveau haut sur la ligne de reset pourrait
 venir d'un rappel sur la carte ou du contrôleur lui-même.
 
-## Ce qui trancherait
+## Ce qui permettrait de trancher
 
 Établir la recette de transfert du contrôleur SPI sans périphérique (un second test, avec la recette d'OpeniBoot, est
 construit et non lancé), puis un premier paquet de vérification, dont un premier octet de réponse `0xD0` signifierait que
@@ -42,10 +42,10 @@ le contrôleur est dans son chargeur.
 
 <div class="journey-choices" markdown>
 
-- [Regarder une autre question ouverte<span class="journey-hint">Retour au bord de ce que nous savons</span>](frontier.md)
-- [Côté noyau : AppleMultitouchSPI (le Grimoire).](grimoire-applemultitouchspi.md)
-- [Côté noyau : AppleS5L8900X (le Grimoire).](grimoire-apples5l8900x.md)
-- [Côté noyau : AppleD1755 (le Grimoire).](grimoire-appled1755.md)
+- [Voir une autre question ouverte<span class="journey-hint">Retour à la liste des questions ouvertes</span>](frontier.md)
+- [Ce que dit le noyau : AppleMultitouchSPI (le Grimoire).](grimoire-applemultitouchspi.md)
+- [Ce que dit le noyau : AppleS5L8900X (le Grimoire).](grimoire-apples5l8900x.md)
+- [Ce que dit le noyau : AppleD1755 (le Grimoire).](grimoire-appled1755.md)
 
 </div>
 
@@ -68,7 +68,7 @@ Source : `AppleMultitouchSPI` · analysé le 2026-10-16 · empreinte `b3db0be99e
 
 Body of the bootload method itself (virtual slot 0x378 of the driver class, called up to three times), which sends the firmware: its packet format, its source and its size were not found; the strings 'PreconstructedBootloadPacketType' and 'A-Speed Firmware' belong to it.
 
-*Ce qui trancherait :* find slot 0x378 of the class table and read it; locate the property or file that carries the firmware
+*Ce qui permettrait de trancher :* find slot 0x378 of the class table and read it; locate the property or file that carries the firmware
 
 Source : `AppleMultitouchSPI` · analysé le 2026-10-16 · empreinte `b3db0be99e24` · [ouvrir la fiche](https://github.com/SebE585/trognon/blob/main/tools/iop_analysis/catalog/AppleMultitouchSPI/bootload_flow_0x8056e2c0.yaml)
 

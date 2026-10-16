@@ -21,7 +21,7 @@ Chaque entrée est une fonction ou une table lue dans le binaire décompilé. El
 
 ## AppleMultitouchSPI::bootloadTimerFiredHandler()
 
-Entrée `0x8056e2c0` · Relecture : partial · 2 affirmations · 2 questions ouvertes
+Point d'entrée `0x8056e2c0` · Relecture : partielle · 2 affirmations · 2 questions ouvertes
 
 - **MT-BOOT-001** (device disassembly verified): The bootload timer handler returns without acting if the PowerOnly flag (byte this+0x7d4) is set or if the byte this+0x7d2 is set.
 - **MT-BOOT-002** (device disassembly verified): The routine at 0x8056e5d8 ("Checking if bootloaded (getting report info)") calls slot 0x3e8 with the report code 0xD3 and a four-byte buffer and returns whether the call succeeded.
@@ -33,7 +33,7 @@ Entrée `0x8056e2c0` · Relecture : partial · 2 affirmations · 2 questions ouv
 
 ## bootloader check (CHECK packet)
 
-Entrée `0x8056e4e8` · Relecture : complete · 2 affirmations · 3 questions ouvertes
+Point d'entrée `0x8056e4e8` · Relecture : complète · 2 affirmations · 3 questions ouvertes
 
 - **MT-CHECK-001** (device disassembly verified): Builds a four-byte packet on the stack with the bytes 05 00 00 06 (offsets 0 to 3), logs "Sending CHECK packet, to see if device is in bootloader", and sends it through the SPI device object at this+0x54 with a four-byte receive…
 - **MT-CHECK-002** (device disassembly verified): The exchange is the call of slot 0x368 on the SPI device object (this+0x54) with the transmit buffer (the four packet bytes), a length of 4, a four-byte receive buffer, a receive length of 4 and a zero flag.

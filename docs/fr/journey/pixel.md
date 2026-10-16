@@ -22,7 +22,7 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 
 L'écran est un framebuffer en `0x4fd00000`, de 320 par 480 pixels. Le contrôleur d'affichage avait déjà été réglé par
-l'étape de démarrage : notre code ne fait que dessiner. Comme le framebuffer est en écriture différée, le code purge le
+l'étape de démarrage : notre code ne fait que dessiner. Comme le framebuffer est en écriture différée, le code nettoie le
 cache de données après avoir dessiné, pour qu'un processeur figé laisse tout de même un écran fidèle.
 
 ![La console d'exceptions sur l'écran du 3GS](../../img/console-exceptions.png)
@@ -33,7 +33,7 @@ cache de données après avoir dessiné, pour qu'un processeur figé laisse tout
 
 <div class="journey-choices" markdown>
 
-- [Casser quelque chose exprès<span class="journey-hint">À quoi ressemble un plantage</span>](crash.md)
+- [Provoquer un plantage<span class="journey-hint">À quoi ressemble un plantage lisible</span>](crash.md)
 
 </div>
 

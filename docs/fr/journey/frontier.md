@@ -29,9 +29,9 @@ décision explicite.
 <div class="journey-choices" markdown>
 
 - [Suivre un doigt sur l'écran<span class="journey-hint">Le contrôleur tactile</span>](f-touch.md)
-- [Suivre la radio<span class="journey-hint">Le Wi-Fi et le coprocesseur</span>](f-wifi.md)
-- [Suivre les données du disque<span class="journey-hint">Le stockage, la mémoire flash NAND</span>](f-nand.md)
-- [Ouvrir le Grimoire<span class="journey-hint">Le côté noyau de ces questions</span>](grimoire.md)
+- [Suivre le signal radio<span class="journey-hint">Le Wi-Fi et le coprocesseur</span>](f-wifi.md)
+- [Suivre les données stockées<span class="journey-hint">Le stockage : la mémoire flash NAND</span>](f-nand.md)
+- [Ouvrir le Grimoire<span class="journey-hint">Ce que dit le noyau sur ces questions</span>](grimoire.md)
 - [Retourner au tiroir<span class="journey-hint">Revenir au début du parcours</span>](start.md)
 
 </div>

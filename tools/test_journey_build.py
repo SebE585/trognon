@@ -138,5 +138,23 @@ class AccessibilityTests(unittest.TestCase):
         self.assertNotIn("Missions on this binary", jb.grimoire_body(node, "en"))
 
 
+class FrenchWordingTests(unittest.TestCase):
+    """Literal calques that were found in the French pages and fixed; they must not come back."""
+    BANNED = ["au bord de ce que", "Retour au bord", "validations d'alimentation", "données du disque", "Demander quelque chose à voir",
+              "Casser quelque chose exprès", "Relecture : partial", "Relecture : complete", "Côté noyau :", "Ce qui trancherait"]
+
+    def test_no_known_calque_in_the_generated_french_pages(self):
+        pages = list((jb.DOCS / "fr" / "journey").glob("*.md")) + [jb.DOCS / "fr" / "README.md"]
+        for f in pages:
+            text = f.read_text()
+            for phrase in self.BANNED:
+                self.assertNotIn(phrase, text, "%s contains %r" % (f.name, phrase))
+
+    def test_a_french_review_state_is_translated(self):
+        node = {"binary": "B", "blurb": "", "fiches": [{"_file": "f.yaml", "function_name_apple": "x", "claims": [],
+                "review": {"status": "partial", "unresolved": []}}]}
+        self.assertIn("partielle", jb.grimoire_body(node, "fr"))
+
+
 if __name__ == "__main__":
     unittest.main()

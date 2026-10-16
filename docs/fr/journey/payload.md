@@ -29,7 +29,7 @@ en mode superviseur, interruptions non masquées.
 <div class="journey-choices" markdown>
 
 - [S'assurer qu'il a vraiment tourné<span class="journey-hint">Le marqueur et le nonce</span>](proof.md)
-- [Vérifier ce qui survivra à l'extinction<span class="journey-hint">Comprendre pourquoi le démarrage est captif</span>](persist.md)
+- [Vérifier ce qui survit à l'extinction du téléphone<span class="journey-hint">Comprendre pourquoi le démarrage est captif</span>](persist.md)
 
 </div>
 

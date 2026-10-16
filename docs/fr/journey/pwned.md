@@ -28,7 +28,7 @@ L'outil est `ipwndfu`, utilisé tel quel ; l'exploit lui-même n'est pas de nous
 
 <div class="journey-choices" markdown>
 
-- [Envoyer quelque chose qu'il exécutera<span class="journey-hint">L'étape de démarrage modifiée</span>](ibss.md)
+- [Lui envoyer quelque chose à exécuter<span class="journey-hint">L'étape de démarrage modifiée</span>](ibss.md)
 
 </div>
 

@@ -21,7 +21,7 @@ Chaque entrée est une fonction ou une table lue dans le binaire décompilé. El
 
 ## AppleS5L8900XClockController::start and its clock-gate function plumbing
 
-Entrée `0x8045e750` · Relecture : partial · 5 affirmations · 2 questions ouvertes
+Point d'entrée `0x8045e750` · Relecture : partielle · 5 affirmations · 2 questions ouvertes
 
 - **S5L-CLK-001** (device disassembly verified): The device tree's arm-io node carries function-clock_gate, 8 bytes: a phandle word and the selector 0x636c6b47 ("clkG" as a four-character code).
 - **S5L-CLK-002** (device disassembly verified): AppleS5L8900XClockController::start reads the device-tree properties clock-gate-defaults and clock-gate-suspend as 64-bit masks (two 32-bit words, stored at this+0x15c/0x160 and this+0x7a4/0x7a8) and writes them to the controller…
@@ -36,7 +36,7 @@ Entrée `0x8045e750` · Relecture : partial · 5 affirmations · 2 questions ouv
 
 ## SoC GPIO function apply (set, get and default application)
 
-Entrée `0x8045b1f0` · Relecture : partial · 3 affirmations · 3 questions ouvertes
+Point d'entrée `0x8045b1f0` · Relecture : partielle · 3 affirmations · 3 questions ouvertes
 
 - **SOC-GPIOFN-001** (device disassembly verified): The descriptor (pointer at this+0x1c) holds the pin word at offset 8 and bytes at offsets 0xc to 0xf.
 - **SOC-GPIOFN-002** (device disassembly verified): Default application (no value, no output pointer, no explicit type): if the type byte +0xc is 1, it calls slot 0x398 with level = byte +0xd XOR byte +0xe XOR 1, i.e.
@@ -50,7 +50,7 @@ Entrée `0x8045b1f0` · Relecture : partial · 3 affirmations · 3 questions ouv
 
 ## SPI device configuration (builds SETUP, CLKDIVIDER and the delay fields from a setting)
 
-Entrée `0x8045c7c8` · Relecture : complete · 2 affirmations · 2 questions ouvertes
+Point d'entrée `0x8045c7c8` · Relecture : complète · 2 affirmations · 2 questions ouvertes
 
 - **SPI-CONF-001** (device disassembly verified): Builds the SETUP value in this+0xd0 from the setting fields: it starts from this+0xa0 (0x4000 for spi-version 1) OR 0x18; the byte at offset 8, if non-zero, makes it 0x1c instead of 0x18; the byte at offset 9, if non-zero, adds 0…
 - **SPI-CONF-002** (device disassembly verified): CLKDIVIDER value (this+0xd8) = ceiling of (period at offset 4 times the 64-bit value this+0xc0) divided by 1,000,000,000, with a minimum of 2 for spi-version 0 when the result is 0 or 1.
@@ -62,7 +62,7 @@ Entrée `0x8045c7c8` · Relecture : complete · 2 affirmations · 2 questions ou
 
 ## SPI interrupt service (FIFO drain and refill) and transfer finish
 
-Entrée `0x8045c92c` · Relecture : complete · 2 affirmations · 2 questions ouvertes
+Point d'entrée `0x8045c92c` · Relecture : complète · 2 affirmations · 2 questions ouvertes
 
 - **SPI-ISR-001** (device disassembly verified): Loop: read STATUS (0x08); take two counts from it through the accessors (slot 0x394 then slot 0x398); first drain the receive FIFO: for each of the RX-count entries read RXDATA (0x20), store the byte at the receive pointer this+0…
 - **SPI-ISR-002** (device disassembly verified): When all counts are zero, the routine clears bit 0x100 in the saved SETUP extra bits (this+0xd4), keeps only bit 0x200000 of them when spi-version is not 0, and writes SETUP (0x04) with those bits ORed with this+0xd0; it returns…
@@ -74,7 +74,7 @@ Entrée `0x8045c92c` · Relecture : complete · 2 affirmations · 2 questions ou
 
 ## SPI register helpers (PIN chip-select bit, STATUS FIFO fields, register read and write)
 
-Entrée `0x8045ca90` · Relecture : complete · 3 affirmations · 1 question ouverte
+Point d'entrée `0x8045ca90` · Relecture : complète · 3 affirmations · 1 question ouverte
 
 - **SPI-REG-001** (device disassembly verified): Two virtual methods (slots 0x3a0 and 0x3a4 of the controller) are one-line register accessors: read32(offset) loads the word at the base kept at this+0x7c plus the offset, and write32(offset, value) stores a word there.
 - **SPI-REG-002** (device disassembly verified): STATUS field accessors (small functions at 0x8045cabc, 0x8045cad4, 0x8045caf4, 0x8045cb0c): for spi-version 0 the TX FIFO count is (STATUS >> 4) & 0xf with free space 8 minus it, and the RX count is (STATUS >> 8) & 0xf; for spi-v…
@@ -86,7 +86,7 @@ Entrée `0x8045ca90` · Relecture : complete · 3 affirmations · 1 question ouv
 
 ## AppleS5L8900XSPIController::start(IOService*)
 
-Entrée `0x8045cf08` · Relecture : complete · 2 affirmations · 3 questions ouvertes
+Point d'entrée `0x8045cf08` · Relecture : complète · 2 affirmations · 3 questions ouvertes
 
 - **SPI-START-001** (device disassembly verified): Reads the property spi-version (0 if absent).
 - **SPI-START-002** (device disassembly verified): Looks up two clocks by name through the object at this+0x74, 'pclk' and 'nclk', each a 64-bit value that must be non-zero; reads the node property internal-cs into the byte at this+0x94; maps the device memory region 0 of the pro…
@@ -99,7 +99,7 @@ Entrée `0x8045cf08` · Relecture : complete · 2 affirmations · 3 questions ou
 
 ## SPI transfer start (head: register programming)
 
-Entrée `0x8045cb54` · Relecture : partial · 4 affirmations · 2 questions ouvertes
+Point d'entrée `0x8045cb54` · Relecture : partielle · 4 affirmations · 2 questions ouvertes
 
 - **SPI-XFER-001** (device disassembly verified): Before moving data, the function writes: CLKDIVIDER (0x30) with this+0xd8, SPIDD (0x38) with this+0xdc, STATUS (0x08) with this+0xac, SETUP (0x04) with this+0xd0, and CONTROL (0x00) with this+0xcc; it later writes SPCNT (0x34) wi…
 - **SPI-XFER-002** (device disassembly verified): Transmit-by-FIFO path: while fewer than this+0xa8 bytes (the FIFO depth: 16 for spi-version 1) have been written and bytes remain (this+0xfc), it writes one byte at a time to register 0x10 (TXDATA) from the buffer at this+0x10c.
@@ -113,7 +113,7 @@ Entrée `0x8045cb54` · Relecture : partial · 4 affirmations · 2 questions ouv
 
 ## SPI per-device setting validation (working name)
 
-Entrée `0x8045ce50` · Relecture : complete · 2 affirmations · 2 questions ouvertes
+Point d'entrée `0x8045ce50` · Relecture : complète · 2 affirmations · 2 questions ouvertes
 
 - **SPI-VALID-001** (device disassembly verified): Takes a setting structure and returns 1 if it is acceptable, else 0.
 - **SPI-VALID-002** (device disassembly verified): The word at offset 4 must be non-zero, and period times the 64-bit value at this+0xc0 (read from the clock 'nclk' at start) plus 999999999 must not exceed 0x1DD11EAC9FF, i.e.

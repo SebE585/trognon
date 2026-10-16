@@ -30,7 +30,7 @@ observés sur le téléphone.
 
 <div class="journey-choices" markdown>
 
-- [Aller au bord de ce que nous savons<span class="journey-hint">Là où notre connaissance s'arrête</span>](frontier.md)
+- [Voir où s'arrête notre connaissance<span class="journey-hint">Les questions encore ouvertes</span>](frontier.md)
 
 </div>
 

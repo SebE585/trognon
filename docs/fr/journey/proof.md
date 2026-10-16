@@ -30,7 +30,7 @@ identique.
 
 <div class="journey-choices" markdown>
 
-- [Demander quelque chose à voir<span class="journey-hint">Dessiner à l'écran</span>](pixel.md)
+- [Faire apparaître quelque chose à l'écran<span class="journey-hint">Le premier pixel</span>](pixel.md)
 
 </div>
 
