@@ -15,6 +15,7 @@ deleted — check the date before relying on a specific number or address.
 | 2026-10-15 | [Touch, Wi-Fi, NAND recon](2026-10-15-touch-wifi-nand-recon.md) | First reconnaissance pass before writing code for these three | active — the Wi-Fi/SDIO part (chip hypothesis, generic SDIO host code) is refined by the 2026-10-16 report below; NAND and touch findings stand |
 | 2026-10-15 | [OS port comparison](2026-10-15-os-port-comparison.md) | NuttX vs. our own kernel vs. Linux ARM vs. Zephyr | active |
 | 2026-10-16 | [Wi-Fi/IOP architecture](2026-10-16-wifi-iop-architecture.md) | The second, embedded ARM core and its role in SDIO/Wi-Fi — the longest-running thread, several corrections | active — consolidated in place (the report's own description), supersedes earlier Wi-Fi/IOP notes |
+| 2026-10-16 | [IOP start-up to first sign of life](2026-10-16-iop-boot-to-life.md) | Thread from the driver's `start`/`startCPU` to a hardware ladder, open links with the proof each needs | active — `startCPU` read in full, no observation attributable to the IOP yet |
 
 "Status" is a coarse read of whether a report is still the best current word on its topic,
 not a replacement for checking its date: "active" with no further note just means no later

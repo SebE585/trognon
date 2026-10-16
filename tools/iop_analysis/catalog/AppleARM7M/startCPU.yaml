@@ -8,16 +8,91 @@ entry_code_address: "0x80713664"       # real instruction (push {r4,r5,r6,r7,lr}
 thumb_entry_pointer: "0x80713665"      # callable/vtable value, LSB=1 per ARM/Thumb convention
 
 review:
-  status: partial
+  # `complete` is bounded to the reconstructed graph (2026-10-16): every
+  # instruction from entry to the single return (0x80713786) was read, and
+  # every INDIRECT call (blx reg) inside it is listed below as an open
+  # question with the proof needed to resolve it. The graph stops at those
+  # calls: what they do is NOT established by this fiche.
+  status: complete
   reviewed_ranges:
-    - ["0x80713664", "0x807136c4"]
-  unresolved:
+    - ["0x80713664", "0x80713788"]     # code, entry to pop {pc}
+    - ["0x80713788", "0x807137b0"]     # literal pool (constants read, not code)
+  resolved:
     - id: ARM7M-STARTCPU-Q1
-      text: "full body past ~0x807136c4 not traced tonight"
+      by: "full linear + branch trace of 0x80713664..0x80713786 on 2026-10-16 (this fiche)"
     - id: ARM7M-STARTCPU-Q2
-      text: "role of this+0x7c/0x80/0x84/0x88 touched early in this function -- plausibly _arm7mLock (a lock object, same external call 0x800670b0 seen in two other functions), not confirmed by name"
+      by: >
+        this+0x7c is passed to 0x800670b0 at entry and to 0x80067250 at the
+        single exit, and this+0x80 is a one-byte running flag tested right
+        after the first call. Structure supports lock/unlock; the callee
+        bodies are not read (see ARM7M-STARTCPU-Q7).
     - id: ARM7M-STARTCPU-Q3
-      text: "the fuller startCPU trace (base+0x100/0x110/0x114/0x118 writes) already exists in the research report, not re-verified here -- see evidence link"
+      by: "re-verified by direct disassembly: ARM7M-STARTCPU-002 corrected, not merely confirmed"
+  unresolved:
+    - id: ARM7M-STARTCPU-Q4
+      text: >
+        Indirect call at 0x80713686, firmware-object vtable slot +0x34c (arg: the IOSlaveFirmware).
+        Returns an object used as `md` in the next two calls. Role: probably the firmware's memory descriptor.
+      proof_needed: "read slot +0x34c of the IOSlaveFirmware vtable in IOSlaveProcessor.kext.bin (class size 80, IOSLAVE-INIT-001) and its body"
+    - id: ARM7M-STARTCPU-Q5
+      text: >
+        Indirect call at 0x80713694, md vtable slot +0x98, args (offset=0, &segLength). Result stored at this+0x88
+        and later written to window0+0x110. Plausibly a physical-address getter (segLength is its out-parameter,
+        compared against md->getLength()); not confirmed.
+      proof_needed: "hardware: after the sequence runs, +0x110 equals the physical address of the loaded image; or static: concrete md class vtable slot +0x98"
+    - id: ARM7M-STARTCPU-Q6
+      text: >
+        Indirect call at 0x807136a2, md vtable slot +0x84, no args. The source-location string at line 155 names it
+        md->getLength(); the slot number itself is not independently checked.
+      proof_needed: "same vtable as Q5"
+    - id: ARM7M-STARTCPU-Q7
+      text: >
+        External calls through literals at 0x80713672 -> 0x800670b0 (entry) and 0x8071377e -> 0x80067250 (exit),
+        both with this+0x7c. Expected lock/unlock, bodies never read.
+      proof_needed: "disassemble both addresses in the decrypted kernelcache"
+    - id: ARM7M-STARTCPU-Q8
+      text: >
+        Indirect calls at 0x807136e4 (provider vtable +0x360, args 1,0) and 0x807136f4 (provider vtable +0x364,
+        args 1,0,0), between the size computation and the first register write. Provider is this+0x50
+        (AppleARMIODevice, ARM7M-START-002). Role unknown; a power/clock/reset step is only a guess.
+      proof_needed: >
+        read the two slots in the kernelcache; compare with the clock gate already at 0x0000000F on the device
+        (evidence/20261016T094945Z-trace_iop_clkgate/), which would make a pure clock-enable call redundant here
+    - id: ARM7M-STARTCPU-Q9
+      text: >
+        Indirect call at 0x807136fe on the object at this+0x68, vtable +0x54, arg 1. No store to this+0x68 was
+        found in start() (grep of the saved disassembly for `[r4,0x68]` writes is empty), so its producer is unknown.
+      proof_needed: "find the writer of this+0x68 (init, a setter, or a later method); then the object's class"
+    - id: ARM7M-STARTCPU-Q10
+      text: >
+        Optional indirect call at 0x8071375e on the object at this+0x6c (skipped if null), vtable +0x50,
+        args (0,0,0), just before the start write. Producer of this+0x6c unknown, same as Q9.
+      proof_needed: "find the writer of this+0x6c"
+    - id: ARM7M-STARTCPU-Q11
+      text: >
+        Indirect call at 0x80713778, provider vtable +0x220, no args, immediately after the start write.
+        Slot sits near the +0x208 slot start() uses for mapDeviceMemoryWithIndex; role unknown.
+      proof_needed: "read slot +0x220 of the provider class in the kernelcache"
+    - id: ARM7M-STARTCPU-Q12
+      text: >
+        Two calls to 0x80015fa1 with a format string: at 0x807136bc (REQUIRE failure, line 155, third arg 0x9b)
+        and at 0x80713718 ("not stopped for some reason", line 170). Control falls through to the next
+        instruction after both in the code; whether the callee returns is unknown, so "non-fatal" is a
+        property of the call site only.
+      proof_needed: "disassemble 0x80015fa0: logger or panic"
+    - id: ARM7M-STARTCPU-Q13
+      text: >
+        Meaning of window0+0x100 bits: 0x10 written first, bit 1 expected set on readback (else the line-170
+        message), then 1 written last. "Stop request", "stopped status" and "start" are readings of the log
+        string, not established.
+      proof_needed: "hardware tier T1 of docs/research/2026-10-16-iop-boot-to-life.md"
+    - id: ARM7M-STARTCPU-Q14
+      text: >
+        Meaning of the constant 0x86300000 written to window0+0x118. The image fwFirmwareImage.bin is linked
+        at base 0 (its vector table holds small absolute handler addresses such as 0x40 and 0x939c, no 0x86xxxxxx
+        literal anywhere), so this is not the image's load address in the IOP's own view. 0x86300000 is a host
+        physical address whose content read as zero (evidence/20261016T094340Z-trace_iop_probe_mmu/).
+      proof_needed: "hardware: read +0x118 back after a start; static: find what the IOP firmware does with a register holding it"
 
 claims:
   - id: ARM7M-STARTCPU-001
@@ -30,14 +105,64 @@ claims:
     evidence: "tools/iop_analysis/appleARM7M_notes.md"
   - id: ARM7M-STARTCPU-002
     text: >
-      Writes a hardware address and the firmware's raw bytes/length into
-      the index-0 register window (base+0x100, +0x110, +0x114, +0x118),
-      and performs a non-fatal status check before doing so.
-    status: source_verified
-    evidence: "docs/research/2026-10-16-wifi-iop-architecture.md#the-missing-producer-everything-checked-for-the-real-sdhc-base-pointer"
+      Programs the index-0 register window (this+0x58) with, in this order:
+      +0x100 <- 0x10; a readback of +0x100 tested for bit 1; +0x118 <- the
+      constant 0x86300000; +0x110 <- the value stored at this+0x88 (result
+      of an md vtable call, ARM7M-STARTCPU-Q5); +0x114 <- a size field
+      (ARM7M-STARTCPU-004); finally +0x100 <- 1. CORRECTED 2026-10-16: the
+      earlier wording ("the firmware's raw bytes/length" written to
+      +0x110/+0x114/+0x118) was wrong -- +0x118 is a literal constant, not
+      firmware data, and no firmware bytes are written by this function.
+    status: device_disassembly_verified
+    evidence: "tools/iop_analysis/appleARM7M_notes.md#startcpu-0x80713664-lue-en-entier-2026-10-16"
+  - id: ARM7M-STARTCPU-003
+    text: >
+      Entry guard: takes the lock object at this+0x7c, then tests the byte
+      at this+0x80. If non-zero, no hardware register is touched and the
+      function returns 0xe00002d5 after releasing the lock. The byte is
+      set to 1 only on the success path, right after the +0x100 <- 1 write.
+    status: device_disassembly_verified
+    evidence: "tools/iop_analysis/appleARM7M_notes.md#startcpu-0x80713664-lue-en-entier-2026-10-16"
+  - id: ARM7M-STARTCPU-004
+    text: >
+      The firmware length returned by the md vtable call at +0x84 is
+      checked against segLength (REQUIRE, line 155). The size field at
+      this+0x8c is the smallest power of two that is >= max(0x1000, length)
+      (a doubling loop starting at 0x1000). If this+0x64 (the iop-version
+      property, value 1 on this device) equals 1, +0x114 receives
+      (-size) & 0x3ffff000; otherwise it receives size unchanged.
+    status: device_disassembly_verified
+    evidence: "tools/iop_analysis/appleARM7M_notes.md#startcpu-0x80713664-lue-en-entier-2026-10-16"
+  - id: ARM7M-STARTCPU-005
+    text: >
+      Ordering: the write of 1 to window0+0x100 is the last register write
+      of the function, followed by one provider vtable call (+0x220), the
+      unlock, and a return of 0. Nothing after that write waits for, or
+      reads back, any IOP state within this function.
+    status: device_disassembly_verified
+    evidence: "tools/iop_analysis/appleARM7M_notes.md#startcpu-0x80713664-lue-en-entier-2026-10-16"
 
-hardware_tests: []
+hardware_tests:
+  - name: trace_iop_regs (STAGE 26), rest state of the startCPU registers
+    claim_tested: "ARM7M-STARTCPU-002: the registers startCPU programs are readable from the main CPU before startCPU runs"
+    execution_status: executed
+    result: >
+      +0x000, +0x100, +0x110, +0x114, +0x118 all read 0x00000000, no data abort.
+      Note (2026-10-16): the driver expects bit 1 of +0x100 to be set after
+      it writes 0x10, so 0 at rest does not contradict it, and does not prove
+      "idle" either -- earlier text calling it the real rest state was a
+      reading, not a measurement of what a stop request produces.
+    evidence: "evidence/20261016T093436Z-trace_iop_regs/"
+  - name: IOP boot ladder T1 -- stop request and readback
+    claim_tested: "ARM7M-STARTCPU-Q13: writing 0x10 to window0+0x100 makes bit 1 read back as set"
+    execution_status: planned
+    result: null
+    notes: >
+      First write of the ladder, and the same write the driver performs at
+      every startCPU. A fixed prediction is recorded before the run:
+      readback & 2 != 0. Either outcome goes into this fiche. See
+      docs/research/2026-10-16-iop-boot-to-life.md for the full ladder.
 
 publication:
   status: approved
-  notes: "facts about control flow and register offsets, not a reproduction of Apple's source"
+  notes: "facts about control flow, register offsets and constants, not a reproduction of Apple's source"

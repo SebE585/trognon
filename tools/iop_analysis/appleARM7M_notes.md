@@ -221,6 +221,57 @@ r2 -e asm.bits=16 -c 'aaa; pd 90 @ 0x80713190' /tmp/trognon_dt/AppleARM7M.kext.b
 r2 -e asm.bits=16 -c 'aaa; pd 30 @ 0x80713510' /tmp/trognon_dt/AppleARM7M.kext.bin   # la fonction qui écrit +0x18
 ```
 
+## `startCPU` lue en entier (2026-10-16)
+
+Corps complet de `0x80713664` à `0x80713786` (un seul `pop {pc}`), pool de
+littéraux `0x80713788`–`0x807137b0`. Fiche : `catalog/AppleARM7M/startCPU.yaml`
+(`complete` = borné au graphe reconstruit ; les 11 appels indirects ou
+externes y sont chacun listés avec la preuve qui les résoudrait).
+
+Séquence, `r4 = this`, fenêtre 0 = `this+0x58` :
+
+| Adresse | Effet |
+|---|---|
+| `0x80713672` | verrou `this+0x7c` via `0x800670b0` |
+| `0x80713674`–`0x8071367c` | octet `this+0x80` non nul : retour `0xe00002d5`, aucun registre touché |
+| `0x80713686` | `md = fw->vtbl[+0x34c]()` |
+| `0x80713694` | `this+0x88 = md->vtbl[+0x98](0, &segLength)` |
+| `0x807136a2`–`0x807136a8` | `md->vtbl[+0x84]()` (getLength) comparé à `segLength`, sinon REQUIRE ligne 155 |
+| `0x807136c8`–`0x807136d6` | `this+0x8c` = plus petite puissance de 2 `>= max(0x1000, longueur)` |
+| `0x807136e4`, `0x807136f4` | deux appels virtuels sur le provider (`+0x360`, `+0x364`) |
+| `0x807136fe` | appel virtuel sur l'objet `this+0x68` (`+0x54`) |
+| `0x80713704` | **`window0[+0x100] = 0x10`** |
+| `0x8071370a`–`0x80713712` | relit `+0x100`, teste le bit 1 ; clair : message ligne 170 « not stopped for some reason », le code continue |
+| `0x8071371e` | **`window0[+0x118] = 0x86300000`** (littéral) |
+| `0x80713728` | **`window0[+0x110] = this+0x88`** |
+| `0x80713740` ou `0x8071374c` | **`window0[+0x114]`** = `(-taille) & 0x3ffff000` si `this+0x64 == 1` (c'est le cas : `iop-version=1`), sinon `taille` |
+| `0x80713752`–`0x8071375e` | si `this+0x6c` non nul : appel virtuel (`+0x50`, 0,0,0) |
+| `0x80713768` | **`window0[+0x100] = 1`**, dernière écriture registre |
+| `0x8071376e` | `this+0x80 = 1` |
+| `0x80713778` | appel virtuel provider `+0x220`, puis déverrouillage `0x80067250`, retour 0 |
+
+**Correction de la fiche précédente** : `ARM7M-STARTCPU-002` disait que la
+fonction écrit « les octets bruts / la longueur du firmware » en
+`+0x110/+0x114/+0x118`. Faux : `+0x118` est un littéral, `+0x110` un
+résultat d'appel virtuel, `+0x114` un champ de taille. Aucun octet du
+firmware n'est écrit par cette fonction ; la copie du firmware est faite
+ailleurs (non localisée). La phrase d'origine est gardée ici, pas dans la
+fiche, selon la règle de ce fichier.
+
+**Ce que la lecture ne dit pas** : qui copie l'image, ce que font les
+sept appels indirects entre les lignes ci-dessus, et ce que signifient les
+bits de `+0x100`. Le firmware `fwFirmwareImage.bin` est une image plate liée
+à l'adresse 0 (table de vecteurs `ea00000e e59ff018 ...`, adresses de
+handlers absolues petites comme `0x40`, `0x939c`, aucun littéral `0x86xxxxxx`
+dans les 110592 octets) : `0x86300000` n'est donc pas son adresse de
+chargement dans la vue de l'IOP.
+
+**Commande pour reproduire** :
+```
+r2 -e asm.bits=16 -c 'pd 90 @ 0x80713664' /tmp/trognon_dt/AppleARM7M.kext.bin
+r2 -e asm.bits=16 -c 'px 32 @ 0x807137a0' /tmp/trognon_dt/AppleARM7M.kext.bin   # littéraux 0x86300000 et 0x3ffff000
+```
+
 ## Prochaine couche (pas encore écrite)
 
 Ce fichier et le rapport de recherche sont des notes d'analyse — la

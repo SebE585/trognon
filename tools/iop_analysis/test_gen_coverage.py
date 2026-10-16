@@ -224,6 +224,35 @@ class TestPublicationGate(CatalogTestCase):
         self.assertIn("further claim(s) exist", out)
 
 
+class TestOpenLinks(CatalogTestCase):
+    def test_open_link_and_planned_test_rendered_with_proof(self):
+        write_tool_coverage(self.binary_dir)
+        write_fiche(
+            self.binary_dir, "f1",
+            review={"status": "complete", "reviewed_ranges": [], "unresolved": [
+                {"id": "FAKE-Q1", "text": "indirect call", "proof_needed": "read slot 0x34c"}]},
+            hardware_tests=[{"name": "t1", "claim_tested": "x", "execution_status": "planned", "result": None}],
+        )
+        binaries = gc.load_catalog(self.catalog)
+        gc.validate(binaries)
+        out = gc.render(binaries)
+        self.assertIn("`FAKE-Q1`", out)
+        self.assertIn("read slot 0x34c", out)
+        self.assertIn("| t1 | `test fn` | planned | not run |", out)
+
+    def test_open_link_of_unpublished_fiche_not_rendered(self):
+        write_tool_coverage(self.binary_dir)
+        write_fiche(
+            self.binary_dir, "f1",
+            review={"status": "partial", "reviewed_ranges": [], "unresolved": [
+                {"id": "HIDDEN-Q1", "text": "x", "proof_needed": "y"}]},
+            publication={"status": "pending_review"},
+        )
+        binaries = gc.load_catalog(self.catalog)
+        gc.validate(binaries)
+        self.assertNotIn("HIDDEN-Q1", gc.render(binaries))
+
+
 class TestDuplicateIds(CatalogTestCase):
     def test_duplicate_claim_id_across_files_fails(self):
         write_tool_coverage(self.binary_dir)

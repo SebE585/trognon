@@ -63,6 +63,10 @@ being used inconsistently before this was written down):
     (register semantics, a method's real name, hardware behavior) --
     `vic_enable_0x80713510.yaml` is `complete` with two such open
     questions, by design, not an inconsistency.
+    BOUNDED TO THE RECONSTRUCTED GRAPH (2026-10-16): `complete` never claims
+    that what an indirect call (`blx reg`) or an external call reaches has
+    been read. Each such call must appear in `review.unresolved[]` with a
+    `proof_needed` line, so the fiche says where the reconstructed graph stops.
 
 Stable ids, for a future cross-reference/RAG use (per review, 2026-10-16):
 claims already had their own `<FICHE>-NNN` id; `review.unresolved[]`
@@ -370,6 +374,37 @@ def render(binaries):
                 provenance = CLAIM_STATUS_LABEL.get(c.get("status"), c.get("status", ""))
                 evidence = evidence_link(c.get("evidence", ""))
                 lines.append(f"| `{c['id']}` — {text} | `{fn_label}` | {provenance} | {evidence} |")
+
+    lines.append("")
+    lines.append("## Open links and hardware tests")
+    lines.append("")
+    lines.append(
+        "Open links are the places where a reconstructed control-flow graph stops: an indirect "
+        "or external call, an unknown producer, a register meaning. `complete` on a fiche "
+        "covers its own instructions only, never what these links lead to. Hardware tests "
+        "are listed with their own status, including results that contradicted the reading."
+    )
+    lines.append("")
+    lines.append("| Open link | Function | What is unknown | Proof needed |")
+    lines.append("|---|---|---|---|")
+    tests = []
+    for name, data in binaries.items():
+        for f in data["fiches"]:
+            if f.get("publication", {}).get("status") != "approved":
+                continue
+            fn_label = f.get("function_name_apple") or f.get("function_name_assigned") or f["_path"]
+            for q in f.get("review", {}).get("unresolved", []):
+                text = " ".join(q.get("text", "").split())
+                proof = " ".join(str(q.get("proof_needed", "not stated")).split())
+                lines.append(f"| `{q['id']}` | `{fn_label}` | {text} | {proof} |")
+            for t in f.get("hardware_tests", []):
+                tests.append((fn_label, t))
+    lines.append("")
+    lines.append("| Hardware test | Function | Status | Result |")
+    lines.append("|---|---|---|---|")
+    for fn_label, t in tests:
+        result = " ".join(str(t.get("result") or "not run").split())
+        lines.append(f"| {t['name']} | `{fn_label}` | {t.get('execution_status')} | {result} |")
 
     return "\n".join(lines) + "\n"
 
