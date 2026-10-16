@@ -1,25 +1,34 @@
-# The 3GS Wi-Fi/SDIO block is owned by a second, embedded processor, not the application CPU
+# The 3GS has a second, embedded IOP processor; it likely — not yet proven — owns Wi-Fi/SDIO
 
-Research date: 2026-10-16. This closes out the SDIO investigation started on
-2026-10-15 (`docs/research/2026-10-15-touch-wifi-nand-recon.md`): after
-extensive register-level probing from Trognon's own payloads produced only
-clean negatives, binary reverse engineering of the device's own firmware
-(extracted and decrypted from the owner's IPSW, never redistributed) found
-the real architectural reason, and it changes the shape of the problem
-entirely.
+Research date: 2026-10-16. This moves the SDIO investigation started on
+2026-10-15 (`docs/research/2026-10-15-touch-wifi-nand-recon.md`) a long way
+forward, but does not close it: after extensive register-level probing from
+Trognon's own payloads produced only clean negatives, binary reverse
+engineering of the device's own firmware (extracted and decrypted from the
+owner's IPSW, never redistributed) found a strong architectural candidate
+explanation. A second review (see "Known gaps" below) correctly pointed out
+that the evidence so far establishes the architecture, not yet the causal
+chain for the specific symptom observed on 2026-10-15/16. This document
+states both clearly, rather than overclaiming the second.
 
 ## Bottom line
 
 The S5L8920 has a second, embedded ARMv7 processor — Apple calls it an
 "IOP" (I/O Processor) — running its own small real-time OS with its own
-scheduler, heap, exception handlers and interrupt controller. This second
-processor, not the application CPU Trognon's payloads run on, owns and
-drives the SDIO/Wi-Fi host controller's registers directly. The application
-CPU only posts messages to it over a shared command channel and waits. The
-same IOP firmware also drives the NAND controller (`h2fmi`) and the
-AES-capable DMA engine (CDMA). Every SDIO register write attempted from the
-application CPU on 2026-10-15/16 was reaching an address whose real owner
-never received a wake-up signal — not a wrong register, a wrong processor.
+scheduler, heap, exception handlers and interrupt controller. **This part is
+established.** What is still a working hypothesis, strongly supported but
+not proven: that this second processor, not the application CPU Trognon's
+payloads run on, is the exclusive owner of the SDIO/Wi-Fi host controller's
+registers, and that this is specifically why those registers read back zero
+and ignored writes on 2026-10-15/16. The application CPU does post messages
+to the IOP over a shared command channel and wait for a reply — that part is
+confirmed from the disassembled driver. The same IOP firmware also drives
+the NAND controller (`h2fmi`) and the AES-capable DMA engine (CDMA). The
+leading explanation for the 2026-10-15/16 negatives is that every SDIO
+register write attempted from the application CPU reached an address whose
+real owner never received a wake-up signal — not a wrong register, a wrong
+processor — but this causal link has not itself been traced; see "Known
+gaps" below.
 
 ## How this was found: a second opinion, then a real disassembler
 
@@ -136,57 +145,82 @@ real, separate ARMv7 Mach-O (`cputype=12`, `cpusubtype=9`), self-identifying
 as `"EmbeddedIOP for s5l8920x, Copyright 2010, Apple Inc."`, built alongside
 `iBoot-1072.61`.
 
-Its own debug strings settle the question completely:
+Its own debug strings strongly support this reading, but by themselves they
+establish a dialogue, not yet a proven causal chain to the specific symptom:
 
-- `"SDHC: Ping received, IOKit <--> IOP Connection established"` — the SDHC
-  hardware stays inert until this handshake happens. `sendIOPCommand`'s
-  special handling of opcode 0 (seen above) is almost certainly this ping.
-  Every direct register write attempted from the application CPU on
-  2026-10-15/16 reached a block that had never received it.
+- `"SDHC: Ping received, IOKit <--> IOP Connection established"` — this
+  establishes that a ping/connection handshake exists between IOKit and the
+  IOP firmware for SDHC. `sendIOPCommand`'s special handling of opcode 0
+  (seen above) is a plausible match for this ping. **What is not yet shown**:
+  whether this handshake is itself what activates the SDHC hardware, or
+  merely opens a logical connection on top of hardware that is initialised
+  some other way — that distinction requires tracing the ping's handler
+  (transport used, expected message, response, and which initialisations it
+  actually triggers), not inferring it from the log line's wording.
 - `sdiodrv_resetSDHC`, `sdiodrv_sendCommand`, `sdiodrv_performDMA`,
-  `sdiodrv_completeTransfer`: the real low-level SD protocol driver runs on
-  the IOP itself, using the exact register names Trognon's own hypotheses
-  used (`cmd`, `arg`, `resp0`, `normalInt`, `errorInt`, `state`) — confirmed
-  as the right names, running on the wrong processor.
+  `sdiodrv_completeTransfer`: a real low-level SD protocol driver, using the
+  exact register names Trognon's own hypotheses used (`cmd`, `arg`, `resp0`,
+  `normalInt`, `errorInt`, `state`), runs on the IOP. That it runs there is
+  established; that the application CPU is *excluded* from reaching the same
+  registers, and that this exclusion is specifically why 2026-10-15/16's
+  reads came back zero, is plausible but not proven by this string alone.
 - `h2fmi_iop_read_multiple`, `h2fmi_erase_blocks`, `h2fmi_nand_reset_all`,
   and the rest of the `h2fmi_*` family: NAND's real driver lives here too.
-  This plausibly explains why Trognon's own NAND chip-ID read (2026-10-15)
-  worked without ever pinging anything: NAND is needed to boot iOS itself,
-  so the IOP's NAND component is almost certainly already live by the time
-  Recovery mode is reached, unlike SDIO, which nothing needs before an OS
-  explicitly asks for it.
+  One possible explanation for why Trognon's own NAND chip-ID read
+  (2026-10-15) worked without ever pinging anything is that NAND is needed
+  to boot iOS and so the IOP's NAND component is already live by the time
+  Recovery mode is reached. **This is not established**: the needs of a
+  normal iOS boot do not by themselves prove the IOP's actual state along
+  Trognon's own tethered DFU/iBSS path, which skips most of that normal
+  boot. The chip-ID read succeeding is a fact; why it succeeded is still a
+  hypothesis.
 - `drivers/apple/cdma/cdma.c`: the AES-capable DMA engine already seen
   referenced in `h2fmi.c`'s source is also IOP-managed.
 - `task_create`, `task_yield`, `idle_task_routine`, a heap allocator, ARM
   exception-mode dump strings (`"ARM %s abort in %s mode at 0x%08x"`), and
   its own interrupt-enable/status registers (`rVICINTENABLE`,
-  `rVICIRQSTATUS`, distinct from the application CPU's own VIC0/1/2): a
-  complete small embedded OS, not a thin relay.
+  `rVICIRQSTATUS`, distinct from the application CPU's own VIC0/1/2): this
+  part is a plain reading of the firmware's own strings, not an inference —
+  a complete small embedded OS, not a thin relay.
 
 ## What this settles, and what it reopens
 
-The original question ("why doesn't 0x80000000 accept writes") had a
-false premise: it assumed the application CPU is the SDHC block's host.
-It is not. No amount of correct register offsets, clock-gate indices or
-init sequences tried from the application CPU alone could have worked,
-because the block's real owner never ran.
+What is now established: the S5L8920 has a second embedded processor
+running real, separate firmware, and a message-passing dialogue exists
+between the application CPU's `AppleIOPSDIO` driver and that firmware for
+SDIO. What is not yet established: that this is *why* `0x80000000` ignored
+reads and writes from the application CPU on 2026-10-15/16. The architecture
+makes that explanation plausible and is now the leading hypothesis, ahead of
+the clock-gate and init-sequence hypotheses already ruled out — but it has
+not itself been traced end to end.
 
-This also retroactively explains the ambiguous dynamic-clock-16 read from
-2026-10-15 (`0xF18` instead of an expected `0x718`): chasing clock
-configuration bits on the application CPU was never going to settle
-anything either way, since clocking this block is plausibly the IOP's own
-responsibility, not something the application CPU's clock-gate table alone
-controls end to end.
+The ambiguous dynamic-clock-16 read from 2026-10-15 (`0xF18` instead of an
+expected `0x718`) is in the same position: the IOP architecture makes it
+plausible that clocking this block is not something the application CPU's
+clock-gate table alone controls end to end, but this has not been confirmed
+either.
+
+### Known gaps (raised by a second review, 2026-10-16)
+
+A second review of this writeup, after the IOP finding, flagged exactly the
+two points above as conclusions stated too strongly, and named the decisive
+next step precisely: **trace the ping's own handler** — which transport it
+uses, what message it expects, what it replies, and which initialisations
+it actually triggers before and after the "Connection established" log
+line. Until that is traced, "the application CPU cannot reach the block
+because only the IOP can" remains the leading hypothesis, not a proven
+fact, and the two softened bullets above should be read as open questions,
+not settled ones.
 
 What would be needed to actually drive Wi-Fi from Trognon's own payloads:
-either reverse-engineer the IOP message-channel wire format precisely
-enough to construct and send a valid ping (the command/message structure
-seen in `sendIOPCommand`, plus whatever the real low-level kickoff write at
-`this+0x24`'s vtable `+0x84` does — a separate class, not yet located or
-disassembled), or disassemble the IOP firmware itself far enough to
-replicate its own init sequence directly (a genuinely separate CPU's code,
-a project of its own). Neither was attempted this session; this is a
-deliberate stopping point, not an unfinished attempt.
+either trace that ping handler and the IOP message-channel wire format
+precisely enough to construct and send a valid one (the command/message
+structure seen in `sendIOPCommand`, plus whatever the real low-level
+kickoff write at `this+0x24`'s vtable `+0x84` does — a separate class, not
+yet located or disassembled), or disassemble the IOP firmware itself far
+enough to replicate its own init sequence directly (a genuinely separate
+CPU's code, a project of its own). Neither was attempted this session; this
+is a deliberate stopping point, not an unfinished attempt.
 
 ## Tooling notes, for reproducibility
 
