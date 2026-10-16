@@ -289,8 +289,31 @@ clock), 8-bit words, and delays of 5 and 10 microseconds, the 5 and 10 of the iD
 master `0x18`, no flag bit, word size field 0), later ORed with `0x40` for a receive; that is a
 computation from the inference, not an observed value.
 
-Not yet read: the data path (the TX and RX FIFO accesses and the interrupt handler) and the register
-at `0x4c`.
+Data path, transmit by FIFO (`SPI-XFER-002`, `-003`): bytes are written one at a time to register `0x10`
+(TXDATA), up to the FIFO depth (16 for version 1); SETUP is then written with extra bits (`0x180`, and
+`0x200000` for version 1) to start, the driver sleeps until an interrupt-set flag, SETUP is rewritten
+without those bits, and the chip select is released. The chip select is either the controller's own PIN
+bit (when the node has `internal-cs`) or the `function-spi_cs<n>` object called with `1` at the start and
+`0` at the end. The `spi1` node has no `internal-cs` property, so its chip select is the GPIO `13.00`
+function, not the PIN register. What `1` and `0` mean as pin levels depends on that GPIO function's own
+flags (`0x10001` on `spi1`'s property, `0x101` on the touch node's `function-enable_cs`), which were not
+decoded. The receive and DMA branches, the interrupt handler and the register at `0x4c` were not read.
+
+Two observations in the touch driver itself (`AppleMultitouchSPI`, strings and a few instructions, not a
+traced path):
+
+- It has a routine that, for the match name `multi-touch,z1` only, reads the current SPI clock period
+  through a virtual method and, if it is `0x1c20` (7200), sets `0x2710` (10000) through another and logs
+  "Manually setting spiClockPeriod to %uns for EVT hardware". It does not apply to this phone's `n88`
+  match. It does show a period held and logged in nanoseconds in the touch driver, and values of
+  7200 and 10000 for the older variant, against 124 in this node's `reg` read under the inference above.
+  It also shows that `0x2710`, the fifth word of this node's `reg`, is a value the driver itself uses as a
+  period in nanoseconds elsewhere, which makes the word-by-word reading of `reg` above less certain
+  than it looked (`SPI-VALID-Q1`).
+- Its clock routine logs "enabling clock", "done enabling clock" and "disabling clock" around a call of a
+  virtual method of the object at `this+0x7e0` with the address of a local value. So the driver does
+  switch the clock through the function object with a value, which supports the "set with a value" path
+  of the PMU fiches; that this call reaches the PMU GPIO routine `0x8075bb8c` is not traced.
 
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
