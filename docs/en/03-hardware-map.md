@@ -18,7 +18,7 @@ inline render.
 | Buttons | All 5 buttons mapped by GPIO difference | Mapping found by observed difference, not by name | [Buttons](#buttons-same-gpio-base-as-above-device-2026-10-15) |
 | Accelerometer | Identifier read; powered up with a verified write; all three axes read with both signs or a known direction: +X right edge, +Y top, +Z out of the screen, about 56 counts per g, offsets near +1.5 / -6 / +3 counts | Exact chip model, axis directions, scale and calibration | [Accelerometer](#accelerometer-i2c0-address-0x1d-device-2026-10-16) |
 | Wi-Fi/SDIO | Base address and GPIO lines confirmed; SDHCI layout confirmed in the IOP's own firmware | Which register window the IOP's SDHCI driver actually uses, and why CPU-side writes don't stick | [Wi-Fi/SDIO](#wi-fisdio-sdio0_base-0x80000000-mixed-devicehypothesis-2026-10-1516) |
-| Magnetometer | An I2C device acknowledges address `0x1e`; `0x1f` does not | Identity of the chip at `0x1e`, any register, any measurement | [Magnetometer](#magnetometer-i2c0-address-0x1e-device-2026-10-16) |
+| Magnetometer | A device at `0x1e` returns the AK8973's documented reset state in 12 registers; `0x1f` is silent; no gyroscope on `i2c0` | A measurement (needs EEPROM-derived setup), the role of `0x1f` | [Magnetometer](#magnetometer-i2c0-address-0x1e-device-2026-10-16) |
 | Touch controller | Reset and chip-select GPIO levels read (one run) | Polarity, power and clock via the PMU, SPI transaction, any response | [Bluetooth](#bluetooth-uart3-reset-1506-wake-1602-device-2026-10-16) |
 
 **Reading the tags**: **DEVICE** means observed on this real phone (a read, or a write
@@ -837,9 +837,9 @@ pattern as the Wi-Fi reset/wake read (STAGE 15): plain reads, no write, no UART 
 
 *The magnetometer measures the magnetic field, from which a compass heading can be computed.*
 
-**Status**: something answers at `0x1e`. Nothing is known yet about what it is.
+**Status**: a device at `0x1e` returns exactly the AK8973's documented reset state. No measurement yet.
 
-**What's confirmed**: the device tree has two nodes on `i2c0`, `compass` (address `0x1e`, with an
+**What's confirmed (first probe, STAGE 34)**: the device tree has two nodes on `i2c0`, `compass` (address `0x1e`, with an
 interrupt) and `compass1` (`0x1f`, no interrupt), both `compass,akm8973s`. A read-only probe
 on the same bit-banged bus as the accelerometer tried four addresses with two minimal
 transactions each (address + write then stop; if acknowledged, address + read, one byte,
@@ -858,17 +858,46 @@ second node does not correspond to a responding chip in this state, which is the
 already noted (two device-tree nodes do not prove two chips). Why `0x1f` is silent (absent on
 this board, not powered, or a variant node) is not established.
 
-**What remains hypothesis**: that the device at `0x1e` is an AKM8973S. An acknowledged address
-says a device is there, not which one. The byte read, `0x00`, is a current-address read whose
-pointer was not set by us; it is not interpreted, and the accelerometer returned the same
-value in the same run, so it carries no identity. Identifying the chip needs a register map
-checked against the datasheet, which is not in this repository. After that, the AKM8973
-needs a configuration step before it measures anything; none was attempted.
+**Datasheet (read 2026-10-16)**: AKM AK8973, document MS0561-E-01, preliminary, 2007/01 (copy
+at `hallaweb.jlab.org/tech/Detectors/public_html/manuals/chip_specs/A-L/asahi_kasei/AK8973.pdf`;
+not stored in this repository). Facts used here: the 7-bit slave address is `00111` followed by
+the CAD1 and CAD0 pins, so `0x1c` to `0x1f`, which fits the `0x1e` node; **the chip has no
+identification register**; the read-only registers are ST `0xC0`, TMPS `0xC1`, H1X/H1Y/H1Z
+`0xC2`..`0xC4` (reset value 0 each); MS1 `0xE0` holds the mode (reset value `0x03` = power-down,
+`00` = sensor measurement, `10` = EEPROM access); HXDA..HZDA `0xE1`..`0xE3` and HXGA..HZGA
+`0xE4`..`0xE6` (offset DACs and gains, reset 0). A random read is a write of the register
+address then a repeated start and a read. Factory correction values live in an EEPROM that is
+read in EEPROM mode and must never be written.
 
-**How to reproduce**: build with `make trace_compass_i2c.bin` (see `tools/payloads/`, STAGE
-34), run it on a device in DFU with `tools/go.sh tools/payloads/trace_compass_i2c.bin`.
+**Register-state probe (DEVICE, STAGE 35, bundle `20261016T152515Z-trace_i2c_scan`)**: random
+reads at `0x1e`, all three transactions acknowledged for each of the 12 registers:
 
-**Links to evidence**: [evidence bundle `20261016T151941Z-trace_compass_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151941Z-trace_compass_i2c), indexed on the [evidence page](08-evidence.md).
+| Register | Read | Datasheet reset value |
+|---|---|---|
+| ST `0xC0`, TMPS `0xC1`, H1X/H1Y/H1Z `0xC2`..`0xC4` | `0x00` each | `0x00` each |
+| MS1 `0xE0` | `0x03` | `0x03` (power-down) |
+| HXDA..HZDA `0xE1`..`0xE3`, HXGA..HZGA `0xE4`..`0xE6` | `0x00` each | `0x00` each |
+
+All twelve match the AK8973's documented state after reset. Since the chip has no ID register,
+this identifies it by reset state: strong consistency with an AK8973 (the `0x03` in MS1 in
+particular), not an identifier. The chip is in power-down, so the data registers hold nothing
+yet; a measurement needs a mode write and the per-chip setup from the EEPROM, not attempted.
+
+**Bus scan (same run)**: address-only transactions (nothing written) over `0x08`..`0x77` on
+`i2c0` were acknowledged at `0x1d` (accelerometer), `0x1e` (magnetometer), `0x39` (the `mikey`
+node) and `0x74` (the `pmu` node), and nowhere else. Not acknowledged although the device tree
+lists them: `0x1f` (`compass1`), `0x4a` (`audio0`, a CS42L61 codec) and `0x29` (`tethered`);
+a powered-down or held-in-reset part does not answer, so silence is not absence. In particular
+**no device answered at the usual gyroscope addresses (`0x68`, `0x69`) or anywhere else
+unexpected, and the device tree names no gyroscope on any bus** (`i2c0`, `i2c2`, `spi0` to
+`spi2`). The only other sensor node is an ambient-light sensor (`als`, TSL2561 at `0x49`) on
+`i2c2`, not scanned. So this phone, as far as the tree and `i2c0` show, has an accelerometer
+and a magnetometer and no gyroscope.
+
+**How to reproduce**: build with `make trace_compass_i2c.bin` (STAGE 34) and `make trace_i2c_scan.bin`
+(STAGE 35, see `tools/payloads/`), run each on a device in DFU with `tools/go.sh`.
+
+**Links to evidence**: [evidence bundle `20261016T151941Z-trace_compass_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T151941Z-trace_compass_i2c) and [`20261016T152515Z-trace_i2c_scan`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T152515Z-trace_i2c_scan), indexed on the [evidence page](08-evidence.md).
 
 ## Touch controller, `spi1` (DEVICE for two GPIO levels, 2026-10-16)
 

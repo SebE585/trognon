@@ -53,6 +53,7 @@ STAGE_trace_accel_axes = 31
 STAGE_trace_iop_vic    = 32
 STAGE_trace_touch_gpio = 33
 STAGE_trace_compass_i2c = 34
+STAGE_trace_i2c_scan = 35
 
 # Objects are built for one SoC. Without this stamp, `make SOC=other` would silently reuse objects built for
 # the previous chip. The stamp is rewritten only when SOC or the flags change.

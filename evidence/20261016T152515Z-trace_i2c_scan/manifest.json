@@ -1,0 +1,61 @@
+{
+  "payload": "trace_i2c_scan.bin",
+  "sha256": "4a6b5f7b8c8ba6c09207fde36e0c93b9664ebffcc9bd85ba2f05bcc1a2afa479",
+  "bytes": 3960,
+  "soc": "s5l8920",
+  "nonce_sent": "0283202C",
+  "nonce_read": "0283202C",
+  "nonce_confirmed": true,
+  "marker": {
+    "trognon": "i2c-scan-1"
+  },
+  "variables": {
+    "scl_idle": "00000001",
+    "sda_idle": "00000001",
+    "scan_w0": "60000000",
+    "scan_w1": "02000000",
+    "scan_w2": "00000000",
+    "scan_w3": "00100000",
+    "scan_count": "00000004",
+    "r_c0": "00000000",
+    "ok_c0": "00000001",
+    "r_c1": "00000000",
+    "ok_c1": "00000001",
+    "r_c2": "00000000",
+    "ok_c2": "00000001",
+    "r_c3": "00000000",
+    "ok_c3": "00000001",
+    "r_c4": "00000000",
+    "ok_c4": "00000001",
+    "r_e0": "00000003",
+    "ok_e0": "00000001",
+    "r_e1": "00000000",
+    "ok_e1": "00000001",
+    "r_e2": "00000000",
+    "ok_e2": "00000001",
+    "r_e3": "00000000",
+    "ok_e3": "00000001",
+    "r_e4": "00000000",
+    "ok_e4": "00000001",
+    "r_e5": "00000000",
+    "ok_e5": "00000001",
+    "r_e6": "00000000",
+    "ok_e6": "00000001"
+  },
+  "device": {
+    "cpid": "8920",
+    "note": "ECID deliberately not recorded"
+  },
+  "git": {
+    "commit": "d426b5621b85689a56d09f4e35a753081ac00ce7",
+    "dirty": true
+  },
+  "tools": {
+    "ipwndfu_commit": "0e28932ec6a2a570b10fd77e50bda4216418cd98",
+    "python": "3.12.2",
+    "host": "darwin"
+  },
+  "time_utc": "20261016T152515Z",
+  "command": "<repo>/tools/run_payload.py <repo>/tools/payloads/trace_i2c_scan.bin --evidence <repo>/evidence --vars scl_idle,sda_idle,scan_w0,scan_w1,scan_w2,scan_w3,scan_count,r_c0,ok_c0,r_c1,ok_c1,r_c2,ok_c2,r_c3,ok_c3,r_c4,ok_c4,r_e0,ok_e0,r_e1,ok_e1,r_e2,ok_e2,r_e3,ok_e3,r_e4,ok_e4,r_e5,ok_e5,r_e6,ok_e6",
+  "screen_rows": 23
+}
