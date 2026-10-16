@@ -13,8 +13,11 @@ states both clearly, rather than overclaiming the second.
 
 ## Bottom line
 
-The S5L8920 has a second, embedded ARMv7 processor — Apple calls it an
-"IOP" (I/O Processor) — running its own small real-time OS with its own
+The S5L8920 has a second, embedded ARM processor (32-bit ARM instruction
+set, confirmed by directly disassembling its own raw firmware; the specific
+architecture version, e.g. ARMv7, is not established — see "Known gaps")
+— Apple calls it an "IOP" (I/O Processor) — running its own small real-time
+OS with its own
 scheduler, heap, exception handlers and interrupt controller. **This part is
 established.** What is still a working hypothesis, strongly supported but
 not proven: that this second processor, not the application CPU Trognon's
@@ -41,11 +44,11 @@ flowchart LR
 
     CH["Shared command channel<br/>(IOSlaveProcessor)"]
 
-    subgraph IOP["Embedded IOP (second ARMv7 core)"]
+    subgraph IOP["Embedded IOP (second ARM core,<br/>exact architecture version unconfirmed)"]
         I1["EmbeddedIOP firmware<br/>own scheduler, heap,<br/>exception handlers, VIC"]
-        I2["sdio message loop<br/>opcode switch (0-6)"]
+        I2["sdio message loop<br/>opcode switch"]
         I1 --- I2
-        I2 -- "case 3: sdiodrv_resetSDHC()<br/>(confirmed to touch hardware)" --> SDHC
+        I2 -- "opcode 4: sdiodrv_resetSDHC()<br/>(confirmed to touch hardware)" --> SDHC
         I2 -- "h2fmi_iop_* " --> NAND["NAND controller"]
         I2 -- "cdma.c" --> DMA["AES DMA engine"]
     end
@@ -174,10 +177,26 @@ dependency:
 `IOP_s5l8920x_firmware` is not a thin wrapper: `_PrelinkExecutableSize =
 0x1d000` (116 KB), `IOProviderClass = IOResources` (a global resource, not a
 per-device driver). Extracted (SHA-256
-`b8af809426e15cd23b5247a15c7ee950843aa893f8bdc7b4e2cc9e018100cd37`), it is a
-real, separate ARMv7 Mach-O (`cputype=12`, `cpusubtype=9`), self-identifying
-as `"EmbeddedIOP for s5l8920x, Copyright 2010, Apple Inc."`, built alongside
-`iBoot-1072.61`.
+`b8af809426e15cd23b5247a15c7ee950843aa893f8bdc7b4e2cc9e018100cd37`), it
+turns out to be **two layers**, not one, and the distinction matters for
+what each fact actually proves:
+
+- A wrapper: a Mach-O container (`cputype=12`, `cpusubtype=9` — ARMv7) with
+  its own tiny `__text`/`__cstring`, holding config keys
+  (`ConfigurationOffset`, `HeapBaseOffset`, `PageTableBase`,
+  `MessageChannelSize`, ...) that tell the host how to load what follows.
+  This Mach-O header describes what the **host** (an ARMv7 Cortex-A8) needs
+  to load the file with XNU's normal kext mechanism — it says nothing about
+  the embedded core's own instruction set.
+- The actual payload: a `fwFirmwareImage` section (0x1b000 bytes, SHA-256
+  `02397017927bfa05d23f77b9e76e9a3e7c73711806c0a230780136af7f7d8bfc`), a
+  *raw* binary with no Mach-O header of its own, starting with a genuine
+  ARM32 exception vector table (confirmed byte-for-byte: its first word,
+  `0e0000ea`, decodes as a `B` branch instruction) and self-identifying,
+  once disassembled, as `"EmbeddedIOP for s5l8920x, Copyright 2010, Apple
+  Inc."`, built alongside `iBoot-1072.61`. This is the code that was
+  actually disassembled below — directly, with `radare2` told to decode it
+  as 32-bit ARM, not inferred from the wrapper's own header.
 
 Its own debug strings strongly support this reading, but by themselves they
 establish a dialogue, not yet a proven causal chain to the specific symptom:
@@ -185,7 +204,10 @@ establish a dialogue, not yet a proven causal chain to the specific symptom:
 - `"SDHC: Ping received, IOKit <--> IOP Connection established"` — this
   establishes that a ping/connection handshake exists between IOKit and the
   IOP firmware for SDHC. `sendIOPCommand`'s special handling of opcode 0
-  (seen above) is a plausible match for this ping. **What is not yet shown**:
+  (seen above) was first guessed as a plausible match for this ping; the
+  IOP-side disassembly below instead identifies the ping as opcode 1, so
+  this specific host/IOP opcode correspondence is not yet established either
+  — see "Known gaps". **What is not yet shown**:
   whether this handshake is itself what activates the SDHC hardware, or
   merely opens a logical connection on top of hardware that is initialised
   some other way — that distinction requires tracing the ping's handler
@@ -257,40 +279,52 @@ exception vector table, confirmed byte-for-byte: `0e0000ea` decodes as a
 received" string) and disassembled in full.
 
 It is a message-processing loop (a queue named `"sdio message"`) that reads
-an incoming message's opcode field and switches on 7 cases (0-6). **Case 0
-— the ping — logs the "Connection established" string, writes a success
-status back into the message's response field, and returns to wait for the
-next message. Nothing else.** No register access, no call into any
-`sdiodrv_*` function. This directly answers the determining question
-flagged above: **the ping does not initialise the SDHC hardware; it only
-acknowledges a logical connection.** The earlier hypothesis assuming a
-direct causal link between the ping and hardware activation is wrong as
-stated.
+an incoming message's opcode field, computes `r3 = opcode - 1`, and if
+`r3 <= 6` (unsigned), jumps through a 7-entry table at `r3`'s index —
+so the table covers **opcodes 1 to 7**; opcode 0 underflows `r3` and falls
+to the same default/error path as any opcode above 7 ("unrecognised sdio
+opcode"). This indexing was checked directly against the table's own raw
+bytes (7 pointers at file offset `0x17c4`), not inferred from a case
+label, after a second review flagged exactly this kind of off-by-one as a
+real risk. **Table index 0 (real opcode 1)** — the ping — logs the
+"Connection established" string, writes a success status back into the
+message's response field, and returns to wait for the next message.
+**Nothing else.** No register access, no call into any `sdiodrv_*`
+function. This directly answers the determining question flagged above:
+**the ping does not initialise the SDHC hardware; it only acknowledges a
+logical connection.** The earlier hypothesis assuming a direct causal link
+between the ping and hardware activation is wrong as stated.
 
-Case 3 of the same switch calls a function that references the
+Table index 3 (**real opcode 4**) calls a function that references the
 `sdiodrv_resetSDHC` string — this, not the ping, is the opcode that
-actually touches hardware. Cases 1, 2, 4, 5 and 6 each call a different,
+actually touches hardware. Opcodes 2, 3, 5, 6 and 7 each call a different,
 not-yet-identified function (no directly linked debug string found in the
-time available this session).
+time available this session). The host driver's own opcode numbering
+(`sendIOPCommand`'s special handling of "opcode 0", noted above as a
+plausible ping match) has not been reconciled with this IOP-side numbering
+— whether the host's opcode byte maps 1:1 to the IOP's, or through some
+other translation, is open; see "Known gaps".
 
 ```mermaid
 flowchart TD
     RECV["fcn.00001730 (message loop)<br/>blocking receive on 'sdio message' queue"]
     OP["read opcode from message<br/>(offset +0)"]
-    SW{{"switch (opcode - 1),<br/>range check 0..6<br/>at 0x17bc"}}
+    SW{{"r3 = opcode - 1;<br/>if r3 &lt;= 6 (unsigned):<br/>jump table[r3] at 0x17c4<br/>else: default/error"}}
 
     RECV --> OP --> SW
 
-    SW -- "opcode 0<br/>(default / out of range)" --> C0
-    SW -- "opcode 1" --> C1["fcn.00001a58<br/>(not identified)"]
-    SW -- "opcode 2" --> C2["fcn.00001a24<br/>(not identified)"]
-    SW -- "opcode 3" --> C3["fcn.000019c4<br/>-> sdiodrv_resetSDHC<br/><b>touches hardware</b>"]
-    SW -- "opcode 4" --> C4["fcn.0000192c<br/>(not identified)"]
-    SW -- "opcode 5" --> C5["fcn.0000190c<br/>(not identified)"]
-    SW -- "opcode 6" --> C6["fcn.000018bc<br/>(not identified)"]
+    SW -- "opcode 0, or &gt; 7<br/>(default)" --> ERR["log 'unrecognised<br/>sdio opcode'"]
+    SW -- "opcode 1<br/>(table[0])" --> C0
+    SW -- "opcode 2<br/>(table[1])" --> C1["fcn.00001a58<br/>(not identified)"]
+    SW -- "opcode 3<br/>(table[2])" --> C2["fcn.00001a24<br/>(not identified)"]
+    SW -- "opcode 4<br/>(table[3])" --> C3["fcn.000019c4<br/>-> sdiodrv_resetSDHC<br/><b>touches hardware</b>"]
+    SW -- "opcode 5<br/>(table[4])" --> C4["fcn.0000192c<br/>(not identified)"]
+    SW -- "opcode 6<br/>(table[5])" --> C5["fcn.0000190c<br/>(not identified)"]
+    SW -- "opcode 7<br/>(table[6])" --> C6["fcn.000018bc<br/>(not identified)"]
 
     C0["<b>the PING</b><br/>log 'Connection established'<br/>write status = 0 (success)<br/><b>no register touched</b>"]
 
+    ERR --> LOOP
     C0 --> LOOP["store status in reply field,<br/>loop back to RECV"]
     C1 --> LOOP
     C2 --> LOOP
@@ -304,29 +338,51 @@ flowchart TD
     style C3 fill:#e8f8e8,stroke:#4ac97a
 ```
 
-*The ping (opcode 0) and the reset (opcode 3) are two different, unrelated
-branches of the same switch — confirmed by disassembly, not inferred from
-the log message's wording.*
+*The ping (real opcode 1) and the reset (real opcode 4) are two different,
+unrelated branches of the same switch — confirmed by reading the jump
+table's own bytes, not inferred from a case label or the log message's
+wording. An earlier version of this document mislabelled these as opcodes
+0 and 3 respectively, off by one for the reason the switch's `opcode - 1`
+subtraction makes easy to miss; corrected 2026-10-16.*
 
 Updated evidence table (format suggested by the review):
 
 | Claim | Status |
 |---|---|
-| The IOP is running | Confirmed — real ARMv7 firmware, a genuine vector table, a message-processing loop |
+| The IOP is running | **Not confirmed** — firmware identified and its message loop disassembled; whether it is actually executing under Trognon's own tethered DFU/iBSS path (as opposed to merely being present as a loaded binary) is not verified |
 | The transport works | Partial — the message's opcode/status fields are understood; the full shared-buffer format is not |
 | The ping activates the SDHC | **Disproven** — the ping handler never touches a register |
-| The SDHC works | Not tested — opcode 3 (reset) has not been sent from a payload |
+| The SDHC works | Not tested — real opcode 4 (reset) has not been sent from a payload |
 
 What would be needed to actually drive Wi-Fi from Trognon's own payloads:
 the message-channel wire format precisely enough to construct and send both
-the ping (opcode 0, now known to be a no-op connection handshake) *and*
-opcode 3 (the one that actually calls into `sdiodrv_resetSDHC`) — the
+the ping (real opcode 1, now known to be a no-op connection handshake) *and*
+real opcode 4 (the one that actually calls into `sdiodrv_resetSDHC`) — the
 command/message structure seen in `sendIOPCommand`, plus whatever the real
 low-level kickoff write at `this+0x24`'s vtable `+0x84` does on the host
 side (a separate class, not yet located or disassembled). Sending only the
 ping, as the architecture doc first assumed might be enough, is now known
 to be insufficient on its own. Not attempted this session; this is a
 deliberate stopping point, not an unfinished attempt.
+
+### Two different goals, often conflated: commanding it vs. programming it
+
+It is tempting to read "there's a second ARM core" as "we have a second,
+programmable processor on this device" — worth separating explicitly into
+two distinct, unequally-supported goals:
+
+| Goal | What is known today |
+|---|---|
+| Drive the IOP's *existing* firmware (send it a ping, a reset, real SDIO commands) | The message protocol exists and its outer shape is partly understood (this document); the transport still needs reconstructing, and whether the IOP is actually running under Trognon's tethered path is unverified |
+| Run Trognon's *own* code on the IOP (turn it into a small programmable coprocessor) | Not demonstrated at all. Would require understanding how `IOP_s5l8920x_firmware`'s own bytes are loaded, by what, to what address, whether anything verifies them (a signature check, a hash, a memory-protection boundary), and what write actually releases the IOP's reset. None of this was traced this session — it is the next concrete research target, not an open question idly raised. |
+
+Even if the main CPU turns out to be free to load arbitrary bytes into the
+IOP's memory and release its reset — a real possibility, not yet ruled
+out — that would still depend on `limera1n`'s own hold over the main CPU to
+get there in the first place. It would not be an independent exploitation
+path beyond the phone's bootrom bug; it would be a new capability unlocked
+*through* the same `limera1n`-pwned state Trognon already has, not a
+separate escape hatch from it.
 
 ## Tooling notes, for reproducibility
 
@@ -363,4 +419,14 @@ deliberate stopping point, not an unfinished attempt.
 - `AppleARM7M`'s exact relationship to the physical IOP core (whether it
   names the core itself or a related peripheral) is inferred from its name
   and its shared dependency on `IOSlaveProcessor`, not confirmed from its
-  own code.
+  own code. The name is a hint toward an ARM7-family core, which is a
+  different thing from the ARMv7 *architecture version* the main Cortex-A8
+  uses — "ARM7" and "ARMv7" name different things, and conflating them was
+  an earlier mistake in this document, corrected 2026-10-16.
+- The IOP firmware's own *load path* — who copies `IOP_s5l8920x_firmware`'s
+  bytes, to what address, whether anything verifies them (signature, hash,
+  a memory-protection boundary) before or after, and what write actually
+  releases the IOP's reset — was not traced this session. This is the
+  specific next target for deciding whether the IOP could ever run
+  Trognon's own code rather than just being sent messages its existing
+  firmware understands.
