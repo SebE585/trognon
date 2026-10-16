@@ -20,6 +20,12 @@
 .md-typeset .tag-source { background:#8A6410; }
 .md-typeset .tag-hyp { background:#A23220; }
 .md-typeset img[src$=".svg"] { display:block; margin:1rem auto; max-width:100%; max-height:34rem; width:auto; }
+/* The paper-forge diagrams (boot-chain.svg, soc-map.svg, ...) are pre-rendered with a
+   fixed white background. On the slate (dark) palette that reads as a jarring white
+   rectangle, so frame it as a deliberate light card instead of letting it clash raw. */
+[data-md-color-scheme="slate"] .md-typeset img[src$=".svg"] {
+  background:#fff; border-radius:8px; padding:.9rem; box-shadow:0 2px 14px rgba(0,0,0,.35);
+}
 .hero { padding:1.2rem 0 .4rem; }
 .hero h1 { font-size:2.4rem; margin:.2rem 0; }
 .hero p { font-size:1.05rem; max-width:44rem; }
