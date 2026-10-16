@@ -1,0 +1,46 @@
+binary: AppleS5L8900X.kext.bin
+binary_sha256: 5439f665a7531f36c0c869fd16e7a33e361e4f72232130fe5055b86a38985175
+function_name_apple: null
+function_name_assigned: "SPI per-device setting validation (working name)"
+decode_mode: thumb
+subsystem: spi_controller
+entry_code_address: "0x8045ce50"
+thumb_entry_pointer: "0x8045ce51"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8045ce50", "0x8045cef0"]
+  constant_ranges:
+    - ["0x8045cef0", "0x8045cf08"]
+  unresolved:
+    - id: SPI-VALID-Q1
+      text: "Where the setting structure comes from: that its first word, its second word and the byte at offset 0xb are the first words of the 'reg' property of the SPI child node (the touch node's 0x0 0x7c 0x8010000 ...) is an inference from matching offsets, not shown by a call chain."
+      proof_needed: "find the caller (AppleARMSPIDevice creation in AppleARMPlatform) and how it fills the structure from the node"
+    - id: SPI-VALID-Q2
+      text: "Unit of the second word (a period): the bound is on period times the 64-bit value read from the clock named 'nclk'. If that clock value is in Hz and the period in ns, the product over 1e9 is a number of clock cycles, at most 2048."
+      proof_needed: "the clock provider's method behind the 'nclk' and 'pclk' lookups (slot +0x358)"
+
+claims:
+  - id: SPI-VALID-001
+    text: >
+      Takes a setting structure and returns 1 if it is acceptable, else 0. Its first word must be below 4
+      (a chip-select index). Unless the controller's internal-cs flag (this+0x94) is set, the function
+      ensures the chip-select function for that index is looked up once, from the node property
+      function-spi_cs<index>, and stored at this+0x84 + 4 * index; a failed lookup rejects the setting.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+  - id: SPI-VALID-002
+    text: >
+      The word at offset 4 must be non-zero, and period times the 64-bit value at this+0xc0 (read from the
+      clock 'nclk' at start) plus 999999999 must not exceed 0x1DD11EAC9FF, i.e. period times that value
+      at most 2048 * 10^9. The byte at offset 0xb must be between 8 and 32 and its position in the mask
+      0x01000101 must be set, which allows 8, 16 and 32 bits per word only.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "offsets, bounds and one property name"

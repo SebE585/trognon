@@ -1,0 +1,54 @@
+binary: AppleS5L8900X.kext.bin
+binary_sha256: 5439f665a7531f36c0c869fd16e7a33e361e4f72232130fe5055b86a38985175
+function_name_apple: "AppleS5L8900XSPIController::start(IOService*)"
+function_name_assigned: null
+decode_mode: thumb
+subsystem: spi_controller
+entry_code_address: "0x8045cf08"
+thumb_entry_pointer: "0x8045cf09"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x8045cf08", "0x8045d0da"]
+  unresolved:
+    - id: SPI-START-Q1
+      text: "Meaning of the version constants (this+0x9c, +0xa0, +0xa4, +0xa8, +0xac): 0xf, 0x4000, 0x2000, 0x10 and 0x40000f for spi-version 1; 0xd, 0x1000, 0x800, 0x8 and a value for version 0. Plausibly field widths and FIFO or buffer sizes, not decoded."
+      proof_needed: "the transfer functions that read those fields, and the registers they program (SETUP, CLKDIVIDER, PIN)"
+    - id: SPI-START-Q2
+      text: "The 'pclk' and 'nclk' lookups (this+0xb8/0xbc and 0xc0/0xc4): two 64-bit values obtained by slot +0x358 of the object at this+0x74."
+      proof_needed: "the clock provider's method; whether nclk is the frequency the divider divides"
+    - id: SPI-START-Q3
+      text: "Which functions program CLKDIVIDER (0x30) and PIN (0x0C): they were not found in the region read."
+      proof_needed: "scan the controller's methods for accesses at those offsets"
+
+claims:
+  - id: SPI-START-001
+    text: >
+      Reads the property spi-version (0 if absent). For version 0 it stores 0xd, 0x1000, 0x800 and 0x8 at
+      this+0x9c, +0xa0, +0xa4, +0xa8; for version 1 it stores 0xf, 0x4000, 0x2000 and 0x10, and 0x40000f at
+      this+0xac; any other version makes start fail. The spi1 node of this phone has spi-version 1.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+  - id: SPI-START-002
+    text: >
+      Looks up two clocks by name through the object at this+0x74, 'pclk' and 'nclk', each a 64-bit
+      value that must be non-zero; reads the node property internal-cs into the byte at this+0x94;
+      maps the device memory region 0 of the provider (slot +0x208), keeps the memory map at this+0x78 and
+      its virtual address at this+0x7c, and logs "_spiBaseAddress"; then creates and registers event
+      sources and returns 1.
+    status: device_disassembly_verified
+    evidence: "docs/research/2026-10-16-touch-n88-preconditions.md#the-spi-controller-driver-start-and-the-per-device-setting-static-2026-10-16"
+
+hardware_tests:
+  - name: trace_spi1_gate (STAGE 38), idle registers of spi1
+    claim_tested: "SPI-START-002 and the OpeniBoot register offsets: the block at the mapped base answers reads"
+    execution_status: executed
+    result: >
+      With the clock gate on, SETUP 0x8, PIN 0x3, CLKDIVIDER 1, CONTROL/STATUS/SPCNT/SPIDD 0, no stall.
+      The layout of those registers was not confirmed; the reads only show a live block.
+    evidence: "evidence/20261016T165854Z-trace_spi1_gate/"
+
+publication:
+  status: approved
+  notes: "offsets, constants and property names"

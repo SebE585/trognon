@@ -237,6 +237,34 @@ which is consistent with a controller in master mode but is not a test of it. Th
 `0x3` and CLKDIVIDER `1` was not decoded. Nothing was configured, and the clock was left off as
 found.
 
+## The SPI controller driver: start and the per-device setting (static, 2026-10-16)
+
+Catalog: `AppleS5L8900X/` (`SPI-START-*`, `SPI-VALID-*`). The controller class
+`AppleS5L8900XSPIController` lives in the kext `AppleS5L8900X` (extracted with the class name as the
+search key, because the bundle identifier is a prefix of three kexts). Read in code, not run:
+
+- `start` reads `spi-version` (the `spi1` node has `1`) and stores version-dependent constants:
+  `0xf`, `0x4000`, `0x2000`, `0x10` and `0x40000f` for version 1, `0xd`, `0x1000`, `0x800`, `0x8` for
+  version 0. They are not decoded (plausibly field widths and buffer sizes). It also looks up two clocks
+  named `pclk` and `nclk` (64-bit values), reads the flag `internal-cs`, and maps the register block.
+- A validation routine checks the setting a child device hands to the controller: a chip-select index
+  below 4 (and, unless `internal-cs`, the chip-select function from the property `function-spi_cs<n>`,
+  which is GPIO `13.00` for chip select 0 here), a non-zero period whose product with `nclk` is at most
+  2048 * 10^9, and a word size of 8, 16 or 32 bits.
+
+The offsets in that routine (word 0, word 1, byte at offset `0xb`) match the first words of the touch
+node's `reg` property, `0x0 0x7c 0x8010000 0x1388 0x2710 0 0 0`: chip select `0`, a period of `0x7c` =
+124, and a word size of `8` in the top byte of `0x8010000`. **This is an inference from matching
+offsets**, not from a traced call chain (`SPI-VALID-Q1`). If it holds, and if `nclk` is a frequency in
+Hz and the period is in nanoseconds, the touch controller's SPI clock period would be 124 ns, about
+8 MHz, and `0x1388` = 5000 and `0x2710` = 10000 would be two delays of 5 and 10 microseconds, which is
+the 5 and 10 of the iDroid driver's setting (there with a slower clock). All three readings rest on
+unverified units.
+
+Not found in the region read: the code that programs CLKDIVIDER (`0x30`) and PIN (`0x0C`). The idle
+values read in STAGE 38 (CLKDIVIDER `1`, PIN `3`, SETUP `8`) therefore remain undecoded
+(`SPI-START-Q3`).
+
 ## Candidate write sequence (a proposal, nothing here is authorised or done)
 
 Each line is one write, to be proposed again, with its exact value, before it is made. The values
@@ -249,7 +277,7 @@ come from the readings above; none of the write semantics was ever exercised on 
 | W3 | PMU GPIO 0 (touch clock enable) | PMU register `0x50`, `0x11` to `0x13` (set bit `0x02`) | `0x11` | write `0x11` | nothing visible alone; read-back only | changes the level of a PMU pin whose load is only known from the device tree |
 | W4 | touch LDO | PMU register `0x11`, `0xBE` to `0xFE` (set bit `0x40`), read-modify-write | `0xBE` | write `0xBE` | nothing visible alone except the read-back and possibly the controller's behaviour on SPI | powers a rail; if the index-to-rail reading is wrong, a different rail is switched |
 | W5 | reset line | SoC GPIO `14.01` released to high impedance, then the driver's delay (`0xf`, unit unknown) | level `0` | drive low again | a change on SPI/attention if the controller starts | the polarity and the unit of the delay are unknown |
-| W6 | first SPI exchange | `spi1` registers, chip select `13.00` | n/a | n/a | any answer | requires the controller's register layout confirmed on this chip, and the bootloader protocol |
+| W6 | first SPI exchange | `spi1` registers, chip select `13.00`; if the `reg` reading above holds, word size 8 and a period of about 124 ns | n/a | n/a | any answer | requires the controller's register layout confirmed on this chip (CLKDIVIDER and PIN undecoded), the `reg` inference confirmed, and the bootloader protocol |
 
 The order that keeps the risk lowest is W1 and then W2, and stopping to read the result before
 anything touches the PMU. The PMU writes (W3, W4) follow the driver's apparent order of power first
