@@ -20,6 +20,11 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 <figcaption>The screen shows what the code draws.</figcaption>
 </figure>
 
+<figure class="journey-figure journey-screen" markdown="1">
+![](../../img/journey/screens/20261015T050542Z-trace_regs.png){ .journey-capture }
+<figcaption>What the phone's screen showed in this run (evidence folder [`20261015T050542Z-trace_regs`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050542Z-trace_regs)). The image is rebuilt from the payload's own screen buffer, not photographed.</figcaption>
+</figure>
+
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
 The screen is a framebuffer at `0x4fd00000`, 320 by 480 pixels. The display controller was already set up by the boot

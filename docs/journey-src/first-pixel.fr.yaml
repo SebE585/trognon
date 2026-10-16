@@ -69,6 +69,7 @@ nodes:
 
   - id: payload
     kind: step
+    screen: 20261015T050540Z-trace
     title: "Notre code arrive"
     tag: DEVICE
     visual: ram
@@ -101,6 +102,7 @@ nodes:
 
   - id: pixel
     kind: step
+    screen: 20261015T050542Z-trace_regs
     title: "Le premier pixel"
     tag: DEVICE
     visual: pixel
@@ -117,6 +119,7 @@ nodes:
 
   - id: crash
     kind: step
+    screen: 20261015T050540Z-trace_pabt
     title: "Un plantage qu'on peut lire"
     tag: DEVICE
     visual: crash
@@ -170,6 +173,7 @@ nodes:
 
   - id: f-touch
     kind: frontier
+    screen: 20261016T225711Z-trace_spi1_selftest2
     title: "Tactile : le contrôleur n'a pas répondu"
     tag: HYPOTHESIS
     know: |
@@ -201,6 +205,7 @@ nodes:
 
   - id: f-wifi
     kind: frontier
+    screen: 20261015T174633Z-trace_wifi_reset
     title: "Wi-Fi : le coprocesseur n'a pas été démarré"
     tag: HYPOTHESIS
     know: |
@@ -234,6 +239,7 @@ nodes:
 
   - id: f-nand
     kind: frontier
+    screen: 20261015T171033Z-trace_nand
     title: "Stockage : seulement le nom de la puce"
     tag: HYPOTHESIS
     know: |

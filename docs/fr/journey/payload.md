@@ -20,6 +20,11 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 <figcaption>Notre code atterrit en RAM, à 0x41000000.</figcaption>
 </figure>
 
+<figure class="journey-figure journey-screen" markdown="1">
+![](../../img/journey/screens/20261015T050540Z-trace.png){ .journey-capture }
+<figcaption>Ce que l'écran du téléphone affichait pendant ce passage (dossier de preuve [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace)). L'image est reconstruite depuis le tampon d'écran du payload, pas photographiée.</figcaption>
+</figure>
+
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 
 `send_data` copie du code Thumb brut en `0x41000000` et `run` y saute. Le code démarre avec la MMU et les caches activés,

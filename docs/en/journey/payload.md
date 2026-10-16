@@ -20,6 +20,11 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 <figcaption>Our code lands in RAM, at 0x41000000.</figcaption>
 </figure>
 
+<figure class="journey-figure journey-screen" markdown="1">
+![](../../img/journey/screens/20261015T050540Z-trace.png){ .journey-capture }
+<figcaption>What the phone's screen showed in this run (evidence folder [`20261015T050540Z-trace`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace)). The image is rebuilt from the payload's own screen buffer, not photographed.</figcaption>
+</figure>
+
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
 `send_data` copies raw Thumb code to `0x41000000` and `run` jumps to it. The code starts with the MMU and caches on, in

@@ -20,6 +20,11 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 <figcaption>Un plantage finit en vidage lisible, pas en redémarrage.</figcaption>
 </figure>
 
+<figure class="journey-figure journey-screen" markdown="1">
+![](../../img/journey/screens/20261015T050540Z-trace_pabt.png){ .journey-capture }
+<figcaption>Ce que l'écran du téléphone affichait pendant ce passage (dossier de preuve [`20261015T050540Z-trace_pabt`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace_pabt)). L'image est reconstruite depuis le tampon d'écran du payload, pas photographiée.</figcaption>
+</figure>
+
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 
 Le téléphone n'a ni port série accessible ni débogueur : un plantage ne ferait que le redémarrer. La console accroche

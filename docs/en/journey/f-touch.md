@@ -15,6 +15,11 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # Touch: the controller has not answered
 
+<figure class="journey-figure journey-screen" markdown="1">
+![](../../img/journey/screens/20261016T225711Z-trace_spi1_selftest2.png){ .journey-capture }
+<figcaption>What the phone's screen showed in this run (evidence folder [`20261016T225711Z-trace_spi1_selftest2`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T225711Z-trace_spi1_selftest2)). The image is rebuilt from the payload's own screen buffer, not photographed.</figcaption>
+</figure>
+
 How sure we are: <span class="tag tag-hyp">HYPOTHESIS</span>
 
 ## What we know

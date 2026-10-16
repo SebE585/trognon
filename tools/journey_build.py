@@ -53,6 +53,7 @@ I18N = {
         "km_total": "%d entries, %d claims, %d open questions.",
         "km_row": "**%s** · %d entr%s · %d claim%s · %d open question%s",
         "back_grimoire": "Back to the Grimoire.", "kernel_side": "The kernel's side: %s (the Grimoire).",
+        "screen_cap": "What the phone's screen showed in this run (evidence folder %s). The image is rebuilt from the payload's own screen buffer, not photographed.",
         "g_missions_hub": "**Want to help?** Each open question can be a mission you take: see the [missions](../missions.md).",
         "g_missions_head": "Missions on this binary", "g_missions_all": "All missions and how to take one",
         "rv_complete": "reviewed", "rv_partial": "partly reviewed", "rv_none": "not reviewed", "q_open": "open question(s)",
@@ -81,6 +82,7 @@ I18N = {
         "km_total": "%d entrées, %d affirmations, %d questions ouvertes.",
         "km_row": "**%s** · %d entrée%s · %d affirmation%s · %d question%s ouverte%s",
         "back_grimoire": "Retour au Grimoire.", "kernel_side": "Ce que dit le noyau : %s (le Grimoire).",
+        "screen_cap": "Ce que l'écran du téléphone affichait pendant ce passage (dossier de preuve %s). L'image est reconstruite depuis le tampon d'écran du payload, pas photographiée.",
         "g_missions_hub": "**Envie d'aider ?** Chaque question ouverte peut devenir une mission : voir les [missions](../../en/missions.md) (en anglais).",
         "g_missions_head": "Missions sur ce binaire", "g_missions_all": "Toutes les missions et comment en prendre une (en anglais)",
         "rv_complete": "relue", "rv_partial": "relue en partie", "rv_none": "non relue", "q_open": "question(s) ouverte(s)",
@@ -452,6 +454,8 @@ def check(g):
         for nid in n.get("notebook", []):
             if nid not in ITEMS:
                 errors.append("%s: notebook note %r is not in the approved catalog" % (i, nid))
+        if n.get("screen") and not (ROOT / "evidence" / n["screen"] / "screen.png").is_file():
+            errors.append("%s: screen %r has no evidence/<bundle>/screen.png" % (i, n["screen"]))
         fig = n.get("figure")
         if fig and not (DOCS / fig["src"]).is_file():
             errors.append("%s: figure %r does not exist" % (i, fig["src"]))
@@ -559,6 +563,9 @@ def page_for(g, n, route, nodes):
         # Decorative alt text: the caption right under the picture says the same thing, and a reader should not hear it twice.
         lines += ['<figure class="journey-figure" markdown="1">', "![](../../%s){ .journey-visual }" % visual_rel(lang, n["visual"]),
                   "<figcaption>%s</figcaption>" % cap, "</figure>", ""]
+    if n.get("screen"):
+        lines += ['<figure class="journey-figure journey-screen" markdown="1">', "![](../../%s){ .journey-capture }" % screen_rel(n["screen"]),
+                  "<figcaption>%s</figcaption>" % (T(lang, "screen_cap") % ("[`%s`](https://github.com/SebE585/trognon/tree/main/evidence/%s)" % (n["screen"], n["screen"]))), "</figure>", ""]
     if n.get("tag"):
         lines += [T(lang, "how_sure") + tag_html(n["tag"]), ""]
     if n["kind"] == "grimoire":
@@ -621,6 +628,15 @@ def render(g):
     return out
 
 
+def screen_rel(bundle):
+    return "img/journey/screens/%s.png" % bundle
+
+
+def screen_files(g):
+    """{path relative to docs: bytes} for the real screen captures this graph shows (copied from the evidence bundles)."""
+    return {screen_rel(n["screen"]): (ROOT / "evidence" / n["screen"] / "screen.png").read_bytes() for n in g["nodes"] if n.get("screen")}
+
+
 def assets(g):
     """{path relative to docs: text} for the generated visuals this graph uses."""
     used = {n["visual"] for n in g["nodes"] if n.get("visual")}
@@ -669,6 +685,11 @@ def main(argv=None):
                 if not f.is_file() or f.read_text() != text:
                     print("%s: %s is missing or stale (run make journey)" % (g["_src"], f.relative_to(ROOT)))
                     status = 1
+            for rel, data in screen_files(g).items():
+                f = DOCS / rel
+                if not f.is_file() or f.read_bytes() != data:
+                    print("%s: %s is missing or stale (run make journey)" % (g["_src"], f.relative_to(ROOT)))
+                    status = 1
             for name in sorted({p.name for p in target.glob("*.md")} - set(pages) if target.is_dir() else set()):
                 print("%s: %s is not in the graph (remove it)" % (g["_src"], (target / name).relative_to(ROOT)))
                 status = 1
@@ -679,6 +700,9 @@ def main(argv=None):
             for rel, text in files.items():
                 (DOCS / rel).parent.mkdir(parents=True, exist_ok=True)
                 (DOCS / rel).write_text(text)
+            for rel, data in screen_files(g).items():
+                (DOCS / rel).parent.mkdir(parents=True, exist_ok=True)
+                (DOCS / rel).write_bytes(data)
             print("%s: %d pages and %d visuals written to %s" % (g["_src"], len(pages), len(files), target.relative_to(ROOT)))
     if args.check and status == 0:
         print("journey: graphs valid, translations in step, generated files up to date")

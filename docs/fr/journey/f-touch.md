@@ -15,6 +15,11 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # Tactile : le contrôleur n'a pas répondu
 
+<figure class="journey-figure journey-screen" markdown="1">
+![](../../img/journey/screens/20261016T225711Z-trace_spi1_selftest2.png){ .journey-capture }
+<figcaption>Ce que l'écran du téléphone affichait pendant ce passage (dossier de preuve [`20261016T225711Z-trace_spi1_selftest2`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T225711Z-trace_spi1_selftest2)). L'image est reconstruite depuis le tampon d'écran du payload, pas photographiée.</figcaption>
+</figure>
+
 Degré de certitude : <span class="tag tag-hyp">HYPOTHESIS</span>
 
 ## Ce que nous savons

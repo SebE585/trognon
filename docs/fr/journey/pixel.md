@@ -20,6 +20,11 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 <figcaption>L'écran montre ce que le code dessine.</figcaption>
 </figure>
 
+<figure class="journey-figure journey-screen" markdown="1">
+![](../../img/journey/screens/20261015T050542Z-trace_regs.png){ .journey-capture }
+<figcaption>Ce que l'écran du téléphone affichait pendant ce passage (dossier de preuve [`20261015T050542Z-trace_regs`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050542Z-trace_regs)). L'image est reconstruite depuis le tampon d'écran du payload, pas photographiée.</figcaption>
+</figure>
+
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 
 L'écran est un framebuffer en `0x4fd00000`, de 320 par 480 pixels. Le contrôleur d'affichage avait déjà été réglé par

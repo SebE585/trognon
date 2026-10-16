@@ -20,6 +20,11 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 <figcaption>A crash ends as a readable dump, not a reboot.</figcaption>
 </figure>
 
+<figure class="journey-figure journey-screen" markdown="1">
+![](../../img/journey/screens/20261015T050540Z-trace_pabt.png){ .journey-capture }
+<figcaption>What the phone's screen showed in this run (evidence folder [`20261015T050540Z-trace_pabt`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T050540Z-trace_pabt)). The image is rebuilt from the payload's own screen buffer, not photographed.</figcaption>
+</figure>
+
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
 The phone has no serial port we can reach and no debugger, so a crash would only reboot it. The console hooks the

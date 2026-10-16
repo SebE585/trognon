@@ -71,6 +71,7 @@ nodes:
 
   - id: payload
     kind: step
+    screen: 20261015T050540Z-trace
     title: "Our code arrives"
     visual: ram
     tag: DEVICE
@@ -102,6 +103,7 @@ nodes:
 
   - id: pixel
     kind: step
+    screen: 20261015T050542Z-trace_regs
     title: "The first pixel"
     visual: pixel
     tag: DEVICE
@@ -118,6 +120,7 @@ nodes:
 
   - id: crash
     kind: step
+    screen: 20261015T050540Z-trace_pabt
     title: "A crash you can read"
     visual: crash
     tag: DEVICE
@@ -169,6 +172,7 @@ nodes:
 
   - id: f-touch
     kind: frontier
+    screen: 20261016T225711Z-trace_spi1_selftest2
     title: "Touch: the controller has not answered"
     tag: HYPOTHESIS
     know: |
@@ -197,6 +201,7 @@ nodes:
 
   - id: f-wifi
     kind: frontier
+    screen: 20261015T174633Z-trace_wifi_reset
     title: "Wi-Fi: the coprocessor has not been started"
     tag: HYPOTHESIS
     know: |
@@ -229,6 +234,7 @@ nodes:
 
   - id: f-nand
     kind: frontier
+    screen: 20261015T171033Z-trace_nand
     title: "Storage: only the chip's name"
     tag: HYPOTHESIS
     know: |

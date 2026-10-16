@@ -147,6 +147,29 @@ class SceneLayoutTests(unittest.TestCase):
         self.assertIn("<figcaption>Black screen. Nothing is connected.</figcaption>", page)
 
 
+class ScreenCaptureTests(unittest.TestCase):
+    BUNDLE = "20261015T050540Z-trace"
+
+    def g(self, lang="en", **extra):
+        return {"lang": lang, "_src": "t.yaml", "title": "T", "start": "a", "nodes": [node("a", ["a"], kind="start", **extra)]}
+
+    def test_a_real_capture_is_shown_with_its_bundle_and_an_honest_caption(self):
+        page = jb.render(self.g(screen=self.BUNDLE))["a.md"]
+        self.assertIn("![](../../img/journey/screens/%s.png)" % self.BUNDLE, page)
+        self.assertIn("not photographed", page)
+        self.assertIn("evidence/%s" % self.BUNDLE, page)
+
+    def test_the_french_caption_says_it_is_not_a_photograph(self):
+        self.assertIn("pas photographiée", jb.render(self.g("fr", screen=self.BUNDLE))["a.md"])
+
+    def test_a_missing_bundle_is_refused(self):
+        self.assertTrue(any("screen.png" in e for e in jb.check(self.g(screen="no-such-bundle"))))
+
+    def test_the_capture_file_is_copied_byte_for_byte(self):
+        files = jb.screen_files(self.g(screen=self.BUNDLE))
+        self.assertEqual(files, {"img/journey/screens/%s.png" % self.BUNDLE: (jb.ROOT / "evidence" / self.BUNDLE / "screen.png").read_bytes()})
+
+
 class FrenchWordingTests(unittest.TestCase):
     """Literal calques that were found in the French pages and fixed; they must not come back."""
     BANNED = ["au bord de ce que", "Retour au bord", "validations d'alimentation", "données du disque", "Demander quelque chose à voir",

@@ -15,6 +15,11 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # Wi-Fi: the coprocessor has not been started
 
+<figure class="journey-figure journey-screen" markdown="1">
+![](../../img/journey/screens/20261015T174633Z-trace_wifi_reset.png){ .journey-capture }
+<figcaption>What the phone's screen showed in this run (evidence folder [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset)). The image is rebuilt from the payload's own screen buffer, not photographed.</figcaption>
+</figure>
+
 How sure we are: <span class="tag tag-hyp">HYPOTHESIS</span>
 
 ## What we know

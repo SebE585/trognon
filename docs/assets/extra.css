@@ -225,4 +225,7 @@
   .md-typeset .journey-figure img.journey-visual { max-height: none; width: 100%; }
 }
 @media (max-width: 59.99em) { .md-typeset .journey-figure img.journey-visual { max-height: 7.5rem; } }
+/* A real capture of the phone's screen (portrait 320x480): smaller than the schematic, with a thin frame */
+.md-typeset .journey-screen img.journey-capture { width: 9rem; max-width: 100%; border: 2px solid var(--md-default-fg-color--lighter); border-radius: 6px; }
+@media (min-width: 60em) { .journey-screen { clear: right; } }
 .md-typeset .page-actions .page-actions__stamp { margin: .8rem 0 0; font-size: .68rem; color: var(--md-default-fg-color--light); max-width: none; }

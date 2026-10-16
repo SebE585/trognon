@@ -15,6 +15,11 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # Wi-Fi : le coprocesseur n'a pas été démarré
 
+<figure class="journey-figure journey-screen" markdown="1">
+![](../../img/journey/screens/20261015T174633Z-trace_wifi_reset.png){ .journey-capture }
+<figcaption>Ce que l'écran du téléphone affichait pendant ce passage (dossier de preuve [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset)). L'image est reconstruite depuis le tampon d'écran du payload, pas photographiée.</figcaption>
+</figure>
+
 Degré de certitude : <span class="tag tag-hyp">HYPOTHESIS</span>
 
 ## Ce que nous savons
