@@ -46,6 +46,8 @@ same claim as "no write at all".
 
 ## CPU and MMU (DEVICE)
 
+*The CPU core and its memory-management unit: what runs the code and how it sees memory.*
+
 | Item | Value | Meaning |
 |---|---|---|
 | `MIDR` | `0x412FC081` | ARM, part `0xC08`, variant 2, revision 1: Cortex-A8 r2p1 |
@@ -54,6 +56,8 @@ same claim as "no write at all".
 | Page table | 1 MiB sections, all in domain 0 | nothing unmapped in indexes 1..0xfff |
 
 ## Display controller, `CLCD_BASE = 0x85400000` (DEVICE)
+
+*The CLCD block drives the physical screen from the framebuffer in RAM.*
 
 | Offset | Value read | Meaning |
 |---|---|---|
@@ -71,6 +75,8 @@ Writing our own panel init is a much larger job (**HYPOTHESIS**, see OpenIBoot `
 
 ## GPIO and clock gates (DEVICE, partial)
 
+*GPIO reads or drives individual pins; a clock gate turns a peripheral's clock on or off.*
+
 | Address | Value | Status |
 |---|---|---|
 | GPIO base `0x83000000` | readable, no abort | mapped, offsets `(8*port+pin)*4` answer |
@@ -86,6 +92,8 @@ Values read by eye from the screen; field widths were assumed to be 8 hex digits
 undetermined). Not retried since that incident. Treat as dangerous until understood.
 
 ## Interrupt controllers VIC0/1/2 (DEVICE, 2026-10-15)
+
+*The VIC routes a peripheral's interrupt request to the CPU.*
 
 Read-only survey. All registers answered, no abort.
 
@@ -108,6 +116,9 @@ Read-only survey. All registers answered, no abort.
 Timer registers are the least understood part of OpenIBoot (its own comment says they are copied from an older SoC).
 
 ## Timer block, `TIMER_BASE = 0xBF100000` (DEVICE, 2026-10-15)
+
+*Free-running counters and per-timer state, used for timing and, potentially, periodic
+interrupts.*
 
 | Register | Offset | Observed |
 |---|---|---|
@@ -138,6 +149,8 @@ Timer registers are the least understood part of OpenIBoot (its own comment says
 
 ## NAND, `H2FMI0_BASE = 0x81200000` (DEVICE, 2026-10-15)
 
+*The NAND controller talks to the flash chips that hold the device's own iOS image.*
+
 Chip ID read: reset + READ ID command (control writes, but no program and no erase) across
 all 16 chip-select lines on bus 0, then its geometry looked up in OpeniBoot's own hardcoded
 table.
@@ -154,6 +167,8 @@ no erase, this project's NOR-equivalent caution (`tools/boot.sh` never calls `fl
 applies here too, with a larger margin, since NAND holds the device's own iOS image.
 
 ## Buttons, same GPIO base as above (DEVICE, 2026-10-15)
+
+*Physical buttons are just GPIO pins, read like any other input line.*
 
 Found by difference, not by name: OpeniBoot's own button names for this SoC look copied from
 an older one, so every readable GPIO bit (`(8*port+pin)*4` from the base above) was sampled,
@@ -172,6 +187,8 @@ close to 3 minutes) killed the USB control endpoint afterwards; a host-side USB 
 (`dev.reset()`, no DFU needed) revived it — see [evidence](08-evidence.md).
 
 ## Accelerometer, i2c0 address `0x1d` (DEVICE, 2026-10-16)
+
+*The accelerometer reports motion/orientation over a two-wire I2C bus.*
 
 **Status**: DEVICE, first try, exact chip model still open. Everything below came from this
 device's own decrypted device tree, then a real bit-banged I2C transaction over GPIO.
@@ -209,6 +226,9 @@ plausibly pulled-up, so a mis-wired guess cannot look like a silent success.
 **Links to evidence**: [evidence bundle `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), indexed on the [evidence page](08-evidence.md).
 
 ## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (mixed DEVICE/HYPOTHESIS, 2026-10-15/16)
+
+*SDIO is the bus protocol most embedded Wi-Fi chips use; on this SoC it may be mediated by a
+second, embedded processor rather than driven directly.*
 
 **Status**: mixed DEVICE/HYPOTHESIS. No OpeniBoot source exists for this block on the
 S5L8920 at all (unlike NAND). Everything below the address itself came from this device's
@@ -268,6 +288,8 @@ that Wi-Fi is secondary to it; no evidence either way on original design intent 
 
 ## Bluetooth, UART3, reset `15.06` / wake `16.02` (DEVICE, 2026-10-16)
 
+*Bluetooth here is a separate radio on its own UART link, not the Wi-Fi chip's SDIO bus.*
+
 **Status**: DEVICE, read-only GPIO levels. No UART traffic attempted yet.
 
 **What's confirmed**: the device tree names a `bluetooth` node under `uart3`
@@ -294,3 +316,23 @@ then run it on a device in DFU with `tools/go.sh tools/payloads/trace_bt_gpio.bi
 pattern as the Wi-Fi reset/wake read (STAGE 15): plain reads, no write, no UART touched.
 
 **Links to evidence**: [evidence bundle `20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio), indexed on the [evidence page](08-evidence.md).
+
+## Driver catalog
+
+Which Apple driver (if any) was identified for each block, which of our own files tests it,
+whether that code follows an inherited register layout or one we wrote ourselves, and what
+was actually exercised. "Not identified" means no named Apple driver turned up in research
+for this block, not that none exists.
+
+| Component | Apple driver identified | Trognon code | Init | Actually tested |
+|---|---|---|---|---|
+| CPU/MMU | not identified (the CPU core itself, no named driver) | `trace.c`, printed on every payload run | n/a, read-only | `MIDR`/`SCTLR`/`DACR`/page table |
+| Display (CLCD) | not identified by name (OpeniBoot's own `clcd.c` registers) | `trace.c` STAGE 5 (`trace_regs.bin`) | inherited: the iBSS's own CLCD init already ran; we only read | framebuffer draw, status/timing registers |
+| GPIO and clock gates | not identified (OpeniBoot's `gpio.c`/`includes/hardware/gpio.h`) | `trace.c` STAGE 5 (`trace_regs.bin`) | inherited register layout | pin reads, one panel-reset pin read |
+| VIC0/1/2 | not identified (standard ARM VIC, OpeniBoot's own offsets) | `trace.c` STAGE 6 (`trace_vic.bin`) | inherited register layout | read-only survey, software-triggered IRQ |
+| Timer block | not identified (OpeniBoot's own `timer.h`, itself "copied from an older SoC" per its comment) | `trace.c` STAGE 8 (`trace_timer.bin`) | inherited, and already known wrong for the IRQ-ack offsets | tick-rate measurement, `STATE` registers |
+| NAND | host-side `com.apple.driver.AppleIOPFMI` named in the IOP firmware report, not the code used here | `trace.c` STAGE 13 (`trace_nand.bin`) | inherited: OpeniBoot's own `h2fmi.c` reset + READ ID sequence | chip ID on CE0/CE1 |
+| Buttons | not identified (OpeniBoot's own button names for this SoC were found wrong) | `trace.c` STAGE 12 (`trace_buttons.bin`) | our own: found by observed GPIO difference, no driver's pin table used | 5 buttons mapped |
+| Accelerometer | not identified by name (device tree only) | `trace.c` STAGE 29 (`trace_accel_i2c.bin`) | our own: I2C bit-bang written for this project | `WHO_AM_I` register |
+| Wi-Fi/SDIO | `AppleIOPSDIO` (host-side driver that talks to the IOP, named in the IOP firmware report; not reimplemented here) | `trace.c` STAGE 17-24 (`trace_sdio_*.bin`, `trace_write_test.bin`) | inherited `plat-s5l8900`-style layout for the direct CPU attempts; the SDHCI-standard layout is confirmed only in the IOP's own firmware, never used by our code | register dump, `CMD0` attempt, GPIO reset toggle, raw write-then-readback |
+| Bluetooth | not identified (device tree only; no Apple Bluetooth driver traced) | `trace.c` STAGE 30 (`trace_bt_gpio.bin`) | our own: plain GPIO read | reset/wake GPIO levels only |

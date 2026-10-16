@@ -48,6 +48,8 @@ persistante » (rien d'enregistré en flash) n'est pas la même affirmation que 
 
 ## CPU et MMU (DEVICE)
 
+*Le cœur CPU et son unité de gestion mémoire : ce qui exécute le code et comment il voit la mémoire.*
+
 | Élément | Valeur | Sens |
 |---|---|---|
 | `MIDR` | `0x412FC081` | ARM, partie `0xC08`, variante 2, révision 1 : Cortex-A8 r2p1 |
@@ -56,6 +58,8 @@ persistante » (rien d'enregistré en flash) n'est pas la même affirmation que 
 | Table de pages | sections de 1 Mio, toutes en domaine 0 | rien de non mappé aux index 1..0xfff |
 
 ## Contrôleur d'affichage, `CLCD_BASE = 0x85400000` (DEVICE)
+
+*Le bloc CLCD pilote l'écran physique à partir du framebuffer en RAM.*
 
 | Décalage | Valeur lue | Sens |
 |---|---|---|
@@ -73,6 +77,8 @@ est un chantier bien plus gros (**HYPOTHESIS**, voir `pinot_init` d'OpenIBoot).
 
 ## GPIO et horloges (DEVICE, partiel)
 
+*Le GPIO lit ou pilote des broches individuelles ; un clock gate active ou coupe l'horloge d'un périphérique.*
+
 | Adresse | Valeur | Statut |
 |---|---|---|
 | Base GPIO `0x83000000` | lisible, sans abort | mappée, les décalages `(8*port+pin)*4` répondent |
@@ -89,6 +95,8 @@ Valeurs lues à l'œil sur l'écran ; largeur de champ supposée à 8 chiffres h
 n'est pas compris.
 
 ## Contrôleurs d'interruptions VIC0/1/2 (DEVICE, 2026-10-15)
+
+*Le VIC transmet les demandes d'interruption d'un périphérique au CPU.*
 
 Relevé en lecture seule. Tous les registres ont répondu, sans abort.
 
@@ -111,6 +119,8 @@ Relevé en lecture seule. Tous les registres ont répondu, sans abort.
 Les registres du timer sont la partie la moins comprise d'OpenIBoot (son propre commentaire dit qu'ils sont copiés d'un SoC plus ancien).
 
 ## Bloc timer, `TIMER_BASE = 0xBF100000` (DEVICE, 2026-10-15)
+
+*Des compteurs libres et un état par timer, utilisés pour le chronométrage et, potentiellement, des interruptions périodiques.*
 
 | Registre | Décalage | Observé |
 |---|---|---|
@@ -141,6 +151,8 @@ Les registres du timer sont la partie la moins comprise d'OpenIBoot (son propre 
 
 ## NAND, `H2FMI0_BASE = 0x81200000` (DEVICE, 2026-10-15)
 
+*Le contrôleur NAND parle aux puces flash qui portent l'image iOS propre à cet appareil.*
+
 Lecture d'identifiant : reset + commande READ ID (des écritures de contrôle, mais ni
 programmation ni effacement) sur les 16 lignes de chip-select du bus 0, puis sa géométrie
 retrouvée dans la table figée d'OpeniBoot.
@@ -158,6 +170,8 @@ seule, ni programmation ni effacement ; la même prudence que ce projet applique
 grande, puisque le NAND porte l'image iOS de l'appareil.
 
 ## Boutons, même base GPIO que ci-dessus (DEVICE, 2026-10-15)
+
+*Les boutons physiques sont de simples broches GPIO, lues comme n'importe quelle autre entrée.*
 
 Trouvés par différence, pas par le nom : les noms de boutons d'OpeniBoot pour ce SoC semblent
 copiés d'une génération antérieure, donc chaque bit GPIO lisible (`(8*port+pin)*4` depuis la
@@ -177,6 +191,8 @@ balayage prend près de 3 minutes) a tué le point de contrôle USB ensuite ; un
 côté hôte (`dev.reset()`, pas besoin de DFU) l'a réveillé — voir [preuves](08-evidence.md).
 
 ## Accéléromètre, adresse i2c0 `0x1d` (DEVICE, 2026-10-16)
+
+*L'accéléromètre signale le mouvement/l'orientation sur un bus I2C deux fils.*
 
 **Statut** : DEVICE, du premier coup, modèle exact de la puce encore ouvert. Tout ce qui
 suit vient du device tree déchiffré propre à cet appareil, puis d'une vraie transaction I2C
@@ -217,6 +233,9 @@ qu'un mauvais câblage ne puisse pas ressembler à une réussite silencieuse.
 **Liens vers les preuves** : [dossier de preuve `20261016T101710Z-trace_accel_i2c`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T101710Z-trace_accel_i2c), indexé sur la [page Preuves](08-evidence.md).
 
 ## Wi-Fi/SDIO, `SDIO0_BASE = 0x80000000` (DEVICE/HYPOTHÈSE mêlées, 2026-10-15/16)
+
+*SDIO est le protocole de bus que la plupart des puces Wi-Fi embarquées utilisent ; sur ce
+SoC, il pourrait être médié par un second processeur embarqué plutôt que piloté directement.*
 
 **Statut** : DEVICE/HYPOTHÈSE mêlées. Aucun code source OpeniBoot n'existe pour ce bloc sur
 le S5L8920 (contrairement au NAND). Tout ce qui suit l'adresse elle-même vient du device
@@ -281,6 +300,8 @@ sur l'intention de conception d'origine.
 
 ## Bluetooth, UART3, reset `15.06` / réveil `16.02` (DEVICE, 2026-10-16)
 
+*Le Bluetooth ici est une radio séparée sur sa propre liaison UART, pas le bus SDIO de la puce Wi-Fi.*
+
 **Statut** : DEVICE, niveaux GPIO en lecture seule. Aucun trafic UART tenté pour l'instant.
 
 **Ce qui est confirmé** : le device tree nomme un nœud `bluetooth` sous `uart3`
@@ -309,3 +330,23 @@ STAGE 30), puis le faire tourner sur un appareil en DFU avec
 Wi-Fi (STAGE 15) : lectures seules, aucune écriture, aucun accès à l'UART.
 
 **Liens vers les preuves** : [dossier de preuve `20261016T124101Z-trace_bt_gpio`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T124101Z-trace_bt_gpio), indexé sur la [page Preuves](08-evidence.md).
+
+## Catalogue des pilotes
+
+Quel pilote Apple (si identifié) correspond à chaque bloc, quel fichier Trognon le teste, si
+ce code suit une disposition de registres héritée ou écrite par nous, et ce qui a été
+réellement exercé. « Non identifié » veut dire qu'aucun pilote Apple nommé n'est apparu dans
+la recherche pour ce bloc, pas qu'aucun n'existe.
+
+| Composant | Pilote Apple identifié | Code Trognon | Init | Réellement testé |
+|---|---|---|---|---|
+| CPU/MMU | non identifié (le cœur CPU lui-même, aucun pilote nommé) | `trace.c`, affiché à chaque exécution de payload | sans objet, lecture seule | `MIDR`/`SCTLR`/`DACR`/table de pages |
+| Affichage (CLCD) | non identifié par son nom (registres propres `clcd.c` d'OpeniBoot) | `trace.c` STAGE 5 (`trace_regs.bin`) | héritée : l'init CLCD de l'iBSS a déjà tourné ; on ne fait que lire | dessin du framebuffer, registres de statut/timing |
+| GPIO et horloges | non identifié (`gpio.c`/`includes/hardware/gpio.h` d'OpeniBoot) | `trace.c` STAGE 5 (`trace_regs.bin`) | disposition héritée | lectures de broches, une lecture de broche reset de dalle |
+| VIC0/1/2 | non identifié (VIC ARM standard, décalages propres d'OpeniBoot) | `trace.c` STAGE 6 (`trace_vic.bin`) | disposition héritée | relevé en lecture seule, IRQ déclenchée logiciellement |
+| Bloc timer | non identifié (`timer.h` propre d'OpeniBoot, lui-même « copié d'un SoC plus ancien » selon son propre commentaire) | `trace.c` STAGE 8 (`trace_timer.bin`) | héritée, et déjà connue comme fausse pour les décalages d'acquittement IRQ | mesure de fréquence du tick, registres `STATE` |
+| NAND | pilote côté hôte `com.apple.driver.AppleIOPFMI` cité dans le rapport sur le firmware de l'IOP, pas le code utilisé ici | `trace.c` STAGE 13 (`trace_nand.bin`) | héritée : séquence reset + READ ID propre au `h2fmi.c` d'OpeniBoot | identifiant de puce sur CE0/CE1 |
+| Boutons | non identifié (les noms de boutons propres d'OpeniBoot pour ce SoC se sont révélés faux) | `trace.c` STAGE 12 (`trace_buttons.bin`) | la nôtre : trouvée par différence GPIO observée, aucune table de broches d'un pilote utilisée | 5 boutons mappés |
+| Accéléromètre | non identifié par son nom (device tree seul) | `trace.c` STAGE 29 (`trace_accel_i2c.bin`) | la nôtre : bit-bang I2C écrit pour ce projet | registre `WHO_AM_I` |
+| Wi-Fi/SDIO | `AppleIOPSDIO` (pilote côté hôte qui parle à l'IOP, cité dans le rapport sur le firmware de l'IOP ; pas réimplémenté ici) | `trace.c` STAGE 17-24 (`trace_sdio_*.bin`, `trace_write_test.bin`) | disposition héritée `plat-s5l8900` pour les essais directs côté CPU ; la disposition SDHCI standard n'est confirmée que dans le firmware propre de l'IOP, jamais utilisée par notre code | dump de registres, essai `CMD0`, bascule GPIO de reset, écriture brute puis relecture |
+| Bluetooth | non identifié (device tree seul ; aucun pilote Bluetooth Apple retracé) | `trace.c` STAGE 30 (`trace_bt_gpio.bin`) | la nôtre : simple lecture GPIO | niveaux GPIO reset/réveil seulement |
