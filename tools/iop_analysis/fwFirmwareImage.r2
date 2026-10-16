@@ -55,17 +55,95 @@ f sym.task_iop_control @ 0xafc
 #   priority 6 "fmi1" entry 0x1114
 #   priority 3 "sdio" entry 0x1730 (sdio_message_loop)
 
-# PROMISING LEAD for [dev+0]'s origin (2026-10-16): iop_control_task
-# (0xafc) is a dispatcher for HOST-sent commands on a separate "iop
-# control" channel. Its "inst" (install) case (tag 0x696e7374, matched at
-# 0xbb8 -> 0xc64) builds a per-client config struct, copying 5 field-pairs
-# from the received command, plus [r4+0x34] = arg_0h -- the iop_control
-# task's OWN third creation-time parameter, not copied from the host
-# message. This is the best candidate so far for a fixed, boot-time
-# hardware-base constant being threaded into a per-channel struct -- NOT
-# YET CONFIRMED to be the same memory later read as [dev+0] by the SDIO
-# opcode handlers. Next: find what value "iop" is created with as its 3rd
-# param, and whether "install"'s target struct aliases a sdio channel slot.
+# NOTATION (fixed 2026-10-16, a reviewer caught the conflation): use
+#   message+0x0c          -- a location, inside the 64-byte message slot
+#   base = *(message+0x0c) -- the VALUE there: a pointer, the real SDHCI base
+#   base+N                -- real SDHCI registers (N from the table below)
+# NOT "message+0x0c+N" -- that was the earlier error, and it also caused a
+# false "offset 0x42 overflows a 64-byte slot" inconsistency that is
+# resolved once base+N is understood as a separate address space.
+
+# CHECKED AND RULED OUT (2026-10-16): does the HOST supply `base`?
+# Re-disassembled AppleIOPSDIO.kext.bin correctly this time (it's Thumb-2;
+# an earlier plain-ARM pass of this same kext was wrong -- use
+# `-e asm.bits=16`). sendIOPCommand (0x8057c424) has exactly one caller,
+# which passes the command BUFFER'S OWN PHYSICAL ADDRESS (logged as
+# "paddr=0x%lX") to the real send() call -- standard shared-memory IPC,
+# not a separate hardware address. sendIOPCommand also requires the cmd
+# object to be exactly one single, fixed, pre-allocated buffer
+# (this->0x14, checked by pointer identity). The kext has ZERO strings/
+# calls resembling getDeviceMemoryWithIndex/mapDeviceMemory -- the host
+# CPU very plausibly never maps or touches the SDHC registers itself.
+# CONCLUSION: `base` is not host-supplied. It must come from the IOP side
+# -- a boot-time constant from a smaller IOP boot stage not yet extracted,
+# or built via movw/movt rather than a single literal (not yet checked).
+
+# fcn.00008528 / fcn.000084a0: the function sdio_message_loop calls right
+# after receiving a raw message is a GENERIC physical<->IOP-local address
+# translator (table at 0xf07c, 27 call sites across the firmware, not
+# SDIO-specific). This is how `message` becomes dereferenceable from
+# whatever raw physical address the sender supplied -- plumbing only, does
+# not supply any SDIO-specific value.
+
+# CHECKED (2026-10-16, user's priority-1 request): does sdio's task entry
+# (0x1730) itself produce `base`, before the receive loop even starts?
+# Compared instruction-by-instruction against fmi0/fmi1's SHARED entry
+# (0x1114). Real structural difference found: fmi0/fmi1 allocate a 0x1b8-
+# byte instance struct, zero it, and REGISTER it into a global array at
+# 0x10ec4 (counter at 0x10ec0) -- the same array fcn.000015fc's two-phase
+# boot-init dispatcher iterates. sdio's entry (0x1730) does NONE of this;
+# it goes straight to creating its "sdio message" queue via fcn.00000db4
+# (shared by all 4 tasks). So there is no sdio-specific "device
+# registration" step visible in the task entry at all.
+#
+# Traced fcn.00000db4 (generic queue creation) in full: for every slot in
+# the new ring (count = the task's own arg1 struct field[1]), it writes
+# the literal value 1 into [slot+0] (almost certainly the opcode byte --
+# a safe default, matching real opcode 1 = ping) and does NOT touch
+# [slot+0xc]. Since .bss is zero at load, base = *(message+0x0c) should
+# start at 0 for a freshly created channel -- which should fail every
+# opcode handler's null-check. So whatever writes a real value into
+# message+0x0c for the FIRST time has not been found yet; it is not the
+# generic queue-creation code, and (per the earlier check) not the host.
+#
+# METHODOLOGY CORRECTION (2026-10-16): found, while reading a neighbour of
+# the generic log function (fcn.00007d94, jumps into fcn.000074d4), a real
+# hardware address built across TWO instructions: `mov r3,0x86000000;
+# add r3,r3,0x300000` -> 0x86300000 (likely the IOP's own debug/log
+# peripheral, not SDHC). This CONFIRMS the firmware does construct some
+# addresses as split mov+add (or movw+movt) sequences rather than single
+# 32-bit literals -- the earlier exhaustive byte-search for 0x80000000 as
+# a whole word is NOT sufficient and needs redoing as an instruction-level
+# search for mov/movw+add/movt pairs that construct an address in the
+# 0x80xxxxxx range, especially near sdio_op4_reset/sdio_op6 and the task
+# entry/queue-creation path.
+
+# METHODOLOGY FOLLOW-UP (2026-10-16): grepped a full linear disassembly
+# for every `mov r_, 0x8......` immediate load in the whole firmware (the
+# split-construction concern above). Found several real 0x80000000/
+# 0x81000000-prefixed immediates (0x59e4, 0x5b58, and others) -- but on
+# inspection every one of them is a STATUS/ERROR CODE built right before a
+# function return (e.g. "mov r0,0x80000000; ...; addne r5,r0,0x200000;
+# ...; mov r0,r5; pop{...}" at 0x5b54-0x5bc4, inside h2fmi_tx_bootpage_pio
+# -- a NAND function), not a hardware address. NONE of these immediates
+# fall inside sdio_message_loop, any opcode handler, sdiodrv_sendCommand/
+# performDMA, or the reset functions. So `base` is not built from a
+# single-instruction or mov+add immediate anywhere in the SDIO code path
+# either -- it must be a genuine LOAD (ldr) from somewhere, most likely
+# the task's own arg1 parameter struct (see "CHECKED" note above) or a
+# literal pool value not yet traced back to its own producer. Finding the
+# real task-creation call site (not yet located -- the task TABLE at
+# 0xe848 has no visible arg1-struct field, so some other code must build
+# and pass it) is the most direct remaining way to find this.
+
+# LOWER-PRIORITY LEAD: iop_control_task (0xafc, priority 0 in the static
+# task table at 0xe848) is a dispatcher for HOST-sent commands on a
+# SEPARATE "iop control" channel (not "sdio message"). Its "inst" (install)
+# case (tag 0x696e7374, matched at 0xbb8 -> 0xc64) builds a per-client
+# config struct, copying 5 field-pairs from the received command, plus
+# [r4+0x34] = arg_0h -- the iop_control task's OWN third creation-time
+# parameter, not copied from the host message. NOT confirmed to be the
+# same memory as `base`; kept only as a secondary candidate.
 
 # not yet disassembled this session, candidates for opcode 5's real
 # register access, and for sendCommand/performDMA's own sub-calls:

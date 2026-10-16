@@ -53,17 +53,32 @@ far too precisely to be coincidence, and asked the decisive question: is
 `[r0+0x2f]` really using `dev` itself, or a pointer *loaded from* a field of
 `dev`? Re-read instruction by instruction (not re-summarised from memory):
 in `sdio_op4_reset` (`0x19c4`), the very first thing it does is
-`r4 = [r0]` — **it dereferences `[dev+0]` once**, and passes **that** value
-(not `dev`) into `generic_poll_retry_100x`, `reset_set_bits_0x34_0x36_a` and
+`r4 = [r0]` — **it dereferences `message+0x0c` once**, and passes **that
+dereferenced value** (not the address `message+0x0c` itself) into
+`generic_poll_retry_100x`, `reset_set_bits_0x34_0x36_a` and
 `reset_set_bits_0x34_0x36_b`. Same in `sdio_op6` (`0x190c`): `r0 = [r0]`
-before tail-calling `sdiodrv_sendCommand`. **`[dev+0]` is not a "configured"
-boolean — it is a pointer, null-checked before use like any driver checks
-its mapped register window, and everything downstream operates through
-*that* pointer.**
+before tail-calling `sdiodrv_sendCommand`.
+
+**Fixed notation, used consistently from here on** (a previous version of
+this document conflated these three distinct things, which a reviewer
+flagged):
+- `message+0x0c` — a *location*: the byte offset inside the message where a
+  pointer is stored. This is RAM, inside the firmware's own 64-byte message
+  slot (see "Where the message buffer lives" below).
+- `base = *(message+0x0c)` — the *value* stored at that location: a pointer,
+  null-checked before use like any driver checks its mapped register
+  window. **This is the field previously and wrongly called `[dev+0]`/the
+  "configured" flag.**
+- `base+N` — real SDHCI registers, for the `N` values in the table below.
+  **Not `message+0x0c+N`** — that was the error. (This also resolves a
+  consistency check a reviewer asked for: message slots are 64 bytes, and
+  `message+0x0c+0x36` would be offset `0x42` — past the end of a slot. Under
+  the corrected reading, `0x36` is an offset from `base`, a completely
+  separate address space, so there is no overflow.)
 
 With that correction, every offset lines up exactly with real SDHCI:
 
-| Offset from the real base pointer | What we saw | Real SDHCI register (Linux `sdhci.h`) |
+| `base+N` | What we saw | Real SDHCI register (Linux `sdhci.h`) |
 |---|---|---|
 | `+0x08` | read/logged as `arg` in `sendCommand` | `SDHCI_ARGUMENT` |
 | `+0x0e` | 16-bit, logged as `cmd` | `SDHCI_COMMAND` |
@@ -77,59 +92,127 @@ This is not a coincidence pattern-match: it is the standard SDHCI layout,
 offset for offset. **The reset path is very plausibly writing a real
 hardware self-clearing reset register directly** (`SOFTWARE_RESET`'s bits
 clear themselves once the reset completes, which would make the
-"deferred/background worker" theory from the previous version of this
+"deferred/background worker" theory from an earlier version of this
 document unnecessary — a live hypothesis, not yet proven).
 
-**What is now the real open question**: not "is this software or hardware"
-(it is real SDHCI hardware, convincingly) but **what numeric value is
-stored at `[dev+0]`, and who writes it there**. Neither `sdio_op2_alloc`
-nor any opcode handler disassembled so far *sets* this field — every one of
-them only reads and null-checks it. It must be initialised somewhere else.
+**The real open question**: not "is this software or hardware" (it is real
+SDHCI hardware, convincingly) but **what numeric value is `base`, and who
+writes it to `message+0x0c`**. Neither `sdio_op2_alloc` nor any opcode
+handler disassembled so far *sets* this field — every one of them only
+reads and null-checks it.
 
-### Three (really four) peer OS tasks, confirmed via the static task table (2026-10-16)
+### Where the message buffer lives, and how it becomes dereferenceable
 
 A static task-creation table at `0xe848` (one 16-byte record per task:
-name pointer, entry point, stack size, priority) lists, in priority
-order:
+name pointer, entry point, stack size, priority) lists, in priority order:
+`"iop"` (priority 0, entry `0xafc`), `"fmi0"`/`"fmi1"` (NAND, priority 5/6,
+both entry `0x1114`), `"sdio"` (priority 3, entry `0x1730` =
+`sdio_message_loop`) — confirming, from the firmware's own data, that NAND
+and Wi-Fi are peer tasks of a real small OS.
 
-| Priority | Name | Entry point | Stack |
-|---|---|---|---|
-| 0 (highest) | `"iop"` | `0xafc` | `0x400` |
-| 5 | `"fmi0"` | `0x1114` | `0x400` |
-| 6 | `"fmi1"` | `0x1114` | `0x400` |
-| 3 | `"sdio"` | `0x1730` (= `sdio_message_loop`) | `0x400` |
+The raw value `sdio_message_loop` receives from the generic queue
+(`fcn.00000eb0`) is **not** used directly as `message` — it is passed
+through `fcn.00008528` → `fcn.000084a0` first. Disassembled in full: this
+is a **generic physical-address ↔ IOP-local-address translator** (a table
+at `0xf07c`, walked linearly, each 16-byte record holding two candidate
+base addresses to match a range against, plus a continuation flag), called
+from **27 places across the firmware** — not SDIO-specific at all, the same
+helper NAND and every other subsystem uses. This explains how `message`
+becomes a real, dereferenceable local pointer starting from whatever raw
+(physical) address the sender supplied — but it does **not** supply any
+SDIO/SDHC-specific value; it is pure plumbing.
 
-Confirms (again, from the firmware's own data, not inference) that NAND
-(`fmi0`/`fmi1`) and Wi-Fi (`sdio`) are peer tasks of a real small
-multitasking OS, all spawned the same way, with `"iop"` itself as the
-highest-priority (0) master/control task.
+### Checked and ruled out (2026-10-16): the host does not supply `base`
 
-### Promising lead (2026-10-16): the "iop control" master task's "install" command
+Natural hypothesis: the host CPU knows the real SDHC physical address
+(`0x80000000`, from the device tree) and writes it into the message at
+`+0x0c` before calling `sendIOPCommand`. **Checked directly in the host
+kext (`AppleIOPSDIO.kext`, Thumb-2 code — an earlier plain-ARM disassembly
+of this kext was wrong, redone correctly with `asm.bits=16`) and ruled
+out**:
 
-Found by following the firmware's own static task table (see "Three
-peer OS tasks" below) up to its highest-priority entry, `"iop"`
-(`fcn.00000afc`), which is a command dispatcher on a separate channel
-("iop control", not the per-peripheral "sdio message" one) for commands
-sent by **the host**. Its tags (4-byte values, decoded from the literal
-pool) are `"musr"`, `"inst"`, `" pon"`, `"dnps"`, `"nitt"`, `"pels"` --
-the `"inst"` case (`0x696e7374`, matched at `0xbb8`→`0xc64`) is the
-interesting one: it builds a per-client configuration struct by copying
-five 8-byte field-pairs from the received command (`+8`, `+0x10`, `+0x18`,
-`+0x20`, `+0x28`) plus two single words at `+0x30` (from a local set by
-the receive helper `fcn.000088ec`) and **`+0x34`, which is `arg_0h` — the
-"iop control" task's own third parameter, fixed at task-creation time, not
-something copied from the host's message.**
+- `sendIOPCommand` (`0x8057c424`) has exactly **one caller** in the kext.
+  That caller passes, as the real argument to the underlying `send()` call
+  (`vtable+0x84` of the `IOSlaveEndpoint`-like object), the **physical
+  address of the command buffer itself** — the same value logged as `paddr`
+  in `"Sending command @ vaddr=%p, paddr=0x%lX, opcode=%lu"`. This is the
+  standard IOKit shared-memory IPC pattern (hand the other processor the
+  physical address of a buffer both sides can see), not a separate
+  hardware-register address.
+- `sendIOPCommand` also checks that the command object is *exactly* one
+  single, fixed, pre-allocated buffer (`this->0x14`, compared by pointer
+  identity) — there is one reused command buffer, not one per call.
+- The kext contains **zero** strings or calls resembling
+  `getDeviceMemoryWithIndex`/`mapDeviceMemory` — the standard IOKit calls
+  that would resolve the device tree's `"reg"` property (the real
+  `0x80000000` SDHC base) into a host-usable address. **The host CPU very
+  plausibly never maps or touches the SDHC registers at all.**
 
-This is the most promising candidate found so far for a fixed,
-boot-time-constant hardware base address being threaded into a per-channel
-config struct via a host-issued "install"/configure command -- but **not
-yet confirmed**: it hasn't been traced whether this specific struct, or
-this specific `+0x34` field, is the same memory later read as `[dev+0]` by
-the SDIO opcode handlers. Next step: find what value the "iop" task is
-actually created with as its 3rd parameter (requires finding the
-top-level task-creation call, and whatever boot-time table supplies that
-argument), and whether the "install" command's target struct address ends
-up aliased with a "sdio message" channel's own message slots.
+Conclusion: `base` is not something the host computes and hands down
+through the message. It must come from somewhere entirely on the IOP side
+— most likely a boot-time constant baked in before this `0x1b000`-byte
+driver blob even starts running (a separate, smaller IOP boot stage that
+has not been extracted/examined), or built via split `movw`/`movt`-style
+instruction sequences rather than a single 32-bit literal (the earlier
+exhaustive literal search only caught whole-word matches, not split
+constructions) -- not yet checked.
+
+### Checked (2026-10-16): does sdio's own task entry produce `base`?
+
+Compared `sdio_message_loop`'s entry (`0x1730`) instruction-by-instruction
+against `fmi0`/`fmi1`'s shared entry (`0x1114`), as requested. Real
+structural difference: `fmi0`/`fmi1` allocate a `0x1b8`-byte instance
+struct, zero it, and **register it into a global array at `0xe8c4`-ish
+(index table `0x10ec0`/`0x10ec4`)** — the same array the two-phase
+boot-init dispatcher (`fcn.000015fc`) iterates. `sdio`'s entry does **none
+of this**; it goes straight to creating its `"sdio message"` queue via the
+generic `fcn.00000db4` (shared by all four tasks). So SDIO's task entry
+has no device-registration step at all, unlike NAND's.
+
+Traced `fcn.00000db4` (generic queue creation) fully: for every slot in a
+new ring, it writes the literal value `1` into `[slot+0]` (almost
+certainly the opcode byte — a safe default matching real opcode 1 = ping)
+and does **not** touch `[slot+0x0c]`. Since `.bss` should be zero at load,
+`base` should start at `0` for a freshly created channel — which should
+fail every opcode handler's null-check. Whatever writes a real value into
+`message+0x0c` for the first time is still not found; it is neither the
+generic queue-creation code nor the host (see above).
+
+### Methodology follow-up: searching for split/computed address constants
+
+Grepped a full linear disassembly of the firmware for every `mov r_,
+0x8......` immediate (the concern that `base` might be built across
+instructions rather than stored as a single literal word). Found several
+real `0x80000000`/`0x81000000`-prefixed immediates — but every one
+inspected turned out to be a **status/error code** built right before a
+function return (e.g. inside `h2fmi_tx_bootpage_pio`, a NAND function:
+`mov r0,0x80000000; ...; addne r5,r0,0x200000; ...; mov r0,r5; pop{...}`),
+not a hardware address. **None fall inside any SDIO-related function**
+(`sdio_message_loop`, the opcode handlers, `sdiodrv_sendCommand`/
+`performDMA`, the reset functions). So `base` is not constructed from a
+single-instruction or `mov`+`add` immediate anywhere in the SDIO code path
+either — it must be a genuine load (`ldr`) from somewhere, most likely the
+task's own `arg1` parameter struct, whose own producer (the real
+task-creation call site — the static task table at `0xe848` has no
+visible field for it) has not yet been located.
+
+### Lower-priority lead (2026-10-16): the "iop control" master task's "install" command
+
+The `"iop"` task (`0xafc`, priority 0) is a dispatcher for commands the
+*host* sends on a **separate** channel ("iop control", not "sdio
+message"). Its tags (4-byte values from the literal pool) are `"musr"`,
+`"inst"`, `" pon"`, `"dnps"`, `"nitt"`, `"pels"`. The `"inst"` case
+(`0x696e7374`, matched at `0xbb8`→`0xc64`) builds a per-client
+configuration struct, copying five 8-byte field-pairs from the received
+command plus one field (`+0x34`) that comes from the "iop control" task's
+own third creation-time parameter, not from the host's message.
+
+Flagged as **lower priority** than the host/firmware checks above: nothing
+connects this specific struct or field to the "sdio message" channel's own
+slots, and the data flow for `base` is more direct (it is consumed right
+where `sdio_op4_reset`/`sdio_op6` dereference `message+0x0c`) than this
+"install"-command path would require. Kept here as a secondary candidate
+only if the boot-stage/split-constant leads above don't pan out.
 
 ### Earlier correction (2026-10-16, caught by a second review): "dev" is not a separate struct
 
