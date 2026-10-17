@@ -11,7 +11,7 @@ hide:
 
 # Trognon
 
-**A phone left in a drawer, running code we wrote.** Open reverse engineering of the iPhone 3GS,
+**A phone left in a drawer, running code we wrote.** Open reverse engineering of the 32-bit iPhones before the A5 (the iPhone 3GS first, then the iPhone 4),
 documented to the register, with every claim marked by how we know it: observed on the phone, read in code, or guessed.
 
 **Two ways in.** Follow the story of the phone from a powered-off drawer to the first pixel, or take a problem: a block we have not finished understanding, and a code to find.
