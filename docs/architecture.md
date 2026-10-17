@@ -1,6 +1,6 @@
 # Architecture
 
-Statut : brouillon, mis à jour 2026-10-14. Premier succès réel le
+Statut : brouillon, mis à jour 2026-10-14. **Périmètre recadré le 2026-10-17 : Trognon s'arrête avant l'A5** ; les passages sur checkm8-a5 et A7–A11 ci-dessous sont du suivi amont, voir [`06-chips`](en/06-chips.md). Premier succès réel le
 2026-10-14 : un iPhone 3GS (S5L8920) a été débridé en DFU via `ipwndfu -p`
 (limera1n), confirmé par `trognon probe`. Voir
 [`2026-10-14-pre-a5-limera1n.md`](research/2026-10-14-pre-a5-limera1n.md).

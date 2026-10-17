@@ -91,7 +91,7 @@ usable as an iPhone again, so it adds no resale value to a stolen phone.
 |---|---|---|
 | S5L8920 (3GS) / A4 (4), 32-bit | limera1n (2010), host-direct, no helper board. No modern OS port. | Boot-chain test devices only, not a port target. |
 | A5 and later (4S to X) | Project Cascadia (A5/A6, 32-bit): mainline 6.12 on iPad mini 1 (S5L8942) with touch and Wi-Fi, since 2026. Hoolock, Asahi tree, postmarketOS (A7 to A11). | Out of scope: follow and contribute upstream. |
-| Host-free boot | checkm8-a5 on a Raspberry Pi Pico (A5); Pico DFU automation (A11). No unattended dongle published. | An always-attached boot dongle, the central open problem. |
+| Host-free boot | Prior art on later chips only: checkm8-a5 on a Raspberry Pi Pico (A5), Pico DFU automation (A11). Nothing for limera1n or SHAtter; no unattended dongle published. | An always-attached boot dongle, the central open problem. |
 
 Details, dates and sources: [`docs/research/`](docs/research/).
 
