@@ -86,6 +86,21 @@ les adresses, le chemin d'affichage et les offsets de patch de l'iBSS : on les r
 - `env_set`, la valeur de `run` et tous les offsets de l'iBSS sont propres à l'image 3GS et sont à
   retrouver dans l'iBSS de l'A4 (**HYPOTHESIS**).
 
+## Frères aînés de la même époque (SOURCE, pas essayés)
+
+Le catalogue d'appareils connaît aussi l'iPhone 2G, l'iPhone 3G et les iPod touch 1G à 4G
+([recherche](../research/2026-10-17-pre-a5-older-siblings.md)). Ils sont de la même époque, mais pas égaux aux deux
+téléphones ci-dessus :
+
+- Les **iPod touch 3G** et **4G** suivent le 3GS et l'iPhone 4 : mêmes exploits selon `ipwndfu` (limera1n pour le
+  CPID 8922, SHAtter pour 8930). L'iPod touch 4G partage le CPID de l'A4 avec l'iPhone 4. Le CPID que rapporte un
+  exemplaire de la 3G n'est pas tranché (la source donne à la fois S5L8920 et S5L8922).
+- L'**iPod touch 2G** (S5L8720) démarre avec steaks4uce dans `ipwndfu`.
+- L'**iPhone 2G, l'iPhone 3G et l'iPod touch 1G** (S5L8900) sont en **ARMv6**, pas en ARMv7 : notre code au niveau
+  du CPU ne se reporte pas tel quel (**HYPOTHESIS**), et `ipwndfu` n'a pas de voie DFU pwned pour eux.
+
+Aucun n'a été essayé ; aucune ligne n'est ajoutée au tableau tant qu'un exemplaire n'a pas été sondé.
+
 ## Au-delà de l'A4 : A5 et après
 
 Trognon s'arrête avant l'A5 (décision du 2026-10-17). À partir d'ici il existe déjà un amont, et la règle est

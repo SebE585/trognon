@@ -11,6 +11,7 @@ deleted — check the date before relying on a specific number or address.
 | 2026-10-13 | [Legal frame](2026-10-13-legal-frame.md) | EU/France and US framing — not legal advice | active |
 | 2026-10-13 | [Untethered boot](2026-10-13-untethered-boot.md) | Whether a persistent (non-tethered) boot is realistic here | active |
 | 2026-10-14 | [Pre-A5 and limera1n](2026-10-14-pre-a5-limera1n.md) | Which bootrom exploit actually applies to the 3GS and iPhone 4 | active |
+| 2026-10-17 | [Pre-A5, older siblings](2026-10-17-pre-a5-older-siblings.md) | Chip and exploit for the iPhone 2G/3G and iPod touch 1G to 4G; the S5L8900 family is ARMv6 | active |
 | 2026-10-14 | [Microkernel on the 3GS](2026-10-14-microkernel-3gs.md) | Feasibility study for a microkernel + touch driver | active |
 | 2026-10-15 | [Touch, Wi-Fi, NAND recon](2026-10-15-touch-wifi-nand-recon.md) | First reconnaissance pass before writing code for these three | active — the Wi-Fi/SDIO part (chip hypothesis, generic SDIO host code) is refined by the 2026-10-16 report below; NAND and touch findings stand |
 | 2026-10-15 | [OS port comparison](2026-10-15-os-port-comparison.md) | NuttX vs. our own kernel vs. Linux ARM vs. Zephyr | active |

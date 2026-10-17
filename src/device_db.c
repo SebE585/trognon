@@ -3,7 +3,9 @@
  * Static device catalog. Read-only, no bus access.
  *
  * Support fields reflect docs/research/2026-10-13-*.md (surveyed
- * 2026-10-13). "notes" points to the upstream/downstream status, not a
+ * 2026-10-13) and, for the pre-A5 siblings, 2026-10-17-pre-a5-older-siblings.md.
+ * Entries from the A5 on only identify a unit: Trognon follows those chips
+ * upstream (scope decision 2026-10-17). "notes" points to the upstream/downstream status, not a
  * guarantee — re-check dates before relying on this in code.
  */
 #include <string.h>
@@ -12,6 +14,95 @@
 #include "trognon/device.h"
 
 const struct trognon_device trognon_device_catalog[] = {
+    {
+        .model_name = "iPhone 2G",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-17",
+        .model_identifier = "iPhone1,1",
+        .cpid = 0x8900,
+        .soc = TROGNON_SOC_S5L8900,
+        .soc_codename = "S5L8900",
+        .dt_platform = NULL,
+        .unlock_path = TROGNON_UNLOCK_UNKNOWN,
+        .unlock_tool_hint = "no pwned-DFU path known: ipwndfu has no CPID:8900 "
+                             "branch (checked 2026-10-17). The known flaw is "
+                             "the unchecked LLB signature (Pwnage), a "
+                             "different mechanism, not tried",
+        .support = {
+            .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
+            .notes = "Not tried. S5L8900 is ARMv6 (ARM1176JZF-S): code written "
+                     "for the 3GS's Cortex-A8 does not carry over unchanged "
+                     "(hypothesis). CPID 0x8900 follows the naming rule, "
+                     "not yet read from a unit. See "
+                     "docs/research/2026-10-17-pre-a5-older-siblings.md.",
+        },
+    },
+    {
+        .model_name = "iPhone 3G",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-17",
+        .model_identifier = "iPhone1,2",
+        .cpid = 0x8900,
+        .soc = TROGNON_SOC_S5L8900,
+        .soc_codename = "S5L8900",
+        .dt_platform = NULL,
+        .unlock_path = TROGNON_UNLOCK_UNKNOWN,
+        .unlock_tool_hint = "no pwned-DFU path known: ipwndfu has no CPID:8900 "
+                             "branch (checked 2026-10-17). The known flaw is "
+                             "the unchecked LLB signature (Pwnage), a "
+                             "different mechanism, not tried",
+        .support = {
+            .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
+            .notes = "Not tried. S5L8900 is ARMv6 (ARM1176JZF-S): code written "
+                     "for the 3GS's Cortex-A8 does not carry over unchanged "
+                     "(hypothesis). CPID 0x8900 follows the naming rule, "
+                     "not yet read from a unit. See "
+                     "docs/research/2026-10-17-pre-a5-older-siblings.md.",
+        },
+    },
+    {
+        .model_name = "iPod touch 1G",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-17",
+        .model_identifier = "iPod1,1",
+        .cpid = 0x8900,
+        .soc = TROGNON_SOC_S5L8900,
+        .soc_codename = "S5L8900",
+        .dt_platform = NULL,
+        .unlock_path = TROGNON_UNLOCK_UNKNOWN,
+        .unlock_tool_hint = "no pwned-DFU path known: ipwndfu has no CPID:8900 "
+                             "branch (checked 2026-10-17). The known flaw is "
+                             "the unchecked LLB signature (Pwnage), a "
+                             "different mechanism, not tried",
+        .support = {
+            .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
+            .notes = "Not tried. S5L8900 is ARMv6 (ARM1176JZF-S): code written "
+                     "for the 3GS's Cortex-A8 does not carry over unchanged "
+                     "(hypothesis). CPID 0x8900 follows the naming rule, "
+                     "not yet read from a unit. See "
+                     "docs/research/2026-10-17-pre-a5-older-siblings.md.",
+        },
+    },
+    {
+        .model_name = "iPod touch 2G",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-17",
+        .model_identifier = "iPod2,1",
+        .cpid = 0x8720,
+        .soc = TROGNON_SOC_S5L8720,
+        .soc_codename = "S5L8720",
+        .dt_platform = NULL,
+        .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
+        .unlock_tool_hint = "ipwndfu -p (dispatches to its steaks4uce exploit for "
+                             "CPID 0x8720, read in the tool's own source "
+                             "2026-10-17)",
+        .support = {
+            .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
+            .notes = "Not tried. S5L8720 is close to the S5L8900 (Wikipedia); the "
+                     "core is not stated in the sources read. See "
+                     "docs/research/2026-10-17-pre-a5-older-siblings.md.",
+        },
+    },
     {
         .model_name = "iPhone 3GS",
         .provenance = TROGNON_PROV_DEVICE,
@@ -51,6 +142,27 @@ const struct trognon_device trognon_device_catalog[] = {
         },
     },
     {
+        .model_name = "iPod touch 3G",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-17",
+        .model_identifier = "iPod3,1",
+        .cpid = 0x8922,
+        .soc = TROGNON_SOC_S5L8922,
+        .soc_codename = "S5L8922",
+        .dt_platform = NULL,
+        .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
+        .unlock_tool_hint = "ipwndfu -p (dispatches to its limera1n exploit for "
+                             "CPID 0x8922, read in the tool's own source "
+                             "2026-10-17)",
+        .support = {
+            .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
+            .notes = "Not tried. Wikipedia lists both S5L8920 and S5L8922 for "
+                     "this model, so which CPID a given unit reports is "
+                     "unsettled. See "
+                     "docs/research/2026-10-17-pre-a5-older-siblings.md.",
+        },
+    },
+    {
         .model_name = "iPhone 4",
         .provenance = TROGNON_PROV_UPSTREAM,
         .provenance_date = "2026-10-14",
@@ -87,6 +199,27 @@ const struct trognon_device trognon_device_catalog[] = {
             .notes = "No modern OS port; useful as a boot-chain test device "
                      "(SHAtter/redsn0w-era tooling), not a realistic Linux "
                      "target today.",
+        },
+    },
+    {
+        .model_name = "iPod touch 4G",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-17",
+        .model_identifier = "iPod4,1",
+        .cpid = 0x8930,
+        .soc = TROGNON_SOC_A4,
+        .soc_codename = "S5L8930",
+        .dt_platform = NULL,
+        .unlock_path = TROGNON_UNLOCK_HOST_DIRECT,
+        .unlock_tool_hint = "ipwndfu -p (dispatches to its SHAtter exploit for CPID "
+                             "0x8930, read in the tool's own source "
+                             "2026-10-17)",
+        .support = {
+            .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
+            .notes = "Not tried. Shares CPID 0x8930 with the iPhone 4 (and the "
+                     "iPad 1): a lookup by CPID returns the iPhone 4 "
+                     "entry. See "
+                     "docs/research/2026-10-17-pre-a5-older-siblings.md.",
         },
     },
     {

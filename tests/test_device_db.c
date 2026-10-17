@@ -44,6 +44,26 @@ main(void)
     assert(dx->soc == TROGNON_SOC_A11);
     assert(dx->support.storage == 1);
 
+    /* Older siblings (research 2026-10-17): chip and exploit as read in ipwndfu's own dispatch. */
+    const struct trognon_device *d2g = trognon_device_find_by_identifier("iPhone1,1");
+    assert(d2g != NULL && d2g->soc == TROGNON_SOC_S5L8900 && d2g->cpid == 0x8900);
+    assert(d2g->unlock_path == TROGNON_UNLOCK_UNKNOWN); /* ipwndfu has no CPID:8900 branch */
+    assert(trognon_device_find_by_cpid(0x8900) == d2g); /* first entry of a CPID represents it */
+    assert(trognon_device_find_by_identifier("iPhone1,2") != NULL);
+    assert(trognon_device_find_by_identifier("iPod1,1") != NULL);
+
+    const struct trognon_device *t2 = trognon_device_find_by_identifier("iPod2,1");
+    assert(t2 != NULL && t2->soc == TROGNON_SOC_S5L8720 && t2->cpid == 0x8720);
+    assert(t2->unlock_path == TROGNON_UNLOCK_HOST_DIRECT); /* steaks4uce */
+
+    const struct trognon_device *t3 = trognon_device_find_by_identifier("iPod3,1");
+    assert(t3 != NULL && t3->soc == TROGNON_SOC_S5L8922 && t3->cpid == 0x8922);
+    assert(trognon_device_find_by_cpid(0x8922) == t3);
+
+    const struct trognon_device *t4 = trognon_device_find_by_identifier("iPod4,1");
+    assert(t4 != NULL && t4->soc == TROGNON_SOC_A4 && t4->cpid == 0x8930);
+    assert(trognon_device_find_by_cpid(0x8930) == d4); /* the iPhone 4 stays the representative */
+
     assert(trognon_device_find_by_identifier("nonexistent") == NULL);
     assert(trognon_device_find_by_identifier(NULL) == NULL);
 

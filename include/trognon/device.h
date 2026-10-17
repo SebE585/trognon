@@ -3,8 +3,15 @@
  * Trognon — static device/SoC catalog.
  *
  * Read-only data: no code here talks to a bus. Sources and dates for every
- * entry are in docs/research/2026-10-13-a7-a11-mainline.md and
- * docs/research/2026-10-13-a5-a6-32bit.md.
+ * entry are in docs/research/2026-10-13-a7-a11-mainline.md,
+ * docs/research/2026-10-13-a5-a6-32bit.md and
+ * docs/research/2026-10-17-pre-a5-older-siblings.md.
+ *
+ * Scope (decision 2026-10-17): Trognon works on the devices before the A5.
+ * Entries from the A5 on are here to identify a unit that gets plugged in,
+ * nothing more: those chips are followed upstream, not ported here.
+ * A CPID names a chip, not a model: when several devices share one, the
+ * first entry in the catalog is the representative that a lookup returns.
  */
 #ifndef TROGNON_DEVICE_H
 #define TROGNON_DEVICE_H
@@ -14,7 +21,10 @@
 
 enum trognon_soc_family {
     TROGNON_SOC_UNKNOWN = 0,
+    TROGNON_SOC_S5L8900, /* iPhone 2G/3G, iPod touch 1G — ARM1176 (ARMv6), not ARMv7 */
+    TROGNON_SOC_S5L8720, /* iPod touch 2G — close to the S5L8900 */
     TROGNON_SOC_S5L8920, /* iPhone 3GS — predates Apple's "A" naming entirely */
+    TROGNON_SOC_S5L8922, /* iPod touch 3G — a revision close to the S5L8920 */
     TROGNON_SOC_A4,   /* S5L8930 — 32-bit, predates checkm8's scope */
     TROGNON_SOC_A5,   /* S5L8940 / S5L8942 / S5L8945 — 32-bit */
     TROGNON_SOC_A6,   /* S5L8950 / S5L8955 — 32-bit */
