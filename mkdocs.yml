@@ -36,8 +36,13 @@ theme:
     - search.highlight
     - content.code.copy
     - content.action.edit
+extra:
+  alternate:
+    - { name: English, lang: en, link: "./" }
+    - { name: Français, lang: fr, link: "fr/" }
 hooks:
   - hooks/build_info.py
+  - hooks/translations.py
 extra_css: [assets/extra.css]
 extra_javascript: [javascripts/mermaid-palette.js, javascripts/journey.js]
 markdown_extensions:
@@ -54,7 +59,13 @@ markdown_extensions:
         - { name: mermaid, class: mermaid, format: !!python/name:pymdownx.superfences.fence_code_format }
 nav:
   - Home: index.md
-  - English:
+  - Adventure:
+      - Guided path: en/journey/start.md
+      - Bestiary: en/bestiary.md
+      - 'Campaign: Wi-Fi': en/campaigns/wifi.md
+      - Missions: en/missions.md
+      - Verifications: en/verifications.md
+  - Reference:
       - Overview: en/README.md
       - 1. Boot chain: en/01-boot-chain.md
       - 2. Exception console: en/02-exception-console.md
@@ -64,13 +75,11 @@ nav:
       - 6. Support by chip: en/06-chips.md
       - 7. Modular code layout: en/07-code-layout.md
       - 8. Evidence: en/08-evidence.md
-      - Missions: en/missions.md
-      - Bestiary: en/bestiary.md
-      - 'Campaign: Wi-Fi': en/campaigns/wifi.md
-      - Verifications: en/verifications.md
-      - Guided path: en/journey/start.md
   - Français:
       - Présentation: fr/README.md
+      - Parcours guidé: fr/journey/start.md
+      - Bestiaire: fr/bestiaire.md
+      - 'Campagne : Wi-Fi': fr/campagnes/wifi.md
       - 1. Chaîne de démarrage: fr/01-boot-chain.md
       - 2. Console d'exceptions: fr/02-exception-console.md
       - 3. Carte matérielle: fr/03-hardware-map.md
@@ -79,9 +88,6 @@ nav:
       - 6. Support par puce: fr/06-chips.md
       - 7. Code modulaire: fr/07-code-layout.md
       - 8. Preuves: fr/08-evidence.md
-      - Parcours guidé: fr/journey/start.md
-      - Bestiaire: fr/bestiaire.md
-      - 'Campagne : Wi-Fi': fr/campagnes/wifi.md
   - Research:
       - Index: research/index.md
       - A5/A6, 32-bit: research/2026-10-13-a5-a6-32bit.md
@@ -96,7 +102,7 @@ nav:
       - IOP start-up to first sign of life: research/2026-10-16-iop-boot-to-life.md
       - Bring-up dependency map, touch and GPS: research/2026-10-16-bringup-dependency-map.md
       - Touch controller preconditions: research/2026-10-16-touch-n88-preconditions.md
-  - Reference:
+  - Specification:
       - SoC memory map (S5L8920): spec/soc-s5l8920.md
   - Notes:
       - Architecture (working notes, FR): architecture.md

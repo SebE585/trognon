@@ -11,11 +11,13 @@ title: Trognon (français)
 **Un téléphone oublié dans un tiroir, qui exécute du code que nous avons écrit.** Rétro-ingénierie ouverte de
 l'iPhone 3GS, documentée jusqu'au registre, chaque affirmation étant marquée selon la façon dont nous la connaissons : observée sur le téléphone, lue dans le code, ou supposée.
 
-[Comprendre le projet](01-boot-chain.md){ .md-button .md-button--primary }
-[Explorer le matériel](03-hardware-map.md){ .md-button }
-[Suivre le parcours guidé](journey/start.md){ .md-button }
+**Deux façons d'entrer.** Suivre l'histoire du téléphone, du tiroir éteint au premier pixel, ou prendre un problème : un bloc que nous n'avons pas fini de comprendre, et un code à trouver.
 
-[English documentation](../en/README.md) · [Code source](https://github.com/SebE585/trognon)
+[Suivre l'histoire](journey/start.md){ .md-button .md-button--primary }
+[Prendre un problème](bestiaire.md){ .md-button .md-button--primary }
+[Lire la référence](01-boot-chain.md){ .md-button }
+
+[Code source](https://github.com/SebE585/trognon)
 
 </div>
 
@@ -24,24 +26,6 @@ l'iPhone 3GS, documentée jusqu'au registre, chaque affirmation étant marquée 
 <figcaption>La console d'exceptions, telle que l'écran du téléphone l'affiche. Reconstituée depuis le tampon
 de console du payload, <strong>pas une photographie</strong>.</figcaption>
 </figure>
-
-</div>
-
-## Deux façons d'entrer
-
-<div class="grid cards" markdown>
-
-- **Suivre l'histoire**
-
-    Un parcours guidé du téléphone éteint au premier pixel. Vous faites des choix, et chaque étape dit à quel point nous sommes sûrs.
-
-    [Commencer l'histoire](journey/start.md){ .card-link }
-
-- **Prendre un problème**
-
-    Choisissez une créature : un bloc du téléphone que nous n'avons pas fini de comprendre, et un code à trouver. Seule une preuve lui enlève de la vie.
-
-    [Ouvrir le Bestiaire](bestiaire.md){ .card-link }
 
 </div>
 

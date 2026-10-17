@@ -14,11 +14,13 @@ hide:
 **A phone left in a drawer, running code we wrote.** Open reverse engineering of the iPhone 3GS,
 documented to the register, with every claim marked by how we know it: observed on the phone, read in code, or guessed.
 
-[Understand the project](en/01-boot-chain.md){ .md-button .md-button--primary }
-[Explore the hardware](en/03-hardware-map.md){ .md-button }
-[Take the guided path](en/journey/start.md){ .md-button }
+**Two ways in.** Follow the story of the phone from a powered-off drawer to the first pixel, or take a problem: a block we have not finished understanding, and a code to find.
 
-[Documentation française](fr/README.md) · [Source code](https://github.com/SebE585/trognon)
+[Follow the story](en/journey/start.md){ .md-button .md-button--primary }
+[Take a problem](en/bestiary.md){ .md-button .md-button--primary }
+[Read the reference](en/README.md){ .md-button }
+
+[Source code](https://github.com/SebE585/trognon)
 
 </div>
 
@@ -27,24 +29,6 @@ documented to the register, with every claim marked by how we know it: observed 
 <figcaption>The exception console, as the phone's own screen shows it. Rebuilt from the payload's
 console buffer, <strong>not a photograph</strong>.</figcaption>
 </figure>
-
-</div>
-
-## Two ways in
-
-<div class="grid cards" markdown>
-
-- **Follow the story**
-
-    A guided path from a powered-off phone to the first pixel. You make choices, and every step says how sure we are.
-
-    [Start the story](en/journey/start.md){ .card-link }
-
-- **Take a problem**
-
-    Pick a creature: a block of the phone we have not finished understanding, and a code to find. Only a proof takes away its life.
-
-    [Open the Bestiary](en/bestiary.md){ .card-link }
 
 </div>
 
