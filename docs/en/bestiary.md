@@ -165,6 +165,25 @@ Life: 4 of 6
 
 Its place in the hardware map: [Magnetometer](03-hardware-map.md#magnetometer)
 
+## The Twin
+
+*A5 boot chain (iPad 2, iPhone 4S)* · **Unspotted**
+
+**Goal** (bounded: reaching it does not mean the block is understood): Boot one payload of ours on an A5 device and show its output.
+
+<p class="bestiary-bar" role="img" aria-label="Life: 6 of 6 points left">▰▰▰▰▰▰▰▰▰▰</p>
+
+Life: 6 of 6
+
+<p class="bestiary-code" role="img" aria-label="Code: 0 of 3 slots found"><code>?</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
+
+- **Open.** A recorded identification of the iPad 2 in DFU. Its ChipID was read in normal mode (0x8940), but no evidence bundle shows it yet.
+    - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
+- **Open.** Entering pwned DFU with checkm8-a5 and a Pico, which is not tried.
+    - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
+- **Open.** Which addresses, display path and boot-image offsets differ from the 3GS.
+    - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
+
 ## Take one on
 
 Pick a front, then take its mission on the [Missions page](missions.md), or propose a mission for a front that has none. A front goes down when a pull request brings the proof, and the page is rebuilt from the data.

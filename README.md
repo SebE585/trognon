@@ -28,7 +28,7 @@ Evidence tags: **DEVICE** observed on a real phone, **SOURCE** read in our notes
 |---|---|---|---|
 | **iPhone 3GS** (S5L8920) | limera1n, host-direct | **DEVICE**: code runs, on-screen console, three exception types handled | the reference |
 | **iPhone 4** (A4, S5L8930) | SHAtter per ipwndfu, host-direct (**SOURCE**) | not tried | same CPU family: method and CPU-level code should carry over (**HYPOTHESIS**) |
-| **iPhone 4S** (A5, S5L8940) | checkm8-a5 with a Pico (**SOURCE**) | not tried | still 32-bit, but another exploit, helper board and loader chain |
+| **iPhone 4S, iPad 2** (A5, S5L8940) | checkm8-a5 with a Pico (**SOURCE**) | an iPad 2 identified over USB, read-only (**DEVICE**); boot not tried | still 32-bit, but another exploit, helper board and loader chain |
 | iPhone 5, 5c (A6) | checkm8, native (**SOURCE**) | not tried | next door to the A5 |
 | iPhone 5s to X (A7 to A11) | checkm8, arm64 (**SOURCE**) | not tried | 64-bit: a different track, contribute upstream |
 

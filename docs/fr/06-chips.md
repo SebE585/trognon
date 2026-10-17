@@ -34,7 +34,7 @@ Une carte par génération de puce, dans l'ordre de sortie. Couleur du bord gauc
 
 | | 3GS (S5L8920) | iPhone 4 (A4, S5L8930) | iPhone 4S (A5, S5L8940) | A6 (5, 5c) | A7 à A11 |
 |---|---|---|---|---|---|
-| Notre statut | **DEVICE** : le code tourne | pas essayé | pas essayé | pas essayé | pas essayé |
+| Notre statut | **DEVICE** : le code tourne | pas essayé | iPad 2 identifié (**DEVICE**, lecture seule) ; boot pas essayé | pas essayé | pas essayé |
 | Cœur CPU | Cortex-A8 r2p1 (**DEVICE**, `MIDR`) | classe Cortex-A8 (**HYPOTHESIS**, lire `MIDR` d'abord) | double cœur, classe Cortex-A9 (**HYPOTHESIS**) | 32 bits (**SOURCE**) | arm64 (**SOURCE**) |
 | Jeu d'instructions | ARMv7 32 bits | ARMv7 32 bits | ARMv7 32 bits | ARMv7 32 bits | 64 bits : une autre piste |
 | Exploit de boot | limera1n (**DEVICE**) | SHAtter selon ipwndfu (**SOURCE**) | checkm8-a5, demande un Pico (**SOURCE**) | checkm8, natif en USB (**SOURCE**) | checkm8 (**SOURCE**) |
@@ -86,11 +86,15 @@ les adresses, le chemin d'affichage et les offsets de patch de l'iBSS : on les r
 - `env_set`, la valeur de `run` et tous les offsets de l'iBSS sont propres à l'image 3GS et sont à
   retrouver dans l'iBSS de l'A4 (**HYPOTHESIS**).
 
-## iPhone 4S, A5 (S5L8940) : le premier démarrage différent (SOURCE, pas essayé)
+## iPhone 4S et iPad 2, A5 (S5L8940) : le premier démarrage différent (SOURCE ; un iPad 2 identifié, boot pas essayé)
 
 - Le boot demande un **Pico exécutant checkm8-a5** (RP2040 avec un UF2 par SoC et un câble OTG en Y ;
   RP2350 ne marche pas). Carte des SoC : 8940 = iPhone 4S et iPad 2 (sauf iPad2,4) (**SOURCE**,
   [recherche](../research/2026-10-13-a5-a6-32bit.md)).
+- Matériel disponible : un **iPad 2** (modèle A1395, `iPad2,1`, carte K93AP), sous iOS 9.3.5, déverrouillé par son propriétaire. Son identité a été lue
+  en USB avec `ideviceinfo`, une requête en lecture seule au service de l'appareil lui-même : ChipID 35136, soit 0x8940, le S5L8940
+  (**DEVICE** : une lecture d'identité, pas l'exécution d'un payload, donc pas de dossier de preuve ; à reproduire avec `ideviceinfo -s`). La capacité
+  de 32 Go et la version d'iOS viennent de la même requête. Rien n'y a été écrit et il n'a pas été mis en DFU. Le numéro de série n'est pas publié ici.
 - Base : **Project Cascadia** fait tourner Linux 6.12 mainline sur l'iPad mini 1 (S5L8942), avec les deux
   cœurs, le multitouch et le Wi-Fi, démarré depuis l'hôte en RAM. Son chemin : primepwn, un iBSS patché,
   un iBEC `autogo`, un chargeur d'étape, puis le noyau (**SOURCE**). Aucun portage n'existe pour le 4S.
@@ -119,7 +123,7 @@ les adresses, le chemin d'affichage et les offsets de patch de l'iBSS : on les r
 
 1. 3GS : le timer, puis les boutons.
 2. iPhone 4 : prouver le découpage par puce avec un deuxième banc.
-3. iPhone 4S : le Pico, puis le chemin de Cascadia sur S5L8940.
+3. iPhone 4S et iPad 2 : le Pico, puis le chemin de Cascadia sur S5L8940. L'iPad 2 est déjà identifié (lecture seule) ; son entrée en DFU est la première étape.
 4. Le reste suit les projets amont déjà actifs.
 
 ## Un dépôt, deux pistes
