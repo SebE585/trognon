@@ -16,7 +16,7 @@ This fits the constraints we found:
   exactly that unit. No installer; the aim is to write nothing to the phone's storage.
 - Every driver is proven on the device before the next one (the method of the
   [exception console](02-exception-console.md)).
-- It stays OS-agnostic: Mods are one track; booting Linux or a BSD on A5+ stays
+- It stays OS-agnostic: Mods are one track; booting Linux or a BSD on these chips stays
   another, and both sit on the same boot chain and hardware map.
 
 ## Capability ladder

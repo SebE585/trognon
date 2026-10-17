@@ -1,11 +1,11 @@
 # Trognon documentation (English)
 
-Reading guide for the reverse-engineering work on the iPhone 3GS (S5L8920).
+Reading guide for the reverse-engineering work on the 32-bit iPhones before the A5: the iPhone 3GS (S5L8920) first, then the iPhone 4.
 Every statement carries an evidence level:
 
 | Tag | Meaning |
 |---|---|
-| **DEVICE** | Observed on a real iPhone 3GS (read off its screen or over USB). |
+| **DEVICE** | Observed on a real device, the one named on the page (so far an iPhone 3GS), read off its screen or over USB. |
 | **EMU** | Only seen in our offline emulation (Unicorn). Proves the logic, not the hardware. |
 | **SOURCE** | Read in OpenIBoot or in a disassembly, not yet checked on the device. |
 | **HYPOTHESIS** | A plan or a guess. Do not build on it without checking. |
@@ -18,7 +18,7 @@ State as of 2026-10-15, one device (ECID redacted), iBSS 4.3.5 for `n88ap`
 3. [Hardware map: what is verified](03-hardware-map.md)
 4. [Mods: building the OS one use case at a time](04-mods.md)
 5. [Field notes: what fails and how to tell](05-field-notes.md)
-6. [Support by chip: 3GS, 4, 4S, then the rest](06-chips.md)
+6. [Support by chip: 3GS, 4, and what lies beyond](06-chips.md)
 7. [Modular code layout](07-code-layout.md)
 8. [Evidence: from claims to reproducible runs](08-evidence.md)
 

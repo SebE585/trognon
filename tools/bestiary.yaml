@@ -139,14 +139,3 @@ creatures:
       - state: open
         text: { en: "The role of the silent address 0x1f.", fr: "Le rôle de l'adresse silencieuse 0x1f." }
 
-  - id: twin
-    goal: { en: "Boot one payload of ours on an A5 device and show its output.", fr: "Faire démarrer un payload à nous sur un appareil A5 et en montrer la sortie." }
-    name: { en: "The Twin", fr: "Le Jumeau" }
-    block: { en: "A5 boot chain (iPad 2, iPhone 4S)", fr: "Chaîne de démarrage A5 (iPad 2, iPhone 4S)" }
-    fronts:
-      - state: open
-        text: { en: "A recorded identification of the iPad 2 in DFU. Its ChipID was read in normal mode (0x8940), but no evidence bundle shows it yet.", fr: "Une identification enregistrée de l'iPad 2 en DFU. Son ChipID a été lu en mode normal (0x8940), mais aucun dossier de preuve ne le montre encore." }
-      - state: open
-        text: { en: "Entering pwned DFU with checkm8-a5 and a Pico, which is not tried.", fr: "Entrer en DFU pwned avec checkm8-a5 et un Pico, ce qui n'est pas essayé." }
-      - state: open
-        text: { en: "Which addresses, display path and boot-image offsets differ from the 3GS.", fr: "Quelles adresses, quel chemin d'affichage et quels décalages de l'image de boot diffèrent du 3GS." }

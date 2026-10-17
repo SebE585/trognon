@@ -16,7 +16,7 @@ Cela colle aux contraintes trouvées :
   cette unité. Pas d'installeur, rien d'écrit dans le téléphone.
 - Chaque pilote est prouvé sur l'appareil avant le suivant (la méthode de la
   [console d'exceptions](02-exception-console.md)).
-- Le projet reste agnostique en OS : les Mods sont une piste ; démarrer Linux ou un BSD sur A5+ en
+- Le projet reste agnostique en OS : les Mods sont une piste ; démarrer Linux ou un BSD sur ces puces en
   est une autre, et les deux reposent sur la même chaîne de démarrage et la même carte matérielle.
 
 ## Échelle de capacités

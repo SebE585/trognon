@@ -1,48 +1,48 @@
 # 6. Support par puce
 
-Trognon se construit **de bas en haut à partir de l'iPhone 3GS**, puis s'élargit famille de puces par
-famille de puces. Cette page dit, pour chaque famille, ce qu'on sait, comment elle démarre, et ce qui se
-reporte depuis la voisine. Étiquettes de preuve comme dans l'[index](README.md). Nous n'avons touché
-que le 3GS : tout le reste est **SOURCE** (lu dans nos notes de recherche) ou **HYPOTHESIS**.
+Trognon couvre les iPhone 32 bits **d'avant l'A5** : l'iPhone 3GS d'abord, puis l'iPhone 4. Il se construit
+**de bas en haut à partir du 3GS**. Cette page dit, pour chaque puce, ce qu'on sait, comment elle démarre, et
+ce qui se reporte depuis la voisine. Étiquettes de preuve comme dans l'[index](README.md). Nous n'avons touché
+que le 3GS : tout ce qui concerne l'iPhone 4 est **SOURCE** (lu dans nos notes de recherche) ou **HYPOTHESIS**.
 
-## Deux régimes, pas une seule échelle
+## Où passe la ligne
 
-Les familles ne forment pas une ligne continue. Il y a une rupture entre l'iPhone 4 et l'iPhone 4S.
+La ligne est l'A5, parce que c'est là qu'un amont commence.
 
-| | **Régime A : avant A5** (3GS, iPhone 4) | **Régime B : A5 et après** (4S et suivants) |
+| | **Dans Trognon : avant A5** (3GS, iPhone 4) | **Au-delà de l'A4** (A5 et après) |
 |---|---|---|
 | Exploit de boot | limera1n (3GS), SHAtter (A4, selon ipwndfu) : bugs bootrom de 2010, **avant** checkm8 (**SOURCE**) | checkm8 (2019), A5 à A11 (**SOURCE**) |
 | Carte auxiliaire | aucune, hôte direct | l'A5 demande un Pico (**SOURCE**) ; les suivantes non |
 | Travail d'OS existant | rien sur quoi construire aujourd'hui : OpeniBoot, dormant (**SOURCE**) | Project Cascadia (A5), Hoolock, arbre Asahi, postmarketOS (**SOURCE**) |
-| Ce qu'on y fait | **bare metal** : nos propres payloads de boot, pilotes et [Mods](04-mods.md) | **porter un OS** et contribuer en amont, sans forker (**HYPOTHESIS** pour le 4S) |
-| Rôle dans Trognon | le laboratoire : tout est prouvé ici d'abord | la destination d'un OS généraliste |
+| Ce qu'on y fait | **bare metal** : nos propres payloads de boot, pilotes et [Mods](04-mods.md) | on suit les projets amont et on y contribue ; voir [Au-delà de l'A4](#au-dela-de-la4-a5-et-apres) |
 
-Le 3GS et l'iPhone 4 sont donc dans une même configuration (bare metal, notre code), le 4S et la suite
-dans une autre (du travail d'OS existant à rejoindre). Ce qui passe de A à B, c'est la méthode et les
-habitudes (niveaux de preuve, idée de la console à l'écran), pas les adresses. Dans le régime A, les deux
-téléphones diffèrent par l'outil d'exploit (limera1n contre SHAtter) : et d'anciens textes disent limera1n
-pour les deux : la [note de recherche](../research/2026-10-14-pre-a5-limera1n.md) porte la correction.
+Aucun amont n'est actif sur le 3GS ni sur l'iPhone 4 (OpeniBoot est dormant, **SOURCE**) : tout est donc
+prouvé ici d'abord. À partir de l'A5, d'autres font déjà le travail, et Trognon ne le refait pas. Ce qui passe
+d'un côté à l'autre, c'est la méthode et les habitudes (niveaux de preuve, idée de la console à l'écran), pas
+les adresses. Les deux téléphones de Trognon diffèrent par l'outil d'exploit (limera1n contre SHAtter), et
+d'anciens textes disent limera1n pour les deux : la
+[note de recherche](../research/2026-10-14-pre-a5-limera1n.md) porte la correction.
 
 
 ## Frise, puce par puce
 
-Une carte par génération de puce, dans l'ordre de sortie. Couleur du bord gauche : régime. Fond vert : là où notre code tourne. Contour rouge : le prochain banc.
+Une carte par génération de puce, dans l'ordre de sortie. Couleur du bord gauche : dans Trognon ou au-delà. Fond vert : là où notre code tourne. Contour rouge : le prochain banc.
 
 --8<-- "docs/snippets/timeline.fr.html"
 
 ## Recouvrements en un coup d'œil
 
-| | 3GS (S5L8920) | iPhone 4 (A4, S5L8930) | iPhone 4S (A5, S5L8940) | A6 (5, 5c) | A7 à A11 |
-|---|---|---|---|---|---|
-| Notre statut | **DEVICE** : le code tourne | pas essayé | iPad 2 identifié (**DEVICE**, lecture seule) ; boot pas essayé | pas essayé | pas essayé |
-| Cœur CPU | Cortex-A8 r2p1 (**DEVICE**, `MIDR`) | classe Cortex-A8 (**HYPOTHESIS**, lire `MIDR` d'abord) | double cœur, classe Cortex-A9 (**HYPOTHESIS**) | 32 bits (**SOURCE**) | arm64 (**SOURCE**) |
-| Jeu d'instructions | ARMv7 32 bits | ARMv7 32 bits | ARMv7 32 bits | ARMv7 32 bits | 64 bits : une autre piste |
-| Exploit de boot | limera1n (**DEVICE**) | SHAtter selon ipwndfu (**SOURCE**) | checkm8-a5, demande un Pico (**SOURCE**) | checkm8, natif en USB (**SOURCE**) | checkm8 (**SOURCE**) |
-| Carte auxiliaire | aucune | aucune | Pico RP2040 + câble OTG en Y | aucune | aucune |
-| Méthode de boot réutilisable ? | la référence | oui : même forme (DFU pwned, iBSS patché, run) | en partie : un chargeur en étapes au lieu de `run` (**HYPOTHESIS**) | en partie | non : pongoOS, m1n1, Linux |
-| Code CPU, console d'exceptions | réutilisable entre 3GS et A4 (**HYPOTHESIS**) | réutilisable | réutilisable si ARMv7 (**HYPOTHESIS**) | réutilisable | non réutilisable (arm64) |
-| Adresses, écran, iBSS | vérifiés | **à refaire** | **à refaire** | **à refaire** | **à refaire** |
-| Travail OS existant | OpeniBoot/iDroid, dormant (**SOURCE**) | partiel dans OpeniBoot, dormant (**SOURCE**) | Project Cascadia sur iPad mini 1 (**SOURCE**) | rien trouvé (**SOURCE**) | Hoolock, arbre Asahi, postmarketOS (**SOURCE**) |
+| | 3GS (S5L8920) | iPhone 4 (A4, S5L8930) |
+|---|---|---|
+| Notre statut | **DEVICE** : le code tourne | pas essayé |
+| Cœur CPU | Cortex-A8 r2p1 (**DEVICE**, `MIDR`) | classe Cortex-A8 (**HYPOTHESIS**, lire `MIDR` d'abord) |
+| Jeu d'instructions | ARMv7 32 bits | ARMv7 32 bits |
+| Exploit de boot | limera1n (**DEVICE**) | SHAtter selon ipwndfu (**SOURCE**) |
+| Carte auxiliaire | aucune | aucune |
+| Méthode de boot réutilisable ? | la référence | oui : même forme (DFU pwned, iBSS patché, run) |
+| Code CPU, console d'exceptions | la référence | réutilisable (**HYPOTHESIS**) |
+| Adresses, écran, iBSS | vérifiés | **à refaire** |
+| Travail OS existant | OpeniBoot/iDroid, dormant (**SOURCE**) | partiel dans OpeniBoot, dormant (**SOURCE**) |
 
 Ce qui se reporte, c'est la *méthode* et le *code au niveau du CPU*. Ce qui ne se reporte jamais, ce sont
 les adresses, le chemin d'affichage et les offsets de patch de l'iBSS : on les relit sur chaque puce
@@ -80,58 +80,44 @@ les adresses, le chemin d'affichage et les offsets de patch de l'iBSS : on les r
   `0x4F700000` ou `0x5F700000` (deux variantes dans son `clcd.h`), GPIO `0xBFA00000`, quatre contrôleurs
   d'interruptions VIC0 à VIC3 en `0xBF200000`, `0xBF210000`, `0xBF220000`, `0xBF230000`.
   L'écran est Retina, 640 x 960 (**HYPOTHESIS**, à confirmer) : la police de la console doit s'adapter.
-- Des appareils sont en main (plusieurs iPhone 4 pour pièces), donc un test coûte peu. **Critère de
+- **Critère de
   réussite :** une console à l'écran en écrivant seulement `soc/s5l8930.h`, sans rien changer d'autre. Si
   ça marche, le découpage du code par puce est validé.
 - `env_set`, la valeur de `run` et tous les offsets de l'iBSS sont propres à l'image 3GS et sont à
   retrouver dans l'iBSS de l'A4 (**HYPOTHESIS**).
 
-## iPhone 4S et iPad 2, A5 (S5L8940) : le premier démarrage différent (SOURCE ; un iPad 2 identifié, boot pas essayé)
+## Au-delà de l'A4 : A5 et après
 
-- Le boot demande un **Pico exécutant checkm8-a5** (RP2040 avec un UF2 par SoC et un câble OTG en Y ;
-  RP2350 ne marche pas). Carte des SoC : 8940 = iPhone 4S et iPad 2 (sauf iPad2,4) (**SOURCE**,
-  [recherche](../research/2026-10-13-a5-a6-32bit.md)).
-- Matériel disponible : un **iPad 2** (modèle A1395, `iPad2,1`, carte K93AP), sous iOS 9.3.5, déverrouillé par son propriétaire. Son identité a été lue
-  en USB avec `ideviceinfo`, une requête en lecture seule au service de l'appareil lui-même : ChipID 35136, soit 0x8940, le S5L8940
-  (**DEVICE** : une lecture d'identité, pas l'exécution d'un payload, donc pas de dossier de preuve ; à reproduire avec `ideviceinfo -s`). La capacité
-  de 32 Go et la version d'iOS viennent de la même requête. Rien n'y a été écrit et il n'a pas été mis en DFU. Le numéro de série n'est pas publié ici.
-- Base : **Project Cascadia** fait tourner Linux 6.12 mainline sur l'iPad mini 1 (S5L8942), avec les deux
-  cœurs, le multitouch et le Wi-Fi, démarré depuis l'hôte en RAM. Son chemin : primepwn, un iBSS patché,
-  un iBEC `autogo`, un chargeur d'étape, puis le noyau (**SOURCE**). Aucun portage n'existe pour le 4S.
-- Le premier travail borné est de passer Cascadia du S5L8942 au S5L8940 (**SOURCE**, note de recherche).
-- Recouvrement avec le 3GS : 32 bits et captifs tous deux, mais l'exploit, la carte auxiliaire et la chaîne
-  de chargement diffèrent. Notre méthode de payload nu peut se reporter ; la commande de boot peut-être pas
-  (**HYPOTHESIS**).
+Trognon s'arrête avant l'A5 (décision du 2026-10-17). À partir d'ici il existe déjà un amont, et la règle est
+de **contribuer là-bas, pas de forker** ([recherche](../research/2026-10-13-a7-a11-mainline.md)). Tout ce qui
+suit est **SOURCE** : lu dans nos notes de recherche, pas essayé par nous.
 
-## A6 (iPhone 5, 5c) : voisine de l'A5 (SOURCE)
+- **A5 (iPhone 4S, iPad 2).** Le boot demande un Pico exécutant checkm8-a5 (RP2040 avec un UF2 par SoC et un
+  câble OTG en Y ; RP2350 ne marche pas). Base : **Project Cascadia**, Linux 6.12 mainline sur l'iPad mini 1
+  (S5L8942), avec les deux cœurs, le multitouch et le Wi-Fi. Aucun portage n'existe encore pour un téléphone
+  ([recherche](../research/2026-10-13-a5-a6-32bit.md)).
+- **A6 (iPhone 5, 5c).** checkm8 tourne nativement dans `ipwndfu` en USB simple. L'iPad 4 (A6X) est la feuille
+  de route annoncée de Cascadia. Rien de connu pour l'iPhone 5 ou 5c.
+- **A7 à A11 (iPhone 5s à X).** 64 bits, une autre piste. Les device trees de tous sont dans Linux mainline
+  depuis la 6.13 ; pas encore de vrai pilote d'écran, ni Wi-Fi, audio, caméra, GPU, tactile. Boot : checkm8,
+  puis pongoOS, puis m1n1, puis Linux. En amont : Hoolock Linux et postmarketOS `apple-idevice`. Notre code
+  32 bits ne s'applique pas ; ce qui se reporte, c'est la méthode de documentation et l'idée de preuve par
+  appareil.
 
-- checkm8 tourne nativement dans `ipwndfu` en USB simple (moins fiable depuis un hôte Linux). Outils
-  cités : ipwnder32, ipwnder_lite, gaster, primepwn. L'iPad 4 (A6X) est la feuille de route annoncée de
-  Cascadia (**SOURCE**). Rien de connu pour l'iPhone 5 ou 5c.
-
-## A7 à A11 (iPhone 5s à X) : une autre piste (SOURCE)
-
-- 64 bits. Les device trees de tous sont dans Linux mainline depuis la 6.13 (framebuffer de boot, boutons,
-  luminosité, et NVMe interne sur A11). Pas de vrai pilote d'écran, ni Wi-Fi, audio, caméra, GPU, tactile.
-- Boot : checkm8, puis pongoOS, puis m1n1, puis Linux. En amont : Hoolock Linux ; aussi postmarketOS
-  `apple-idevice`. Captif.
-- La règle de Trognon ici : **contribuer en amont, ne pas forker**
-  ([recherche](../research/2026-10-13-a7-a11-mainline.md)). Notre code 32 bits ne s'applique pas ; ce qui se
-  reporte, c'est la méthode de documentation et l'idée de preuve par appareil.
+Un appareil A5 (un iPad 2) a été identifié en USB, en lecture seule, le 2026-10-15 ; ce travail ne fait pas
+partie de ce dépôt.
 
 ## Ordre de travail
 
 1. 3GS : le timer, puis les boutons.
 2. iPhone 4 : prouver le découpage par puce avec un deuxième banc.
-3. iPhone 4S et iPad 2 : le Pico, puis le chemin de Cascadia sur S5L8940. L'iPad 2 est déjà identifié (lecture seule) ; son entrée en DFU est la première étape.
-4. Le reste suit les projets amont déjà actifs.
+3. Au-delà de l'A4 : suivre les projets amont déjà actifs.
 
-## Un dépôt, deux pistes
+## Décision de périmètre
 
-Décision (2026-10-15) : Trognon reste **un seul dépôt avec deux pistes nommées**, par technologie :
-**A, bare metal** (3GS et iPhone 4) et **B, OS sur A5 et suivants** (4S et suite). La piste B n'a pas
-encore de code propre : un dépôt séparé serait vide et couperait un public déjà petit. **Règle de scission :**
-le jour où la piste B contient du code qui n'a plus rien à voir avec `hal/` (par exemple le chargeur A5 pour le
-Pico), elle passe dans son propre dépôt, avec un noyau commun dans un dépôt `-shared` si les deux en ont encore
-besoin. Le 3GS et l'iPhone 4 restent ensemble : ils partagent une méthode et un cœur CPU, pas leurs adresses,
-donc passer de l'un à l'autre est un deuxième en-tête `soc/`, pas un deuxième projet.
+Décision (2026-10-17) : Trognon couvre les iPhone 32 bits **d'avant l'A5** et reste un seul dépôt. Elle
+remplace la décision du 2026-10-15 (un dépôt, deux pistes : bare metal, puis OS sur l'A5 et après). La raison :
+Project Cascadia commence à l'A5, donc le 3GS et l'iPhone 4 sont les appareils sans amont actif, et refaire le
+chemin de Cascadia dans un dépôt public n'apporterait rien. Le 3GS et l'iPhone 4 restent ensemble : ils
+partagent une méthode et un cœur CPU, pas leurs adresses, donc passer de l'un à l'autre est un deuxième
+en-tête `soc/`, pas un deuxième projet.

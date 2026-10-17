@@ -1,18 +1,13 @@
 charte: trognon
-title: Chip families and what carries over
+title: Inside Trognon, and what lies beyond
 direction: right
 groups:
-  - { id: bootrom, label: "32-bit ARMv7, bootrom bug, host-direct", style: pipeline }
-  - { id: a5,      label: "32-bit ARMv7, checkm8 family",          style: pipeline }
-  - { id: arm64,   label: "64-bit, checkm8",                        style: zone }
+  - { id: bootrom, label: "Inside Trognon: 32-bit ARMv7, bootrom bug, host-direct", style: pipeline }
+  - { id: beyond,  label: "Beyond the A4: followed upstream",                        style: zone }
 nodes:
-  - { id: g3gs, label: iPhone 3GS,        subtitle: "S5L8920 - limera1n - DEVICE",     group: bootrom, style: stage }
-  - { id: a4,   label: iPhone 4,          subtitle: "S5L8930 - SHAtter - not tried",   group: bootrom, style: accent }
-  - { id: a5s,  label: iPhone 4S,         subtitle: "S5L8940 - Pico + checkm8-a5",     group: a5,      style: service }
-  - { id: a6,   label: iPhone 5, 5c,      subtitle: "A6 - checkm8 native",             group: a5,      style: muted }
-  - { id: a7,   label: iPhone 5s to X,    subtitle: "A7 to A11 - Hoolock, Asahi tree", group: arm64,   style: muted }
+  - { id: g3gs, label: iPhone 3GS,     subtitle: "S5L8920 - limera1n - DEVICE",              group: bootrom, style: stage }
+  - { id: a4,   label: iPhone 4,       subtitle: "S5L8930 - SHAtter - not tried",            group: bootrom, style: accent }
+  - { id: up,   label: A5 and later,   subtitle: "Cascadia, Hoolock, Asahi - SOURCE",        group: beyond,  style: muted }
 edges:
-  - { from: g3gs, to: a4,  label: "CPU code, method" }
-  - { from: a4,   to: a5s, label: "method, partly", style: tap }
-  - { from: a5s,  to: a6,  label: "checkm8 family" }
-  - { from: a6,   to: a7,  label: "ISA break", style: dead }
+  - { from: g3gs, to: a4, label: "CPU code, method" }
+  - { from: a4,   to: up, label: "method only", style: dead }

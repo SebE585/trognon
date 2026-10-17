@@ -6,12 +6,13 @@
 
 Documentation site: **[sebe585.github.io/trognon](https://sebe585.github.io/trognon/)**. English and French, with diagrams and an evidence level on every claim.
 
-STATUT: ACTIF, 2026-10-15 (first code running on an iPhone 3GS: on-screen console and exception handlers; see Documentation)
+STATUT: ACTIF, 2026-10-17 (scope: the 32-bit iPhones before the A5; first code running on an iPhone 3GS: on-screen console and exception handlers; see Documentation)
 
-Open hardware enablement for old, unsupported Apple phones, so that devices left in
-drawers can run code, and in time a free operating system, of their owner's choosing.
-Work goes **chip family by chip family**: the iPhone 3GS first (code already runs on it),
-then the iPhone 4, then the iPhone 4S, then the newer families, reusing what carries over.
+Open hardware enablement for the old, unsupported iPhones **before the A5**, the iPhone 3GS and the
+iPhone 4, so that devices left in drawers can run code, and in time a free operating system, of
+their owner's choosing. Work goes **chip by chip**: the iPhone 3GS first (code already runs on it),
+then the iPhone 4, reusing what carries over. From the A5 on, others already do the work (Project
+Cascadia, Hoolock, Asahi): Trognon follows them and contributes there instead of repeating it.
 
 **The value is reuse.** Trognon turns an unsupported phone into a base to
 build on: a GPS logger, an emulator, a kiosk, a Linux-like pocket computer, whatever its owner wants to make of it.
@@ -28,9 +29,7 @@ Evidence tags: **DEVICE** observed on a real phone, **SOURCE** read in our notes
 |---|---|---|---|
 | **iPhone 3GS** (S5L8920) | limera1n, host-direct | **DEVICE**: code runs, on-screen console, three exception types handled | the reference |
 | **iPhone 4** (A4, S5L8930) | SHAtter per ipwndfu, host-direct (**SOURCE**) | not tried | same CPU family: method and CPU-level code should carry over (**HYPOTHESIS**) |
-| **iPhone 4S, iPad 2** (A5, S5L8940) | checkm8-a5 with a Pico (**SOURCE**) | an iPad 2 identified over USB, read-only (**DEVICE**); boot not tried | still 32-bit, but another exploit, helper board and loader chain |
-| iPhone 5, 5c (A6) | checkm8, native (**SOURCE**) | not tried | next door to the A5 |
-| iPhone 5s to X (A7 to A11) | checkm8, arm64 (**SOURCE**) | not tried | 64-bit: a different track, contribute upstream |
+| A5 and later (iPhone 4S to X) | checkm8 (**SOURCE**) | followed, not tried | out of scope: an upstream exists (Cascadia, Hoolock, Asahi), see [Beyond the A4](docs/en/06-chips.md#beyond-the-a4-a5-and-later) |
 
 What carries over between chips is the boot *method* and the CPU-level code. Addresses, the display
 and the iBSS offsets are re-read on each chip, so the code is split to keep them in one small file per
@@ -57,7 +56,7 @@ Trognon is **OS-agnostic**. It is not "a Linux distro for iPhones". It is the
 layer every free OS needs and none should have to rebuild:
 
 1. **Boot chain**: getting a device from DFU to a payload we control
-   (limera1n on the 3GS, SHAtter on the A4, checkm8 from the A5 up), reproducibly,
+   (limera1n on the 3GS, SHAtter on the A4), reproducibly,
    from open tooling.
 2. **Hardware enablement**: per-SoC, per-device descriptions and drivers
    (display, touch, storage, USB, Wi-Fi, battery, camera, and so on), upstreamed
@@ -72,11 +71,11 @@ upstream first, no fork kept alive for its own sake.
 
 ## Hard constraints (known before writing a line)
 
-- **Tethered boot.** The bootrom exploits (limera1n, SHAtter, checkm8) do not persist across
+- **Tethered boot.** The bootrom exploits (limera1n, SHAtter) do not persist across
   reboots. Every cold boot needs a host (or a dongle) to re-run it. Turning
   that into something a non-expert can live with is the central problem.
-- **32-bit vs 64-bit.** The 3GS, A4, A5 and A6 (3GS, 4, 4S, 5, 5c) are 32-bit ARMv7; A7 to A11
-  (5s to X) are arm64. Two very different tracks, and only the 32-bit one shares our code.
+- **32-bit only.** The 3GS and the A4 (3GS, 4) are 32-bit ARMv7 and share our code. Later chips
+  (A7 to A11, arm64) do not, and are followed upstream rather than ported here.
 - **Batteries.** A ten-year-old Li-ion pack is often dead or swollen. Refurbishing
   is part of the project, not an afterthought.
 
@@ -91,8 +90,7 @@ usable as an iPhone again, so it adds no resale value to a stolen phone.
 | Track | Existing work | Gap Trognon takes on |
 |---|---|---|
 | S5L8920 (3GS) / A4 (4), 32-bit | limera1n (2010), host-direct, no helper board. No modern OS port. | Boot-chain test devices only, not a port target. |
-| A7 to A11 (5s to X), arm64 | Device trees in mainline since 6.13; Hoolock Linux downstream; postmarketOS `apple-idevice`. Framebuffer, buttons, brightness, NVMe on A11. | Contribute upstream, don't fork. Nobody works on touch, Wi-Fi, audio, charging. |
-| A5/A6 (4S, 5, 5c), 32-bit | Project Cascadia: mainline 6.12 on iPad mini 1 (S5L8942) with touch and Wi-Fi, since 2026. Nothing for phones. | Port to S5L8940 (iPhone 4S, iPad 2), then A6. |
+| A5 and later (4S to X) | Project Cascadia (A5/A6, 32-bit): mainline 6.12 on iPad mini 1 (S5L8942) with touch and Wi-Fi, since 2026. Hoolock, Asahi tree, postmarketOS (A7 to A11). | Out of scope: follow and contribute upstream. |
 | Host-free boot | checkm8-a5 on a Raspberry Pi Pico (A5); Pico DFU automation (A11). No unattended dongle published. | An always-attached boot dongle, the central open problem. |
 
 Details, dates and sources: [`docs/research/`](docs/research/).

@@ -9,7 +9,7 @@ title: Trognon (français)
 # Trognon
 
 **Un téléphone oublié dans un tiroir, qui exécute du code que nous avons écrit.** Rétro-ingénierie ouverte de
-l'iPhone 3GS, documentée jusqu'au registre, chaque affirmation étant marquée selon la façon dont nous la connaissons : observée sur le téléphone, lue dans le code, ou supposée.
+des iPhone d'avant l'A5 (le 3GS d'abord, puis l'iPhone 4), documentée jusqu'au registre, chaque affirmation étant marquée selon la façon dont nous la connaissons : observée sur le téléphone, lue dans le code, ou supposée.
 
 **Deux façons d'entrer.** Suivre l'histoire du téléphone, du tiroir éteint au premier pixel, ou prendre un problème : un bloc que nous n'avons pas fini de comprendre, et un code à trouver.
 
@@ -157,7 +157,7 @@ Les notes datées sont dans l'[index de la recherche](../research/index.md).
 3. [Carte matérielle : ce qui est vérifié](03-hardware-map.md)
 4. [Mods : construire l'OS un cas d'usage à la fois](04-mods.md)
 5. [Notes de terrain : ce qui échoue et comment le voir](05-field-notes.md)
-6. [Support par puce : 3GS, 4, 4S, puis le reste](06-chips.md)
+6. [Support par puce : 3GS, 4, et ce qui vient après](06-chips.md)
 7. [Code modulaire](07-code-layout.md)
 8. [Preuves : des affirmations aux exécutions reproductibles](08-evidence.md)
 
@@ -167,7 +167,7 @@ Anciennes notes de travail (mêlées au journal) : [`../architecture.md`](../arc
 
 | Étiquette | Sens |
 |---|---|
-| <span class="tag tag-device">DEVICE</span> | Observé sur un vrai iPhone 3GS (lu à l'écran ou par USB). |
+| <span class="tag tag-device">DEVICE</span> | Observé sur un vrai appareil, celui que nomme la page (pour l'instant un iPhone 3GS), lu à l'écran ou par USB. |
 | <span class="tag tag-emu">EMU</span> | Vu seulement dans notre émulation hors ligne (Unicorn). Prouve la logique, pas le matériel. |
 | <span class="tag tag-source">SOURCE</span> | Lu dans OpenIBoot ou dans un désassemblage, pas encore vérifié sur l'appareil. |
 | <span class="tag tag-hyp">HYPOTHESIS</span> | Un plan ou une supposition. Ne rien construire dessus sans vérifier. |
