@@ -36,6 +36,10 @@ theme:
     - search.highlight
     - content.code.copy
     - content.action.edit
+extra:
+  alternate:
+    - { name: English, lang: en, link: "./" }
+    - { name: Français, lang: fr, link: "fr/" }
 hooks:
   - hooks/build_info.py
   - hooks/translations.py

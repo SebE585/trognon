@@ -19,7 +19,6 @@ documented to the register, with every claim marked by how we know it: observed 
 [Follow the story](en/journey/start.md){ .md-button .md-button--primary }
 [Take a problem](en/bestiary.md){ .md-button .md-button--primary }
 [Read the reference](en/README.md){ .md-button }
-[Français](fr/README.md){ .md-button lang=fr hreflang=fr }
 
 [Source code](https://github.com/SebE585/trognon)
 

@@ -16,7 +16,6 @@ l'iPhone 3GS, documentée jusqu'au registre, chaque affirmation étant marquée 
 [Suivre l'histoire](journey/start.md){ .md-button .md-button--primary }
 [Prendre un problème](bestiaire.md){ .md-button .md-button--primary }
 [Lire la référence](01-boot-chain.md){ .md-button }
-[English](../index.md){ .md-button lang=en hreflang=en }
 
 [Code source](https://github.com/SebE585/trognon)
 
