@@ -165,6 +165,25 @@ Vie : 4 sur 6
 
 Sa place dans la carte matérielle : [Magnétomètre](03-hardware-map.md)
 
+## Le Jumeau
+
+*Chaîne de démarrage A5 (iPad 2, iPhone 4S)* · **Non repérée**
+
+**Objectif** (borné : l'atteindre ne veut pas dire que le bloc est compris) : Faire démarrer un payload à nous sur un appareil A5 et en montrer la sortie.
+
+<p class="bestiary-bar" role="img" aria-label="Vie : 6 sur 6 points restants">▰▰▰▰▰▰▰▰▰▰</p>
+
+Vie : 6 sur 6
+
+<p class="bestiary-code" role="img" aria-label="Code : 0 sur 3 emplacements trouvés"><code>?</code> &nbsp;·&nbsp; <code>?</code> &nbsp;·&nbsp; <code>?</code></p>
+
+- **Ouvert.** Une identification enregistrée de l'iPad 2 en DFU. Son ChipID a été lu en mode normal (0x8940), mais aucun dossier de preuve ne le montre encore.
+    - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
+- **Ouvert.** Entrer en DFU pwned avec checkm8-a5 et un Pico, ce qui n'est pas essayé.
+    - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
+- **Ouvert.** Quelles adresses, quel chemin d'affichage et quels décalages de l'image de boot diffèrent du 3GS.
+    - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
+
 ## En affronter une
 
 Choisissez un front, puis prenez sa mission sur la [page Missions](../en/missions.md) (en anglais), ou proposez-en une pour un front qui n'en a pas. Un front tombe quand une pull request apporte la preuve, et la page est reconstruite depuis les données.
