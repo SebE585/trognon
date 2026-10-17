@@ -10,6 +10,10 @@
 {% endblock %}
 
 {% block content %}
+  {% if page and page.meta and page.meta.other_language_url %}
+    {% set to_fr = not page.url.startswith("fr/") %}
+    <p class="lang-switch"><a href="{{ page.meta.other_language_url | url }}" hreflang="{{ 'fr' if to_fr else 'en' }}" lang="{{ 'fr' if to_fr else 'en' }}">{{ 'Lire cette page en français' if to_fr else 'Read this page in English' }}</a></p>
+  {% endif %}
   {{ super() }}
   {% if page and page.url is defined and page.file and page.file.src_uri != "404.md" %}
     {% set fr = page.url.startswith("fr/") %}

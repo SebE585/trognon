@@ -92,6 +92,7 @@ corpus:
 tools-check:
 	python3 -I tools/test_bundle_source.py
 	python3 -I tools/test_build_info.py
+	python3 -I tools/test_translations.py
 	python3 -I tools/test_rebuild_bundle.py
 	python3 -I tools/test_verifications_build.py
 	python3 -I tools/verifications_build.py --check
