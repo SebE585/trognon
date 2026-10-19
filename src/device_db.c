@@ -243,6 +243,31 @@ const struct trognon_device trognon_device_catalog[] = {
         },
     },
     {
+        .model_name = "iPad 2 (Wi-Fi)",
+        .provenance = TROGNON_PROV_UPSTREAM,
+        .provenance_date = "2026-10-19",
+        .model_identifier = "iPad2,1",
+        .cpid = 0x8940,
+        .soc = TROGNON_SOC_A5,
+        .soc_codename = "S5L8940",
+        .dt_platform = NULL, /* no mainline DT; closest base is Project
+                                 Cascadia (S5L8942, iPad mini 1) */
+        .unlock_path = TROGNON_UNLOCK_HELPER_BOARD,
+        .unlock_tool_hint = "LukeZGD/checkm8-a5 via a Pico RP2040 or "
+                             "Arduino+MAX3421E helper board — host CLI "
+                             "cannot drive this exploit alone. Shares CPID "
+                             "0x8940 with the iPhone 4S: a lookup by CPID "
+                             "returns that entry.",
+        .support = {
+            .framebuffer = 0, .touch = 0, .wifi = 0, .storage = 0, .gpu = 0,
+            .notes = "No port exists yet; nearest work is Project Cascadia "
+                     "on the sibling S5L8942 SoC. The LukeZGD/Legacy-iOS-Kit "
+                     "wiki's checkm8-a5 page (public, upstream) lists CPID "
+                     "0x8940 for iPad 2 models other than iPad2,4, which is "
+                     "0x8942 instead despite the same \"iPad 2\" name.",
+        },
+    },
+    {
         .model_name = "iPhone 5",
         .provenance = TROGNON_PROV_UPSTREAM,
         .provenance_date = "2026-10-13",
