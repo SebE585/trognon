@@ -75,7 +75,7 @@ include/trognon/
   chain.h      : enum des étapes de la chaîne de démarrage, état
   log.h        : logging commun
 src/
-  device_db.c  : table statique (A5 à A11), read-only
+  device_db.c  : table statique (identification de toute puce reconnue, S5L8900 à A11 ; ne porte rien hors périmètre), read-only
   usb_probe.c  : énumération + identification (pas d'écriture)
   chain.c      : orchestration, lance les outils tiers en sous-processus
   cli.c        : `trognon`, point d'entrée
