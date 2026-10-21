@@ -88,6 +88,11 @@ def verify(bundle, search_later=False):
         notes = "No commit that was tried rebuilds this exact payload."
     if result == "mismatch":
         notes = "Built bytes differ from the manifest (built %s)." % got
+        recorded = (manifest.get("tools") or {}).get("compiler")
+        if recorded and recorded != toolchain():
+            notes += " The run recorded the compiler %r; this one is %r." % (recorded, toolchain())
+    if manifest["git"].get("source_complete") == "incomplete" and result != "match":
+        notes = (notes + " " if notes else "") + "The manifest says source_complete: incomplete (files git did not track were part of the build)."
     return {"bundle": bundle.name, "kind": "rebuild", "date": datetime.date.today().isoformat(), "by": "YOUR-GITHUB-HANDLE",
             "environment": {"host": "%s %s" % (platform.system(), platform.machine()), "toolchain": toolchain() or "none"},
             "result": result, "commit": used if result in ("match", "mismatch") else None, "notes": notes}

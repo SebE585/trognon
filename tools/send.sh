@@ -13,9 +13,11 @@ export PYTHONPATH=.
 shift
 # run_payload.py runs from the ipwndfu directory: make a relative --evidence DIR absolute first, or the
 # bundle lands inside ipwndfu (seen 2026-10-16).
-ARGS=""
+# Rebuild the argument list in place ("$@" rotated once), no eval: every argument stays one word.
 want_dir=0
-for a in "$@"; do
+n=$#
+while [ "$n" -gt 0 ]; do
+  a="$1"; shift; n=$((n - 1))
   if [ "$want_dir" = 1 ]; then
     case "$a" in /*) ;; *) a="$(pwd)/$a" ;; esac
     want_dir=0
@@ -29,7 +31,7 @@ for a in "$@"; do
         a="--evidence=$v" ;;
     esac
   fi
-  ARGS="$ARGS $(printf '%s' "$a" | sed "s/'/'\\\\''/g; s/^/'/; s/\$/'/")"
+  set -- "$@" "$a"
 done
 cd "$IPWNDFU"
-eval "exec python3 \"$HERE/run_payload.py\" \"$PAYLOAD\" $ARGS"
+exec python3 "$HERE/run_payload.py" "$PAYLOAD" "$@"

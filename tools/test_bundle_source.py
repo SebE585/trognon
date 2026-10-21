@@ -11,7 +11,7 @@ import bundle_source as bs  # noqa: E402
 class SourceFieldTests(unittest.TestCase):
     def test_a_clean_tree_records_only_the_commit(self):
         block, patch = bs.source_fields("abc", False, "", [])
-        self.assertEqual(block, {"commit": "abc", "dirty": False})
+        self.assertEqual(block, {"commit": "abc", "dirty": False, "source_complete": "complete"})
         self.assertIsNone(patch)
 
     def test_a_dirty_tree_saves_the_diff_and_its_hash(self):
@@ -38,6 +38,32 @@ class SourceFieldTests(unittest.TestCase):
     def test_the_run_warns_when_files_cannot_be_saved(self):
         block, _ = bs.source_fields("abc", True, "", ["tools/payloads/new.c"])
         self.assertTrue(any("NOT saved" in w for w in bs.warnings(block)))
+
+    def test_source_complete_says_whether_the_source_is_all_there(self):
+        self.assertEqual(bs.source_fields("a", False, "", [])[0]["source_complete"], "complete")
+        self.assertEqual(bs.source_fields("a", True, "diff\n", [])[0]["source_complete"], "with-source-diff")
+        self.assertEqual(bs.source_fields("a", True, "diff\n", ["tools/x.c"])[0]["source_complete"], "incomplete")
+        self.assertEqual(bs.source_fields("a", True, "", [])[0]["source_complete"], "incomplete")   # dirty, nothing saved
+        for combo in ((False, "", []), (True, "d", []), (True, "d", ["x"]), (True, "", [])):
+            self.assertIn(bs.source_fields("a", *combo)[0]["source_complete"], bs.SOURCE_COMPLETE)
+
+    def test_the_manifest_never_claims_reproducibility(self):
+        for combo in ((False, "", []), (True, "d", []), (True, "d", ["x"])):
+            self.assertNotIn("reproducible", bs.source_fields("a", *combo)[0])
+
+    def test_build_environment_records_compiler_and_flags(self):
+        class R:
+            def __init__(self, out, rc=0): self.stdout, self.returncode = out, rc
+        def run(cmd, **k):
+            return R("arm-none-eabi-gcc (fake) 13.2\nmore\n") if "--version" in cmd else R("gcc -Os -DSOC_X\n")
+        env = bs.build_environment("/p", run=run, which=lambda n: "/usr/bin/" + n)
+        self.assertEqual(env, {"compiler": "arm-none-eabi-gcc (fake) 13.2", "cflags": "gcc -Os -DSOC_X"})
+
+    def test_build_environment_without_a_compiler_says_none(self):
+        class R:
+            stdout, returncode = "", 2
+        env = bs.build_environment("/p", run=lambda *a, **k: R(), which=lambda n: None)
+        self.assertEqual(env, {"compiler": None, "cflags": None})
 
     def test_a_clean_run_says_nothing(self):
         block, _ = bs.source_fields("abc", False, "", [])
