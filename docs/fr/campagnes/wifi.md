@@ -37,6 +37,8 @@ Vie : 5 sur 8
 ### Étape 2. Quelle horloge physique alimente le coprocesseur
 
 - **Disponible** · Ouvert
+- **Écarté.** Que la porte 0x27, lue allumée lors d'un relevé précédent, soit celle du coprocesseur : c'est la porte du contrôleur NAND 1, allumée par le pilote NAND de l'iBSS. Lecture : [`research/2026-10-16-bringup-dependency-map.md`](../../research/2026-10-16-bringup-dependency-map.md).
+- **Écarté.** Que les portes lues quand un payload tourne soient seulement les six que l'initialisation d'horloge de l'iBSS allume (0, 0x18, 0x24, 0x2C, 0x2D, 0x31) : un relevé des 52 en lit 25 allumées, et la porte 0x2D éteinte. Preuve : [`20261020T134724Z-trace_gate_survey`](https://github.com/SebE585/trognon/tree/main/evidence/20261020T134724Z-trace_gate_survey).
 - Pour le faire tomber : on ne sait pas encore quelle exécution trancherait
 - L'attaquer : [Which object implements the clock-gate call?](../../en/missions.md#mission-s5l-clk-q1) (sans téléphone) · [Do the clock mask registers mirror the gate words?](../../en/missions.md#mission-s5l-clk-q2) (avec un téléphone, lecture seule)
 

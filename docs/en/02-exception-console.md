@@ -70,3 +70,8 @@ python3 -I render_fb.py trace.bin trace.png   # offline render with Unicorn
 
 Emulation limits: Unicorn models none of `FSR`, `FAR`, `IFSR`, `SCTLR.A`, `DACR`.
 Faults are simulated with unmapped addresses, so only the control flow is checked.
+
+Unicorn version: CI installs `unicorn==2.1.1` and `pillow==11.0.0` on Linux, where the emulation passed on the last pushed commit. On one Apple silicon Mac
+(macOS arm64, 2026-10-21), `unicorn` 2.1.1 crashed natively (a bus error in `mem_map`, `render_fb.py` line 19) on `trace`, `trace_irq` and `trace_tirq`, while 2.1.4 ran
+all three to the end with their markers set. The cause was not isolated: it was not established whether it is the emulator build, the platform or something else.
+If you hit it, try a newer release locally.

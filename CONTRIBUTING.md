@@ -41,11 +41,17 @@ or the campaign pages. What you can add, and what each needs:
   the code; `down` needs `evidence`, the bundle(s) under `evidence/` that show it. A front only moves when its proof is attached.
 - **A code fragment** on a front that is down (`fragment: {label, value, proof}`): a register value or an identifier. `proof` must be a line that appears
   as is in the `screen.txt` or `vars.txt` of the front's bundles, and `value` must appear in that line; the generator refuses it otherwise.
+- **A refutation** (`ruled_out` on any front): a hypothesis shown false, with its text in both languages and its source, a page of `docs/` (`ref`) and/or
+  evidence bundles. It is not a state and does not move the life bar; it is listed under its front because it shortens the search as much as a
+  confirmation does. Ruling out a lead is a contribution of the same weight as finding a register.
 - **A creature**: a block, with its names and its bounded `goal` in English and French. The life bar is computed from the states of the fronts; what a
   measurement demonstrates is decided by review, in the pull request.
 - **A campaign** (`campaign: true`, plus `campaign_intro` in both languages): every front gets an `id`, optionally `needs` (the fronts that come first in our
   working order, a plan and not a proven requirement) and, unless it is down, `down_needs` (`survey`, `write` or `unknown`: what would bring it down).
   A front is *locked* until every front it needs is down; locked fronts can still be studied in the code. Hardware writes stay with the maintainer.
+
+There is no ranking by number of contributions: it would reward many small actions over settling a hard question. What is recorded is who checked
+what, on the [Verifications](https://sebe585.github.io/trognon/en/verifications/) page. The life bar counts points investigated, not how much of a block works.
 
 `make bestiary-check` runs its tests and refuses a front without its proof, a mission, bundle or section that does not exist, a cycle in `needs`,
 and a stale generated page.
@@ -60,3 +66,11 @@ The guided journey, the missions page and the Bestiary are generated: edit `docs
 
 Code is GPL-2.0-only or MIT as marked per file; documentation is CC-BY-SA-4.0. By submitting a contribution you confirm you have the
 right to do so under these licences.
+
+`make docs-check` also runs `python3 -I tools/check_public.py`, which fails if the repository tracks something it must not publish: a local
+context file (`CLAUDE*.md`, `TODO.md`, `docs/journal/`, `.claude/`), Apple firmware or a built payload, a binary format that is not on its list,
+a person's home path, a device identifier (ECID, serial number, IMEI), a secret, the name of a private project, or a commit trailer added by a tool.
+A deliberate exception goes in `ALLOWED` in that file, with its reason, so a reviewer sees it.
+
+The SVGs in `docs/img/` are committed and are what the site uses. They are built from `docs/diagrams/*.yaml` by a maintainer-side tool that is not
+public (`make diagrams`, which says so); do not edit an SVG by hand, propose a change to its YAML instead.

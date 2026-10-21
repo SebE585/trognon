@@ -70,3 +70,8 @@ python3 -I render_fb.py trace.bin trace.png   # rendu hors ligne avec Unicorn
 
 Limites de l'émulation : Unicorn ne modélise ni `FSR`, `FAR`, `IFSR`, `SCTLR.A`, ni `DACR`. Les
 fautes sont simulées par des adresses non mappées : seul le flux de contrôle est vérifié.
+
+Version d'Unicorn : la CI installe `unicorn==2.1.1` et `pillow==11.0.0` sous Linux, où l'émulation a passé sur le dernier commit poussé. Sur un Mac Apple silicon
+(macOS arm64, 2026-10-21), `unicorn` 2.1.1 a planté nativement (erreur de bus dans `mem_map`, `render_fb.py` ligne 19) sur `trace`, `trace_irq` et `trace_tirq`, alors que la
+2.1.4 mène les trois jusqu'au bout avec leurs marqueurs. La cause n'a pas été isolée : on n'a pas établi si c'est la construction de l'émulateur, la plateforme ou autre
+chose. En cas de problème, essayer une version plus récente en local.

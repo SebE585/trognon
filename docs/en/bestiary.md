@@ -18,6 +18,8 @@ Each creature is a block of the phone. Its **fronts** are the precise points the
 - **Wounded**: read in the firmware or in code (SOURCE), not yet seen working on the phone. Half a point of life is gone.
 - **Down**: observed on the real phone (DEVICE), with an evidence folder you can open and rebuild. The point is gone.
 - A creature is **defeated** when every front is down. That means its **goal** is reached, not that the block is understood: new questions may appear after a victory.
+- **Ruled out** is not a state: it is a hypothesis shown false, listed under its front with the page or the evidence that shows it. It does not move the bar, but it counts as much as a confirmation, because it shortens the search for whoever comes next.
+- The bar counts **points investigated**, not how much of the block works. Several small questions answered can leave the one that blocks everything untouched.
 - It is called *unspotted* while it is not even in the hardware map.
 
 ## The Whisperer
@@ -36,6 +38,8 @@ Life: 5 of 8
 - **Wounded: read in code.** How the coprocessor is started: its start-up sequence, read in the firmware but never run by us. Reading: [`research/2026-10-16-wifi-iop-architecture.md`](../research/2026-10-16-wifi-iop-architecture.md).
     - Attack it: [Which class receives the coprocessor start call?](missions.md#mission-arm7m-startcpu-q4) (no phone) · [What do the object-slot calls of the coprocessor start sequence do?](missions.md#mission-embiop-seq-q1) (no phone)
 - **Open.** Which physical clock gate feeds the coprocessor.
+    - **Ruled out.** That gate 0x27, read as on in an earlier survey, is the coprocessor's: it is the gate of NAND flash controller 1, turned on by the iBSS's NAND driver. Reading: [`research/2026-10-16-bringup-dependency-map.md`](../research/2026-10-16-bringup-dependency-map.md).
+    - **Ruled out.** That the gates read when a payload runs are only the six that the iBSS's clock initialisation turns on (0, 0x18, 0x24, 0x2C, 0x2D, 0x31): a survey of all 52 reads 25 on, and gate 0x2D off. Proof: [`20261020T134724Z-trace_gate_survey`](https://github.com/SebE585/trognon/tree/main/evidence/20261020T134724Z-trace_gate_survey).
     - Attack it: [Which object implements the clock-gate call?](missions.md#mission-s5l-clk-q1) (no phone) · [Do the clock mask registers mirror the gate words?](missions.md#mission-s5l-clk-q2) (needs a phone, reads only)
 - **Open.** Why writes from the main processor to the Wi-Fi registers do not stick.
     - No mission yet for this front. [Propose one](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
@@ -167,4 +171,4 @@ Its place in the hardware map: [Magnetometer](03-hardware-map.md#magnetometer)
 
 ## Take one on
 
-Pick a front, then take its mission on the [Missions page](missions.md), or propose a mission for a front that has none. A front goes down when a pull request brings the proof, and the page is rebuilt from the data.
+Pick a front, then take its mission on the [Missions page](missions.md), or propose a mission for a front that has none. No phone? The missions marked *no phone* are readings of public material, and `python3 tools/rebuild_bundle.py evidence/<bundle>` checks an evidence bundle without any device. A front goes down when a pull request brings the proof, and the page is rebuilt from the data. A refutation, with its source, is as welcome as a confirmation.

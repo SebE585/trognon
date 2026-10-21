@@ -37,6 +37,8 @@ Life: 5 of 8
 ### Step 2. Which physical clock gate feeds the coprocessor
 
 - **Available** · Open
+- **Ruled out.** That gate 0x27, read as on in an earlier survey, is the coprocessor's: it is the gate of NAND flash controller 1, turned on by the iBSS's NAND driver. Reading: [`research/2026-10-16-bringup-dependency-map.md`](../../research/2026-10-16-bringup-dependency-map.md).
+- **Ruled out.** That the gates read when a payload runs are only the six that the iBSS's clock initialisation turns on (0, 0x18, 0x24, 0x2C, 0x2D, 0x31): a survey of all 52 reads 25 on, and gate 0x2D off. Proof: [`20261020T134724Z-trace_gate_survey`](https://github.com/SebE585/trognon/tree/main/evidence/20261020T134724Z-trace_gate_survey).
 - To bring it down: not known yet which run would settle it
 - Attack it: [Which object implements the clock-gate call?](../missions.md#mission-s5l-clk-q1) (no phone) · [Do the clock mask registers mirror the gate words?](../missions.md#mission-s5l-clk-q2) (needs a phone, reads only)
 

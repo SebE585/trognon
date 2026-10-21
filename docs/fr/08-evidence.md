@@ -11,7 +11,7 @@ Chaque exécution de `tools/send.sh` ou `tools/go.sh` écrit un répertoire sous
 
 | Fichier | Ce qu'il prouve |
 |---|---|
-| `manifest.json` | le SHA-256 du payload, le commit git d'où il a été construit, si l'arbre était propre, le nonce envoyé et relu, le commit d'ipwndfu, la ligne de commande, le CPID de l'appareil (l'ECID n'est volontairement pas enregistré) |
+| `manifest.json` | le SHA-256 du payload, le commit git d'où il a été construit, si l'arbre était propre, le nonce envoyé et relu, le commit d'ipwndfu, le compilateur et ses options installés au moment de l'enregistrement (depuis le 2026-10-21), un champ `source_complete` (depuis le 2026-10-21), la ligne de commande, le CPID de l'appareil (l'ECID n'est volontairement pas enregistré) |
 | `screen.txt` | le texte et la couleur exacts de chaque ligne de console affichée par le téléphone, **publiés par le payload lui-même par USB** : ni photo ni OCR |
 | `source.diff` | seulement quand l'arborescence des sources n'était **pas** propre au moment de l'exécution : les modifications non commitées de `tools/`, `include/` et `src/`, pour pouvoir reconstruire le payload (récupérer le commit, `git apply source.diff`, compiler). Absent des 54 premiers dossiers, dont 26 ont été enregistrés avec une arborescence modifiée |
 | `screen.png` | la console redessinée à partir de `screen.txt`. Une reconstruction, pas une photo du téléphone |
@@ -57,3 +57,22 @@ est déterministe avec la même chaîne d'outils), puis lire `screen.txt` face �
 | Timers 0-3, les 5 champs, rien ne change sur 0,5 s | `trace_which_timer`, `trace_which_timer_b` | avec dossier |
 
 Une affirmation sans dossier vient d'un run antérieur et reste une piste tant qu'elle n'est pas rejouée.
+
+## Tout le source est-il dans le dossier ? (`source_complete`) et est-il reproductible ?
+
+Depuis le 2026-10-21, le bloc `git` du manifeste porte `source_complete`, décidé au moment où l'exécution est enregistrée **à partir du seul état de git** :
+
+| Valeur | Sens |
+|---|---|
+| `complete` | l'arborescence était propre : le commit enregistré contient tout le source |
+| `with-source-diff` | l'arborescence était modifiée : le commit plus le `source.diff` enregistré le contiennent tout |
+| `incomplete` | des fichiers que git ne suit pas faisaient partie de la construction et ne peuvent pas être sauvegardés : le dossier montre ce qui s'est passé, mais son source ne peut pas en être récupéré |
+
+**Ce n'est pas un verdict de reproductibilité.** Une arborescence propre ne prouve pas que le binaire envoyé a été construit depuis ce commit (ce peut être
+une construction plus ancienne, ou faite avec d'autres options), et le nonce prouve que le binaire a tourné, pas d'où il vient. Un dossier est **reproductible**
+quand une reconstruction depuis son commit donne le même SHA-256 : c'est ce que vérifie `tools/rebuild_bundle.py`, et le résultat est consigné sur la page
+[Verifications](verifications.md) (match, mismatch ou not-reproducible).
+
+Le compilateur et les options de `tools` sont ceux **installés au moment de l'enregistrement**. Le payload n'est pas reconstruit à cet instant : c'est un
+indice, pas une preuve. `tools/rebuild_bundle.py` les cite quand une reconstruction donne d'autres octets, un compilateur différent en étant la cause
+habituelle. Les dossiers antérieurs n'ont aucun des deux champs.

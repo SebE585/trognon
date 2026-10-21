@@ -18,6 +18,8 @@ Chaque créature est un bloc du téléphone. Ses **fronts** sont les points pré
 - **Blessé** : lu dans le firmware ou dans du code (SOURCE), pas encore vu fonctionner sur le téléphone. Un demi-point de vie est parti.
 - **À terre** : observé sur le vrai téléphone (DEVICE), avec un dossier de preuve que vous pouvez ouvrir et reconstruire. Le point est parti.
 - Une créature est **vaincue** quand tous ses fronts sont à terre. Cela veut dire que son **objectif** est atteint, pas que le bloc est compris : de nouvelles questions peuvent apparaître après une victoire.
+- **Écarté** n'est pas un état : c'est une hypothèse montrée fausse, listée sous son front avec la page ou la preuve qui le montre. Elle ne fait pas bouger la barre, mais elle compte autant qu'une confirmation, parce qu'elle raccourcit la recherche de celui qui vient après.
+- La barre compte des **points étudiés**, pas la part du bloc qui fonctionne. Plusieurs petites questions résolues peuvent laisser intacte celle qui bloque tout.
 - Elle est dite *non repérée* tant qu'elle n'est même pas dans la carte matérielle.
 
 ## Le Chuchoteur
@@ -36,6 +38,8 @@ Vie : 5 sur 8
 - **Blessé : lu dans le code.** Comment le coprocesseur démarre : sa séquence, lue dans le firmware mais jamais exécutée par nous. Lecture : [`research/2026-10-16-wifi-iop-architecture.md`](../research/2026-10-16-wifi-iop-architecture.md).
     - L'attaquer : [Which class receives the coprocessor start call?](../en/missions.md#mission-arm7m-startcpu-q4) (sans téléphone) · [What do the object-slot calls of the coprocessor start sequence do?](../en/missions.md#mission-embiop-seq-q1) (sans téléphone)
 - **Ouvert.** Quelle horloge physique alimente le coprocesseur.
+    - **Écarté.** Que la porte 0x27, lue allumée lors d'un relevé précédent, soit celle du coprocesseur : c'est la porte du contrôleur NAND 1, allumée par le pilote NAND de l'iBSS. Lecture : [`research/2026-10-16-bringup-dependency-map.md`](../research/2026-10-16-bringup-dependency-map.md).
+    - **Écarté.** Que les portes lues quand un payload tourne soient seulement les six que l'initialisation d'horloge de l'iBSS allume (0, 0x18, 0x24, 0x2C, 0x2D, 0x31) : un relevé des 52 en lit 25 allumées, et la porte 0x2D éteinte. Preuve : [`20261020T134724Z-trace_gate_survey`](https://github.com/SebE585/trognon/tree/main/evidence/20261020T134724Z-trace_gate_survey).
     - L'attaquer : [Which object implements the clock-gate call?](../en/missions.md#mission-s5l-clk-q1) (sans téléphone) · [Do the clock mask registers mirror the gate words?](../en/missions.md#mission-s5l-clk-q2) (avec un téléphone, lecture seule)
 - **Ouvert.** Pourquoi les écritures du processeur principal dans les registres Wi-Fi ne tiennent pas.
     - Pas encore de mission pour ce front. [En proposer une](https://github.com/SebE585/trognon/issues/new?template=mission.yml).
@@ -167,4 +171,4 @@ Sa place dans la carte matérielle : [Magnétomètre](03-hardware-map.md)
 
 ## En affronter une
 
-Choisissez un front, puis prenez sa mission sur la [page Missions](../en/missions.md) (en anglais), ou proposez-en une pour un front qui n'en a pas. Un front tombe quand une pull request apporte la preuve, et la page est reconstruite depuis les données.
+Choisissez un front, puis prenez sa mission sur la [page Missions](../en/missions.md) (en anglais), ou proposez-en une pour un front qui n'en a pas. Pas de téléphone ? Les missions marquées *sans téléphone* sont des lectures de sources publiques, et `python3 tools/rebuild_bundle.py evidence/<dossier>` vérifie un dossier de preuve sans aucun appareil. Un front tombe quand une pull request apporte la preuve, et la page est reconstruite depuis les données. Une réfutation, avec sa source, est aussi bienvenue qu'une confirmation.

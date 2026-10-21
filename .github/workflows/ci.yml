@@ -27,9 +27,9 @@ jobs:
         with: { python-version: "3.12" }
       - run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi
       - run: pip install unicorn==2.1.1 pillow==11.0.0
-      - name: Build every payload
+      - name: Build every payload (all stages, from the Makefile list)
         working-directory: tools/payloads
-        run: make trace.bin trace_pabt.bin trace_regs.bin trace_vic.bin trace_irq.bin trace_timer.bin trace_ticks.bin trace_tirq.bin trace_accel_i2c.bin trace_bt_gpio.bin trace_accel_axes.bin trace_iop_vic.bin
+        run: make all-stages
       - name: An unverified chip must be refused
         working-directory: tools/payloads
         run: |
@@ -67,6 +67,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install mkdocs==1.6.1 mkdocs-material==9.6.16
+      - name: Public repository guard (no private file, firmware, personal path, device id or machine trailer)
+        run: python3 -I tools/check_public.py
       - name: IOP coverage catalog regression tests
         run: python3 -m unittest tools.iop_analysis.test_gen_coverage -v
       - name: Build and check (same gate as the Pages deploy)

@@ -44,12 +44,15 @@ tests/test_chain: tests/test_chain.c src/chain.c src/device_db.c
 clean:
 	rm -f $(OBJ) $(BIN) tests/test_device_db tests/test_serial tests/test_chain tests/san_device_db tests/san_serial tests/san_chain; rm -rf tests/*.dSYM
 
-# Diagrams: docs/diagrams/*.yaml -> docs/img/*.svg, built with paper-forge (maintainer-side; the SVGs are
-# committed, so readers need nothing). Needs paper-forge's `trognon` charte (charte/trognon.tokens.yaml, `make tokens`).
-PAPER_FORGE ?= $(HOME)/projects/pro/deeptech/paper-forge
+# Diagrams: docs/diagrams/*.yaml -> docs/img/*.svg. MAINTAINER-ONLY: the builder (paper-forge, with its `trognon` charte,
+# `make tokens`) is a separate private tool, so a third party cannot regenerate them. The SVGs are committed, so readers and
+# contributors need nothing; do not edit an SVG by hand, propose a change to its YAML instead. Point PAPER_FORGE at a checkout:
+#   make diagrams PAPER_FORGE=/path/to/paper-forge
+PAPER_FORGE ?=
 # Padding around each diagram, in pixels (d2's default is 100, which shrinks the text in a page column).
 D2_PAD ?= 16
 diagrams:
+	@[ -f "$(PAPER_FORGE)/diagrams/build.py" ] || { echo "make diagrams: maintainer-only. Set PAPER_FORGE=/path/to/paper-forge (not publicly available); the committed SVGs in docs/img/ are what the site uses."; exit 1; }
 	@for f in docs/diagrams/*.yaml; do n=$$(basename $$f .yaml); \
 	  D2_PAD=$(D2_PAD) python3 $(PAPER_FORGE)/diagrams/build.py $$PWD/$$f --no-pdf >/dev/null && \
 	  cp $(PAPER_FORGE)/diagrams/dist/$$n.svg docs/img/$$n.svg && echo "docs/img/$$n.svg"; done
@@ -91,6 +94,11 @@ corpus:
 
 tools-check:
 	python3 -I tools/test_bundle_source.py
+	python3 -I tools/test_require_3gs.py
+	python3 -I tools/test_boot_ibss_only.py
+	python3 -I tools/test_go_sh.py
+	python3 -I tools/test_check_public.py
+	python3 -I tools/check_public.py
 	python3 -I tools/test_build_info.py
 	python3 -I tools/test_translations.py
 	python3 -I tools/test_rebuild_bundle.py

@@ -13,7 +13,7 @@ A published run is only as good as someone else's ability to check it. This page
 
 ## State
 
-55 bundles in [`evidence/`](https://github.com/SebE585/trognon/tree/main/evidence), by the best result recorded for each:
+57 bundles in [`evidence/`](https://github.com/SebE585/trognon/tree/main/evidence), by the best result recorded for each:
 
 | Result | Bundles |
 |---|---|
@@ -21,8 +21,8 @@ A published run is only as good as someone else's ability to check it. This page
 | Rebuilt to the exact hash, but only at a **later** commit (the run was recorded from an uncommitted source tree; new runs save it as `source.diff`) | 23 |
 | Rebuilt to different bytes | 0 |
 | Not reproducible (the first run of a stage whose source changed afterwards) | 2 |
-| Not checked yet | 1 |
-| **Total** | **55** |
+| Not checked yet | 3 |
+| **Total** | **57** |
 
 **Independent checks: 0.** Every row counted above is the maintainer's, made on one toolchain (the project's own); a check by someone else is listed separately below and is the only kind that adds independence.
 

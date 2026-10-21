@@ -11,7 +11,7 @@ Each run of `tools/send.sh` or `tools/go.sh` writes a directory under [`evidence
 
 | File | What it proves |
 |---|---|
-| `manifest.json` | the payload's SHA-256, the git commit it was built from, whether the tree was clean, the nonce sent and read back, the ipwndfu commit, the command line, the device CPID (the ECID is deliberately not recorded) |
+| `manifest.json` | the payload's SHA-256, the git commit it was built from, whether the tree was clean, the nonce sent and read back, the ipwndfu commit, the compiler and flags installed when the run was recorded (from 2026-10-21), a `source_complete` field (from 2026-10-21), the command line, the device CPID (the ECID is deliberately not recorded) |
 | `screen.txt` | the exact text and colour of every console row the phone displayed, **published by the payload itself over USB**: no photo, no OCR |
 | `source.diff` | only when the source tree was **not** clean at the run: the uncommitted changes of `tools/`, `include/` and `src/`, so the payload can be rebuilt (check out the commit, `git apply source.diff`, build). Absent from the first 54 bundles, 26 of which were recorded with a dirty tree |
 | `screen.png` | the console re-drawn from `screen.txt`. A reconstruction, not a photo of the phone |
@@ -71,3 +71,22 @@ Independent checks are recorded on the [Verifications](verifications.md) page. T
 | Timers 0-3, all 5 fields, nothing changes over 0.5 s | `trace_which_timer`, `trace_which_timer_b` | bundled |
 
 A claim without a bundle is documented from an earlier run and should be treated as a lead until re-run.
+
+## Is all the source in the bundle? (`source_complete`) and is it reproducible?
+
+From 2026-10-21 the manifest's `git` block carries `source_complete`, decided when the run is recorded **from the git state alone**:
+
+| Value | Meaning |
+|---|---|
+| `complete` | the tree was clean: the recorded commit holds all the source |
+| `with-source-diff` | the tree was dirty: the commit plus the saved `source.diff` hold all of it |
+| `incomplete` | files git does not track were part of the build and cannot be saved: the bundle shows what happened but its source cannot be recovered from it |
+
+**This is not a verdict of reproducibility.** A clean tree does not prove that the binary that was sent was built from that commit (it may be an older
+build, or built with other options), and the nonce proves that the binary ran, not where it came from. A bundle is **reproducible** when a rebuild from its
+commit gives the same SHA-256: that is what `tools/rebuild_bundle.py` checks, and the result is recorded on the [Verifications](verifications.md) page
+(match, mismatch or not-reproducible).
+
+The compiler and flags in `tools` are those installed **when the run was recorded**. The payload is not rebuilt at that moment, so they are a hint, not
+proof. `tools/rebuild_bundle.py` quotes them when a rebuild produces other bytes, since a different compiler is the usual reason. Earlier bundles carry
+neither field.
