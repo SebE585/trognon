@@ -46,6 +46,8 @@ TXT = {
             "**Wounded**: read in the firmware or in code (SOURCE), not yet seen working on the phone. Half a point of life is gone.",
             "**Down**: observed on the real phone (DEVICE), with an evidence folder you can open and rebuild. The point is gone.",
             "A creature is **defeated** when every front is down. That means its **goal** is reached, not that the block is understood: new questions may appear after a victory.",
+            "**Ruled out** is not a state: it is a hypothesis shown false, listed under its front with the page or the evidence that shows it. It does not move the bar, but it counts as much as a confirmation, because it shortens the search for whoever comes next.",
+            "The bar counts **points investigated**, not how much of the block works. Several small questions answered can leave the one that blocks everything untouched.",
             "It is called *unspotted* while it is not even in the hardware map."],
         "story": "The story behind it", "goal": "Goal", "goal_note": "bounded: reaching it does not mean the block is understood",
         "camp": "Campaign", "camp_title": "Campaign: %s", "camp_lead": "The order in which to attack %s, and what each step needs.",
@@ -63,9 +65,10 @@ TXT = {
         "life": "Life", "of": "of", "points": "points left", "state": {"open": "Open", "wounded": "Wounded: read in code", "down": "Down: seen on the phone"},
         "status": {"unspotted": "Unspotted", "intact": "Intact", "wounded": "Wounded", "defeated": "Defeated"},
         "map": "Its place in the hardware map", "attack": "Attack it", "none": "No mission yet for this front.",
-        "propose": "Propose one", "proof": "Proof", "src": "Reading", "missions_page": "missions.md", "map_page": "03-hardware-map.md",
+        "propose": "Propose one", "ruled": "Ruled out", "proof": "Proof", "src": "Reading", "missions_page": "missions.md", "map_page": "03-hardware-map.md",
         "take_h": "Take one on", "take": ("Pick a front, then take its mission on the [Missions page](missions.md), or propose a mission for a front that has none. "
-                                        "A front goes down when a pull request brings the proof, and the page is rebuilt from the data."),
+                                        "No phone? The missions marked *no phone* are readings of public material, and `python3 tools/rebuild_bundle.py evidence/<bundle>` checks an evidence bundle without any device. "
+                                        "A front goes down when a pull request brings the proof, and the page is rebuilt from the data. A refutation, with its source, is as welcome as a confirmation."),
         "unit": {"static": "no phone", "survey": "needs a phone, reads only", "write": "maintainer only"},
     },
     "fr": {
@@ -79,6 +82,8 @@ TXT = {
             "**Blessé** : lu dans le firmware ou dans du code (SOURCE), pas encore vu fonctionner sur le téléphone. Un demi-point de vie est parti.",
             "**À terre** : observé sur le vrai téléphone (DEVICE), avec un dossier de preuve que vous pouvez ouvrir et reconstruire. Le point est parti.",
             "Une créature est **vaincue** quand tous ses fronts sont à terre. Cela veut dire que son **objectif** est atteint, pas que le bloc est compris : de nouvelles questions peuvent apparaître après une victoire.",
+            "**Écarté** n'est pas un état : c'est une hypothèse montrée fausse, listée sous son front avec la page ou la preuve qui le montre. Elle ne fait pas bouger la barre, mais elle compte autant qu'une confirmation, parce qu'elle raccourcit la recherche de celui qui vient après.",
+            "La barre compte des **points étudiés**, pas la part du bloc qui fonctionne. Plusieurs petites questions résolues peuvent laisser intacte celle qui bloque tout.",
             "Elle est dite *non repérée* tant qu'elle n'est même pas dans la carte matérielle."],
         "story": "L'histoire qui y mène", "goal": "Objectif", "goal_note": "borné : l'atteindre ne veut pas dire que le bloc est compris",
         "camp": "Campagne", "camp_title": "Campagne : %s", "camp_lead": "L'ordre dans lequel attaquer %s, et ce dont chaque étape a besoin.",
@@ -96,9 +101,10 @@ TXT = {
         "life": "Vie", "of": "sur", "points": "points restants", "state": {"open": "Ouvert", "wounded": "Blessé : lu dans le code", "down": "À terre : vu sur le téléphone"},
         "status": {"unspotted": "Non repérée", "intact": "Intacte", "wounded": "Blessée", "defeated": "Vaincue"},
         "map": "Sa place dans la carte matérielle", "attack": "L'attaquer", "none": "Pas encore de mission pour ce front.",
-        "propose": "En proposer une", "proof": "Preuve", "src": "Lecture", "missions_page": "../en/missions.md", "map_page": "03-hardware-map.md",
+        "propose": "En proposer une", "ruled": "Écarté", "proof": "Preuve", "src": "Lecture", "missions_page": "../en/missions.md", "map_page": "03-hardware-map.md",
         "take_h": "En affronter une", "take": ("Choisissez un front, puis prenez sa mission sur la [page Missions](../en/missions.md) (en anglais), ou proposez-en une pour un front qui n'en a pas. "
-                                              "Un front tombe quand une pull request apporte la preuve, et la page est reconstruite depuis les données."),
+                                              "Pas de téléphone ? Les missions marquées *sans téléphone* sont des lectures de sources publiques, et `python3 tools/rebuild_bundle.py evidence/<dossier>` vérifie un dossier de preuve sans aucun appareil. "
+                                              "Un front tombe quand une pull request apporte la preuve, et la page est reconstruite depuis les données. Une réfutation, avec sa source, est aussi bienvenue qu'une confirmation."),
         "unit": {"static": "sans téléphone", "survey": "avec un téléphone, lecture seule", "write": "mainteneur seulement"},
     },
 }
@@ -265,6 +271,17 @@ def check(data, titles=None, bundles=None):
                     errors.append("%s: ref %r does not exist under docs/" % (where, f["ref"]))
             elif f.get("ref"):
                 errors.append("%s: only a wounded front carries a ref" % where)
+            for k2, r in enumerate(f.get("ruled_out", [])):
+                rw = "%s ruled_out %d" % (where, k2 + 1)
+                if not (r.get("text") or {}).get("en") or not (r.get("text") or {}).get("fr"):
+                    errors.append("%s: text needs both languages (the hypothesis that was shown false)" % rw)
+                if not r.get("ref") and not r.get("evidence"):
+                    errors.append("%s: a refutation needs its source: a page of docs/ (ref) or evidence bundle(s)" % rw)
+                if r.get("ref") and not (DOCS / r["ref"]).is_file():
+                    errors.append("%s: ref %r does not exist under docs/" % (rw, r["ref"]))
+                for b in r.get("evidence", []):
+                    if b not in bundles:
+                        errors.append("%s: evidence bundle %r does not exist" % (rw, b))
             for m in f.get("missions", []):
                 if m not in titles:
                     errors.append("%s: mission %r is not in missions.yaml" % (where, m))
@@ -272,6 +289,19 @@ def check(data, titles=None, bundles=None):
                 errors.append("%s: down_needs must be one of %s" % (where, ", ".join(DOWN_NEEDS)))
         errors += _campaign_errors(c)
     return errors
+
+
+def ruled_out_lines(f, lang, t, col, ref_up, indent):
+    """One line per hypothesis shown false under a front: the hypothesis, then where it is shown."""
+    out = []
+    for r in f.get("ruled_out", []):
+        src = []
+        if r.get("ref"):
+            src.append("%s%s[`%s`](%s%s)" % (t["src"], col, r["ref"], ref_up, r["ref"]))
+        if r.get("evidence"):
+            src.append("%s%s%s" % (t["proof"], col, ", ".join("[`%s`](%s/tree/main/evidence/%s)" % (b, REPO, b) for b in r["evidence"])))
+        out.append("%s- **%s.** %s. %s." % (indent, t["ruled"], r["text"][lang].rstrip("."), " ; ".join(src)))
+    return out
 
 
 def render(data, lang, titles=None, fr_anchors=None):
@@ -303,6 +333,7 @@ def render(data, lang, titles=None, fr_anchors=None):
             if f["state"] == "wounded":
                 line += " %s%s[`%s`](../%s)." % (t["src"], col, f["ref"], f["ref"])
             lines.append(line)
+            lines += ruled_out_lines(f, lang, t, col, "../", "    ")
             if f["state"] != "down":
                 ms = f.get("missions", [])
                 if ms:
@@ -348,6 +379,7 @@ def render_campaign(c, lang, titles=None):
         lines += ["### %s %d. %s" % (t["step"], n, f["text"][lang].rstrip(".")), "", "- **%s** · %s" % (label, t["state"][f["state"]])]
         if f.get("fragment"):
             lines.append("- %s%s<code>%s</code> (%s)" % (t["fragment"], col, f["fragment"]["value"], f["fragment"]["label"][lang]))
+        lines += ruled_out_lines(f, lang, t, col, t["ref_up"], "")
         if f["state"] == "down":
             lines.append("- %s%s%s" % (t["proof"], col, ", ".join("[`%s`](%s/tree/main/evidence/%s)" % (b, REPO, b) for b in f["evidence"])))
         else:

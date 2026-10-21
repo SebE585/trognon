@@ -194,5 +194,54 @@ class RenderTests(unittest.TestCase):
         self.assertEqual(bb.check(bb.load()), [])
 
 
+REF = "research/2026-10-16-bringup-dependency-map.md"
+
+
+def ro(**kw):
+    r = {"text": {"en": "A hypothesis shown false.", "fr": "Une hypothèse montrée fausse."}}
+    r.update(kw)
+    return r
+
+
+class RuledOutTests(unittest.TestCase):
+    def test_a_refutation_with_a_page_is_accepted(self):
+        self.assertEqual(errs(front("open", ruled_out=[ro(ref=REF)])), [])
+
+    def test_a_refutation_with_a_bundle_is_accepted(self):
+        self.assertEqual(errs(front("open", ruled_out=[ro(evidence=[B])])), [])
+
+    def test_a_refutation_without_a_source_is_refused(self):
+        self.assertTrue(any("needs its source" in e for e in errs(front("open", ruled_out=[ro()]))))
+
+    def test_a_refutation_needs_both_languages(self):
+        r = ro(ref=REF)
+        r["text"] = {"en": "only English"}
+        self.assertTrue(any("both languages" in e for e in errs(front("open", ruled_out=[r]))))
+
+    def test_a_missing_page_or_bundle_is_refused(self):
+        self.assertTrue(any("does not exist under docs/" in e for e in errs(front("open", ruled_out=[ro(ref="nope.md")]))))
+        self.assertTrue(any("does not exist" in e for e in errs(front("open", ruled_out=[ro(evidence=["20200101T000000Z-none"])]))))
+
+    def test_it_is_allowed_on_any_state(self):
+        for st in ("open", "wounded"):
+            extra = {"ref": REF} if st == "wounded" else {}
+            self.assertEqual(errs(front(st, ruled_out=[ro(ref=REF)], **extra)), [])
+
+    def test_it_does_not_move_the_bar(self):
+        with_r = creature(front("open", ruled_out=[ro(ref=REF)]), front("wounded", ref=REF))
+        without = creature(front("open"), front("wounded", ref=REF))
+        self.assertEqual(bb.life(with_r), bb.life(without))
+        self.assertEqual(bb.status(with_r), bb.status(without))
+
+    def test_it_is_shown_in_both_languages_with_its_source(self):
+        data = {"creatures": [creature(front("open", ruled_out=[ro(ref=REF, evidence=[B])]))]}
+        en = bb.render(data, "en", titles=TITLES)
+        fr = bb.render(data, "fr", titles=TITLES, fr_anchors=set())
+        self.assertIn("**Ruled out.** A hypothesis shown false", en)
+        self.assertIn(REF, en)
+        self.assertIn(B, en)
+        self.assertIn("**Écarté.** Une hypothèse montrée fausse", fr)
+
+
 if __name__ == "__main__":
     unittest.main()

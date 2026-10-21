@@ -17,6 +17,8 @@
 #   id          a short id, unique in the creature (required on every front of a campaign)
 #   needs       ids of the fronts that come first in OUR WORKING ORDER (a plan, not a proven requirement); the front is locked while one is open
 #   down_needs  what would bring it down: survey (a run that only reads), write (hardware writes: maintainer only) or unknown
+# Any front may also list `ruled_out`: hypotheses shown FALSE, each {text (both languages), ref (a page of docs/) and/or evidence (bundles)}. It is not a state and does not move the
+# bar; it is shown under the front because a refutation shortens the search as much as a confirmation does.
 # Wording rule: a front says what is established or not, at the strength of its proof. Nothing here is a claim of its own.
 creatures:
   - id: wifi
@@ -47,6 +49,13 @@ creatures:
         state: open
         text: { en: "Which physical clock gate feeds the coprocessor.", fr: "Quelle horloge physique alimente le coprocesseur." }
         missions: [S5L-CLK-Q1, S5L-CLK-Q2]
+        ruled_out:
+          - text: { en: "That gate 0x27, read as on in an earlier survey, is the coprocessor's: it is the gate of NAND flash controller 1, turned on by the iBSS's NAND driver",
+                    fr: "Que la porte 0x27, lue allumée lors d'un relevé précédent, soit celle du coprocesseur : c'est la porte du contrôleur NAND 1, allumée par le pilote NAND de l'iBSS" }
+            ref: research/2026-10-16-bringup-dependency-map.md
+          - text: { en: "That the gates read when a payload runs are only the six that the iBSS's clock initialisation turns on (0, 0x18, 0x24, 0x2C, 0x2D, 0x31): a survey of all 52 reads 25 on, and gate 0x2D off",
+                    fr: "Que les portes lues quand un payload tourne soient seulement les six que l'initialisation d'horloge de l'iBSS allume (0, 0x18, 0x24, 0x2C, 0x2D, 0x31) : un relevé des 52 en lit 25 allumées, et la porte 0x2D éteinte" }
+            evidence: [20261020T134724Z-trace_gate_survey]
       - id: sticky
         needs: [start]
         down_needs: unknown
