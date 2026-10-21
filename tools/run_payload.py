@@ -20,6 +20,25 @@ The outcome is also appended to a log (default ~/trognon-runs.log, override with
 import argparse, ast, datetime, hashlib, json, os, re, subprocess, sys, time
 import usb.core
 import recovery
+
+# Several iOS devices can sit in Recovery on this bench (an iPad 2 in the same session). recovery.acquire_device()
+# takes the first 0x1281 device whatever it is, so it can wait on, or send to, the wrong one. Only the 3GS
+# (CPID:8920) is accepted here, and nothing else is ever used.
+def _acquire_3gs(timeout=10):
+    import usb.backend.libusb1
+    backend = usb.backend.libusb1.get_backend(find_library=recovery._find_library)
+    end = time.time() + timeout
+    while time.time() < end:
+        for d in usb.core.find(find_all=True, idVendor=0x5AC, idProduct=0x1281, backend=backend):
+            try:
+                if 'CPID:8920' in (d.serial_number or ''):
+                    return d
+            except (usb.core.USBError, ValueError):   # unreadable serial: not proven to be the 3GS, so skipped
+                pass
+        time.sleep(0.1)
+    print('ERROR: no iPhone 3GS (CPID:8920) in Recovery Mode 0x1281 within %ds; other Recovery devices are ignored.' % timeout)
+    sys.exit(1)
+recovery.acquire_device = _acquire_3gs
 import bundle_source
 
 ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
@@ -152,7 +171,8 @@ if args.evidence:
         'device': {'cpid': cpid or None, 'note': 'ECID deliberately not recorded'},
         'git': git_block,
         'tools': {'ipwndfu_commit': subprocess.run(['git', '-C', ipw, 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip(),
-                  'python': sys.version.split()[0], 'host': sys.platform},
+                  'python': sys.version.split()[0], 'host': sys.platform,
+                  **bundle_source.build_environment(os.path.join(REPO, 'tools', 'payloads'))},
         'time_utc': stamp,
         'command': ' '.join(sys.argv).replace(REPO, '<repo>').replace(os.path.expanduser('~'), '~'),   # no personal paths in a public bundle
         'screen_rows': len(rows),

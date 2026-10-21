@@ -8,8 +8,15 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 IPWNDFU="${IPWNDFU:-$HOME/tools/ipwndfu}"
 [ $# -ge 1 ] || { echo "usage: $0 PAYLOAD.bin [VARIABLE ...]"; exit 2; }
 PAYLOAD="$1"; shift
+python3 -I "$HERE/ipwndfu/require_3gs.py" || exit 1   # one loud refusal, not six retries
+LOG="${TMPDIR:-/tmp}/trognon-boot.log"
 tries=0
-until "$HERE/boot.sh" </dev/null 2>&1 | tee /tmp/trognon-boot.log | grep -q "boot_ibss() returned"; do
+while :; do
+  boot=0
+  "$HERE/boot.sh" </dev/null >"$LOG" 2>&1 || boot=$?
+  cat "$LOG"
+  [ "$boot" -eq 0 ] && break
+  [ "$boot" -eq 10 ] || { echo "go.sh: boot failed (exit $boot); put the device back in DFU and rerun"; exit "$boot"; }
   tries=$((tries + 1))
   [ "$tries" -lt 6 ] || { echo "go.sh: pwn failed $tries times; put the device back in DFU and rerun"; exit 1; }
   echo "go.sh: pwn failed (try $tries), retrying"
