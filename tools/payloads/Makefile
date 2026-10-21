@@ -16,7 +16,7 @@ CFLAGS  = -mthumb -mcpu=cortex-a8 -Os -ffreestanding -fno-builtin -fno-pic \
 # One source of truth for the load address: the SoC header.
 PAYLOAD_BASE = $(shell echo SOC_PAYLOAD_BASE | $(CC) -E -P -x c -include soc.h $(SOCDEF) - 2>/dev/null | tr -d ' ')
 LDFLAGS = -T payload.ld -Wl,--gc-sections -Wl,--defsym=PAYLOAD_BASE=$(PAYLOAD_BASE)
-HAL     = hal/entry.o hal/console.o hal/exc.o hal/vic.o hal/result.o
+HAL     = hal/entry.o hal/console.o hal/exc.o hal/vic.o hal/result.o hal/i2c_gpio.o
 
 # stage number per payload (STAGE is read by trace.c)
 STAGE_trace      = 3
@@ -66,6 +66,7 @@ STAGE_trace_spi1_nogate = 44
 STAGE_trace_spi1_selftest = 45
 STAGE_trace_spi1_selftest2 = 46
 STAGE_trace_gate_survey = 47
+STAGE_trace_gate_snap = 48
 
 # Objects are built for one SoC. Without this stamp, `make SOC=other` would silently reuse objects built for
 # the previous chip. The stamp is rewritten only when SOC or the flags change.
@@ -79,10 +80,10 @@ font.h: gen_font.py
 hal/%.o: hal/%.c hal/*.h soc.h soc/*.h font.h .build-stamp
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-trace.o: trace.c hal/*.h soc.h soc/*.h font.h .build-stamp
+trace.o: trace.c stages/*.inc hal/*.h soc.h soc/*.h font.h .build-stamp
 	$(CC) $(CFLAGS) -DSTAGE=$(STAGE_trace) -c -o $@ $<
 
-trace_%.o: trace.c hal/*.h soc.h soc/*.h font.h .build-stamp
+trace_%.o: trace.c stages/*.inc hal/*.h soc.h soc/*.h font.h .build-stamp
 	$(CC) $(CFLAGS) -DSTAGE=$(STAGE_trace_$*) -c -o $@ $<
 
 %.elf: %.o $(HAL) payload.ld
@@ -94,7 +95,18 @@ trace_%.o: trace.c hal/*.h soc.h soc/*.h font.h .build-stamp
 %.png: %.bin render_fb.py
 	python3 -I render_fb.py $< $@
 
+# Every stage plus draw, then one sha256 per binary. Run before and after a refactor of hal/ or trace.c and diff the two
+# outputs: a change that is meant to keep the behaviour must leave the unaffected binaries byte-identical.
+STAGE_BINS = $(addsuffix .bin,$(shell grep -E '^STAGE_[a-z0-9_]+ *=' Makefile | sed 's/^STAGE_\([a-z0-9_]*\).*/\1/'))
+all-stages: $(STAGE_BINS) draw.bin
+sums: all-stages
+	@shasum -a 256 $(STAGE_BINS) draw.bin
+
+# The flags a payload is built with, for the evidence manifest (tools/bundle_source.py).
+print-flags:
+	@echo "$(CC) $(CFLAGS) $(LDFLAGS)"
+
 clean:
 	rm -f *.o hal/*.o *.elf *.bin *.png .build-stamp
-.PHONY: clean FORCE
+.PHONY: clean FORCE all-stages sums print-flags
 .SECONDARY:

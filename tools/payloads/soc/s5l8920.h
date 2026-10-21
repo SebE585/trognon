@@ -12,6 +12,7 @@
 /* Screen transcript (26 rows x 32 bytes) and register snapshots: more of our own mapped section. */
 #define SOC_TRANSCRIPT       0x41081000
 #define SOC_SNAPSHOTS        0x41084000
+#define SOC_GATE_STASH       0x410A0000   /* filled by the iBSS gate-snapshot hook (tools/ipwndfu/gate_snapshot.py) */
 #define SOC_HANDLER_STACK_TOP 0x410f8000
 #define SOC_IRQ_STACK_TOP     0x410f4000
 
@@ -47,6 +48,21 @@
 #define SOC_TIMER_IRQSTAT     (SOC_TIMER_BASE + 0x10000)    /* SOURCE, never read before STAGE 10 */
 #define SOC_TIMER_IRQLATCH    (SOC_TIMER_BASE + 0xF8)       /* SOURCE, never read before STAGE 10 */
 #define SOC_TIMER_VIC0_BIT    6                             /* SOURCE: TIMER_IRQ 6, enabled by the iBSS (EN bit 6) */
+
+/* Free-running tick at TIMER_BASE + 0x200 and its rate (24 ticks per microsecond: 24.001 MHz measured against the host
+ * clock on 2026-10-15 with tools/tick_rate.py, no evidence bundle yet). DEVICE. Used by the bit-banged I2C delays (hal/i2c_gpio.c). */
+#define SOC_TICK_REG          (SOC_TIMER_BASE + 0x200)
+#define SOC_TICKS_PER_US      24
+/* GPIO pin-mode words for open-drain emulation, OpeniBoot's gpio_custom_io() (plat-s5l8920/gpio.c): value and mask
+ * to release a pin (input, no level forced) and to drive it low. SOURCE, used on the device by the accelerometer
+ * and PMU stages. */
+#define SOC_GPIO_INPUT_VAL    0x210
+#define SOC_GPIO_INPUT_MASK   0x27E
+#define SOC_GPIO_LOW_VAL      0x212
+#define SOC_GPIO_LOW_MASK     0x27F
+/* BOARD (N88, iPhone 3GS), kept here until a second board exists (docs/en/07-code-layout.md). PMU 7-bit address on the bit-banged i2c0 (device tree). The PMU answered the i2c scan at 0x74 on the device (2026-10-16,
+ * evidence/20261016T164348Z-trace_pmu_read). */
+#define SOC_PMU_I2C_ADDR      0x74
 #define SOC_CLOCK_GATE_2C     0xBF100128
 
 /* NAND (H2FMI), bus 0 / CE0 only, read-only chip ID probe. SOURCE (OpeniBoot plat-s5l8920/h2fmi.c
