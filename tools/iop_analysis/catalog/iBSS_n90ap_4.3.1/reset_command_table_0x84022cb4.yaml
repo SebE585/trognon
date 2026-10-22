@@ -330,6 +330,30 @@ claims:
       on nibble match -- same pattern as iBSS_n88ap_4.3.5/clock_gate_init_0x8400dd58.yaml's set_gates), on the
       fresh N90AP SecureROM dump, scratchpad-only, never committed"
 
+  - id: IBSS90-RST-012
+    text: >
+      TRIED, did NOT resolve, IBSS90-RST-011's open question (what peripheral sits behind SecureROM's clock
+      gate `0x1d`). Decrypted this iPhone 4's own `DeviceTree.n90ap.img3` (from its IPSW, GID-key decrypted
+      same as LLB/iBoot/iBSS, tools/decrypt_image3.sh) and parsed Apple's binary device-tree node format (a
+      small one-off parser, not committed -- recursive {num_props,num_children} header then
+      {name[32],length,data} properties) to list every `/device-tree/arm-io/*` node's own `clock-gates`
+      property, hoping to find the name attached to gate 29 (0x1d) the way this project already did for the
+      3GS's own gate numbers (docs/research/2026-10-16-touch-n88-preconditions.md). It is NOT there: every
+      named peripheral node's `clock-gates` values run from 48 (`sdio`) up to 125 (`clcd`'s second gate) --
+      nothing below 48 appears anywhere in the tree. A raw byte search for the literal 4-byte value 0x1d
+      elsewhere in the tree only turns up unrelated numeric data (clock-frequency tables, interrupt numbers),
+      not a gate assignment. Most likely explanation, not yet confirmed: SecureROM runs before any device
+      tree is loaded at all, so its own internal PMGR gate indexing may simply use a different numbering
+      convention from the one the device tree (which only matters once iBoot/the kernel are running) exposes
+      -- the two may never have been meant to line up. This is a genuine dead end for this specific
+      approach, not merely an unfinished trace; a different source would be needed (e.g. a public S5L8930
+      PMGR register map/datasheet, which this project does not have).
+    status: device_disassembly_verified
+    evidence: "Firmware/all_flash/all_flash.n90ap.production/DeviceTree.n90ap.img3 from this device's own
+      IPSW, GID-key decrypted (tools/decrypt_image3.sh), kept scratchpad/local-cache only, never committed;
+      a one-off Apple-devicetree-format parser (not committed) walking every arm-io child node's
+      clock-gates property"
+
 hardware_tests:
   - name: single live memory read of 0xbf106000 (IBSS90-RST-008's question), no patch, no button
     claim_tested: "IBSS90-RST-009"
