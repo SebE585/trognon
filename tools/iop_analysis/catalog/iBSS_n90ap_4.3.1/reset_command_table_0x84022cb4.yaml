@@ -34,24 +34,20 @@ review:
         analysis method on this kind of table, not a sign that the N90AP table is structured differently.
       proof_needed: "either a disassembler with better indirect-call/computed-table resolution, or dynamic
         tracing on real hardware"
-    - id: IBSS90-RST-Q3
+    - id: IBSS90-RST-Q5
       text: >
-        What the UNPATCHED handler at 0x84000cd4 actually does once fully read (only its short prologue was
-        read: `push {r7,lr}; add r7,sp,#0; bl 0x840155bc; movs r0,#0; bl 0x8401654c`) -- is it a real hardware
-        reset (watchdog/PMU write) or something else; whether that matters to IBSS90-RST-Q4 below.
-      proof_needed: "full disassembly of 0x84000cd4 to its return, and of its two callees"
-    - id: IBSS90-RST-Q4
-      text: >
-        Why patching this handler to jump to "loadaddr" (0x41000001, confirmed the right address for this chip
-        in boot_env_init_0x84000df0.yaml) produced a white screen and no Recovery Mode on N90AP, twice, when the
-        same patch pattern is reported to work on the 3GS. Two live hardware_tests below (same outcome both
-        times) rule out one-off flakiness. Leading hypothesis, not yet checked: the jump itself may be EXPECTED
-        to fault (nothing is ever uploaded to "loadaddr" before this patched command runs -- boot_ibss() never
-        sends a second payload there either, on either chip), and what differs between boards is how each
-        board's own fault/exception handler reacts to that fault -- N88AP's apparently falls through to USB
-        Recovery Mode, N90AP's apparently shows a white screen instead (plausibly a framebuffer-touching panic
-        path, given the iPhone 4's screen is a different, newer panel setup than the 3GS's). Not traced.
-      proof_needed: "locate and read each board's own prefetch/data-abort exception handler"
+        What actually happens on real hardware between the watchdog-reset write (IBSS90-RST-003/-004) and the
+        device settling into a solid white screen with no USB enumeration -- now that IBSS90-RST-Q4's leading
+        hypothesis is ruled out (the fault/panic/reset code itself does not differ between boards, see
+        IBSS90-RST-004). The remaining candidates are outside what this iBSS binary's own code can show: the
+        N90AP SecureROM's own behaviour on a watchdog-triggered reset while still USB-pwned/DFU-held (does it
+        re-enter DFU the same way N88AP's does, or does it need the button combo again), or a display-panel
+        power-sequencing difference (the iPhone 4's screen being a different, newer panel than the 3GS's) that
+        only shows up as a blank/backlit screen rather than darkness either way.
+      proof_needed: "either a decrypted/disassembled N90AP SecureROM (not obtained in this project; the
+        securerom_dump() of 2026-10-22 was never kept past hash verification, scratchpad-only, see
+        docs/journal/2026-10-22.md), or live instrumentation on real hardware (e.g. an intermediate marker
+        write right before the final reset call, to confirm the panic path is actually what gets reached)"
 
 claims:
   - id: IBSS90-RST-001
@@ -74,6 +70,50 @@ claims:
       4-byte little-endian value of LOAD_ADDRESS+1, 0x41000001).
     status: device_disassembly_verified
     evidence: "same as IBSS90-RST-001"
+
+  - id: IBSS90-RST-003
+    text: >
+      Resolves IBSS90-RST-Q3. The UNPATCHED handler at 0x84000cd4 read to its end: `push {r7,lr}; add r7,sp,#0;
+      bl 0x840155bc; movs r0,#0; bl 0x8401654c` -- no `pop`/return, because the second call never returns. It is
+      a real hardware reset, not a placeholder: 0x840155bc is a conditional cleanup (checks a flag at
+      *0x84028b88, and if set, calls two cleanup routines before clearing it); 0x8401654c, called with r0=0,
+      skips its own optional branch and tail-calls 0x8400726c, which writes three words (unlock value
+      0x80000000, then action code 4) to the MMIO block at 0x84007288/0x8400728c/0x84007290 pointing at
+      0xbf102020/0xbf102024/0xbf10202c (watchdog/PMU block), then returns into an infinite self-loop
+      (`b $$`) that waits for the reset to take effect.
+    status: device_disassembly_verified
+    evidence: "r2 -a arm -b 32 -m 0x84000000 -e asm.bits=16, af+pdf on 0x84000cd4, 0x840155bc, 0x8401654c and
+      0x8400726c in sequence, on the GID-decrypted N90AP iBSS body"
+
+  - id: IBSS90-RST-004
+    text: >
+      The 3GS's own unpatched "reset" handler (0x84000cdc, same table shape, see n88ap's own table at
+      0x84017650/0x84017654) is structurally IDENTICAL to IBSS90-RST-003 above, instruction-for-instruction,
+      down to its own final MMIO write sequence (same three-write unlock/action-code pattern, same relative
+      offsets +0x10/+0x14/+0x1c from a watchdog/PMU base at 0xbf100200 -- vs N90AP's +0x20/+0x24/+0x2c from
+      0xbf102000, consistent with a different register-block layout for this IP block between the two silicon
+      generations, not a behavioural difference). This disproves IBSS90-RST-Q4's leading hypothesis (that the
+      two boards' fault/reset handling code differs): it does not. Followed one level further, up the call
+      chain from the shared vector table (both boards: identical ARM `ldr pc,[pc,#0x18]` x8 table at their
+      respective 0x84000000, read via the literal pool at +0x20) through each board's prefetch-abort and
+      data-abort stubs (byte-identical shape, only the target addresses of their `blx`/`bl` calls differ as
+      expected) to the shared-shape panic-string formatter (which builds the well-known
+      "ARM %s abort in %s mode at 0x%08x due to %s: far ... dfsr ... r0...sp...lr...spsr..." message, same on
+      both boards, same literal pool strings for mode names "system"/"user"/"FIQ"/"IRQ"/"supervisor"/"abort"/
+      "undefined") to its final call (`movs r0,1; bl <reset trigger>`): on BOTH boards that final call is
+      exactly the same function already read for IBSS90-RST-003/the 3GS equivalent (N90AP: 0x8401654c: N88AP:
+      0x8400e078). So an unrecoverable ARM fault (including a prefetch abort from jumping into unmapped memory,
+      the patched "reset" command's actual effect) ends, by design, in the SAME hardware watchdog reset on both
+      boards -- not in a USB Recovery fallback on one board and a silent hang on the other. The apparent
+      difference observed on real hardware (N88AP historically falling back to USB Recovery Mode vs N90AP's
+      white screen, hardware_tests below) is therefore NOT explained by anything in this iBSS binary's own
+      code; see IBSS90-RST-Q5.
+    status: device_disassembly_verified
+    evidence: "same r2 invocation as IBSS90-RST-003, repeated on n88ap_body.bin (n88ap-iBSS-4.3.5's own
+      decrypted body, GID key already cached from an earlier session) for the vector table, both abort stubs,
+      the panic-string formatter and its final reset call; cross-checked against the n88ap IRQ/FIQ vector
+      addresses already on record (0x8400f9ec/0x8400fa34, see TODO.md) which this same literal-pool read
+      reproduced exactly"
 
 hardware_tests:
   - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- 1st fresh-DFU attempt
