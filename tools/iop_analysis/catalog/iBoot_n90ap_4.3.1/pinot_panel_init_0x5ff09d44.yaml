@@ -32,35 +32,45 @@ review:
         tree reused across several device families; pinot_init is the one actually reachable from the panel
         dispatch above.
       proof_needed: null
-  unresolved:
     - id: IBOOT90-DISP-Q2
-      text: >
-        What pinot_init() itself fully does past its opening sequence, and in particular whether it can hang
-        or spin indefinitely (rather than return) under some panel-ID-read failure condition. What was read:
-        it calls what looks like a GPIO toggle helper (`bl 0x5ff024a4`) with argument pairs (0x206, 0) then
-        (0x206, 1) -- consistent with pulsing a reset-line GPIO low then high -- each followed by a delay call
-        (`bl 0x5ff17974` with 0x2710 then 0x1770, plausibly microsecond delays of 10000 and 6000), then a call
-        at (0x5ff0eb1c) with the framebuffer object and a second argument, then a further GPIO-shaped call
-        (`bl 0x5ff0e93c`, r0=5). The function's own error-path strings ("pinot_init(): read of pinot panel id
-        failed") suggest it probes the panel over some bus (likely SPI, matching the existing "lcd-panel-id" /
-        "raw-panel-id" / "pinot-panel-id" device-tree keys already seen in the N90AP iBSS strings) and that a
-        failed read is a recognised, named error condition -- but whether that condition RETURNS an error code
-        or gets stuck (e.g. in a retry loop) was not traced this session.
-      proof_needed: "read 0x5ff0eb1c, 0x5ff024a4 and 0x5ff0e93c fully, and follow every exit path of
-        pinot_init() itself to its return (or lack of one)"
-    - id: IBOOT90-DISP-Q3
+      by: >
+        Read pinot_init() (0x5ff09d44) in full, to its own `pop {r4,r5,r6,r7,pc}` at 0x5ff09f10. It does NOT
+        hang or spin on a panel-ID-read failure: the read call (0x5ff0e968) is checked (`cbnz`/retry-counter
+        `cmp r3,2`), and on failure it simply logs "pinot_init(): read of pinot panel id failed." (`bl
+        0x5ff2a0a4`, the same logging/printf-style call used for every other "pinot_init()..." trace line in
+        this function) and falls straight through to the common continuation point at 0x5ff09e4c -- the exact
+        same place the SUCCESS path rejoins. From there the function proceeds unconditionally through more
+        GPIO-shaped calls, backlight-level logic (byte at [r4+1] compared against 3/7/8, gating a call to
+        0x5ff0e920 and 0x5ff01eb8) and a final GPIO write (`bl 0x5ff023dc`, arg 0x207), and returns normally
+        on every path traced. No branch anywhere in this function loops back on itself other than the panel
+        read's own bounded (<=2) retry counter.
+    - id: IBOOT90-DISP-Q3b
+      by: >
+        The staging-address question this entry originally listed under -Q3 (whether LLB really hands iBoot
+        off at 0x5ff00000) is resolved and cross-referenced: LLB actually stages iBoot's raw image3 at
+        0x4ff00000, not 0x5ff00000 (LLB_n90ap_4.3.1/chainload_to_iboot_0x840007c0.yaml, LLB90-CHAIN-001). This
+        is not a mismatch: iBoot's own reset handler at its self-asserted 0x5ff00040 is a position-independent
+        self-relocating trampoline (same fiche, LLB90-CHAIN-003) that copies itself to 0x5ff00000 from
+        wherever it actually was staged before falling through to per-mode stack setup and `main()`. The
+        handoff's correctness therefore does not depend on LLB's staging address matching iBoot's literal
+        pool at all.
+  unresolved:
+    - id: IBOOT90-DISP-Q4
       text: >
         Whether this call chain (device-tree panel-type==3 dispatch -> pinot_init) is actually reached on THIS
-        specific white-screen hardware test (IBSS90-RST-Q6's hardware_tests), i.e. whether the SecureROM's
-        post-watchdog-reset NOR dispatch (IBSS90-RST-005, device index 1) really hands off into this exact
-        LLB/iBoot pair rather than, say, failing earlier (NAND/NOR read error, LLB->iBoot handoff fault) before
-        any display code runs at all. Nothing in this session traced LLB's own NOR-read-and-jump-to-iBoot
-        sequence (LLB_n90ap_4.3.1/boot_vector_and_no_display_0x84000000.yaml stops at confirming LLB contains
-        no display code, not at confirming the handoff itself succeeds).
-      proof_needed: "read LLB's own image3-load-and-jump function (the one that reads 'iBoot.n90ap...' from
-        nor0 and jumps to 0x5ff00000), and/or live instrumentation of a white-screen hardware test (e.g. a
-        debug/verbose boot-args string, if this iBoot build supports one, or a logic probe on the LCD control
-        lines)"
+        specific white-screen hardware test (IBSS90-RST-Q6's hardware_tests). The handoff MECHANISM is now
+        understood and sane end to end (LLB's chainload call, LLB90-CHAIN-001/-002; iBoot's self-relocation,
+        LLB90-CHAIN-003; pinot_init()'s own control flow, IBOOT90-DISP-Q2) -- every piece read so far behaves
+        correctly on paper, on both the success and the panel-read-failure path. What remains genuinely open is
+        narrower than before: whether LLB's generic image3 read+validate pipeline (0x8400fb98 and what it
+        calls, LLB90-CHAIN-Q2) actually succeeds on real hardware in this exact post-watchdog-reset scenario --
+        a question static reading alone cannot settle without tracing considerably more of that generic I/O
+        pipeline, and even then only a live hardware test confirms what actually happens on the specific
+        failing unit.
+      proof_needed: "either trace LLB90-CHAIN-Q2's generic image3 pipeline to a concrete pass/fail outcome, or
+        move to live instrumentation of the actual white-screen hardware test (e.g. a debug/verbose boot-args
+        string, if this iBoot build supports one, or a logic probe on the LCD control lines, or simply the
+        already-identified GPIO-button DFU-forcing test from IBSS90-RST-005/-Q6)"
 
 claims:
   - id: IBOOT90-DISP-001

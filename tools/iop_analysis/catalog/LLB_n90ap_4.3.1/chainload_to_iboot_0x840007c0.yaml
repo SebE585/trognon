@@ -1,0 +1,84 @@
+binary: llb_decrypted.bin
+binary_sha256: acbbf40356717ad0eeb318e1e91b68830f527dc485f0528507fe4418d66585d7
+function_name_apple: null
+function_name_assigned: "LLB's own image3 chainload call into iBoot, and its never-return guard"
+decode_mode: thumb
+subsystem: iboot_platform
+entry_code_address: "0x840007fc"
+thumb_entry_pointer: "0x840007fd"
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x840007c0", "0x84000820"]
+    - ["0x8400caa0", "0x8400cacc"]
+  resolved:
+    - id: LLB90-CHAIN-Q1
+      by: >
+        Resolves part of IBSS90-RST-Q6/IBOOT90-DISP-Q3 (whether LLB's handoff to iBoot is itself traceable).
+        Found by a raw byte search for the image3 type tag "tobi" (the reversed 'iBot' tag already seen in
+        this iBoot's own img3 header, LLB_n90ap_4.3.1/tool_coverage.json) inside the LLB body: a single hit at
+        file offset 0x80c, loaded as a 4-byte little-endian literal (0x69626f74) by a tiny wrapper at
+        0x840007fc (`movs r1,2; ldr r0,[tobi_literal]; bl 0x840007c0`), which is this fiche's own
+        entry_code_address. This is the call this project was looking for.
+      proof_needed: null
+  unresolved:
+    - id: LLB90-CHAIN-Q2
+      text: >
+        Whether this exact call chain actually completes successfully (reads the real image3 from NOR,
+        decrypts/validates it, and reaches the final `blx r6`) on the specific hardware test that produced the
+        white screen, as opposed to failing earlier (e.g. inside the generic image3 reader 0x8400fb98's own
+        NAND/NOR I/O, not traced past its first two calls this session) and leaving the device stuck before any
+        of iBoot's own code -- including its self-relocation trampoline, LLB90-CHAIN-003 below -- ever runs.
+      proof_needed: "trace 0x8400fb98/0x8400fb20/0x8400bab8 (the generic image3 read+validate pipeline) to a
+        concrete pass/fail outcome, or live instrumentation of the actual white-screen hardware test"
+
+claims:
+  - id: LLB90-CHAIN-001
+    text: >
+      `0x840007c0` builds a 2-word struct on its own stack (`[sp]=0x100000` size, `[sp+4]=0x4ff00000` a
+      staging address literal read from its own pool at `0x840007f8`), then calls the generic image3 loader
+      `0x8400fb98(dst=&struct, size_ptr=sp, type="tobi")`. If that returns non-zero, it calls
+      `0x8400caa0(retry_or_mode=2, loaded_ptr=[sp+4])`.
+    status: device_disassembly_verified
+    evidence: "r2 -a arm -b 32 -m 0x84000000 -e asm.bits=16, pd on 0x840007c0 and its wrapper 0x840007fc, on
+      the GID-decrypted N90AP LLB body"
+
+  - id: LLB90-CHAIN-002
+    text: >
+      `0x8400caa0` runs several unidentified preparation/cleanup calls (0x8400c9dc, 0x8400c040, 0x8400bda0,
+      0x8400cecc, 0x8400dd38 -- not individually read this session, plausibly cache/MMU or peripheral
+      quiesce steps, a known pre-handoff pattern in this project's other reset/boot-dispatch functions), then
+      executes `blx r6` where r6 carries the address LLB staged the image3 at (0x4ff00000 going in, per
+      LLB90-CHAIN-001 -- not independently confirmed unchanged by the loader, LLB90-CHAIN-Q2). Immediately
+      after the `blx`, the very next instruction is `b $$` (an infinite self-loop at its own address,
+      0x8400cacc): the same "this call must never return" guard idiom already seen at the end of both boards'
+      iBSS reset/watchdog handlers (IBSS90-RST-003/-004) -- consistent project-wide convention, not a new
+      pattern.
+    status: device_disassembly_verified
+    evidence: "same r2 invocation as LLB90-CHAIN-001, pd on 0x8400caa0"
+
+  - id: LLB90-CHAIN-003
+    text: >
+      Resolves the apparent address mismatch between LLB90-CHAIN-001's staging address (0x4ff00000) and
+      iBoot's own self-asserted load address (0x5ff00000, IBOOT90-DISP-001): iBoot's reset handler, read at
+      its own 0x5ff00040 in pure ARM mode (the Thumb-mode decode of this exact range produces nonsense, same
+      pitfall as the shared helper function found earlier this project -- base instruction set, not
+      a new finding), is a position-independent self-relocating trampoline: `sub r0, pc, 0x48` computes its
+      OWN actual current address (wherever it was staged, not assumed), compares it against the literal
+      0x5ff00000; if different, it copies 0x35c00 bytes of itself from its current location to 0x5ff00000 in
+      a tight word loop, then `bx`-jumps to the relocated copy; only then does it set up per-mode stack
+      pointers and fall through toward `main()`. This means LLB does NOT need to stage iBoot exactly at
+      0x5ff00000 for the handoff to work -- iBoot relocates itself wherever it lands, including the
+      0x4ff00000 scratch address LLB actually uses. The staging-address difference is therefore explained and
+      benign, not a sign of a broken or mismatched handoff.
+    status: device_disassembly_verified
+    evidence: "r2 -a arm -b 32 -m 0x5ff00000 -e scr.color=0 (ARM mode, no asm.bits=16), pd on 0x5ff00040
+      through 0x5ff00074 on the GID-decrypted N90AP iBoot body"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "call chain, a staging-address self-relocation mechanism, and a cross-reference to an existing
+    project-wide convention; no firmware bytes, no device identifiers"
