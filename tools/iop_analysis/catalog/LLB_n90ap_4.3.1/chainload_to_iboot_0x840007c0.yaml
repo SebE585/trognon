@@ -64,14 +64,18 @@ review:
     - id: LLB90-CHAIN-Q2
       text: >
         Whether this exact call chain actually completes successfully (reads the real image3 from NOR,
-        decrypts/validates it, and reaches the final `blx r6`). The live hardware tests (LLB90-CHAIN-Q3) show
-        the overall chain CAN succeed (2/4 Recovery-Mode reappearances with Power held), which is consistent
-        with this pipeline working, but it was not independently traced to a concrete pass/fail outcome of its
-        own, and LLB90-CHAIN-Q3's own 2/4 (not 4/4) result means "the overall chain succeeded" cannot yet be
-        treated as reliably established either.
-      proof_needed: "trace this pipeline directly; or gather enough further hardware_tests data points under
-        LLB90-CHAIN-Q3 to know whether the 2/4 rate reflects this pipeline's own reliability or something
-        upstream of it (the power-button gate's timing sensitivity, most likely)"
+        decrypts/validates it, and reaches the final `blx r6`). Traced two levels deeper this session with
+        `r2ghidra`'s `pdg` (cross-check tool, see tools/iop_analysis/README.md): `0x8400fb20` dispatches on a
+        device-type tag (accepts two: "Mem", a RAM-backed device, and "img3", the generic NOR/NAND-backed
+        kind) into a common loader, `0x8400b550` -- a large function full of generic null-pointer/defensive
+        checks (logging error codes 0x114-0x116 on missing device-table entries) rather than anything
+        alarming, not traced to its own end (judged disproportionate: it is generic infrastructure, not
+        specific to this boot path, and the live hardware test already shows the OVERALL chain can succeed,
+        LLB90-CHAIN-Q3). No red flag found at any level traced so far.
+      proof_needed: "trace 0x8400b550 to its own end if a future session needs certainty rather than absence
+        of red flags; or gather enough further hardware_tests data points under LLB90-CHAIN-Q3 to know
+        whether the 2/4 rate reflects this pipeline's own reliability or something upstream of it (the
+        power-button gate's timing sensitivity, most likely) -- now the better-evidenced guess of the two"
 
 claims:
   - id: LLB90-CHAIN-001

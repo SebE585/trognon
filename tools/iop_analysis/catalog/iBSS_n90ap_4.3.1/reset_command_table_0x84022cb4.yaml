@@ -230,6 +230,31 @@ claims:
       dump, scratchpad-only, never committed; the raw manual radare2 disassembly this corrects is
       IBSS90-RST-005's own evidence, re-examined rather than redone"
 
+  - id: IBSS90-RST-008
+    text: >
+      EXTENDS IBSS90-RST-006, decompiling all of `0x5270` with `pdg` (cross-checked line-for-line against raw
+      `pd` at its tail, 0x5388-0x53a0, which matches exactly). Resolves why its three output pointers
+      (`*r1`/`*r2`/`*r3`, written to `[sp+0x1c]`/`[sp+0x18]`/`[sp+0x14]` back in `main()`) stay unwritten on the
+      out-of-range branch (IBSS90-RST-006's finding stands: `default: return 0;`, no writes, confirmed by the
+      decompiler too), and, for every one of the 15 in-range chip-revision cases, what they actually compute:
+      a device "class" (`*r1` = 1 or 2, NEVER 3 from inside the switch itself) plus two secondary values that
+      vary by case but do not matter for the boot-path question. The important part is AFTER the switch,
+      unconditional on which in-range case fired: `r0` (the original button sentinel argument, IBSS90-RST-Q7b,
+      untouched by every single case) is tested one more time -- `cbnz r0, 0x5396` -- and if still non-zero
+      ("forced boot requested"), OVERRIDES `*r1` to 3 and `*r2` to 0 regardless of the chip-revision case that
+      ran, then returns success (r0=1). So the button sentinel DOES have a clean, deterministic path to force
+      device-index 3 (DFU, straight to `usb_wait_for_image`, bypassing NOR/LLB/iBoot entirely) -- but ONLY if
+      the chip-revision byte at `0xbf106000` bits[15:8] is one of the 15 values this table supports at all; if
+      it is not, the function returns 0 before ever reaching this override, and IBSS90-RST-006's
+      uninitialised-stack-garbage finding governs instead. The open question is now sharp and single-valued:
+      is THIS unit's actual byte at that address one of the 15 supported values? A single live DFU memory
+      read (`dfuexec.PwnedDFUDevice().read_memory(0xbf106000, 4)`, far cheaper than a full boot_ibss() hardware
+      cycle) would settle it outright, rather than inferring it indirectly from button-hold test outcomes the
+      way IBSS90-RST-Q7/-Q7b had to.
+    status: device_disassembly_verified
+    evidence: "r2 -a arm -b 32 -m 0x0 -e asm.bits=16 -c 'af @ 0x5270; pdg @ 0x5270' plus a raw 'pd 20 @ 0x5388'
+      cross-check of the override tail, on the fresh N90AP SecureROM dump, scratchpad-only, never committed"
+
 hardware_tests:
   - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- 3rd attempt, Home button held throughout
     claim_tested: "IBSS90-RST-005's GPIO-button-gated SecureROM dispatch (device index 1=nor0/2=idle/3=DFU):
