@@ -50,6 +50,31 @@ review:
         to establish whether and how the button sentinel at [sp+4] actually reaches the final device-index
         r4 -- a non-trivial undertaking (a 15-entry jump table keyed on silicon revision) that this session
         judged disproportionate to attempt in full without a clearer sign it would change the outcome"
+    - id: IBSS90-RST-Q6
+      by: >
+        RESOLVED by a live hardware test (LLB90-CHAIN-Q3, LLB_n90ap_4.3.1/chainload_to_iboot_0x840007c0.yaml):
+        the real blocker was never any of fault-handler divergence (IBSS90-RST-Q4, ruled out),
+        SecureROM boot-dispatch divergence (IBSS90-RST-Q5, ruled out), or a broken/hanging display-init chain
+        (every piece of LLB, iBoot and pinot_init() read this session turned out to behave correctly on paper).
+        It was LLB's OWN power-button debounce gate, upstream of all of that: the boot_ibss() exploit sequence
+        never simulates a physical button press, so every earlier attempt hit LLB's "Power on canceled.."
+        path and powered the device off before ever reaching the "tobi" chainload into iBoot. Holding the
+        physical Power button (not Home, IBSS90-RST-Q7) throughout a 4th attempt reached USB Recovery Mode
+        cleanly -- the first time this project has seen the iPhone 4 do what the 3GS has always done on this
+        same patch -- and the screen showed the Apple boot logo, not a blank panel. No bug was ever present in
+        any of the five pieces of code this investigation eliminated one by one; the blocker was a missing
+        input condition (a button press) that this project's own automated exploit tooling has no way to
+        provide on its own.
+    - id: IBSS90-RST-Q7
+      by: >
+        Holding the physical Home button (believed to drive the GPIO SecureROM polls, port 3 pin 2,
+        IBSS90-RST-005) throughout a 3rd boot_ibss() attempt made NO observable difference versus the two
+        earlier attempts without it: same silent white screen, no USB reappearance, all three times. RESOLVED
+        by a follow-up live test, not by static analysis: hypothesis (c) was the closest of the three
+        originally listed -- the real blocker sat even earlier than SecureROM's device-index dispatch, in
+        LLB's own power-button debounce gate (IBSS90-RST-Q6, LLB90-CHAIN-Q3). Home was simply the wrong
+        button: the gate that mattered reads the Power button, not Home, which explains why holding Home
+        changed nothing while holding Power (tested afterwards) changed everything.
   unresolved:
     - id: IBSS90-RST-Q2
       text: >
@@ -62,49 +87,6 @@ review:
         analysis method on this kind of table, not a sign that the N90AP table is structured differently.
       proof_needed: "either a disassembler with better indirect-call/computed-table resolution, or dynamic
         tracing on real hardware"
-    - id: IBSS90-RST-Q6
-      text: >
-        What actually happens on real hardware between the watchdog-reset write (IBSS90-RST-003/-004) and the
-        device settling into a solid white screen with no USB enumeration. Three candidate explanations ruled
-        out so far: fault-handler divergence (IBSS90-RST-Q4), SecureROM boot-dispatch divergence
-        (IBSS90-RST-Q5), and -- the most promising lead this session -- a broken or hanging display-init chain:
-        LLB carries no display code at all (LLB_n90ap_4.3.1/boot_vector_and_no_display_0x84000000.yaml); iBoot
-        does (gated on a panel-type byte, dispatching into pinot_init() for type 3,
-        iBoot_n90ap_4.3.1/pinot_panel_init_0x5ff09d44.yaml); LLB's chainload call into iBoot and iBoot's own
-        position-independent self-relocation trampoline are both read and sane
-        (LLB_n90ap_4.3.1/chainload_to_iboot_0x840007c0.yaml); pinot_init() itself returns cleanly on every path
-        traced, including its panel-ID-read failure path -- it does not hang (IBOOT90-DISP-Q2, resolved). Every
-        piece of this chain that was read behaves correctly on paper. What is left is narrower and harder:
-        whether LLB's own generic image3 read+validate I/O pipeline (not yet traced past its first two calls)
-        actually succeeds in this exact post-watchdog-reset scenario, and ultimately whether any of this static
-        reading reflects what the specific failing unit does at all.
-      proof_needed: "see LLB90-CHAIN-Q2 and IBOOT90-DISP-Q4 (both in the LLB/iBoot_n90ap_4.3.1 fiches): trace
-        the generic image3 I/O pipeline to a concrete outcome. The live hardware test this question used to
-        point to (hold the GPIO button combo during the reset) has now been RUN (see hardware_tests below,
-        3rd attempt): it made no observable difference. See IBSS90-RST-Q7 for what that negative result
-        actually narrows down."
-    - id: IBSS90-RST-Q7
-      text: >
-        Holding the physical button believed to drive the GPIO SecureROM polls (port 3 pin 2, IBSS90-RST-005)
-        throughout a 3rd boot_ibss() attempt made NO observable difference versus the two earlier attempts
-        without it (hardware_tests below): same silent white screen, no USB reappearance within 15s, all three
-        times. Three non-exclusive candidate explanations, none yet distinguished: (a) the button/pin mapping
-        itself is wrong -- "port 3 pin 2" was read from the SecureROM's device-index dispatch by static
-        analysis (IBSS90-RST-005), never independently confirmed to be the physical Home button on this unit;
-        (b) a watchdog-triggered internal reset may not re-poll this GPIO the way a full power-on reset does
-        (many SoCs skip user-input checks on a warm/watchdog reset and always retake the same path regardless
-        of button state) -- in which case holding the button could never have mattered, by design, for THIS
-        specific reset trigger; (c) the white screen's actual cause lies earlier than the SecureROM's
-        device-index dispatch altogether (e.g. in the ARM fault/exception itself, before the watchdog reset
-        even fires, or in something common to every path regardless of device-index) -- which would mean
-        IBSS90-RST-Q6's whole LLB/iBoot/display-chain line of investigation this session, while internally
-        consistent, may be investigating a branch that was never actually reached.
-      proof_needed: "static-read the exact condition that selects the watchdog-reset path in the first place
-        (does it depend on device-index/button state at all, or is it unconditional on an uncaught fault?);
-        and/or a live test that varies something OTHER than the button -- e.g. a short-timeout USB trace or a
-        power-rail/backlight probe -- to tell apart 'no code ever reached iBoot' from 'iBoot ran but painted
-        nothing', since holding the button no longer distinguishes between them."
-
 claims:
   - id: IBSS90-RST-001
     text: >

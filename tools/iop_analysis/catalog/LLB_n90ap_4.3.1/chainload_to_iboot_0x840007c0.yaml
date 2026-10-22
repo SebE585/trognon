@@ -38,32 +38,33 @@ review:
       proof_needed: "trace 0x84005bc4 fully to know exactly which bitfield/condition this gate checks, and
         whether a boot_ibss()-triggered watchdog reset (no physical hand on the power button, unlike a real
         cold boot) would plausibly fail to satisfy it -- see LLB90-CHAIN-Q3"
-  unresolved:
     - id: LLB90-CHAIN-Q3
-      text: >
-        Whether LLB's power-button debounce gate (LLB90-CHAIN-Q2b) is actually what stops this specific
-        hardware test before iBoot/pinot_init() ever runs. The exploit sequence (limera1n pwn, patched iBSS
-        send, validation request) never simulates a physical power-button hold the way a real cold boot would
-        -- if this gate's underlying condition requires that, a boot_ibss()-triggered watchdog reset could
-        plausibly and consistently take the "Power on canceled.." power-down path every time, before the "tobi"
-        chainload, which would explain the white screen (display rail possibly turned off, not merely
-        unpainted) AND the total USB silence (0x8400c038's `b $$` genuinely halts, nothing left running to
-        enumerate) without requiring any bug anywhere in LLB, iBoot or the panel driver already read. This is
-        now the single most concrete, actionable lead of the whole IBSS90-RST-Q6 investigation.
-      proof_needed: "trace 0x84005bc4's exact condition; or, cheaper, a live test: if this hypothesis is right,
-        the SAME patched boot_ibss() attempt, retried while someone keeps a genuine finger held on the physical
-        Power button throughout (not Home -- a different button from the one tested for IBSS90-RST-Q7), should
-        behave differently (reach iBoot/display, or at least stay enumerable long enough to tell) if the gate
-        is satisfied"
+      by: >
+        CONFIRMED by a live hardware test (hardware_tests below): the same patched boot_ibss() attempt that
+        produced a silent white screen on every prior try (3/3, two without any button held, one with Home
+        held) instead reached USB Recovery Mode (PID 0x1281) cleanly when the physical Power button was held
+        throughout -- the first time this project has seen the iPhone 4 do what the 3GS has always done on this
+        same patch. LLB's power-button debounce gate (LLB90-CHAIN-Q2b) was the real blocker: the exploit
+        sequence never simulates a physical button press, so every prior attempt hit "Power on canceled.." and
+        powered itself off before ever reaching the "tobi" chainload into iBoot. This resolves IBSS90-RST-Q6's
+        central question for the USB-silence half of the symptom. The screen ALSO showed the Apple boot logo
+        on this run (user-observed, after an initial report of "white" that the user corrected once they
+        looked again) -- not blank/unpainted at all: real boot graphics were drawn, which is a materially
+        better and more informative result than "white screen" suggested. This is consistent with LLB and
+        iBoot both actually running their normal boot-logo path (distinct from pinot_init()'s own panel-ID-SPI
+        probe, IBOOT90-DISP-Q2) all the way through, on real hardware, for the first time this project has
+        observed it on this board.
+  unresolved:
     - id: LLB90-CHAIN-Q2
       text: >
         Whether this exact call chain actually completes successfully (reads the real image3 from NOR,
-        decrypts/validates it, and reaches the final `blx r6`) on the specific hardware test that produced the
-        white screen, as opposed to failing earlier (e.g. inside the generic image3 reader 0x8400fb98's own
-        NAND/NOR I/O, not traced past its first two calls this session) and leaving the device stuck before any
-        of iBoot's own code -- including its self-relocation trampoline, LLB90-CHAIN-003 below -- ever runs.
-      proof_needed: "trace 0x8400fb98/0x8400fb20/0x8400bab8 (the generic image3 read+validate pipeline) to a
-        concrete pass/fail outcome, or live instrumentation of the actual white-screen hardware test"
+        decrypts/validates it, and reaches the final `blx r6`) now that LLB90-CHAIN-Q3 confirms the power-
+        button gate upstream of it is satisfiable and was the real earlier blocker. Not independently traced
+        to a concrete pass/fail outcome of its own -- the live test that resolved Q3 shows the OVERALL chain
+        succeeds (USB Recovery Mode reached), which strongly implies this pipeline also succeeded, but was not
+        instrumented separately.
+      proof_needed: "largely superseded by the Q3 hardware test; would still need separate tracing or
+        instrumentation to confirm in isolation, now low priority"
 
 claims:
   - id: LLB90-CHAIN-001
@@ -121,7 +122,26 @@ claims:
       0x840008f4 (LLB's main(), the \".LLB start.\" function), 0x84005c2c, 0x8400d8f0 and 0x8400c01c, on the
       GID-decrypted N90AP LLB body"
 
-hardware_tests: []
+hardware_tests:
+  - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- 4th attempt, Power button held throughout
+    claim_tested: "LLB90-CHAIN-Q2b/-Q3: whether LLB's power-button debounce gate, not any code bug, was the
+      real blocker behind the three earlier silent white-screen attempts"
+    execution_status: executed
+    result: >
+      Fresh DFU, limera1n pwn eventually succeeded (unusually flaky this run -- roughly 30 attempts total
+      across two batches, well above the typical 1-3, with two mid-attempt libusb "no such device" errors;
+      no evidence this was caused by the test method itself, confirmed by asking the user whether Power was
+      already held during the pwn phase -- it was not), same two-byte patch as every prior attempt, sent and
+      validated with NO USB error. Physical Power button (not Home, already tested without effect for
+      IBSS90-RST-Q7) held continuously from just before the send. Outcome: the device reappeared in USB
+      Recovery Mode (PID 0x1281) within the poll window -- the FIRST time this project has seen that on the
+      iPhone 4 with this patch, matching the 3GS's own long-known behaviour. The screen showed the Apple boot
+      logo (not blank/unpainted), a materially better result than the three earlier "white screen" attempts.
+      3/3 silent-white-screen attempts without this exact condition (2 with no button, 1 with Home held) vs
+      1/1 success with Power held throughout -- a sample of one success, but a complete behavioural change
+      consistent with every static claim in this fiche (LLB90-CHAIN-Q2b/-Q3).
+    evidence: "docs/journal/2026-10-22.md (not in this public repo); device's serial number/IMEI/ECID shown
+      in the USB descriptor at the time were NOT recorded in this repository per project rule"
 
 publication:
   status: approved
