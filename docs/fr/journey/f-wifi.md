@@ -26,7 +26,9 @@ Degré de certitude : <span class="tag tag-hyp">HYPOTHESIS</span>
 
 La ligne de reset du Wi-Fi a été basculée puis relue. Chaque registre testé du bloc SDIO se lit à zéro et une valeur
 écrite n'est jamais relue. La séquence de démarrage du coprocesseur embarqué impliqué dans ce chemin a été lue dans son
-firmware, et ce firmware utilise la disposition standard de registres SDHCI.
+firmware, et ce firmware utilise la disposition standard de registres SDHCI. Un relevé en lecture seule des 52 portes
+d'horloge et des registres de masque d'horloge a depuis été exécuté : 25 portes se lisent allumées, dont `0x27`, qui
+appartient au contrôleur flash et non au coprocesseur. Le relevé dit quelles portes sont allumées, pas à qui elles sont.
 
 ## Ce que nous supposons
 
@@ -36,8 +38,8 @@ device tree ne sont pas les numéros physiques.
 
 ## Ce qui permettrait de trancher
 
-Un relevé en lecture seule de toutes les portes d'horloge et des registres de masque d'horloge est construit et non lancé.
-Il dirait quels blocs sont cadencés avant que rien ne soit démarré.
+Trouver quelle porte physique alimente le coprocesseur. Le relevé donne des états, pas des propriétaires ; le lien entre
+les registres de masque et les mots de portes n'a pas encore été étudié.
 
 *Ceci décrit une expérience, pas une procédure à suivre : une étape qui écrit dans le matériel du téléphone n'est exécutée qu'après une description écrite et une décision explicite.*
 
@@ -101,7 +103,7 @@ Réserve : les numéros de portes du device tree ne sont pas des indices physiqu
 
 **Aller plus loin dans la référence :** [Carte matérielle : Wi-Fi et SDIO](../../fr/03-hardware-map.md#wi-fi-et-sdio) · [Le Wi-Fi et le coprocesseur : architecture (en anglais)](../../research/2026-10-16-wifi-iop-architecture.md)
 
-**Preuves :** [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset) · [`20261016T043007Z-trace_write_test`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T043007Z-trace_write_test)
+**Preuves :** [`20261015T174633Z-trace_wifi_reset`](https://github.com/SebE585/trognon/tree/main/evidence/20261015T174633Z-trace_wifi_reset) · [`20261016T043007Z-trace_write_test`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T043007Z-trace_write_test) · [`20261020T134724Z-trace_gate_survey`](https://github.com/SebE585/trognon/tree/main/evidence/20261020T134724Z-trace_gate_survey)
 
 </details>
 
