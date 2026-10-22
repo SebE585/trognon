@@ -1,0 +1,57 @@
+binary: llb_decrypted.bin
+binary_sha256: acbbf40356717ad0eeb318e1e91b68830f527dc485f0528507fe4418d66585d7
+function_name_apple: null
+function_name_assigned: "boot vector table, load address, and a negative check for display/panel code"
+decode_mode: arm
+subsystem: iboot_platform
+entry_code_address: "0x84000000"
+thumb_entry_pointer: null
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x84000000", "0x84000040"]
+  resolved:
+    - id: LLB90-BOOT-Q1
+      by: >
+        Confirmed LLB's own load/run address is 0x84000000, not assumed by analogy with iBSS/SecureROM: its ARM
+        vector table (`b 0x84000040` then seven `ldr pc,[pc,#0x18]`, byte-identical shape to every other binary
+        this project has read so far) has a literal pool at +0x20 whose first entry is 0x84004000 and whose
+        remaining seven entries (0x8400de58, 0x8400de90, 0x8400dec8, 0x8400df04, 0x8400df3c, 0x8400ddc8,
+        0x8400de10) are all well inside this body's own 98304-byte range -- the only address that makes that
+        true is 0x84000000 (the same fixed staging address SecureROM uses for USB-DFU staging and, evidently,
+        for a NOR-sourced LLB as well).
+  unresolved: []
+
+claims:
+  - id: LLB90-BOOT-001
+    text: >
+      This LLB build carries the string "iBoot-1072.59" at body offset 0x280 -- Apple's shared source tree
+      stamps LLB and iBoot with the same "iBoot-x.y" version string regardless of which stage is actually
+      built; this is a known, harmless naming quirk of the shared codebase, not evidence that this LLB *is*
+      an iBoot or runs iBoot's code.
+    status: device_disassembly_verified
+    evidence: "r2 izz on llb_decrypted.bin"
+
+  - id: LLB90-BOOT-002
+    text: >
+      This LLB build contains NONE of the display/panel strings found in both the N90AP iBSS and the N90AP
+      iBoot (see iBoot_n90ap_4.3.1/pinot_panel_init_0x5ff09d44.yaml): no "pinot", "displaypipe_init",
+      "backlight", "lcd-panel-id", "arm-io/clcd" or "arm-io/mipi-dsim/lcd" anywhere in the 98304-byte body
+      (plain `strings` sweep, case-insensitive grep on the usual display/panel/backlight/gpio keyword set --
+      zero hits, where the equivalent sweep on iBoot and on iBSS both return a dozen-plus hits each). This
+      narrows IBSS90-RST-Q6 (reset_command_table_0x84022cb4.yaml): whatever paints or fails to paint the
+      screen after the SecureROM hands off to a normal NOR boot is NOT in this LLB -- LLB's only job here is
+      to load and jump to iBoot. The display-capable code is in iBoot (see the fiche above), not in LLB, and
+      (per IBSS90-RST-004/-005 already on record) not in iBSS or SecureROM either.
+    status: device_disassembly_verified
+    evidence: "strings -n 5 llb_decrypted.bin | grep -iE 'panel|display|backlight|lcd|gpio|clcd|disp0' -- see
+      docs/journal/2026-10-22.md for the exact command and its empty result, contrasted with the non-empty
+      result of the same command on iBoot_n90ap_4.3.1 and on iBSS_n90ap_4.3.1"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "load address, a version-string naming quirk, and the absence of display code; no firmware bytes, no
+    device identifiers, no ECID/serial"

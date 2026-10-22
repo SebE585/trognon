@@ -1,0 +1,14 @@
+{
+  "binary": "iboot_decrypted.bin",
+  "binary_sha256": "c2cc179b110b0d5f4af44f7bada6064eb90e7c0356da4860e996194b885c1bf1",
+  "date": "2026-10-22",
+  "text_section_bytes": 221184,
+  "text_section_base": "0x5ff00000",
+  "auto_recognized_bytes": 0,
+  "auto_recognized_functions": 0,
+  "recognized_functions": [],
+  "tool": "radare2 (aa, then linear pd $s and izz/search sweeps, no per-function af/aaa pass)",
+  "tool_version": "n/a",
+  "method": "radare2, -a arm -b 32 -m 0x5ff00000 -e asm.bits=16. Virtual address = 0x5ff00000 + file offset, same DATA-tag-stripped body convention as iBSS_n90ap_4.3.1 -- base confirmed independently by its own boot-vector literal pool (same shape as LLB/iBSS/SecureROM), not assumed by analogy.",
+  "note": "Apple's iBoot 4.3.1 for n90ap (iPhone 4), extracted from iPhone3,1_4.3.1_8G4_Restore.ipsw (Firmware/all_flash/all_flash.n90ap.production/iBoot.n90ap.RELEASE.img3) and decrypted through the device's own GID key (tools/decrypt_image3.sh), kept only under /tmp; never committed. Re-derive it with the same tool."
+}

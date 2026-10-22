@@ -38,19 +38,19 @@ review:
       text: >
         What actually happens on real hardware between the watchdog-reset write (IBSS90-RST-003/-004) and the
         device settling into a solid white screen with no USB enumeration. IBSS90-RST-Q4 (fault-handler
-        divergence) and IBSS90-RST-Q5 (SecureROM boot-dispatch divergence) are both ruled out now (see
-        IBSS90-RST-004/-005): neither board's SecureROM nor iBSS code differs in any way that would explain it.
-        The only path not yet examined is what the SecureROM's own dispatch (IBSS90-RST-005) hands off to when
-        no "force DFU" button flag is read after a self-triggered reset: a normal NOR boot attempt (device
-        index 1, "nor0") straight into the device's own, never-touched, stock N90AP LLB/iBoot -- which this
-        project has never decrypted, dumped or read for either board, and which is where display/panel
-        initialisation would plausibly live (SecureROM itself touches none).
-      proof_needed: "decrypt and read the stock N90AP LLB and/or iBoot from this iPhone 4's own NOR (GID-key
-        decryption, same method as tools/decrypt_image3.sh, applied to a NOR dump rather than an IPSW's iBSS);
-        or, more simply, live instrumentation (hold the exact GPIO button combo this session's own
-        IBSS90-RST-005 read identified, port 3 pin 2, while retrying the patched boot_ibss() reset, to force
-        the SecureROM down the DFU dispatch branch instead of the NOR one and see whether that changes the
-        outcome)"
+        divergence) and IBSS90-RST-Q5 (SecureROM boot-dispatch divergence) are both ruled out (IBSS90-RST-004/
+        -005). Partly narrowed: LLB_n90ap_4.3.1/boot_vector_and_no_display_0x84000000.yaml confirms LLB itself
+        carries no display/panel code at all, and iBoot_n90ap_4.3.1/pinot_panel_init_0x5ff09d44.yaml finds
+        where that code actually lives (iBoot, gated on a panel-type byte, dispatching into pinot_init() for
+        type 3) -- the first live display-touching code this project has read anywhere. Still open: whether
+        this exact call chain is what runs (or fails to run) on the white-screen hardware test, since LLB's
+        own NOR-read-and-jump-to-iBoot handoff was not traced, and pinot_init() itself was not read to its own
+        return (IBOOT90-DISP-Q2/-Q3 in that same fiche cover these two remaining gaps precisely).
+      proof_needed: "see IBOOT90-DISP-Q2/-Q3 (iBoot_n90ap_4.3.1/pinot_panel_init_0x5ff09d44.yaml): read
+        pinot_init() to its return and LLB's own handoff function; or, more simply, live instrumentation (hold
+        the exact GPIO button combo this session's own IBSS90-RST-005 read identified, port 3 pin 2, while
+        retrying the patched boot_ibss() reset, to force the SecureROM down the DFU dispatch branch instead of
+        the NOR one and see whether that changes the outcome)"
 
 claims:
   - id: IBSS90-RST-001

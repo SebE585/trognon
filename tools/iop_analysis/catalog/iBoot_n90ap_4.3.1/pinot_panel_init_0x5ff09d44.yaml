@@ -1,0 +1,99 @@
+binary: iboot_decrypted.bin
+binary_sha256: c2cc179b110b0d5f4af44f7bada6064eb90e7c0356da4860e996194b885c1bf1
+function_name_apple: "pinot_init"
+function_name_assigned: "panel-type dispatch into the N90AP ('pinot') LCD panel driver"
+decode_mode: thumb
+subsystem: iboot_platform
+entry_code_address: "0x5ff0219c"
+thumb_entry_pointer: "0x5ff09d45"
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x5ff02156", "0x5ff021a4"]
+    - ["0x5ff09d44", "0x5ff09d98"]
+  resolved:
+    - id: IBOOT90-DISP-Q1
+      by: >
+        Resolves (for its iBoot half) IBSS90-RST-Q6 (reset_command_table_0x84022cb4.yaml): "where display/panel
+        initialisation would plausibly live". It lives here, in iBoot, not in LLB (confirmed absent,
+        LLB_n90ap_4.3.1/boot_vector_and_no_display_0x84000000.yaml) and not in iBSS/SecureROM's own executed
+        paths (confirmed identical cross-chip, IBSS90-RST-004/-005). Found by string search for "pinot_init()."
+        and "displaypipe_init" (both present in this iBoot's string table, izz), then locating the single
+        literal-pool reference to each string's address and reading back to each reference's enclosing
+        function. The enclosing function at 0x5ff02156+ reads device-tree properties ("display-color-space",
+        "framebuffer"), builds a framebuffer object (`bl 0x5ff01d8c`), then reads a panel-type value at
+        offset 0x44 of that framebuffer's root object: if it equals 3, it calls pinot_init (0x5ff09d44/Thumb
+        0x5ff09d45) with that object and a stack pointer; otherwise it falls through to a different branch
+        (not yet read -- a different panel driver, presumably a DIFFERENT value of that same byte for a
+        different N90AP panel supplier/revision, not examined). `displaypipe_init` (0x5ff022f8, found the
+        same way via its own string) has NO callers anywhere in this binary ('bl 0x5ff022f8' does not occur) --
+        it is present but dead code on this specific build, a leftover of Apple's shared display-pipe source
+        tree reused across several device families; pinot_init is the one actually reachable from the panel
+        dispatch above.
+      proof_needed: null
+  unresolved:
+    - id: IBOOT90-DISP-Q2
+      text: >
+        What pinot_init() itself fully does past its opening sequence, and in particular whether it can hang
+        or spin indefinitely (rather than return) under some panel-ID-read failure condition. What was read:
+        it calls what looks like a GPIO toggle helper (`bl 0x5ff024a4`) with argument pairs (0x206, 0) then
+        (0x206, 1) -- consistent with pulsing a reset-line GPIO low then high -- each followed by a delay call
+        (`bl 0x5ff17974` with 0x2710 then 0x1770, plausibly microsecond delays of 10000 and 6000), then a call
+        at (0x5ff0eb1c) with the framebuffer object and a second argument, then a further GPIO-shaped call
+        (`bl 0x5ff0e93c`, r0=5). The function's own error-path strings ("pinot_init(): read of pinot panel id
+        failed") suggest it probes the panel over some bus (likely SPI, matching the existing "lcd-panel-id" /
+        "raw-panel-id" / "pinot-panel-id" device-tree keys already seen in the N90AP iBSS strings) and that a
+        failed read is a recognised, named error condition -- but whether that condition RETURNS an error code
+        or gets stuck (e.g. in a retry loop) was not traced this session.
+      proof_needed: "read 0x5ff0eb1c, 0x5ff024a4 and 0x5ff0e93c fully, and follow every exit path of
+        pinot_init() itself to its return (or lack of one)"
+    - id: IBOOT90-DISP-Q3
+      text: >
+        Whether this call chain (device-tree panel-type==3 dispatch -> pinot_init) is actually reached on THIS
+        specific white-screen hardware test (IBSS90-RST-Q6's hardware_tests), i.e. whether the SecureROM's
+        post-watchdog-reset NOR dispatch (IBSS90-RST-005, device index 1) really hands off into this exact
+        LLB/iBoot pair rather than, say, failing earlier (NAND/NOR read error, LLB->iBoot handoff fault) before
+        any display code runs at all. Nothing in this session traced LLB's own NOR-read-and-jump-to-iBoot
+        sequence (LLB_n90ap_4.3.1/boot_vector_and_no_display_0x84000000.yaml stops at confirming LLB contains
+        no display code, not at confirming the handoff itself succeeds).
+      proof_needed: "read LLB's own image3-load-and-jump function (the one that reads 'iBoot.n90ap...' from
+        nor0 and jumps to 0x5ff00000), and/or live instrumentation of a white-screen hardware test (e.g. a
+        debug/verbose boot-args string, if this iBoot build supports one, or a logic probe on the LCD control
+        lines)"
+
+claims:
+  - id: IBOOT90-DISP-001
+    text: >
+      This iBoot's own ARM vector table at its own base confirms its load/run address is 0x5ff00000, not
+      0x84000000 (LLB's address, and the DFU-staging address used throughout this project so far) -- found
+      directly from its own literal pool (0x5ff00040, 0x5ff18aac, 0x5ff18ae4, 0x5ff18b1c, 0x5ff18b58,
+      0x5ff18b90, 0x5ff18a1c, 0x5ff18a64, all inside this 221184-byte body), not assumed by analogy. This is
+      the first binary this project has read whose own natural runtime address differs from 0x84000000.
+    status: device_disassembly_verified
+    evidence: "python3 struct.unpack on the first 0x40 bytes of iboot_decrypted.bin, cross-checked by r2 -m
+      0x5ff00000 disassembly of the same vector table"
+
+  - id: IBOOT90-DISP-002
+    text: >
+      iBoot (not LLB, not iBSS/SecureROM's own executed code paths) is where N90AP panel/display
+      initialisation lives, gated on a panel-type byte read from a device-tree-derived framebuffer object:
+      type 3 dispatches into pinot_init(), which pulses a GPIO (likely the panel reset line), delays twice,
+      then probes the panel over what is almost certainly SPI (matching existing "pinot-panel-id" /
+      "raw-panel-id" device-tree keys) with a named, loggable failure path
+      ("pinot_init(): read of pinot panel id failed"). This is new ground for the project: no prior fiche in
+      this catalog (iBSS or SecureROM, either chip) has read any display-touching code, because neither
+      binary's EXECUTED path touches the screen (IBSS90-RST-004/-005) even though iBSS's own string table
+      does carry dead/unreached display strings of its own (not yet traced to a live call site the way this
+      fiche traced iBoot's).
+    status: device_disassembly_verified
+    evidence: "r2 -a arm -b 32 -m 0x5ff00000 -e asm.bits=16, string search (izz) for 'pinot_init' and
+      'displaypipe_init', /v4 literal-pool search for each string's address, pd around each reference and its
+      enclosing function -- see docs/journal/2026-10-22.md for the exact transcript (not in this public repo)"
+
+hardware_tests: []
+
+publication:
+  status: approved
+  notes: "load address, call-graph shape and GPIO/SPI-shaped behaviour inferred from control flow; no verbatim
+    disassembly dump beyond what is needed to support the claim, no firmware bytes, no device identifiers"
