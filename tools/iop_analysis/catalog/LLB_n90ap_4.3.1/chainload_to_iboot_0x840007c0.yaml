@@ -175,6 +175,21 @@ hardware_tests:
       painting therefore vary somewhat independently of each other: 2/4 reached Recovery Mode (attempts #1
       and #4), only 1/4 showed the Apple logo (attempt #1 only).
     evidence: "docs/journal/2026-10-22.md (not in this public repo)"
+  - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- 5th attempt, Home AND Power held together
+    claim_tested: "whether the Home+Power combo (the classic forced-DFU gesture on these devices) triggers
+      SecureROM's own button-sentinel override to device-index 3 (IBSS90-RST-008/-009,
+      reset_command_table_0x84022cb4.yaml), which would bypass NOR/LLB/iBoot entirely and reappear as plain
+      DFU (PID 0x1227) rather than Recovery Mode -- a result this project has not yet observed on any attempt"
+    execution_status: executed
+    result: >
+      Fresh pwn (1st try this time, no flakiness), Home AND Power held together from before the send through
+      the poll window. Device reappeared in USB Recovery Mode (PID 0x1281), screen showing the Apple boot
+      logo -- the SAME outcome as attempt #1 (Power alone), not a new one. Does NOT confirm the SecureROM-
+      level override (that would need plain DFU, 0x1227, which did not appear): consistent with Power (alone
+      or in this combo) acting on LLB's debounce gate as already established, not with the SecureROM
+      mechanism firing. Running tally with Power involved in some form: 3/5 reached Recovery Mode (attempts
+      #1, #4, this one), 2/5 showed the Apple logo (attempt #1, this one).
+    evidence: "docs/journal/2026-10-22.md (not in this public repo)"
 
 publication:
   status: approved
