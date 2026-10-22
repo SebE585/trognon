@@ -22,7 +22,17 @@
 #define SOC_VIC3              0xBF230000
 #define SOC_GPIO_BASE         0xBFA00000
 
-/* STILL TO FIND on an iPhone 4 (build fails until defined): SOC_PAYLOAD_BASE, SOC_SCRATCH,
+/* Read directly out of the decrypted N90AP iBSS's own default-environment-variable setup function
+ * (0x84000df0: `loadaddr` = 0x41000000), not assumed by analogy with the 3GS -- the exact same
+ * function exists, byte-for-byte the same shape, in the 3GS's own iBSS (iBSS_n88ap_4.3.5), confirming
+ * this is shared Apple source, not a per-board guess. Not yet DEVICE-confirmed: a live test that jumps
+ * here (the project's boot_ibss() patch) ran twice and did not reach Recovery Mode (white screen both
+ * times) -- open question, not yet attributed to this address being wrong (see
+ * tools/iop_analysis/catalog/iBSS_n90ap_4.3.1/reset_command_table_0x84022cb4.yaml, IBSS90-RST-Q4).
+ * tools/iop_analysis/catalog/iBSS_n90ap_4.3.1/boot_env_init_0x84000df0.yaml */
+#define SOC_PAYLOAD_BASE      0x41000000
+
+/* STILL TO FIND on an iPhone 4 (build fails until defined): SOC_SCRATCH,
  * SOC_HANDLER_STACK_TOP, SOC_IRQ_STACK_TOP, SOC_ENV_SET, SOC_CLCD_BASE, SOC_VEC_*, breadcrumb sizes. */
 
 #endif
