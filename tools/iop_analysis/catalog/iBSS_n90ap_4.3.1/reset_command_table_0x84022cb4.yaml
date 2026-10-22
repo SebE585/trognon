@@ -1,0 +1,96 @@
+binary: ibss_decrypted.bin
+binary_sha256: 147630a3259f07a427ac2390b49a7d94845865081c9bf6faacae72a23e7bb7dd
+function_name_apple: null
+function_name_assigned: "console command table entry for \"reset\", and its stock handler"
+decode_mode: thumb
+subsystem: iboot_platform
+entry_code_address: "0x84022cb4"
+thumb_entry_pointer: "0x84000cd5"
+
+review:
+  status: partial
+  reviewed_ranges:
+    - ["0x84022cb4", "0x84022cc8"]
+    - ["0x84000cd4", "0x84000cf8"]
+  resolved:
+    - id: IBSS90-RST-Q1
+      by: >
+        Found by byte search (not disassembly) for the runtime pointer value of the "reset" string
+        (0x8401d088 = LOAD_ADDRESS + its body offset), then searching the whole body for that 4-byte value as a
+        pointer: exactly one hit, at 0x84022cb4, immediately followed at 0x84022cb8 by 0x84000cd5 (the handler,
+        Thumb bit set). The next 16-byte-aligned slot (0x84022cc4) holds the pointer to the adjacent string
+        "reboot" (0x8401d090) with the SAME handler pointer 0x84000cd5 -- cross-checked against the string table
+        itself, where "reset\0" is immediately followed by "reboot\0\0reboot the device\0" (matches a
+        console command table's usual {name, help} string layout).
+  unresolved:
+    - id: IBSS90-RST-Q2
+      text: >
+        How this table is actually walked (which function iterates it, with what loop/index, and in what
+        register/stack context the handler at 0x84000cd5 is finally called -- argc/argv-shaped or otherwise).
+        `axt` (radare2 cross-reference search) found no code reference to either table slot, nor to the string
+        address, on this binary. The exact same search on the 3GS's own known-working equivalent entry
+        (0x84017650/0x84017654, patched in dfuexec.py's n88ap_iBSS_435_patches and used successfully by
+        boot_ibss() historically) gives the identical negative result -- so this is a known blind spot of this
+        analysis method on this kind of table, not a sign that the N90AP table is structured differently.
+      proof_needed: "either a disassembler with better indirect-call/computed-table resolution, or dynamic
+        tracing on real hardware"
+    - id: IBSS90-RST-Q3
+      text: >
+        What the UNPATCHED handler at 0x84000cd4 actually does once fully read (only its short prologue was
+        read: `push {r7,lr}; add r7,sp,#0; bl 0x840155bc; movs r0,#0; bl 0x8401654c`) -- is it a real hardware
+        reset (watchdog/PMU write) or something else; whether that matters to IBSS90-RST-Q4 below.
+      proof_needed: "full disassembly of 0x84000cd4 to its return, and of its two callees"
+    - id: IBSS90-RST-Q4
+      text: >
+        Why patching this handler to jump to "loadaddr" (0x41000001, confirmed the right address for this chip
+        in boot_env_init_0x84000df0.yaml) produced a white screen and no Recovery Mode on N90AP, twice, when the
+        same patch pattern is reported to work on the 3GS. Two live hardware_tests below (same outcome both
+        times) rule out one-off flakiness. Leading hypothesis, not yet checked: the jump itself may be EXPECTED
+        to fault (nothing is ever uploaded to "loadaddr" before this patched command runs -- boot_ibss() never
+        sends a second payload there either, on either chip), and what differs between boards is how each
+        board's own fault/exception handler reacts to that fault -- N88AP's apparently falls through to USB
+        Recovery Mode, N90AP's apparently shows a white screen instead (plausibly a framebuffer-touching panic
+        path, given the iPhone 4's screen is a different, newer panel setup than the 3GS's). Not traced.
+      proof_needed: "locate and read each board's own prefetch/data-abort exception handler"
+
+claims:
+  - id: IBSS90-RST-001
+    text: >
+      The command table entry for "reset" sits at body offset 0x22cb4 (absolute file offset 0x22cf4 in the full
+      reconstructed image3, i.e. +64 for the img3 header), 16-byte-strided: word 0 = pointer to the name string
+      ("reset", 0x8401d088), word 1 = pointer to the handler (0x84000cd5, Thumb), words 2-3 = 0. The structure is
+      byte-identical in shape to the 3GS's own "reset" entry at body offset 0x17650 (same word layout, same
+      "reboot" neighbour sharing the same handler, same {name, help} string pairing right after).
+    status: device_disassembly_verified
+    evidence: "r2 -a arm -b 32 -m 0x84000000 -e asm.bits=16 -c 'aaa; pdf @ ...' plus a direct byte search for the
+      runtime pointer value, on the GID-decrypted N90AP iBSS (see boot_env_init_0x84000df0.yaml for how it was
+      obtained)"
+
+  - id: IBSS90-RST-002
+    text: >
+      In body-offset terms relative to decryptediBSS[64:] (the convention dfuexec.py's own n88ap_iBSS_435_patches
+      uses), the two bytes to patch for an N90AP boot_ibss()-equivalent are: the "reset" string at body offset
+      0x1d088 (overwrite with b'run\x00'), and the handler pointer at body offset 0x22c78 (overwrite with the
+      4-byte little-endian value of LOAD_ADDRESS+1, 0x41000001).
+    status: device_disassembly_verified
+    evidence: "same as IBSS90-RST-001"
+
+hardware_tests:
+  - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- 1st fresh-DFU attempt
+    claim_tested: "IBSS90-RST-002"
+    execution_status: executed
+    result: >
+      Pwn (limera1n, shared libusb context), decrypt, patch and send all succeeded with no USB error (158 KB
+      patched iBSS fully accepted). Device screen went solid white; never appeared in USB Recovery Mode (0x1281)
+      within 10s. No NOR write. Recovered by a full DFU power cycle.
+    evidence: "docs/journal/2026-10-22.md (not in this public repo)"
+  - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- 2nd fresh-DFU attempt, same patch, no changes
+    claim_tested: "IBSS90-RST-002"
+    execution_status: executed
+    result: "Identical outcome to the 1st attempt. 2/2: the white-screen result is systematic for this exact patch, not a one-off."
+    evidence: "docs/journal/2026-10-22.md (not in this public repo)"
+
+publication:
+  status: approved
+  notes: "table layout, patch offsets and the cross-chip comparison; no firmware bytes, no device identifiers,
+    no ECID/serial"

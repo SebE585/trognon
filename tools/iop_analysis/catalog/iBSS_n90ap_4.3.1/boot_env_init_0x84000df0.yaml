@@ -1,0 +1,72 @@
+binary: ibss_decrypted.bin
+binary_sha256: 147630a3259f07a427ac2390b49a7d94845865081c9bf6faacae72a23e7bb7dd
+function_name_apple: null
+function_name_assigned: "default boot environment variable setup (set_default_env-shaped)"
+decode_mode: thumb
+subsystem: iboot_platform
+entry_code_address: "0x84000df0"
+thumb_entry_pointer: "0x84000df1"
+
+review:
+  status: complete
+  reviewed_ranges:
+    - ["0x84000df0", "0x84000e52"]
+  resolved:
+    - id: IBSS90-ENV-Q1
+      by: >
+        Confirmed by direct comparison against the 3GS's own equivalent function (n88ap's fcn.84000df8, same
+        decoded body, same literal `mov.w r1, 0x41000000` at the "loadaddr" setter call, same relative
+        position): the env default "loadaddr" = 0x41000000 is not a value guessed by analogy for this chip --
+        it is read, in the same instruction form, directly inside the N90AP binary itself (IBSS90-ENV-001).
+  unresolved:
+    - id: IBSS90-ENV-Q2
+      text: >
+        What "loadaddr" is actually used for by this iBSS build: whether anything reads this environment
+        variable back before the project's `boot_ibss()`-style "reset" command patch (see
+        reset_command_table_0x84022cb4.yaml) ever runs, or whether it only matters to commands never reached on
+        the tethered DFU-only boot path this project uses (no NAND/NOR boot, no "fsboot").
+      proof_needed: "trace callers of the generic getenv-shaped helper for the string \"loadaddr\""
+
+claims:
+  - id: IBSS90-ENV-001
+    text: >
+      The function at 0x84000df0 (called once, from fcn.84016984 @ 0x840169b8) sets eight default boot
+      environment variables through a generic setter, (key, value, flags=0) each: "build-style"="RELEASE",
+      "build-version"="iBoot-1072.59", "config_board"="n90ap", "loadaddr"=0x41000000 (set through a different
+      helper, fcn.8401a728, not the generic string setter fcn.8401a454 used for the others -- consistent with a
+      numeric-vs-string env setter distinction, not examined further), "boot-command"="fsboot",
+      "bootdelay"="0", then "auto-boot" and "idle-off" both set to a third literal pool string read once into r4
+      before the function starts (not individually re-read per key).
+    status: device_disassembly_verified
+    evidence: "r2 -a arm -b 32 -m 0x84000000 -e asm.bits=16 -c 'aaa; pdf @ 0x84000df0' on the GID-decrypted N90AP
+      iBSS payload (iPhone3,1_4.3.1_8G4's Firmware/dfu/iBSS.n90ap.RELEASE.dfu, newImage3(decrypted=True)[64:])"
+
+  - id: IBSS90-ENV-002
+    text: >
+      The exact same function exists in the 3GS's own decrypted iBSS (n88ap-iBSS-4.3.5.img3, newImage3's own
+      [64:] body) at 0x84000df8 -- 8 bytes later, same instruction count and shape, same eight keys in the same
+      order, same "loadaddr"=0x41000000 literal (`mov.w r1, 0x41000000` at 0x84000e22 there, vs 0x84000e1a on
+      N90AP). The only visible differences are the build-version string ("iBoot-1072.61" vs "iBoot-1072.59"),
+      the board name ("n88ap" vs "n90ap"), and small instruction-count shifts from different `bl` target
+      encodings elsewhere -- consistent with the same shared Apple source compiled per-board, not a
+      coincidental match.
+    status: device_disassembly_verified
+    evidence: "same r2 invocation, on n88ap-iBSS-4.3.5.img3's decrypted body (the GID key for this exact file
+      was already cached from an earlier session, no device needed for this specific comparison)"
+
+hardware_tests:
+  - name: boot_ibss() patch attempt for the iPhone 4 (N90AP), using 0x41000001 (loadaddr+1, Thumb bit) as the
+      patched "reset" command handler's jump target
+    claim_tested: "IBSS90-ENV-001 / IBSS90-ENV-002 (is 0x41000000 the right target address)"
+    execution_status: executed
+    result: >
+      2/2 identical outcomes: the patched iBSS is accepted and runs (pwn, decrypt, patch and
+      dfu.send_data()/request_image_validation() all succeed with no USB error), the device's screen turns
+      solid white, and the device never appears in USB Recovery Mode (0x1281). No NOR write at any point;
+      recoverable by a full DFU power cycle both times. Does NOT by itself show 0x41000000 is wrong -- see
+      IBSS90-ENV-Q2 and the sibling fiche's open question on what differs between the two boards at the fault.
+    evidence: "docs/journal/2026-10-22.md (not in this public repo)"
+
+publication:
+  status: approved
+  notes: "function address, env keys and the cross-chip comparison; no firmware bytes, no device identifiers"

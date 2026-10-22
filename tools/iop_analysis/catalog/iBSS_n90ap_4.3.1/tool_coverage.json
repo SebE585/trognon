@@ -1,0 +1,14 @@
+{
+  "binary": "ibss_decrypted.bin",
+  "binary_sha256": "147630a3259f07a427ac2390b49a7d94845865081c9bf6faacae72a23e7bb7dd",
+  "date": "2026-10-22",
+  "text_section_bytes": 157888,
+  "text_section_base": "0x84000000",
+  "auto_recognized_bytes": 0,
+  "auto_recognized_functions": 0,
+  "recognized_functions": [],
+  "tool": "radare2 (aaa, then pdf per function)",
+  "tool_version": "n/a",
+  "method": "radare2, -a arm -b 32 -m 0x84000000 -e asm.bits=16, aaa then pdf @@f. Virtual address = 0x84000000 + file offset - 0x40 (64-byte IMG3 header), same convention as iBSS_n88ap_4.3.5.",
+  "note": "The binary is Apple's iBSS 4.3.1 for n90ap (iPhone 4), extracted from iPhone3,1_4.3.1_8G4_Restore.ipsw and decrypted through the device's own GID key (docs/journal/2026-10-22.md, not in this public repo), kept only under /tmp; never committed. Re-derive it with tools/decrypt_image3.sh."
+}
