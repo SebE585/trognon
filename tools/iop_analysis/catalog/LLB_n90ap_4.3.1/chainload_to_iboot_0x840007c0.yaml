@@ -22,7 +22,39 @@ review:
         0x840007fc (`movs r1,2; ldr r0,[tobi_literal]; bl 0x840007c0`), which is this fiche's own
         entry_code_address. This is the call this project was looking for.
       proof_needed: null
+    - id: LLB90-CHAIN-Q2b
+      by: >
+        Finds something more promising than the generic image3 I/O pipeline: BEFORE the "tobi" chainload call
+        (LLB90-CHAIN-001) is ever reached, LLB's own main() (0x840008f4, the ".LLB start." string's function)
+        runs a power-button debounce/confirmation gate. It reads a power-status bitfield (via a shared helper
+        at 0x84005bc4, consumed by both 0x84005c2c and 0x8400d8f0), and if a bounded retry loop (callsite
+        0x8400099c-0x840009d2) never sees that confirmation condition settle, it prints
+        "Power on canceled.." (string present, LLB90-CHAIN-004 below) and calls 0x8400c01c, which clears a
+        flag, calls what looks like a power-rail control function (0x84000820, the same GPIO-shaped setter
+        already seen wrapping 0x8400580c), calls another cleanup function (0x84005d78), and ends in an
+        infinite self-loop (`b $$`, 0x8400c038) -- i.e. a genuine power-down/halt sequence, not a crash. Only
+        if this gate is satisfied does control reach 0x840009d4 and, two calls later, the "tobi" chainload
+        (0x840009dc: `bl 0x840007fc`).
+      proof_needed: "trace 0x84005bc4 fully to know exactly which bitfield/condition this gate checks, and
+        whether a boot_ibss()-triggered watchdog reset (no physical hand on the power button, unlike a real
+        cold boot) would plausibly fail to satisfy it -- see LLB90-CHAIN-Q3"
   unresolved:
+    - id: LLB90-CHAIN-Q3
+      text: >
+        Whether LLB's power-button debounce gate (LLB90-CHAIN-Q2b) is actually what stops this specific
+        hardware test before iBoot/pinot_init() ever runs. The exploit sequence (limera1n pwn, patched iBSS
+        send, validation request) never simulates a physical power-button hold the way a real cold boot would
+        -- if this gate's underlying condition requires that, a boot_ibss()-triggered watchdog reset could
+        plausibly and consistently take the "Power on canceled.." power-down path every time, before the "tobi"
+        chainload, which would explain the white screen (display rail possibly turned off, not merely
+        unpainted) AND the total USB silence (0x8400c038's `b $$` genuinely halts, nothing left running to
+        enumerate) without requiring any bug anywhere in LLB, iBoot or the panel driver already read. This is
+        now the single most concrete, actionable lead of the whole IBSS90-RST-Q6 investigation.
+      proof_needed: "trace 0x84005bc4's exact condition; or, cheaper, a live test: if this hypothesis is right,
+        the SAME patched boot_ibss() attempt, retried while someone keeps a genuine finger held on the physical
+        Power button throughout (not Home -- a different button from the one tested for IBSS90-RST-Q7), should
+        behave differently (reach iBoot/display, or at least stay enumerable long enough to tell) if the gate
+        is satisfied"
     - id: LLB90-CHAIN-Q2
       text: >
         Whether this exact call chain actually completes successfully (reads the real image3 from NOR,
@@ -75,6 +107,19 @@ claims:
     status: device_disassembly_verified
     evidence: "r2 -a arm -b 32 -m 0x5ff00000 -e scr.color=0 (ARM mode, no asm.bits=16), pd on 0x5ff00040
       through 0x5ff00074 on the GID-decrypted N90AP iBoot body"
+
+  - id: LLB90-CHAIN-004
+    text: >
+      The string "Power on canceled.." is present in this LLB body and is printed exactly once, on the path
+      described in LLB90-CHAIN-Q2b: a bounded debounce retry loop in main() that gives up without the power
+      button confirmation it is checking for. The function it calls next, 0x8400c01c, is a clean power-down
+      sequence (clear a flag; call a power-rail-shaped GPIO setter, 0x84000820; call a further cleanup
+      function, 0x84005d78; `b $$`), not a crash handler -- consistent with this being LLB's intentional,
+      documented-by-design protection against a brief/accidental power-button press, not a bug.
+    status: device_disassembly_verified
+    evidence: "r2 -a arm -b 32 -m 0x84000000 -e asm.bits=16, izz for \"Power on canceled\" plus pd on
+      0x840008f4 (LLB's main(), the \".LLB start.\" function), 0x84005c2c, 0x8400d8f0 and 0x8400c01c, on the
+      GID-decrypted N90AP LLB body"
 
 hardware_tests: []
 

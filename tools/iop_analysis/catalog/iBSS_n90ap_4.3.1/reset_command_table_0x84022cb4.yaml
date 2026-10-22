@@ -198,6 +198,30 @@ claims:
       hardware_tests below); r2 -a arm -b 32 -m 0x0 -e asm.bits=16, af+pdf on both dumps' reset vector, relocation
       routine and main(), scratchpad-only, never committed (docs/journal/2026-10-22.md)"
 
+  - id: IBSS90-RST-006
+    text: >
+      Traced where the button sentinel described in IBSS90-RST-Q7b actually goes. It is passed, alongside three
+      stack-buffer pointers (`[sp+0x1c]`, `[sp+0x18]`, `[sp+0x14]`, all inside main()'s own `sub sp,0x20` frame
+      and never written before this call), into `0x5270(sentinel, &sp1c, &sp18, &sp14)`. That function's first
+      action is a `cmp.w ip,0xe; bhi 0x529c` range check against a byte extracted from MMIO `0xbf106000` bits
+      [15:8] (confirmed NOT the same register as the `CPRV:%02X` field in this SecureROM's own USB descriptor
+      string, which instead comes from `0xbf50000c` via a different helper, 0x5420 -- these two silicon-ID-like
+      fields are read from different hardware blocks and must not be conflated). If this byte is "bhi" the
+      table's 15-entry range, `0x5270` returns immediately (r0=0) WITHOUT writing any of its three output
+      pointers. Back in main(), the final dispatch value at `[sp+0x1c]` (loaded into r4 for the `cmp r4,2/3/1`
+      comparison, 0x71e/0x72e-0x738) is therefore, on that branch, WHATEVER WAS ALREADY ON THE STACK at that
+      address before the call -- nothing in main() between its own frame setup (`sub sp,0x20`, 0x634) and this
+      call (0x708) ever initialises it. If that leftover value matches none of 1/2/3, control falls to 0x824,
+      which checks the earlier button sentinel again: if it was -1 ("forced boot requested"), loops back to
+      retry the whole 0x5270 call (`beq 0x700`); otherwise increments a counter and also loops (`b 0x6fe`) --
+      either way, a retry loop that never reaches `nor0` (index 1) or `usb_wait_for_image` (index 3) unless the
+      stack garbage or a later retry happens to land on one of those three values.
+    status: device_disassembly_verified
+    evidence: "r2 -a arm -b 32 -m 0x0 -e asm.bits=16, pd on main() 0x62c-0x824, on 0x5270's opening range check,
+      and on the CPRV string-building code (0x8342-0x8384) and its 0x94d0/0x5420 call chain, to confirm it reads
+      a DIFFERENT register than 0x5270's check -- all on the fresh N90AP SecureROM dump, scratchpad-only, never
+      committed"
+
 hardware_tests:
   - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- 3rd attempt, Home button held throughout
     claim_tested: "IBSS90-RST-005's GPIO-button-gated SecureROM dispatch (device index 1=nor0/2=idle/3=DFU):
