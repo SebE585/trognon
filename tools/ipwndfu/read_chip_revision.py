@@ -15,10 +15,12 @@ Patches dfu.acquire_device() to reuse a single libusb backend/context for the wh
 reason as tools/ipwndfu/try_limera1n.py (context churn made every pwn/DFU step on this host unreliable
 before this fix, 2026-10-22).
 
-2026-10-22 attempt: blocked by unusually poor USB reliability that same evening (confirmed general, not
+2026-10-22: first attempt blocked by unusually poor USB reliability that same evening (confirmed general, not
 specific to this address -- the same timeout reproduced on a known-good read, 0x0/SecureROM's own base,
-already dumped successfully earlier the same session). Not yet run to completion. Next session: retry first,
-before any other hardware test.
+already dumped successfully earlier the same session). Recovered, same session, without a physical
+replug: `device.reset()` (libusb_reset_device(), see RECOVER_WITH_USB_RESET below) on the stuck device, then
+a short wait for re-enumeration -- the pwned state survives this (it is a USB-level reset, not a power
+cycle). Result obtained: bits[15:8] = 0x0d (13), IN the supported range -- recorded as IBSS90-RST-009.
 
 Usage (from ~/tools/ipwndfu, TROGNON_LIBUSB_PATH set, device already pwned or about to be via limera1n):
     PYTHONPATH=. python3 <repo>/tools/ipwndfu/read_chip_revision.py
@@ -47,15 +49,45 @@ if _shared_backend is not None:
         return None
     dfu.acquire_device = _acquire_shared
 
+
+def recover_with_usb_reset():
+    """libusb_reset_device() on the current DFU device: a USB-level reset (re-enumeration), not a power
+    cycle -- the device's own pwned state survives it. Found 2026-10-22: the exact "no langid"/control-
+    transfer-timeout symptom that otherwise needed a physical cable replug also clears with this, with no
+    need to touch the device at all. Call it once, right after a read/execute call fails with exactly that
+    symptom; retry the call after it returns."""
+    d = dfu.acquire_device(fatal=False)
+    if d is None:
+        return False
+    try:
+        d.reset()
+    except Exception as e:
+        print('recover_with_usb_reset: reset() itself failed: %r' % e)
+        return False
+    time.sleep(2)
+    return dfu.acquire_device(timeout=5.0, fatal=False) is not None
+
+
 REGISTER = 0xbf106000
 SUPPORTED_MAX = 0xe  # inclusive; IBSS90-RST-006/-008's 0x5270 table has exactly 15 entries, 0..0xe
 
-device = dfuexec.PwnedDFUDevice()
-if device.config.cpid != '8930':
-    print('ERROR: this is CPID:%s, not the iPhone 4 (8930).' % device.config.cpid)
-    sys.exit(1)
 
-data = device.read_memory(REGISTER, 4)
+def read_chip_revision_byte():
+    device = dfuexec.PwnedDFUDevice()
+    if device.config.cpid != '8930':
+        print('ERROR: this is CPID:%s, not the iPhone 4 (8930).' % device.config.cpid)
+        sys.exit(1)
+    return device.read_memory(REGISTER, 4)
+
+
+try:
+    data = read_chip_revision_byte()
+except Exception as e:
+    print('First attempt failed (%r); trying recover_with_usb_reset() before giving up.' % e)
+    if not recover_with_usb_reset():
+        print('ERROR: recovery failed too -- a physical cable replug is still the fallback.')
+        sys.exit(1)
+    data = read_chip_revision_byte()
 (raw,) = struct.unpack('<I', data)
 byte = (raw >> 8) & 0xff
 

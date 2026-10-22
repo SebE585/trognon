@@ -35,3 +35,15 @@ tools/send.sh tools/payloads/trace.bin     # send a payload, check its nonce
 `tools/boot.sh` stops and says so when the checkout is not at the pinned commit, so a different ipwndfu
 cannot be used by accident. A failed pwn is common: it is repeated at most three times, and the device
 must be put back in DFU between failures (the script says when).
+
+## A stuck USB connection, without touching the device (2026-10-22)
+
+A device still visible in `ioreg` (macOS, no USB traffic) but failing every pyusb call with
+`ValueError: The device has no langid` or a control-transfer `Operation timed out` is a host-side USB state
+stuck, not a dead or disconnected device. `device.reset()` (`usb.core.Device.reset()`, wraps
+`libusb_reset_device()`) asks for a USB-level reset -- re-enumeration -- without a power cycle: an already
+pwned device stays pwned across it. Found live this session (confirmed: the same symptom reproduces on a
+known-good read too, so it is general host-side flakiness, not a bad address or command) after a physical
+cable replug had already been the only known fix. `tools/ipwndfu/read_chip_revision.py`'s own
+`recover_with_usb_reset()` is a reusable example of the pattern: try the call once, and only on exactly this
+symptom, reset and retry before falling back to a physical replug.

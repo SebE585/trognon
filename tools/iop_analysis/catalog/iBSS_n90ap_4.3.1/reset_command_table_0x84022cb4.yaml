@@ -59,7 +59,12 @@ review:
         instead (4 attempts, 2 reaching USB Recovery Mode -- see IBSS90-RST-Q6 and LLB90-CHAIN-Q3, NOT a
         clean 4/4 confirmation, but a real and repeated difference Home never produced even once in 3
         attempts). Whether Power's debounce gate is the SOLE explanation remains open (IBSS90-RST-Q6), but
-        Home specifically is settled: it is not the button that matters here.
+        Home specifically is settled: it is not the button that matters here. Further narrowed by
+        IBSS90-RST-009: this unit's chip-revision byte IS in `0x5270`'s supported range, so the
+        button-sentinel override to device-index 3 (IBSS90-RST-008) was genuinely reachable during the Home
+        test -- "chip revision out of range" is now ruled OUT as an explanation for Home's lack of effect,
+        leaving "wrong physical button/GPIO for that sentinel" as the better-supported account of the two
+        originally listed under hypothesis (a).
   unresolved:
     - id: IBSS90-RST-Q6
       text: >
@@ -257,7 +262,38 @@ claims:
     evidence: "r2 -a arm -b 32 -m 0x0 -e asm.bits=16 -c 'af @ 0x5270; pdg @ 0x5270' plus a raw 'pd 20 @ 0x5388'
       cross-check of the override tail, on the fresh N90AP SecureROM dump, scratchpad-only, never committed"
 
+  - id: IBSS90-RST-009
+    text: >
+      ANSWERS IBSS90-RST-008's single-valued question, same day. First live attempt timed out over USB
+      (`tools/ipwndfu/read_chip_revision.py`'s own read call) -- confirmed general host-side USB flakiness,
+      not an effect of this specific address, by reproducing the identical timeout on a known-good read
+      (0x0, SecureROM's own base, already dumped successfully earlier the same session). Recovered without a
+      physical cable replug: `device.reset()` (`libusb_reset_device()`) on the stuck device, then a ~2s wait
+      for re-enumeration -- the pwned state survives a USB-level reset (not a power cycle). Result: raw
+      `0xbf106000` = `0x01000d01`, bits[15:8] = `0x0d` (13) -- IN the 15-entry supported range (0-0xe). This
+      unit's own chip-revision byte does NOT block the button-sentinel override found in IBSS90-RST-008: the
+      override path to device-index 3 (DFU) is genuinely reachable on this exact hardware, not merely in
+      principle on some other unit. Narrows IBSS90-RST-Q7 (Home button, no effect): the explanation can no
+      longer be "chip revision unsupported" -- it has to be something about Home itself (wrong physical
+      button/GPIO for this sentinel, or some other reason the sentinel never ends up non-zero), which is now
+      the better-supported account of hypothesis (a).
+    status: device_tested
+    evidence: "tools/ipwndfu/read_chip_revision.py, run live this session (fresh limera1n pwn, then this
+      read, recovered via device.reset() mid-run after one USB timeout); docs/journal/2026-10-22.md (ECID/
+      serial shown in the pwned device's own USB descriptor at the time were NOT recorded in this repository,
+      per project rule)"
+
 hardware_tests:
+  - name: single live memory read of 0xbf106000 (IBSS90-RST-008's question), no patch, no button
+    claim_tested: "IBSS90-RST-009"
+    execution_status: executed
+    result: >
+      Fresh limera1n pwn, then dfuexec.PwnedDFUDevice().read_memory(0xbf106000, 4). First attempt timed out
+      over USB (host-side, confirmed general by reproducing the same timeout on a known-good read); recovered
+      without a physical replug via device.reset() + ~2s wait, pwned state intact. Result: raw 0x01000d01,
+      bits[15:8] = 0x0d (13), in the 0x5270 table's supported range (0-0xe). Device never written to.
+    evidence: "docs/journal/2026-10-22.md (not in this public repo); device's serial number/ECID shown in the
+      USB descriptor at the time were NOT recorded in this repository per project rule"
   - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- 3rd attempt, Home button held throughout
     claim_tested: "IBSS90-RST-005's GPIO-button-gated SecureROM dispatch (device index 1=nor0/2=idle/3=DFU):
       whether holding the identified button forces SecureROM down branch 3 (DFU) instead of branch 1 (NOR)
