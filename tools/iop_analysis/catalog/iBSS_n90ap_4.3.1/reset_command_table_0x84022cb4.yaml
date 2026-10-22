@@ -283,6 +283,30 @@ claims:
       serial shown in the pwned device's own USB descriptor at the time were NOT recorded in this repository,
       per project rule)"
 
+  - id: IBSS90-RST-010
+    text: >
+      Decompiled the four GPIO-shaped one-line helpers `main()` calls (IBSS90-RST-005/-Q7b: `0x4e3c`,
+      `0x4e28`, `0x4e14`, `0x4e5c`) with `pdg`, and their shared base `fcn.0xe00(arg1)`, to get exact
+      port/pin values instead of the single one ("port 3 pin 2") this catalog had carried since
+      IBSS90-RST-005. `fcn.0xe00` decodes its argument as `port = (arg>>8)&0xff`, `pin = arg&7`, then reads
+      a GPIO pad table (`*(table[port*8+pin]*4) & 1`) -- except for `port==0x1e` (30), handled by a separate
+      function (`func_0x2308`, not traced). Decoded: `0x4e3c` calls `fcn.0xe00(0x302)` -> **port 3, pin 2**
+      (confirms IBSS90-RST-005's claim exactly, now verified rather than carried forward from memory); this
+      is the one read RAW (no inversion) into the "forced boot requested" sentinel at `main()`'s very start.
+      `0x4e28` calls `fcn.0xe00(1)` -> port 0, pin 1; `0x4e14` calls `fcn.0xe00(0)` -> port 0, pin 0 -- both
+      INVERTED (`1 - bit`, i.e. these read as true when the pad is LOW). `0x4e5c`, the fourth confirmation
+      check in the same debounce loop, does NOT go through `fcn.0xe00` or any plain GPIO pad at all: it reads
+      MMIO `0x86000028` -- a different address range from the `0xbfxxxxxx` block every other GPIO pad read in
+      this project's catalog has used so far -- gated behind an explicit clock-gate enable/disable pair
+      (`func_0x55fc(0x1d, 1)` before the read, `func_0x55fc(0x1d)` after, clock-gate id `0x1d`, matching this
+      project's own existing clock-gate-init convention from the IOP catalog). A plain GPIO pad is always-on
+      and never needs its own clock gated in to be read; something that does is a different class of signal
+      entirely (a sensed/ADC-like line, or a dedicated peripheral pin) -- NOT demonstrated to be unrelated to
+      any button, but the evidence here does not support assuming it is one either, unlike the other three.
+    status: device_disassembly_verified
+    evidence: "r2 -a arm -b 32 -m 0x0 -e asm.bits=16 -c 'af @ ADDR; pdg @ ADDR' on 0x4e3c, 0x4e28, 0x4e14,
+      0x4e5c, 0xe00 and 0x28a4, on the fresh N90AP SecureROM dump, scratchpad-only, never committed"
+
 hardware_tests:
   - name: single live memory read of 0xbf106000 (IBSS90-RST-008's question), no patch, no button
     claim_tested: "IBSS90-RST-009"
