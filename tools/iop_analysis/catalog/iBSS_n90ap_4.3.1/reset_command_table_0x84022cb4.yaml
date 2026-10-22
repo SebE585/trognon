@@ -250,7 +250,9 @@ claims:
       is THIS unit's actual byte at that address one of the 15 supported values? A single live DFU memory
       read (`dfuexec.PwnedDFUDevice().read_memory(0xbf106000, 4)`, far cheaper than a full boot_ibss() hardware
       cycle) would settle it outright, rather than inferring it indirectly from button-hold test outcomes the
-      way IBSS90-RST-Q7/-Q7b had to.
+      way IBSS90-RST-Q7/-Q7b had to. Tool ready: `tools/ipwndfu/read_chip_revision.py`. A same-day attempt was
+      blocked by unusually poor USB reliability (confirmed general, reproduced on a known-good read too, not
+      specific to this address) -- not yet run to completion; the next session's first hardware step.
     status: device_disassembly_verified
     evidence: "r2 -a arm -b 32 -m 0x0 -e asm.bits=16 -c 'af @ 0x5270; pdg @ 0x5270' plus a raw 'pd 20 @ 0x5388'
       cross-check of the override tail, on the fresh N90AP SecureROM dump, scratchpad-only, never committed"
