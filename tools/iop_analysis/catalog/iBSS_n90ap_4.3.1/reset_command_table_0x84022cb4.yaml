@@ -207,6 +207,29 @@ claims:
       a DIFFERENT register than 0x5270's check -- all on the fresh N90AP SecureROM dump, scratchpad-only, never
       committed"
 
+  - id: IBSS90-RST-007
+    text: >
+      CORRECTS part of IBSS90-RST-005: device-index case 2 is NOT "an idle/button debounce loop". Found by
+      trying `r2ghidra`'s decompiler (`pdg`, newly installed this session via `r2pm -ci r2ghidra r2ghidra-sleigh`,
+      as a cross-check of the project's manual radare2 reading method, not a replacement for it) on `main()`
+      (0x62c): case 2 runs an active scan over up to 4 "devices" (an outer loop, device index 0-3) and, for
+      each, up to 32 "slots" tested against bits of a mask value (`uVar2`, carried over from the earlier
+      0x5270 call's output), calling a probe function (0x13c4) for each live (device, slot) pair, and on a
+      successful probe, validating (0x7468) and copying the result to 0x84000000 (0x5f0/0x7450/0x83c0) before
+      continuing. This is a real boot-image scan across multiple candidate sources, not a wait loop; the
+      0x2710 (10000) value IS still present as a delay at the very start of this case (matching the original
+      description's only concrete number), but it precedes the scan rather than constituting the whole of it.
+      Cases 1 (nor0) and 3 (DFU/usb_wait_for_image) are confirmed exactly as IBSS90-RST-005 already described
+      them -- the decompiler's output matches the manual reading there, which is itself a useful cross-check
+      in the other direction. This does not change any conclusion already drawn about IBSS90-RST-Q6/-Q7 (none
+      of them depended on case 2's exact behaviour), but IBSS90-RST-005's own text is corrected here rather
+      than silently edited, per this project's own rule that corrections are part of the material.
+    status: device_disassembly_verified
+    evidence: "r2pm -ci r2ghidra; r2pm -ci r2ghidra-sleigh (both newly installed this session, not previously
+      present); r2 -a arm -b 32 -m 0x0 -e asm.bits=16 -c 'af @ 0x62c; pdg @ 0x62c' on the fresh N90AP SecureROM
+      dump, scratchpad-only, never committed; the raw manual radare2 disassembly this corrects is
+      IBSS90-RST-005's own evidence, re-examined rather than redone"
+
 hardware_tests:
   - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- 3rd attempt, Home button held throughout
     claim_tested: "IBSS90-RST-005's GPIO-button-gated SecureROM dispatch (device index 1=nor0/2=idle/3=DFU):
