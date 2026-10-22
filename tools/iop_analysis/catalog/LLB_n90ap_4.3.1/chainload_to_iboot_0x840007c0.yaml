@@ -38,33 +38,40 @@ review:
       proof_needed: "trace 0x84005bc4 fully to know exactly which bitfield/condition this gate checks, and
         whether a boot_ibss()-triggered watchdog reset (no physical hand on the power button, unlike a real
         cold boot) would plausibly fail to satisfy it -- see LLB90-CHAIN-Q3"
-    - id: LLB90-CHAIN-Q3
-      by: >
-        CONFIRMED by a live hardware test (hardware_tests below): the same patched boot_ibss() attempt that
-        produced a silent white screen on every prior try (3/3, two without any button held, one with Home
-        held) instead reached USB Recovery Mode (PID 0x1281) cleanly when the physical Power button was held
-        throughout -- the first time this project has seen the iPhone 4 do what the 3GS has always done on this
-        same patch. LLB's power-button debounce gate (LLB90-CHAIN-Q2b) was the real blocker: the exploit
-        sequence never simulates a physical button press, so every prior attempt hit "Power on canceled.." and
-        powered itself off before ever reaching the "tobi" chainload into iBoot. This resolves IBSS90-RST-Q6's
-        central question for the USB-silence half of the symptom. The screen ALSO showed the Apple boot logo
-        on this run (user-observed, after an initial report of "white" that the user corrected once they
-        looked again) -- not blank/unpainted at all: real boot graphics were drawn, which is a materially
-        better and more informative result than "white screen" suggested. This is consistent with LLB and
-        iBoot both actually running their normal boot-logo path (distinct from pinot_init()'s own panel-ID-SPI
-        probe, IBOOT90-DISP-Q2) all the way through, on real hardware, for the first time this project has
-        observed it on this board.
   unresolved:
+    - id: LLB90-CHAIN-Q3
+      text: >
+        PARTIALLY supported, NOT confirmed, by a live hardware test across 4 attempts, each with the physical
+        Power button held correctly and continuously per the user's own explicit confirmation each time
+        (hardware_tests below): #1 reached USB Recovery Mode (PID 0x1281) AND showed the Apple boot logo; #2
+        and #3 showed no USB reappearance at all (white screen, same as the three earlier attempts WITHOUT the
+        button held); #4 reached Recovery Mode again but with a white screen, not the logo. Overall: 2/4
+        reached Recovery Mode with the button held vs 0/3 without it (2 with no button, 1 with Home) -- a real
+        and likely meaningful difference, not noise, but far from the deterministic "the gate was THE
+        blocker" conclusion this entry first (over-confidently) recorded after attempt #1 alone. USB
+        enumeration and the screen actually painting the logo also vary somewhat independently of each other
+        (both succeeded together only once, out of two Recovery-Mode reappearances). Candidate explanations,
+        none distinguished: imprecise human button-press timing against whatever exact window LLB's debounce
+        loop expects; the uninitialised-stack-garbage mechanism already found in SecureROM's own dispatch
+        (IBSS90-RST-006) possibly having an analogous counterpart somewhere in this LLB/iBoot path too; or
+        this session's own unusually poor limera1n pwn reliability (see hardware_tests) being a symptom of a
+        marginal hardware/USB condition tonight (battery, cable, thermal) that could itself be adding noise
+        independent of the button hypothesis.
+      proof_needed: "more hardware_tests data points (ideally beyond 4, on a session with normal pwn
+        reliability to rule out a marginal-hardware confound); and/or trace 0x84005bc4's exact condition
+        (already flagged in LLB90-CHAIN-Q2b) to know precisely what timing window it expects, rather than
+        inferring it purely from outcome variance"
     - id: LLB90-CHAIN-Q2
       text: >
         Whether this exact call chain actually completes successfully (reads the real image3 from NOR,
-        decrypts/validates it, and reaches the final `blx r6`) now that LLB90-CHAIN-Q3 confirms the power-
-        button gate upstream of it is satisfiable and was the real earlier blocker. Not independently traced
-        to a concrete pass/fail outcome of its own -- the live test that resolved Q3 shows the OVERALL chain
-        succeeds (USB Recovery Mode reached), which strongly implies this pipeline also succeeded, but was not
-        instrumented separately.
-      proof_needed: "largely superseded by the Q3 hardware test; would still need separate tracing or
-        instrumentation to confirm in isolation, now low priority"
+        decrypts/validates it, and reaches the final `blx r6`). The live hardware tests (LLB90-CHAIN-Q3) show
+        the overall chain CAN succeed (2/4 Recovery-Mode reappearances with Power held), which is consistent
+        with this pipeline working, but it was not independently traced to a concrete pass/fail outcome of its
+        own, and LLB90-CHAIN-Q3's own 2/4 (not 4/4) result means "the overall chain succeeded" cannot yet be
+        treated as reliably established either.
+      proof_needed: "trace this pipeline directly; or gather enough further hardware_tests data points under
+        LLB90-CHAIN-Q3 to know whether the 2/4 rate reflects this pipeline's own reliability or something
+        upstream of it (the power-button gate's timing sensitivity, most likely)"
 
 claims:
   - id: LLB90-CHAIN-001
@@ -123,7 +130,7 @@ claims:
       GID-decrypted N90AP LLB body"
 
 hardware_tests:
-  - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- 4th attempt, Power button held throughout
+  - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- Power-button-held attempt #1 of 4
     claim_tested: "LLB90-CHAIN-Q2b/-Q3: whether LLB's power-button debounce gate, not any code bug, was the
       real blocker behind the three earlier silent white-screen attempts"
     execution_status: executed
@@ -136,12 +143,34 @@ hardware_tests:
       IBSS90-RST-Q7) held continuously from just before the send. Outcome: the device reappeared in USB
       Recovery Mode (PID 0x1281) within the poll window -- the FIRST time this project has seen that on the
       iPhone 4 with this patch, matching the 3GS's own long-known behaviour. The screen showed the Apple boot
-      logo (not blank/unpainted), a materially better result than the three earlier "white screen" attempts.
-      3/3 silent-white-screen attempts without this exact condition (2 with no button, 1 with Home held) vs
-      1/1 success with Power held throughout -- a sample of one success, but a complete behavioural change
-      consistent with every static claim in this fiche (LLB90-CHAIN-Q2b/-Q3).
+      logo (not blank/unpainted).
     evidence: "docs/journal/2026-10-22.md (not in this public repo); device's serial number/IMEI/ECID shown
       in the USB descriptor at the time were NOT recorded in this repository per project rule"
+  - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- Power-button-held attempt #2 of 4
+    claim_tested: "same as attempt #1 -- reproducibility"
+    execution_status: executed
+    result: >
+      Same patch, pwn confirmed fresh, Power held correctly and continuously from before the send per the
+      user's own explicit confirmation (asked directly). No USB reappearance within 15s, white screen --
+      unlike attempt #1.
+    evidence: "docs/journal/2026-10-22.md (not in this public repo)"
+  - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- Power-button-held attempt #3 of 4
+    claim_tested: "same as attempt #1 -- reproducibility"
+    execution_status: executed
+    result: >
+      Same as attempt #2: fresh pwn (unusually flaky again, ~45 attempts before success, plus a mid-attempt
+      disconnect requiring a physical cable reseat to recover reliable device detection), Power held correctly
+      and continuously, no USB reappearance, white screen.
+    evidence: "docs/journal/2026-10-22.md (not in this public repo)"
+  - name: boot_ibss() patch attempt for the iPhone 4 (N90AP) -- Power-button-held attempt #4 of 4
+    claim_tested: "same as attempt #1 -- reproducibility"
+    execution_status: executed
+    result: >
+      Power held correctly and continuously. Device reappeared in USB Recovery Mode (PID 0x1281), same as
+      attempt #1 -- but the screen stayed WHITE this time, not the Apple logo. USB enumeration and the screen
+      painting therefore vary somewhat independently of each other: 2/4 reached Recovery Mode (attempts #1
+      and #4), only 1/4 showed the Apple logo (attempt #1 only).
+    evidence: "docs/journal/2026-10-22.md (not in this public repo)"
 
 publication:
   status: approved

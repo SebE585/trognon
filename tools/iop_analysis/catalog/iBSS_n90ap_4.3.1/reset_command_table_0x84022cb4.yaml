@@ -50,32 +50,35 @@ review:
         to establish whether and how the button sentinel at [sp+4] actually reaches the final device-index
         r4 -- a non-trivial undertaking (a 15-entry jump table keyed on silicon revision) that this session
         judged disproportionate to attempt in full without a clearer sign it would change the outcome"
-    - id: IBSS90-RST-Q6
-      by: >
-        RESOLVED by a live hardware test (LLB90-CHAIN-Q3, LLB_n90ap_4.3.1/chainload_to_iboot_0x840007c0.yaml):
-        the real blocker was never any of fault-handler divergence (IBSS90-RST-Q4, ruled out),
-        SecureROM boot-dispatch divergence (IBSS90-RST-Q5, ruled out), or a broken/hanging display-init chain
-        (every piece of LLB, iBoot and pinot_init() read this session turned out to behave correctly on paper).
-        It was LLB's OWN power-button debounce gate, upstream of all of that: the boot_ibss() exploit sequence
-        never simulates a physical button press, so every earlier attempt hit LLB's "Power on canceled.."
-        path and powered the device off before ever reaching the "tobi" chainload into iBoot. Holding the
-        physical Power button (not Home, IBSS90-RST-Q7) throughout a 4th attempt reached USB Recovery Mode
-        cleanly -- the first time this project has seen the iPhone 4 do what the 3GS has always done on this
-        same patch -- and the screen showed the Apple boot logo, not a blank panel. No bug was ever present in
-        any of the five pieces of code this investigation eliminated one by one; the blocker was a missing
-        input condition (a button press) that this project's own automated exploit tooling has no way to
-        provide on its own.
     - id: IBSS90-RST-Q7
       by: >
         Holding the physical Home button (believed to drive the GPIO SecureROM polls, port 3 pin 2,
         IBSS90-RST-005) throughout a 3rd boot_ibss() attempt made NO observable difference versus the two
-        earlier attempts without it: same silent white screen, no USB reappearance, all three times. RESOLVED
-        by a follow-up live test, not by static analysis: hypothesis (c) was the closest of the three
-        originally listed -- the real blocker sat even earlier than SecureROM's device-index dispatch, in
-        LLB's own power-button debounce gate (IBSS90-RST-Q6, LLB90-CHAIN-Q3). Home was simply the wrong
-        button: the gate that mattered reads the Power button, not Home, which explains why holding Home
-        changed nothing while holding Power (tested afterwards) changed everything.
+        earlier attempts without it: same silent white screen, no USB reappearance, all three times.
+        Home itself is RESOLVED as the wrong button to test, by a follow-up live test with Power held
+        instead (4 attempts, 2 reaching USB Recovery Mode -- see IBSS90-RST-Q6 and LLB90-CHAIN-Q3, NOT a
+        clean 4/4 confirmation, but a real and repeated difference Home never produced even once in 3
+        attempts). Whether Power's debounce gate is the SOLE explanation remains open (IBSS90-RST-Q6), but
+        Home specifically is settled: it is not the button that matters here.
   unresolved:
+    - id: IBSS90-RST-Q6
+      text: >
+        What actually happens on real hardware between the watchdog-reset write (IBSS90-RST-003/-004) and the
+        device's outcome. Fault-handler divergence (IBSS90-RST-Q4) and SecureROM boot-dispatch divergence
+        (IBSS90-RST-Q5) are ruled out; every piece of LLB, iBoot and pinot_init() read this session behaves
+        correctly on paper on every path traced. The leading candidate is LLB's own power-button debounce
+        gate (LLB90-CHAIN-Q2b): the boot_ibss() exploit sequence never simulates a physical button press, and
+        a live test holding the physical Power button throughout reached USB Recovery Mode in 2 of 4 attempts
+        (vs 0 of 3 without it: 2 with no button, 1 with Home) -- a real difference, but NOT a reliable fix:
+        2/4 is far short of confirming this gate is the sole or deterministic explanation. The screen also
+        painted the Apple boot logo in only 1 of those 2 Recovery-Mode reappearances, suggesting USB
+        enumeration and display painting can diverge from each other too. This session's own limera1n pwn
+        reliability was also unusually poor throughout (dozens of attempts per try, well above the normal
+        1-3), raising an unresolved question of whether tonight's hardware/USB conditions were marginal in a
+        way that adds noise to every result recorded this session, button-hold included.
+      proof_needed: "see LLB90-CHAIN-Q3 (LLB_n90ap_4.3.1/chainload_to_iboot_0x840007c0.yaml) for the detailed
+        hardware_tests record and next steps: more data points under normal (non-flaky) pwn conditions, and/or
+        tracing 0x84005bc4's exact timing condition instead of inferring it from outcome variance alone"
     - id: IBSS90-RST-Q2
       text: >
         How this table is actually walked (which function iterates it, with what loop/index, and in what
