@@ -41,6 +41,18 @@ class CheckTests(unittest.TestCase):
         errs = jb.check(graph(node("a", ["a"], kind="start", tag="DEVICE", evidence=["no-such-bundle"])))
         self.assertTrue(any("does not exist" in e for e in errs))
 
+    def test_a_quoted_proof_line_must_be_in_its_bundle(self):
+        b = "20261016T094945Z-trace_iop_clkgate"
+        ok = node("a", ["a"], kind="start", tag="DEVICE", evidence=[b], proof=[{"bundle": b, "line": "gate27=0000000F"}])
+        self.assertEqual(jb.check(graph(ok)), [])
+        bad = node("a", ["a"], kind="start", tag="DEVICE", evidence=[b], proof=[{"bundle": b, "line": "gate27=0000000E"}])
+        self.assertTrue(any("neither screen.txt nor vars.txt" in e for e in jb.check(graph(bad))))
+
+    def test_a_proof_line_needs_its_bundle_listed_as_evidence(self):
+        b = "20261016T094945Z-trace_iop_clkgate"
+        n = node("a", ["a"], kind="start", tag="DEVICE", evidence=[b], proof=[{"bundle": "other", "line": "x"}])
+        self.assertTrue(any("does not list as evidence" in e for e in jb.check(graph(n))))
+
     def test_reference_must_exist(self):
         errs = jb.check(graph(node("a", ["a"], kind="start", refs=[{"label": "x", "page": "en/no-such-page.md"}])))
         self.assertTrue(any("does not exist" in e for e in errs))

@@ -6,7 +6,7 @@
 
 The pages are generated, never edited by hand. The checks exist so that the story cannot drift away from the reference
 documentation: a choice that leads nowhere, an unreachable page, a link to a page or heading that does not exist, an evidence
-bundle or a catalog note that does not exist, a step tagged DEVICE that names no evidence, a page whose front matter is not
+bundle or a catalog note that does not exist, a step tagged DEVICE that names no evidence, a quoted proof line that is not in its bundle, a page whose front matter is not
 valid YAML, or a translation whose structure differs from the English graph all stop the build.
 """
 import argparse
@@ -421,6 +421,11 @@ def expand_grimoire(g):
             n.setdefault("choices", []).append({"text": T(lang, "kernel_side") % b, "to": ids[b]})
 
 
+def bundle_text(bundle):
+    """The text of a bundle's capture files, to check that a line a story step quotes is really in it."""
+    return "\n".join((EVIDENCE / bundle / f).read_text(errors="replace") for f in ("screen.txt", "vars.txt") if (EVIDENCE / bundle / f).is_file())
+
+
 # ---- checks ------------------------------------------------------------------------------------------------------------
 def check(g):
     errors = []
@@ -458,6 +463,11 @@ def check(g):
         for b in n.get("evidence", []):
             if not (EVIDENCE / b).is_dir():
                 errors.append("%s: evidence bundle %r does not exist" % (i, b))
+        for pr in n.get("proof", []):
+            if pr.get("bundle") not in n.get("evidence", []):
+                errors.append("%s: proof line %r names a bundle that the node does not list as evidence" % (i, pr.get("line")))
+            elif pr.get("line") not in bundle_text(pr["bundle"]):
+                errors.append("%s: proof line %r is in neither screen.txt nor vars.txt of %s" % (i, pr.get("line"), pr["bundle"]))
         refs = list(n.get("refs", [])) + [c["ref"] for c in n.get("corrections", [])]
         for r in refs:
             page, _, anchor = r["page"].partition("#")

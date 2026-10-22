@@ -298,6 +298,9 @@ nodes:
       Un détail se manque facilement. Les deux feuilles utilisent le même numéro. Rien, pour l'instant, ne dit qu'elles
       comptent les portes de la même façon.
     evidence: [20261016T094945Z-trace_iop_clkgate]
+    proof:
+      - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "gate27=0000000F" }
+      - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "GATE+27  0000000F" }
     choices:
       - { text: "Tirer une conclusion", hint: "Dire ce que vous pensez que cela montre", to: fg-conclude }
 
@@ -317,6 +320,9 @@ nodes:
       s'accorder. Les deux feuilles utilisent le même numéro. Rien, pour l'instant, ne dit qu'elles comptent les portes de la
       même façon.
     evidence: [20261016T094945Z-trace_iop_clkgate]
+    proof:
+      - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "gate27=0000000F" }
+      - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "GATE+27  0000000F" }
     choices:
       - { text: "Tirer une conclusion", hint: "Dire ce que vous pensez que cela montre", to: fg-conclude }
 

@@ -2,7 +2,7 @@
 # The pages under docs/en/journey/ are GENERATED from this file by tools/journey_build.py (make journey); do not edit them.
 # Rules enforced by tools/journey_build.py --check: every choice leads to an existing node, every node is reachable from the
 # start, no dead end (a frontier node ends in references), every reference points to an existing page and heading, every
-# evidence bundle exists, and a node tagged DEVICE names at least one bundle.
+# evidence bundle exists, a node tagged DEVICE names at least one bundle, and a `proof` line a node quotes is in its bundle.
 title: "From a powered-off phone to the first pixel"
 lang: en
 start: start
@@ -290,6 +290,9 @@ nodes:
 
       One detail is easy to miss. Both sheets use the same number. Nothing, so far, says they count gates the same way.
     evidence: [20261016T094945Z-trace_iop_clkgate]
+    proof:
+      - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "gate27=0000000F" }
+      - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "GATE+27  0000000F" }
     choices:
       - { text: "Draw a conclusion", hint: "Say what you think this shows", to: fg-conclude }
 
@@ -307,6 +310,9 @@ nodes:
       Now the device tree: its entry for the coprocessor lists `0x27`. Put side by side, the two seem to line up. Both
       sheets use the same number. Nothing, so far, says they count gates the same way.
     evidence: [20261016T094945Z-trace_iop_clkgate]
+    proof:
+      - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "gate27=0000000F" }
+      - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "GATE+27  0000000F" }
     choices:
       - { text: "Draw a conclusion", hint: "Say what you think this shows", to: fg-conclude }
 
