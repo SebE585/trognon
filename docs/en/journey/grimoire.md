@@ -62,13 +62,25 @@ Legend: ✓ reviewed (green), ◐ partly reviewed (amber), ○ not reviewed (gre
 
 [◐3](grimoire-ioslaveprocessor.md){ .kmap-tile .kmap-partial title="class tables survey (pointer tables, destructor sizes, metaclass arguments), partly reviewed, 3 open question(s)" aria-label="class tables survey (pointer tables, destructor sizes, metaclass arguments), partly reviewed, 3 open question(s)" } [✓1](grimoire-ioslaveprocessor.md){ .kmap-tile .kmap-complete title="field&#95;0x58&#95;getter (working name, not Apple's), reviewed, 1 open question(s)" aria-label="field&#95;0x58&#95;getter (working name, not Apple's), reviewed, 1 open question(s)" } [✓2](grimoire-ioslaveprocessor.md){ .kmap-tile .kmap-complete title="module init (OSMetaClass registration loop), reviewed, 2 open question(s)" aria-label="module init (OSMetaClass registration loop), reviewed, 2 open question(s)" }
 
+**LLB_n90ap_4.3.1** · 2 entries · 6 claims · 2 open questions
+
+[◐0](grimoire-llb_n90ap_431.md){ .kmap-tile .kmap-partial title="boot vector table, load address, and a negative check for display/panel code, partly reviewed, 0 open question(s)" aria-label="boot vector table, load address, and a negative check for display/panel code, partly reviewed, 0 open question(s)" } [◐2](grimoire-llb_n90ap_431.md){ .kmap-tile .kmap-partial title="LLB's own image3 chainload call into iBoot, and its never-return guard, partly reviewed, 2 open question(s)" aria-label="LLB's own image3 chainload call into iBoot, and its never-return guard, partly reviewed, 2 open question(s)" }
+
 **iBSS_n88ap_4.3.5** · 3 entries · 11 claims · 8 open questions
 
 [✓2](grimoire-ibss_n88ap_435.md){ .kmap-tile .kmap-complete title="iBSS clock-gate initialisation (set&#95;gates(mask, on) at 0x8400dd04 and its wrapper), reviewed, 2 open question(s)" aria-label="iBSS clock-gate initialisation (set&#95;gates(mask, on) at 0x8400dd04 and its wrapper), reviewed, 2 open question(s)" } [✓4](grimoire-ibss_n88ap_435.md){ .kmap-tile .kmap-complete title="iBSS gpio&#95;configure(pin id, mode) and its per-pad default table, reviewed, 4 open question(s)" aria-label="iBSS gpio&#95;configure(pin id, mode) and its per-pad default table, reviewed, 4 open question(s)" } [○2](grimoire-ibss_n88ap_435.md){ .kmap-tile .kmap-none title="iBSS peripheral tables (SPI, I2C0, platform pin list): data read, no code, not reviewed, 2 open question(s)" aria-label="iBSS peripheral tables (SPI, I2C0, platform pin list): data read, no code, not reviewed, 2 open question(s)" }
 
+**iBSS_n90ap_4.3.1** · 2 entries · 14 claims · 3 open questions
+
+[✓1](grimoire-ibss_n90ap_431.md){ .kmap-tile .kmap-complete title="default boot environment variable setup (set&#95;default&#95;env-shaped), reviewed, 1 open question(s)" aria-label="default boot environment variable setup (set&#95;default&#95;env-shaped), reviewed, 1 open question(s)" } [◐2](grimoire-ibss_n90ap_431.md){ .kmap-tile .kmap-partial title="console command table entry for 'reset', and its stock handler, partly reviewed, 2 open question(s)" aria-label="console command table entry for 'reset', and its stock handler, partly reviewed, 2 open question(s)" }
+
+**iBoot_n90ap_4.3.1** · 1 entry · 2 claims · 1 open question
+
+[◐1](grimoire-iboot_n90ap_431.md){ .kmap-tile .kmap-partial title="panel-type dispatch into the N90AP ('pinot') LCD panel driver, partly reviewed, 1 open question(s)" aria-label="panel-type dispatch into the N90AP ('pinot') LCD panel driver, partly reviewed, 1 open question(s)" }
+
 </div>
 
-30 entries, 76 claims, 77 open questions.
+35 entries, 98 claims, 83 open questions.
 
 
 ## Where to next?
@@ -82,7 +94,10 @@ Legend: ✓ reviewed (green), ◐ partly reviewed (amber), ○ not reviewed (gre
 - [EmbeddedIOP (2)](grimoire-embeddediop.md)
 - [IOP_s5l8920x_firmware (2)](grimoire-iop_s5l8920x_firmware.md)
 - [IOSlaveProcessor (3)](grimoire-ioslaveprocessor.md)
+- [LLB_n90ap_4.3.1 (2)](grimoire-llb_n90ap_431.md)
 - [iBSS_n88ap_4.3.5 (3)](grimoire-ibss_n88ap_435.md)
+- [iBSS_n90ap_4.3.1 (2)](grimoire-ibss_n90ap_431.md)
+- [iBoot_n90ap_4.3.1 (1)](grimoire-iboot_n90ap_431.md)
 - [Go back to the drawer<span class="journey-hint">Return to the start of the path</span>](start.md)
 
 </div>

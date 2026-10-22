@@ -40,4 +40,7 @@ A guided path through what Trognon has observed on a real iPhone 3GS. Two or thr
 | [EmbeddedIOP](grimoire-embeddediop.md) | — | A 3GS in a drawer → The Grimoire |
 | [IOP_s5l8920x_firmware](grimoire-iop_s5l8920x_firmware.md) | — | A 3GS in a drawer → The Grimoire |
 | [IOSlaveProcessor](grimoire-ioslaveprocessor.md) | — | A 3GS in a drawer → The Grimoire |
+| [LLB_n90ap_4.3.1](grimoire-llb_n90ap_431.md) | — | A 3GS in a drawer → The Grimoire |
 | [iBSS_n88ap_4.3.5](grimoire-ibss_n88ap_435.md) | — | A 3GS in a drawer → The Grimoire |
+| [iBSS_n90ap_4.3.1](grimoire-ibss_n90ap_431.md) | — | A 3GS in a drawer → The Grimoire |
+| [iBoot_n90ap_4.3.1](grimoire-iboot_n90ap_431.md) | — | A 3GS in a drawer → The Grimoire |

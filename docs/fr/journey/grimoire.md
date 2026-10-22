@@ -62,13 +62,25 @@ Légende : ✓ relue (vert), ◐ relue en partie (ambre), ○ non relue (gris) ;
 
 [◐3](grimoire-ioslaveprocessor.md){ .kmap-tile .kmap-partial title="class tables survey (pointer tables, destructor sizes, metaclass arguments), relue en partie, 3 question(s) ouverte(s)" aria-label="class tables survey (pointer tables, destructor sizes, metaclass arguments), relue en partie, 3 question(s) ouverte(s)" } [✓1](grimoire-ioslaveprocessor.md){ .kmap-tile .kmap-complete title="field&#95;0x58&#95;getter (working name, not Apple's), relue, 1 question(s) ouverte(s)" aria-label="field&#95;0x58&#95;getter (working name, not Apple's), relue, 1 question(s) ouverte(s)" } [✓2](grimoire-ioslaveprocessor.md){ .kmap-tile .kmap-complete title="module init (OSMetaClass registration loop), relue, 2 question(s) ouverte(s)" aria-label="module init (OSMetaClass registration loop), relue, 2 question(s) ouverte(s)" }
 
+**LLB_n90ap_4.3.1** · 2 entrées · 6 affirmations · 2 questions ouvertes
+
+[◐0](grimoire-llb_n90ap_431.md){ .kmap-tile .kmap-partial title="boot vector table, load address, and a negative check for display/panel code, relue en partie, 0 question(s) ouverte(s)" aria-label="boot vector table, load address, and a negative check for display/panel code, relue en partie, 0 question(s) ouverte(s)" } [◐2](grimoire-llb_n90ap_431.md){ .kmap-tile .kmap-partial title="LLB's own image3 chainload call into iBoot, and its never-return guard, relue en partie, 2 question(s) ouverte(s)" aria-label="LLB's own image3 chainload call into iBoot, and its never-return guard, relue en partie, 2 question(s) ouverte(s)" }
+
 **iBSS_n88ap_4.3.5** · 3 entrées · 11 affirmations · 8 questions ouvertes
 
 [✓2](grimoire-ibss_n88ap_435.md){ .kmap-tile .kmap-complete title="iBSS clock-gate initialisation (set&#95;gates(mask, on) at 0x8400dd04 and its wrapper), relue, 2 question(s) ouverte(s)" aria-label="iBSS clock-gate initialisation (set&#95;gates(mask, on) at 0x8400dd04 and its wrapper), relue, 2 question(s) ouverte(s)" } [✓4](grimoire-ibss_n88ap_435.md){ .kmap-tile .kmap-complete title="iBSS gpio&#95;configure(pin id, mode) and its per-pad default table, relue, 4 question(s) ouverte(s)" aria-label="iBSS gpio&#95;configure(pin id, mode) and its per-pad default table, relue, 4 question(s) ouverte(s)" } [○2](grimoire-ibss_n88ap_435.md){ .kmap-tile .kmap-none title="iBSS peripheral tables (SPI, I2C0, platform pin list): data read, no code, non relue, 2 question(s) ouverte(s)" aria-label="iBSS peripheral tables (SPI, I2C0, platform pin list): data read, no code, non relue, 2 question(s) ouverte(s)" }
 
+**iBSS_n90ap_4.3.1** · 2 entrées · 14 affirmations · 3 questions ouvertes
+
+[✓1](grimoire-ibss_n90ap_431.md){ .kmap-tile .kmap-complete title="default boot environment variable setup (set&#95;default&#95;env-shaped), relue, 1 question(s) ouverte(s)" aria-label="default boot environment variable setup (set&#95;default&#95;env-shaped), relue, 1 question(s) ouverte(s)" } [◐2](grimoire-ibss_n90ap_431.md){ .kmap-tile .kmap-partial title="console command table entry for 'reset', and its stock handler, relue en partie, 2 question(s) ouverte(s)" aria-label="console command table entry for 'reset', and its stock handler, relue en partie, 2 question(s) ouverte(s)" }
+
+**iBoot_n90ap_4.3.1** · 1 entrée · 2 affirmations · 1 question ouverte
+
+[◐1](grimoire-iboot_n90ap_431.md){ .kmap-tile .kmap-partial title="panel-type dispatch into the N90AP ('pinot') LCD panel driver, relue en partie, 1 question(s) ouverte(s)" aria-label="panel-type dispatch into the N90AP ('pinot') LCD panel driver, relue en partie, 1 question(s) ouverte(s)" }
+
 </div>
 
-30 entrées, 76 affirmations, 77 questions ouvertes.
+35 entrées, 98 affirmations, 83 questions ouvertes.
 
 
 ## Et maintenant ?
@@ -82,7 +94,10 @@ Légende : ✓ relue (vert), ◐ relue en partie (ambre), ○ non relue (gris) ;
 - [EmbeddedIOP (2)](grimoire-embeddediop.md)
 - [IOP_s5l8920x_firmware (2)](grimoire-iop_s5l8920x_firmware.md)
 - [IOSlaveProcessor (3)](grimoire-ioslaveprocessor.md)
+- [LLB_n90ap_4.3.1 (2)](grimoire-llb_n90ap_431.md)
 - [iBSS_n88ap_4.3.5 (3)](grimoire-ibss_n88ap_435.md)
+- [iBSS_n90ap_4.3.1 (2)](grimoire-ibss_n90ap_431.md)
+- [iBoot_n90ap_4.3.1 (1)](grimoire-iboot_n90ap_431.md)
 - [Retourner au tiroir<span class="journey-hint">Revenir au début du parcours</span>](start.md)
 
 </div>
