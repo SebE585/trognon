@@ -59,6 +59,35 @@ double-counted), a `tool_coverage.json` cache that has drifted from its
 own `recognized_ranges`, and a hardware test left `planned` correctly
 excluded from the executed count.
 
+## Cross-checking with `r2ghidra` (optional, not the source of truth)
+
+The project's documented method is manual radare2 disassembly (`pdf`), per-function
+YAML fiches, never Ghidra itself (that belongs to a different, private project for
+A5+ chips, out of scope here). `r2ghidra` (`r2pm -ci r2ghidra r2ghidra-sleigh`) is radare2's own
+embedded Ghidra decompiler (`pdg`) — a useful second opinion on an already-read
+function, not a replacement for the method above, and its pseudo-C is never itself
+citable evidence in a fiche without the matching manual `pdf` reading.
+
+**Known gotcha, found 2026-10-22 on `IBSS90-RST-003`'s own "reset" handler
+(`0x84000cd4` N90AP / `0x84000cdc` N88AP), identical on both chips**: `pdg` does
+NOT reliably propagate a callee's no-return nature to its caller. Decompiling the
+callee (`fcn.8401654c`/`fcn.8400e078`, the watchdog-reset trigger) alone correctly
+shows an infinite loop (`pdg` even annotates it `// WARNING: Do nothing block with
+infinite loop`). But decompiling the CALLER produces a fabricated `if (uVar3 == 4)
+{...} else { return 0xffffffff; }` around that call, as if it returned a value —
+it never does, on real hardware the device resets. Always verify a `pdg` output's
+control flow against a manual `pdf` reading when a call site sits near a function
+already known (or suspected) to never return; do not trust a decompiled `return`
+near such a call without checking.
+
+`r2ghidra` DID catch a real error the same day: `IBSS90-RST-005` had described one
+branch of SecureROM's `main()` dispatch as "an idle/button debounce loop" — `pdg`
+showed it is actually an active multi-device, multi-slot image scan (corrected as
+`IBSS90-RST-007`, not silently edited). Net assessment so far: worth running as a
+cross-check on every function important enough to get its own fiche, but its output
+needs the same scrutiny as any other source, not blind trust — it is as capable of
+a confident, readable, WRONG answer as it is of catching a real mistake.
+
 ## What the firmware is
 
 A ~0x1b000-byte raw ARM32 binary (no Mach-O header of its own — it is a
