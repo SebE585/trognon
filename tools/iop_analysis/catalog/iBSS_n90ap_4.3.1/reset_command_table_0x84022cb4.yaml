@@ -22,6 +22,34 @@ review:
         "reboot" (0x8401d090) with the SAME handler pointer 0x84000cd5 -- cross-checked against the string table
         itself, where "reset\0" is immediately followed by "reboot\0\0reboot the device\0" (matches a
         console command table's usual {name, help} string layout).
+    - id: IBSS90-RST-Q7b
+      by: >
+        Narrows (b) and revises IBSS90-RST-005's own simplification, read more carefully this session.
+        Hypothesis (b) (a watchdog reset skips the button check) is now WEAKER: `main()` at 0x62c calls its
+        button-reading block (0x642 onward) completely unconditionally, straight after three setup calls
+        (0x66a4, 0x50a8, 0x509c) -- none of which branches around it or checks any reset-cause/status register
+        first. No gate on reset cause was found anywhere between the shared reset vector and the button read.
+        Separately, a watchdog/core-only reset is not expected to affect GPIO pad electrical state at all (only
+        a full power cycle would), so the physical button level should read identically either way even if
+        some such gate existed. Hypothesis (a) is REVISED rather than simply confirmed: IBSS90-RST-005's
+        description of the dispatch ("reads a GPIO flag ... then dispatches on a device-index variable with
+        three cases") undersold how indirect that path actually is. Read in full this session: the GPIO helper
+        at 0x4e3c feeds into a two-stage debounce/confirmation loop (two more one-line GPIO-shaped helpers,
+        0x4e28/0x4e14/0x4e5c, re-polled in a bounded loop from 0x696/0x6ca) that produces only a binary
+        "forced-boot-device requested" sentinel (0 or -1, stored at [sp+4]); that sentinel is then ONE of four
+        inputs (alongside three stack buffers) to a completely separate function, 0x5270, whose own first
+        branch is a 15-way jump table keyed on a chip-revision/epoch byte read from MMIO 0xbf106000 bits
+        [15:8] -- nothing to do with the button at all. The actual r4 used in the final `cmp r4,2`/`cmp r4,3`/
+        `cmp r4,1` dispatch (0x72e-0x738) is read back from one of 0x5270's output pointers, not directly from
+        the button sentinel. Whether (and how) the button sentinel actually steers that output through the
+        chip-revision table was not traced to a conclusion this session -- this is a real, evidenced increase
+        in how indirect and chip-revision-dependent the path is, not a simple relabelling of what was already
+        known, and it is a far more plausible explanation for a hold-the-button test producing no visible
+        effect than a wrong single button/pin identification would be.
+      proof_needed: "trace 0x5270 (the chip-revision-keyed dispatch table) and its three output pointers fully,
+        to establish whether and how the button sentinel at [sp+4] actually reaches the final device-index
+        r4 -- a non-trivial undertaking (a 15-entry jump table keyed on silicon revision) that this session
+        judged disproportionate to attempt in full without a clearer sign it would change the outcome"
   unresolved:
     - id: IBSS90-RST-Q2
       text: >
