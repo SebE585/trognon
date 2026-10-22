@@ -47,6 +47,7 @@ Il dirait quels blocs sont cadencés avant que rien ne soit démarré.
 
 <div class="journey-choices" markdown>
 
+- [Rejouer une correction : la fausse porte<span class="journey-hint">Comment une mauvaise étiquette sur une porte d'horloge a été repérée</span>](fg-intro.md)
 - [Voir une autre question ouverte<span class="journey-hint">Retour à la liste des questions ouvertes</span>](frontier.md)
 - [Ce que dit le noyau : AppleARM7M (le Grimoire).](grimoire-applearm7m.md)
 - [Ce que dit le noyau : EmbeddedIOP (le Grimoire).](grimoire-embeddediop.md)

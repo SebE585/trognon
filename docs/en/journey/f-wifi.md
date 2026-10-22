@@ -46,6 +46,7 @@ blocks are clocked before anything is started.
 
 <div class="journey-choices" markdown>
 
+- [Replay a correction: the false gate<span class="journey-hint">How a wrong label on a clock gate was caught</span>](fg-intro.md)
 - [Look at another open question<span class="journey-hint">Back to the edge of what we know</span>](frontier.md)
 - [The kernel's side: AppleARM7M (the Grimoire).](grimoire-applearm7m.md)
 - [The kernel's side: EmbeddedIOP (the Grimoire).](grimoire-embeddediop.md)
