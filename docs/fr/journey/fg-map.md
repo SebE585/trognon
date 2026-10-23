@@ -15,22 +15,27 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # Suivre la carte
 
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/sheets.svg){ .journey-visual }
+<figcaption>Deux feuilles, un seul numéro. Rien ne dit encore qu'elles comptent de la même façon.</figcaption>
+</figure>
+
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 
 Le device tree est la description que le téléphone donne de lui-même. S'il dit que la porte du coprocesseur est `0x27`,
-alors `0x27` est un endroit sensé où regarder. C'est pourquoi le lien paraissait plausible.
+alors `0x27` est un endroit raisonnable où regarder. C'est pourquoi le lien paraissait plausible.
 
-Puis la deuxième feuille : le tableau de portes du téléphone, lu à `0x27`, a renvoyé `0xF`. Côte à côte, les deux
-semblent dire la même chose : la porte du coprocesseur est allumée.
+Puis la feuille 2 : la lecture du tableau de portes à `0x27` a renvoyé `0xF`. Côte à côte, les deux feuilles semblent dire
+la même chose : la porte du coprocesseur est allumée.
 
-Un détail se manque facilement. Les deux feuilles utilisent le même numéro. Rien, pour l'instant, ne dit qu'elles
+Un détail passe facilement inaperçu. Les deux feuilles utilisent le même numéro. Rien, pour l'instant, ne dit qu'elles
 comptent les portes de la même façon.
 
 ## Et maintenant ?
 
 <div class="journey-choices" markdown>
 
-- [Tirer une conclusion<span class="journey-hint">Dire ce que vous pensez que cela montre</span>](fg-conclude.md)
+- [Tirer une conclusion<span class="journey-hint">Formuler ce que vous pensez que cela montre</span>](fg-conclude.md)
 
 </div>
 

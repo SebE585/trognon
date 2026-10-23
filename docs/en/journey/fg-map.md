@@ -15,13 +15,18 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # Following the map
 
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/sheets.svg){ .journey-visual }
+<figcaption>Two sheets, one number. Nothing yet says they count the same way.</figcaption>
+</figure>
+
 How sure we are: <span class="tag tag-device">DEVICE</span>
 
 The device tree is the phone's own description of itself. If it says the coprocessor's gate is `0x27`, then `0x27` is
-a sensible place to look. That is why the link looked plausible.
+a reasonable place to look. That is why the link looked plausible.
 
-Then the second sheet: the phone's gate array, read at `0x27`, returned `0xF`. Put side by side, the two seem to say
-the same thing: the gate of the coprocessor is on.
+Then sheet 2: reading the gate array at `0x27` returned `0xF`. Side by side, the two sheets seem to say the same thing:
+the gate of the coprocessor is on.
 
 One detail is easy to miss. Both sheets use the same number. Nothing, so far, says they count gates the same way.
 
@@ -29,7 +34,7 @@ One detail is easy to miss. Both sheets use the same number. Nothing, so far, sa
 
 <div class="journey-choices" markdown>
 
-- [Draw a conclusion<span class="journey-hint">Say what you think this shows</span>](fg-conclude.md)
+- [Draw a conclusion<span class="journey-hint">State what you think this shows</span>](fg-conclude.md)
 
 </div>
 

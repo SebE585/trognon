@@ -259,36 +259,39 @@ nodes:
     kind: step
     title: "The False Gate"
     tag: null
+    visual: switches
     text: |
-      Imagine a row of switches with unreliable labels. Inside the phone, a *clock gate* is one of them: it lets the timing
+      Imagine a row of switches with unreliable labels. Inside the phone, a *clock gate* is such a switch: it lets the timing
       signal reach a block of the phone, or cuts it off. Finding a switch turned on is not enough: we still need to establish
       which block it belongs to.
 
-      This replays a real correction, made on 16 October 2026. The question: was the clock of the coprocessor behind the
-      Wi-Fi, the one the [Whisperer](../bestiary.md#the-whisperer) sleeps behind, already running? Two sheets carry the same
-      number, `0x27`.
+      This replays a real correction, made on 16 October 2026, with a guide who has been wrong before, and says so. The
+      question: was the clock of the Wi-Fi coprocessor (where the [Whisperer](../bestiary.md#the-whisperer) sleeps) already
+      running? Two sheets carry the same number, `0x27`.
 
-      - **Sheet 1, the device tree.** A description of the phone's blocks, carried by the phone's own software. Its entry
-        for the coprocessor lists a clock-gate value of `0x27`.
-      - **Sheet 2, a capture.** Our own code read the phone's gate array at position `0x27` and got `0xF`, which we read as
-        "on". This was observed on the phone.
+      - **Sheet 1, the map: the device tree.** A description of the phone's blocks, carried by the phone's own software. Its
+        entry for the coprocessor lists a clock-gate value of `0x27`.
+      - **Sheet 2, the trace: a capture.** Our own code read the phone's list of gates (the gate array) at position `0x27` and
+        got `0xF`, which we read as "on". This was observed on the phone.
 
-      Someone linked the two: *"coprocessor's clock already on?"* The question mark is small. The rest is very convincing.
+      Someone linked the two: *"coprocessor's clock already on?"* The question mark is small; everything else about it sounds
+      certain.
     choices:
       - { text: "Start from the map", hint: "Sheet 1 first: what the device tree says", to: fg-map }
       - { text: "Start from the trace", hint: "Sheet 2 first: what the phone answered", to: fg-trace }
-      - { text: "Back to the Wi-Fi question", hint: "Return to the edge of what we know", to: f-wifi }
+      - { text: "Back to the Wi-Fi question", hint: "Return to the Wi-Fi page", to: f-wifi }
 
   - id: fg-map
     kind: step
     title: "Following the map"
     tag: DEVICE
+    visual: sheets
     text: |
       The device tree is the phone's own description of itself. If it says the coprocessor's gate is `0x27`, then `0x27` is
-      a sensible place to look. That is why the link looked plausible.
+      a reasonable place to look. That is why the link looked plausible.
 
-      Then the second sheet: the phone's gate array, read at `0x27`, returned `0xF`. Put side by side, the two seem to say
-      the same thing: the gate of the coprocessor is on.
+      Then sheet 2: reading the gate array at `0x27` returned `0xF`. Side by side, the two sheets seem to say the same thing:
+      the gate of the coprocessor is on.
 
       One detail is easy to miss. Both sheets use the same number. Nothing, so far, says they count gates the same way.
     evidence: [20261016T094945Z-trace_iop_clkgate]
@@ -296,7 +299,7 @@ nodes:
       - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "gate27=0000000F" }
       - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "GATE+27  0000000F" }
     choices:
-      - { text: "Draw a conclusion", hint: "Say what you think this shows", to: fg-conclude }
+      - { text: "Draw a conclusion", hint: "State what you think this shows", to: fg-conclude }
 
   - id: fg-trace
     kind: step
@@ -309,25 +312,25 @@ nodes:
 
       What it shows: that gate reads as on. What it does not show: which block that gate feeds. A reading carries no label.
 
-      Now the device tree: its entry for the coprocessor lists `0x27`. Put side by side, the two seem to line up. Both
-      sheets use the same number. Nothing, so far, says they count gates the same way.
+      Now sheet 1, the device tree: its entry for the coprocessor lists `0x27`. Side by side, the two sheets seem to line up.
+      Both use the same number. Nothing, so far, says they count gates the same way.
     evidence: [20261016T094945Z-trace_iop_clkgate]
     proof:
       - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "gate27=0000000F" }
       - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "GATE+27  0000000F" }
     choices:
-      - { text: "Draw a conclusion", hint: "Say what you think this shows", to: fg-conclude }
+      - { text: "Draw a conclusion", hint: "State what you think this shows", to: fg-conclude }
 
   - id: fg-conclude
     kind: step
     title: "What do you conclude?"
     tag: null
     text: |
-      Decide which sheet your answer rests on before you choose. This page cannot ask you; the next one tells you what each
-      answer rests on.
+      Decide which sheet your answer rests on before you choose. This page cannot check it; the next one shows what each
+      choice rests on.
     choices:
       - { text: "The coprocessor's clock is on", hint: "Both sheets say 0x27", to: fg-adopted }
-      - { text: "A gate is on; its link to the coprocessor is not established", hint: "A shared number is not a proof", to: fg-doubt }
+      - { text: "A gate is on, but we cannot say whose it is", hint: "Say only what the sheets show", to: fg-doubt }
       - { text: "The reading itself is wrong", hint: "Doubt the capture", to: fg-measure }
 
   - id: fg-adopted
@@ -335,21 +338,21 @@ nodes:
     title: "You linked the two sheets"
     tag: null
     text: |
-      You linked the two sheets. That is exactly what was concluded on the day, and it was plausible: the rest of the
-      story is what happens to a plausible link. It rests on one assumption, that the same number means the same gate on
-      both sheets, and nothing has shown it yet.
+      You linked the two sheets. That is what was concluded at the time, and it was plausible; what follows shows what becomes
+      of a link that is only plausible. It rests on one assumption, that the same number means the same gate on both sheets,
+      and nothing has shown it yet.
 
-      Time to undo the link, or confirm it. For that, look at what the phone's own code does with gate `0x27`.
+      Let us test the link. For that, look at what the phone's own code does with gate `0x27`.
     choices:
       - { text: "Open the routine", hint: "What the boot stage does with gate 0x27", to: fg-reveal }
 
   - id: fg-doubt
     kind: step
-    title: "You left the line dotted"
+    title: "You left the link open"
     tag: null
     text: |
-      You left the line dotted. Before the decisive clue, that is the right answer: a shared number is a lead, not a link.
-      "Not enough to say" is an answer here, and a useful one.
+      You left the link open. Without further evidence, that is the right answer: a shared number is a lead, not a link.
+      "Not enough to conclude" is an answer here, and a useful one.
 
       Now see what settles it. Look at what the phone's own code does with gate `0x27`.
     choices:
@@ -360,11 +363,12 @@ nodes:
     title: "You doubted the capture"
     tag: null
     text: |
-      The capture is not contradicted: the code read `0xF`, and the evidence folder holds the reading. What may be wrong is
-      not the reading but what we made it say.
+      Nothing on these pages contradicts the capture: the code read `0xF`, and the evidence folder, linked below, holds the
+      reading. The doubt is fair. What these pages can test is the other side: what we made the reading say.
 
       So the question moves from the capture to the meaning of the number. Look at what the phone's own code does with gate
       `0x27`.
+    evidence: [20261016T094945Z-trace_iop_clkgate]
     choices:
       - { text: "Open the routine", hint: "What the boot stage does with gate 0x27", to: fg-reveal }
 
@@ -373,15 +377,17 @@ nodes:
     title: "What the boot stage does with gate 0x27"
     tag: SOURCE
     text: |
-      The phone's boot stage (the iBSS) contains a routine that resets the flash storage controller. It takes a controller
-      number, 0 or 1, and acts on gate `0x26` plus that number. For any other value it logs an error that names the flash
-      controller. OpeniBoot, an independent open-source project, names the same two gates: `H2FMI0` for `0x26`, `H2FMI1` for
-      `0x27`.
+      The phone's boot stage (the iBSS, an early start-up program) contains a routine that resets the flash storage
+      controller (the block that reads and writes the phone's storage). It takes a controller number, 0 or 1, and acts on gate
+      `0x26 + n`, where n is that number. For any other value it logs an error that names the flash controller. OpeniBoot, an
+      open-source project that documents this hardware, names the same two gates: `H2FMI0` for `0x26`, `H2FMI1` for `0x27`.
 
-      So, on the physical gate array, gate `0x27` belongs to the **NAND flash controller 1**.
+      On these two sources, gate `0x27` of the physical gate array (the real hardware numbering, as opposed to the device
+      tree's) is the **NAND flash controller 1**'s.
 
-      Two readings agree: our disassembly of the routine, and OpeniBoot's names. Neither was seen running on the phone for
-      this purpose. The note below is the catalog entry.
+      Two sources agree: our disassembly of the routine, and OpeniBoot's names. Neither was seen running on the phone for
+      this purpose. The note below quotes only the start of the catalog entry; the full entry, linked from it, follows the
+      caller and the logged error.
     notebook: [IBSS-CLK-006]
     refs:
       - { label: "The iBSS clock initialisation", page: research/2026-10-16-touch-n88-preconditions.md#the-ibss-clock-initialisation-static-2026-10-16 }
@@ -392,20 +398,21 @@ nodes:
     kind: step
     title: "The reading stands, the label does not"
     tag: SOURCE
+    visual: struck
     text: |
       The guide lays the two sheets side by side.
 
       *"Same number. We had not checked that it was the same numbering."*
 
-      On the physical gate array, the reading stands: gate `0x27`, value `0xF`. The attribution does not: that gate feeds the
-      NAND controller, not the coprocessor. The guide strikes out "coprocessor" in the reading of the capture, not in the
-      device tree. The reading stays; the attribution goes.
+      The reading stands: gate `0x27` of the physical gate array, value `0xF`, read as on. The label does not: on both
+      sources, that gate is the NAND controller's, and nothing here shows that it also feeds the coprocessor. The guide strikes
+      out "coprocessor" on the capture's reading only, not on the device tree.
 
       The guide does not correct the phone. The guide corrects what we concluded from its answer.
 
       *"And the `0x27` on the other sheet?"* It is still there. Whether the device tree uses another numbering that happens
-      to give `0x27`, or contains an error, is not shown. It does not make the Wi-Fi work either: the clock state of the
-      coprocessor is unknown.
+      to give `0x27`, or contains an error, is not shown. Either way, the Wi-Fi does not work yet, and the clock state of the
+      coprocessor remains unknown.
     refs:
       - { label: "Hardware map: Wi-Fi and SDIO", page: en/03-hardware-map.md#wi-fi-and-sdio }
     choices:
@@ -413,23 +420,24 @@ nodes:
 
   - id: fg-after
     kind: step
-    title: "A passage condemned, and why"
+    title: "A withdrawn label, and why we kept it"
     tag: null
     text: |
-      The withdrawn sentence is still on the [Wi-Fi page](f-wifi.md), struck out and followed by its reason. The
-      [Bestiary](../bestiary.md) keeps it as a ruled-out lead on the Whisperer's clock front. A closed lead can be reopened
-      by anyone who finds the old map, which is why the correction stays visible, next to what it corrected.
+      The withdrawn sentence is still on the [Wi-Fi page](f-wifi.md), struck out and followed by its reason: *"Gate 0x27 read
+      0xF, so the coprocessor's clock was already on."* The [Bestiary](../bestiary.md) keeps it as a ruled-out lead on the
+      Whisperer's clock front. Anyone who finds the old map could reopen a closed lead, which is why the correction stays
+      visible, next to what it corrected.
 
-      The Whisperer still keeps its language: which physical gate feeds the coprocessor is not known. Someone after you may
+      The Whisperer still keeps its secret: which physical gate feeds the coprocessor is not known. Someone after you may
       find it, or may show that the question was framed wrongly.
 
       If you notice two sheets that disagree, or a page that says more than its proof, [suggest a correction](https://github.com/SebE585/trognon/issues/new?template=correction.yml). A correction is as welcome as a
-      discovery. Scout of an inconsistency, archivist of a source, decipherer of a clue, witness of an observation,
-      cartographer of a correction: which trace would you leave?
+      discovery. Five ways to take part: scout (spots an inconsistency), archivist (checks a source), decipherer (reads a
+      clue), witness (repeats an observation), cartographer (corrects a map). Which trace would you leave?
     refs:
       - { label: "Missions: how to take one", page: en/missions.md }
     choices:
-      - { text: "Back to the Wi-Fi question", hint: "Return to the edge of what we know", to: f-wifi }
+      - { text: "Back to the Wi-Fi question", hint: "Return to the Wi-Fi page", to: f-wifi }
       - { text: "Look at another open question", hint: "Back to the edge of what we know", to: frontier }
 
   - id: grimoire

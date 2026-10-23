@@ -15,15 +15,15 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # Que concluez-vous ?
 
-Décidez sur quelle feuille repose votre réponse avant de choisir. Cette page ne peut pas vous le demander ; la
-suivante vous dit sur quoi repose chaque réponse.
+Décidez sur quelle feuille repose votre réponse avant de choisir. Cette page ne peut pas le vérifier ; la suivante
+indique sur quoi repose chaque choix.
 
 ## Et maintenant ?
 
 <div class="journey-choices" markdown>
 
 - [L'horloge du coprocesseur est active<span class="journey-hint">Les deux feuilles disent 0x27</span>](fg-adopted.md)
-- [Une porte est active ; son lien avec le coprocesseur n'est pas établi<span class="journey-hint">Un numéro commun n'est pas une preuve</span>](fg-doubt.md)
+- [Une porte est allumée, mais on ne peut pas dire à qui elle est<span class="journey-hint">Dire seulement ce que montrent les feuilles</span>](fg-doubt.md)
 - [La lecture elle-même est fausse<span class="journey-hint">Douter de la capture</span>](fg-measure.md)
 
 </div>

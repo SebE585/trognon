@@ -15,21 +15,26 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # The reading stands, the label does not
 
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/struck.svg){ .journey-visual }
+<figcaption>The reading stays. The label “coprocessor” is struck out.</figcaption>
+</figure>
+
 How sure we are: <span class="tag tag-source">SOURCE</span>
 
 The guide lays the two sheets side by side.
 
 *"Same number. We had not checked that it was the same numbering."*
 
-On the physical gate array, the reading stands: gate `0x27`, value `0xF`. The attribution does not: that gate feeds the
-NAND controller, not the coprocessor. The guide strikes out "coprocessor" in the reading of the capture, not in the
-device tree. The reading stays; the attribution goes.
+The reading stands: gate `0x27` of the physical gate array, value `0xF`, read as on. The label does not: on both
+sources, that gate is the NAND controller's, and nothing here shows that it also feeds the coprocessor. The guide strikes
+out "coprocessor" on the capture's reading only, not on the device tree.
 
 The guide does not correct the phone. The guide corrects what we concluded from its answer.
 
 *"And the `0x27` on the other sheet?"* It is still there. Whether the device tree uses another numbering that happens
-to give `0x27`, or contains an error, is not shown. It does not make the Wi-Fi work either: the clock state of the
-coprocessor is unknown.
+to give `0x27`, or contains an error, is not shown. Either way, the Wi-Fi does not work yet, and the clock state of the
+coprocessor remains unknown.
 
 ## Where to next?
 

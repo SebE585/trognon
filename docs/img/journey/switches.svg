@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 224" role="img" font-family="system-ui, sans-serif" font-size="11">
+<rect x="28" y="96" width="44" height="22" rx="11" fill="#f8f8f4" stroke="#202522" stroke-width="2"/>
+<circle cx="39" cy="107" r="8" fill="#ffffff" stroke="#202522" stroke-width="2"/>
+<text x="50" y="140" text-anchor="middle" fill="#202522">?</text>
+<text x="50" y="86" text-anchor="middle" fill="#202522" font-weight="bold">OFF</text>
+<rect x="90" y="96" width="44" height="22" rx="11" fill="#f8f8f4" stroke="#202522" stroke-width="2"/>
+<circle cx="101" cy="107" r="8" fill="#ffffff" stroke="#202522" stroke-width="2"/>
+<text x="112" y="140" text-anchor="middle" fill="#202522">?</text>
+<text x="112" y="86" text-anchor="middle" fill="#202522" font-weight="bold">OFF</text>
+<rect x="152" y="96" width="44" height="22" rx="11" fill="#f8f8f4" stroke="#202522" stroke-width="2"/>
+<circle cx="163" cy="107" r="8" fill="#ffffff" stroke="#202522" stroke-width="2"/>
+<text x="174" y="140" text-anchor="middle" fill="#202522">?</text>
+<text x="174" y="86" text-anchor="middle" fill="#202522" font-weight="bold">OFF</text>
+<rect x="214" y="96" width="44" height="22" rx="11" fill="#356548" stroke="#202522" stroke-width="2"/>
+<circle cx="247" cy="107" r="8" fill="#ffffff" stroke="#202522" stroke-width="2"/>
+<text x="236" y="140" text-anchor="middle" fill="#202522">0x27</text>
+<text x="236" y="86" text-anchor="middle" fill="#202522" font-weight="bold">ON</text>
+<rect x="276" y="96" width="44" height="22" rx="11" fill="#f8f8f4" stroke="#202522" stroke-width="2"/>
+<circle cx="287" cy="107" r="8" fill="#ffffff" stroke="#202522" stroke-width="2"/>
+<text x="298" y="140" text-anchor="middle" fill="#202522">?</text>
+<text x="298" y="86" text-anchor="middle" fill="#202522" font-weight="bold">OFF</text>
+<rect x="338" y="96" width="44" height="22" rx="11" fill="#f8f8f4" stroke="#202522" stroke-width="2"/>
+<circle cx="349" cy="107" r="8" fill="#ffffff" stroke="#202522" stroke-width="2"/>
+<text x="360" y="140" text-anchor="middle" fill="#202522">?</text>
+<text x="360" y="86" text-anchor="middle" fill="#202522" font-weight="bold">OFF</text>
+</svg>

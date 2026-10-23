@@ -265,46 +265,48 @@ nodes:
     kind: step
     title: "La fausse porte"
     tag: null
+    visual: switches
     text: |
-      Imaginez une rangée d'interrupteurs aux étiquettes incertaines. Dans le téléphone, une *porte d'horloge* en est un : elle
-      laisse passer ou coupe le signal qui donne le rythme à un bloc. Trouver un interrupteur activé ne suffit pas : il faut
-      encore établir à quel bloc il correspond.
+      Imaginez une rangée d'interrupteurs aux étiquettes peu fiables. Dans le téléphone, une *porte d'horloge* est un
+      interrupteur de ce genre : elle laisse passer ou coupe le signal qui donne le rythme à un bloc. Trouver un interrupteur
+      activé ne suffit pas : il faut encore établir à quel bloc il correspond.
 
-      Ceci rejoue une vraie correction, faite le 16 octobre 2026. La question : l'horloge du coprocesseur placé derrière le
-      Wi-Fi, celui derrière lequel dort [le Chuchoteur](../bestiaire.md#le-chuchoteur), tournait-elle déjà ? Deux feuilles
-      portent le même numéro, `0x27`.
+      Ceci rejoue une vraie correction, faite le 16 octobre 2026, avec un guide qui s'est déjà trompé, et le dit. La question :
+      l'horloge du coprocesseur du Wi-Fi (là où dort [le Chuchoteur](../bestiaire.md#le-chuchoteur)) tournait-elle déjà ? Deux
+      feuilles portent le même numéro, `0x27`.
 
-      - **Feuille 1, le device tree.** Une description des blocs du téléphone, portée par son propre logiciel. Son entrée pour
-        le coprocesseur indique une valeur de porte d'horloge de `0x27`.
-      - **Feuille 2, une capture.** Notre propre code a lu le tableau de portes du téléphone à la position `0x27` et obtenu
-        `0xF`, que nous lisons comme « allumée ». Observé sur le téléphone.
+      - **Feuille 1, la carte : le device tree.** Une description des blocs du téléphone, portée par son propre logiciel. Son
+        entrée pour le coprocesseur indique une valeur de porte d'horloge de `0x27`.
+      - **Feuille 2, la trace : une capture.** Notre propre code a lu la liste des portes du téléphone (le tableau de portes) à
+        la position `0x27` et obtenu `0xF`, que nous lisons comme « allumée ». Observé sur le téléphone.
 
-      Quelqu'un a relié les deux : *« horloge du coprocesseur déjà active ? »* Le point d'interrogation est petit. Le reste est
-      très convaincant.
+      Quelqu'un a relié les deux : *« horloge du coprocesseur déjà active ? »* Le point d'interrogation est discret ; tout le
+      reste sonne comme une certitude.
     choices:
       - { text: "Partir de la carte", hint: "La feuille 1 d'abord : ce que dit le device tree", to: fg-map }
       - { text: "Partir de la trace", hint: "La feuille 2 d'abord : ce que le téléphone a répondu", to: fg-trace }
-      - { text: "Retour à la question du Wi-Fi", hint: "Revenir à la page de cette question ouverte", to: f-wifi }
+      - { text: "Retour à la question du Wi-Fi", hint: "Revenir à la page du Wi-Fi", to: f-wifi }
 
   - id: fg-map
     kind: step
     title: "Suivre la carte"
     tag: DEVICE
+    visual: sheets
     text: |
       Le device tree est la description que le téléphone donne de lui-même. S'il dit que la porte du coprocesseur est `0x27`,
-      alors `0x27` est un endroit sensé où regarder. C'est pourquoi le lien paraissait plausible.
+      alors `0x27` est un endroit raisonnable où regarder. C'est pourquoi le lien paraissait plausible.
 
-      Puis la deuxième feuille : le tableau de portes du téléphone, lu à `0x27`, a renvoyé `0xF`. Côte à côte, les deux
-      semblent dire la même chose : la porte du coprocesseur est allumée.
+      Puis la feuille 2 : la lecture du tableau de portes à `0x27` a renvoyé `0xF`. Côte à côte, les deux feuilles semblent dire
+      la même chose : la porte du coprocesseur est allumée.
 
-      Un détail se manque facilement. Les deux feuilles utilisent le même numéro. Rien, pour l'instant, ne dit qu'elles
+      Un détail passe facilement inaperçu. Les deux feuilles utilisent le même numéro. Rien, pour l'instant, ne dit qu'elles
       comptent les portes de la même façon.
     evidence: [20261016T094945Z-trace_iop_clkgate]
     proof:
       - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "gate27=0000000F" }
       - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "GATE+27  0000000F" }
     choices:
-      - { text: "Tirer une conclusion", hint: "Dire ce que vous pensez que cela montre", to: fg-conclude }
+      - { text: "Tirer une conclusion", hint: "Formuler ce que vous pensez que cela montre", to: fg-conclude }
 
   - id: fg-trace
     kind: step
@@ -312,32 +314,32 @@ nodes:
     title: "Suivre la trace"
     tag: DEVICE
     text: |
-      Partons de ce que le téléphone a répondu. Notre code a lu le tableau de portes à la position `0x27` et la console
+      Commençons par ce que le téléphone a répondu. Notre code a lu le tableau de portes à la position `0x27` et la console
       affiche `GATE+27  0000000F`. Cette lecture est réelle : le dossier de preuve la contient.
 
       Ce qu'elle montre : cette porte se lit allumée. Ce qu'elle ne montre pas : quel bloc cette porte alimente. Une lecture ne
       porte pas d'étiquette.
 
-      Voici maintenant le device tree : son entrée pour le coprocesseur indique `0x27`. Côte à côte, les deux semblent
-      s'accorder. Les deux feuilles utilisent le même numéro. Rien, pour l'instant, ne dit qu'elles comptent les portes de la
-      même façon.
+      Rapprochons maintenant la feuille 1, le device tree : son entrée pour le coprocesseur indique `0x27`. Côte à côte, les
+      deux feuilles semblent s'accorder. Toutes deux utilisent le même numéro. Rien, pour l'instant, ne dit qu'elles comptent
+      les portes de la même façon.
     evidence: [20261016T094945Z-trace_iop_clkgate]
     proof:
       - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "gate27=0000000F" }
       - { bundle: 20261016T094945Z-trace_iop_clkgate, line: "GATE+27  0000000F" }
     choices:
-      - { text: "Tirer une conclusion", hint: "Dire ce que vous pensez que cela montre", to: fg-conclude }
+      - { text: "Tirer une conclusion", hint: "Formuler ce que vous pensez que cela montre", to: fg-conclude }
 
   - id: fg-conclude
     kind: step
     title: "Que concluez-vous ?"
     tag: null
     text: |
-      Décidez sur quelle feuille repose votre réponse avant de choisir. Cette page ne peut pas vous le demander ; la
-      suivante vous dit sur quoi repose chaque réponse.
+      Décidez sur quelle feuille repose votre réponse avant de choisir. Cette page ne peut pas le vérifier ; la suivante
+      indique sur quoi repose chaque choix.
     choices:
       - { text: "L'horloge du coprocesseur est active", hint: "Les deux feuilles disent 0x27", to: fg-adopted }
-      - { text: "Une porte est active ; son lien avec le coprocesseur n'est pas établi", hint: "Un numéro commun n'est pas une preuve", to: fg-doubt }
+      - { text: "Une porte est allumée, mais on ne peut pas dire à qui elle est", hint: "Dire seulement ce que montrent les feuilles", to: fg-doubt }
       - { text: "La lecture elle-même est fausse", hint: "Douter de la capture", to: fg-measure }
 
   - id: fg-adopted
@@ -345,21 +347,20 @@ nodes:
     title: "Vous avez relié les deux feuilles"
     tag: null
     text: |
-      Vous avez relié les deux feuilles. C'est exactement ce qui a été conclu ce jour-là, et c'était plausible : la suite de
-      l'histoire, c'est ce qui arrive à un lien plausible. Il repose sur une hypothèse, que le même numéro désigne la même
-      porte sur les deux feuilles, et rien ne l'a encore montré.
+      Vous avez relié les deux feuilles. C'est ce qui a été conclu à l'époque, et c'était plausible ; la suite montre ce qu'il
+      advient d'un lien seulement plausible. Il repose sur une hypothèse, que le même numéro désigne la même porte sur les deux
+      feuilles, et rien ne l'a encore montré.
 
-      Il est temps de défaire le lien, ou de le confirmer. Pour cela, regardez ce que le code du téléphone fait de la porte
-      `0x27`.
+      Mettons ce lien à l'épreuve. Pour cela, regardez ce que le code du téléphone fait de la porte `0x27`.
     choices:
       - { text: "Ouvrir la routine", hint: "Ce que l'étape de démarrage fait de la porte 0x27", to: fg-reveal }
 
   - id: fg-doubt
     kind: step
-    title: "Vous avez laissé le trait en pointillés"
+    title: "Vous avez laissé le lien en suspens"
     tag: null
     text: |
-      Vous avez laissé le trait en pointillés. Avant l'indice décisif, c'est la bonne réponse : un numéro commun est une piste,
+      Vous avez laissé le lien en suspens. Sans preuve supplémentaire, c'est la bonne réponse : un numéro commun est une piste,
       pas un lien. « Pas assez pour conclure » est une réponse ici, et une réponse utile.
 
       Voyons maintenant ce qui tranche. Regardez ce que le code du téléphone fait de la porte `0x27`.
@@ -371,10 +372,12 @@ nodes:
     title: "Vous avez douté de la capture"
     tag: null
     text: |
-      La capture n'est pas démentie : le code a lu `0xF`, et le dossier de preuve contient la lecture. Ce qui peut être faux,
-      ce n'est pas la lecture mais ce que nous lui avons fait dire.
+      Rien sur ces pages ne contredit la capture : le code a lu `0xF`, et le dossier de preuve, lié plus bas, contient la
+      lecture. Le doute est légitime. Ce que ces pages peuvent mettre à l'épreuve, c'est l'autre côté : ce que nous avons fait
+      dire à la lecture.
 
       La question passe donc de la capture au sens du numéro. Regardez ce que le code du téléphone fait de la porte `0x27`.
+    evidence: [20261016T094945Z-trace_iop_clkgate]
     choices:
       - { text: "Ouvrir la routine", hint: "Ce que l'étape de démarrage fait de la porte 0x27", to: fg-reveal }
 
@@ -383,15 +386,18 @@ nodes:
     title: "Ce que l'étape de démarrage fait de la porte 0x27"
     tag: SOURCE
     text: |
-      L'étape de démarrage du téléphone (l'iBSS) contient une routine qui remet à zéro le contrôleur de la mémoire de stockage.
-      Elle prend un numéro de contrôleur, 0 ou 1, et agit sur la porte `0x26` plus ce numéro. Pour toute autre valeur, elle
-      journalise une erreur qui nomme le contrôleur flash. OpeniBoot, un projet libre indépendant, nomme les deux mêmes portes :
+      L'étape de démarrage du téléphone (l'iBSS, un programme de lancement précoce) contient une routine qui remet à zéro le
+      contrôleur de la mémoire de stockage (le bloc qui lit et écrit le stockage du téléphone). Elle prend un numéro de
+      contrôleur, 0 ou 1, et agit sur la porte `0x26 + n`, où n est ce numéro. Pour toute autre valeur, elle journalise une
+      erreur qui nomme le contrôleur flash. OpeniBoot, un projet libre qui documente ce matériel, nomme les deux mêmes portes :
       `H2FMI0` pour `0x26`, `H2FMI1` pour `0x27`.
 
-      Donc, sur le tableau physique de portes, la porte `0x27` appartient au **contrôleur flash NAND 1**.
+      D'après ces deux sources, la porte `0x27` du tableau physique de portes (la vraie numérotation matérielle, par opposition
+      à celle du device tree) est celle du **contrôleur flash NAND 1**.
 
-      Deux lectures concordent : notre désassemblage de la routine, et les noms d'OpeniBoot. Aucune n'a été vue fonctionner
-      sur le téléphone à cet effet. La note ci-dessous est la fiche du catalogue.
+      Deux sources concordent : notre désassemblage de la routine, et les noms d'OpeniBoot. Aucune des deux n'a été vérifiée
+      sur le téléphone. La note ci-dessous (en anglais) ne cite que le début de la fiche du catalogue ; la fiche complète, liée
+      depuis elle, suit l'appelant et l'erreur journalisée.
     notebook: [IBSS-CLK-006]
     refs:
       - { label: "L'initialisation d'horloge de l'iBSS (en anglais)", page: research/2026-10-16-touch-n88-preconditions.md#the-ibss-clock-initialisation-static-2026-10-16 }
@@ -402,20 +408,21 @@ nodes:
     kind: step
     title: "La lecture tient, l'étiquette non"
     tag: SOURCE
+    visual: struck
     text: |
       Le guide pose les deux feuilles côte à côte.
 
       *« Même numéro. Nous n'avions pas vérifié que c'était la même numérotation. »*
 
-      Sur le tableau physique de portes, la lecture tient : porte `0x27`, valeur `0xF`. L'attribution ne tient pas : cette porte
-      alimente le contrôleur NAND, pas le coprocesseur. Le guide barre « coprocesseur » dans la lecture de la capture, pas dans
-      le device tree. La lecture reste ; l'attribution s'en va.
+      La lecture tient : porte `0x27` du tableau physique de portes, valeur `0xF`, lue comme allumée. L'étiquette ne tient pas :
+      d'après les deux sources, cette porte est celle du contrôleur NAND, et rien ici ne montre qu'elle alimente aussi le
+      coprocesseur. Le guide barre « coprocesseur » sur la lecture de la capture seulement, pas sur le device tree.
 
       Le guide ne corrige pas le téléphone. Le guide corrige ce que nous avions conclu de sa réponse.
 
-      *« Et le `0x27` de l'autre feuille ? »* Il est toujours là. Savoir si le device tree utilise une autre numérotation qui
-      donne `0x27` par coïncidence, ou s'il contient une erreur, n'est pas démontré. Cela ne fait pas non plus fonctionner le
-      Wi-Fi : l'état de l'horloge du coprocesseur est inconnu.
+      *« Et le `0x27` de l'autre feuille ? »* Il est toujours là. On ignore si le device tree utilise une autre numérotation qui
+      donne `0x27` par coïncidence, ou s'il contient une erreur. Dans les deux cas, le Wi-Fi ne fonctionne pas encore, et l'état
+      de l'horloge du coprocesseur reste inconnu.
     refs:
       - { label: "Carte matérielle : Wi-Fi et SDIO", page: fr/03-hardware-map.md#wi-fi-et-sdio }
     choices:
@@ -423,25 +430,26 @@ nodes:
 
   - id: fg-after
     kind: step
-    title: "Un passage condamné, et pourquoi"
+    title: "Une étiquette retirée, et pourquoi on la garde"
     tag: null
     text: |
-      La phrase retirée est toujours sur la [page du Wi-Fi](f-wifi.md), barrée et suivie de sa raison. Le
-      [Bestiaire](../bestiaire.md) la garde comme piste écartée sur le front d'horloge du Chuchoteur. Une piste fermée peut
-      être rouverte par quiconque retrouve l'ancienne carte, c'est pourquoi la correction reste visible, à côté de ce qu'elle
-      corrigeait.
+      La phrase retirée est toujours sur la [page du Wi-Fi](f-wifi.md), barrée et suivie de sa raison : *« La porte 0x27 se
+      lisait 0xF, donc l'horloge du coprocesseur était déjà active. »* Le [Bestiaire](../bestiaire.md) la garde comme piste
+      écartée sur le front d'horloge du Chuchoteur. Quiconque retrouve l'ancienne carte pourrait rouvrir une piste fermée ;
+      c'est pourquoi la correction reste visible, à côté de ce qu'elle corrigeait.
 
-      Le Chuchoteur garde sa langue : quelle porte physique alimente le coprocesseur n'est pas connu. Quelqu'un après vous la
+      Le Chuchoteur garde son secret : quelle porte physique alimente le coprocesseur n'est pas connu. Quelqu'un après vous la
       trouvera peut-être, ou montrera que la question était mal posée.
 
       Si vous remarquez deux feuilles qui se contredisent, ou une page qui en dit plus que sa preuve,
       [proposez une correction](https://github.com/SebE585/trognon/issues/new?template=correction.yml) (formulaire en anglais).
-      Une correction est aussi bienvenue qu'une découverte. Éclaireur d'une incohérence, archiviste d'une source, déchiffreur
-      d'un indice, témoin d'une observation, cartographe d'une correction : quelle trace voulez-vous laisser ?
+      Une correction est aussi bienvenue qu'une découverte. Cinq façons de participer : éclaireur (repère une incohérence),
+      archiviste (vérifie une source), déchiffreur (lit un indice), témoin (reproduit une observation), cartographe (corrige une
+      carte). Quelle trace voulez-vous laisser ?
     refs:
       - { label: "Missions : comment en prendre une (en anglais)", page: en/missions.md }
     choices:
-      - { text: "Retour à la question du Wi-Fi", hint: "Revenir à la page de cette question ouverte", to: f-wifi }
+      - { text: "Retour à la question du Wi-Fi", hint: "Revenir à la page du Wi-Fi", to: f-wifi }
       - { text: "Voir une autre question ouverte", hint: "Retour à la liste des questions ouvertes", to: frontier }
 
   - id: grimoire

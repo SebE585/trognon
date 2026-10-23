@@ -17,15 +17,17 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 How sure we are: <span class="tag tag-source">SOURCE</span>
 
-The phone's boot stage (the iBSS) contains a routine that resets the flash storage controller. It takes a controller
-number, 0 or 1, and acts on gate `0x26` plus that number. For any other value it logs an error that names the flash
-controller. OpeniBoot, an independent open-source project, names the same two gates: `H2FMI0` for `0x26`, `H2FMI1` for
-`0x27`.
+The phone's boot stage (the iBSS, an early start-up program) contains a routine that resets the flash storage
+controller (the block that reads and writes the phone's storage). It takes a controller number, 0 or 1, and acts on gate
+`0x26 + n`, where n is that number. For any other value it logs an error that names the flash controller. OpeniBoot, an
+open-source project that documents this hardware, names the same two gates: `H2FMI0` for `0x26`, `H2FMI1` for `0x27`.
 
-So, on the physical gate array, gate `0x27` belongs to the **NAND flash controller 1**.
+On these two sources, gate `0x27` of the physical gate array (the real hardware numbering, as opposed to the device
+tree's) is the **NAND flash controller 1**'s.
 
-Two readings agree: our disassembly of the routine, and OpeniBoot's names. Neither was seen running on the phone for
-this purpose. The note below is the catalog entry.
+Two sources agree: our disassembly of the routine, and OpeniBoot's names. Neither was seen running on the phone for
+this purpose. The note below quotes only the start of the catalog entry; the full entry, linked from it, follows the
+caller and the logged error.
 
 ## Where to next?
 

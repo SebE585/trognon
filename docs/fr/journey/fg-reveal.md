@@ -17,15 +17,18 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 Degré de certitude : <span class="tag tag-source">SOURCE</span>
 
-L'étape de démarrage du téléphone (l'iBSS) contient une routine qui remet à zéro le contrôleur de la mémoire de stockage.
-Elle prend un numéro de contrôleur, 0 ou 1, et agit sur la porte `0x26` plus ce numéro. Pour toute autre valeur, elle
-journalise une erreur qui nomme le contrôleur flash. OpeniBoot, un projet libre indépendant, nomme les deux mêmes portes :
+L'étape de démarrage du téléphone (l'iBSS, un programme de lancement précoce) contient une routine qui remet à zéro le
+contrôleur de la mémoire de stockage (le bloc qui lit et écrit le stockage du téléphone). Elle prend un numéro de
+contrôleur, 0 ou 1, et agit sur la porte `0x26 + n`, où n est ce numéro. Pour toute autre valeur, elle journalise une
+erreur qui nomme le contrôleur flash. OpeniBoot, un projet libre qui documente ce matériel, nomme les deux mêmes portes :
 `H2FMI0` pour `0x26`, `H2FMI1` pour `0x27`.
 
-Donc, sur le tableau physique de portes, la porte `0x27` appartient au **contrôleur flash NAND 1**.
+D'après ces deux sources, la porte `0x27` du tableau physique de portes (la vraie numérotation matérielle, par opposition
+à celle du device tree) est celle du **contrôleur flash NAND 1**.
 
-Deux lectures concordent : notre désassemblage de la routine, et les noms d'OpeniBoot. Aucune n'a été vue fonctionner
-sur le téléphone à cet effet. La note ci-dessous est la fiche du catalogue.
+Deux sources concordent : notre désassemblage de la routine, et les noms d'OpeniBoot. Aucune des deux n'a été vérifiée
+sur le téléphone. La note ci-dessous (en anglais) ne cite que le début de la fiche du catalogue ; la fiche complète, liée
+depuis elle, suit l'appelant et l'erreur journalisée.
 
 ## Et maintenant ?
 

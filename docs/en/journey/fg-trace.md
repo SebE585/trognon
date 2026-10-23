@@ -27,14 +27,14 @@ Start from what the phone answered. Our code read the gate array at position `0x
 
 What it shows: that gate reads as on. What it does not show: which block that gate feeds. A reading carries no label.
 
-Now the device tree: its entry for the coprocessor lists `0x27`. Put side by side, the two seem to line up. Both
-sheets use the same number. Nothing, so far, says they count gates the same way.
+Now sheet 1, the device tree: its entry for the coprocessor lists `0x27`. Side by side, the two sheets seem to line up.
+Both use the same number. Nothing, so far, says they count gates the same way.
 
 ## Where to next?
 
 <div class="journey-choices" markdown>
 
-- [Draw a conclusion<span class="journey-hint">Say what you think this shows</span>](fg-conclude.md)
+- [Draw a conclusion<span class="journey-hint">State what you think this shows</span>](fg-conclude.md)
 
 </div>
 

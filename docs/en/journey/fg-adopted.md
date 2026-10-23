@@ -15,11 +15,11 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # You linked the two sheets
 
-You linked the two sheets. That is exactly what was concluded on the day, and it was plausible: the rest of the
-story is what happens to a plausible link. It rests on one assumption, that the same number means the same gate on
-both sheets, and nothing has shown it yet.
+You linked the two sheets. That is what was concluded at the time, and it was plausible; what follows shows what becomes
+of a link that is only plausible. It rests on one assumption, that the same number means the same gate on both sheets,
+and nothing has shown it yet.
 
-Time to undo the link, or confirm it. For that, look at what the phone's own code does with gate `0x27`.
+Let us test the link. For that, look at what the phone's own code does with gate `0x27`.
 
 ## Where to next?
 

@@ -15,20 +15,26 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # The False Gate
 
-Imagine a row of switches with unreliable labels. Inside the phone, a *clock gate* is one of them: it lets the timing
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/switches.svg){ .journey-visual }
+<figcaption>A row of switches with unreliable labels. One is on; whose is it?</figcaption>
+</figure>
+
+Imagine a row of switches with unreliable labels. Inside the phone, a *clock gate* is such a switch: it lets the timing
 signal reach a block of the phone, or cuts it off. Finding a switch turned on is not enough: we still need to establish
 which block it belongs to.
 
-This replays a real correction, made on 16 October 2026. The question: was the clock of the coprocessor behind the
-Wi-Fi, the one the [Whisperer](../bestiary.md#the-whisperer) sleeps behind, already running? Two sheets carry the same
-number, `0x27`.
+This replays a real correction, made on 16 October 2026, with a guide who has been wrong before, and says so. The
+question: was the clock of the Wi-Fi coprocessor (where the [Whisperer](../bestiary.md#the-whisperer) sleeps) already
+running? Two sheets carry the same number, `0x27`.
 
-- **Sheet 1, the device tree.** A description of the phone's blocks, carried by the phone's own software. Its entry
-  for the coprocessor lists a clock-gate value of `0x27`.
-- **Sheet 2, a capture.** Our own code read the phone's gate array at position `0x27` and got `0xF`, which we read as
-  "on". This was observed on the phone.
+- **Sheet 1, the map: the device tree.** A description of the phone's blocks, carried by the phone's own software. Its
+  entry for the coprocessor lists a clock-gate value of `0x27`.
+- **Sheet 2, the trace: a capture.** Our own code read the phone's list of gates (the gate array) at position `0x27` and
+  got `0xF`, which we read as "on". This was observed on the phone.
 
-Someone linked the two: *"coprocessor's clock already on?"* The question mark is small. The rest is very convincing.
+Someone linked the two: *"coprocessor's clock already on?"* The question mark is small; everything else about it sounds
+certain.
 
 ## Where to next?
 
@@ -36,7 +42,7 @@ Someone linked the two: *"coprocessor's clock already on?"* The question mark is
 
 - [Start from the map<span class="journey-hint">Sheet 1 first: what the device tree says</span>](fg-map.md)
 - [Start from the trace<span class="journey-hint">Sheet 2 first: what the phone answered</span>](fg-trace.md)
-- [Back to the Wi-Fi question<span class="journey-hint">Return to the edge of what we know</span>](f-wifi.md)
+- [Back to the Wi-Fi question<span class="journey-hint">Return to the Wi-Fi page</span>](f-wifi.md)
 
 </div>
 

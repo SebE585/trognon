@@ -15,15 +15,15 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # What do you conclude?
 
-Decide which sheet your answer rests on before you choose. This page cannot ask you; the next one tells you what each
-answer rests on.
+Decide which sheet your answer rests on before you choose. This page cannot check it; the next one shows what each
+choice rests on.
 
 ## Where to next?
 
 <div class="journey-choices" markdown>
 
 - [The coprocessor's clock is on<span class="journey-hint">Both sheets say 0x27</span>](fg-adopted.md)
-- [A gate is on; its link to the coprocessor is not established<span class="journey-hint">A shared number is not a proof</span>](fg-doubt.md)
+- [A gate is on, but we cannot say whose it is<span class="journey-hint">Say only what the sheets show</span>](fg-doubt.md)
 - [The reading itself is wrong<span class="journey-hint">Doubt the capture</span>](fg-measure.md)
 
 </div>

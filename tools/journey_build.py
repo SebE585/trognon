@@ -106,7 +106,8 @@ def plural(n, one="", many="s"):
 
 
 # ---- the little phone that changes at each step -----------------------------------------------------------------------
-VISUAL_STATES = ("black", "cable", "unlocked", "ibss", "ram", "check", "pixel", "crash", "empty")
+VISUAL_STATES = ("black", "cable", "unlocked", "ibss", "ram", "check", "pixel", "crash", "empty", "switches", "sheets", "struck")
+SCENE_STATES = ("switches", "sheets", "struck")  # drawn by scene_svg, not by phone_svg
 VISUAL_CAPTIONS = {
     "en": {
         "black": "Black screen. Nothing is connected.",
@@ -118,6 +119,9 @@ VISUAL_CAPTIONS = {
         "pixel": "The screen shows what the code draws.",
         "crash": "A crash ends as a readable dump, not a reboot.",
         "empty": "After a restart, the RAM is empty.",
+        "switches": "A row of switches with unreliable labels. One is on; whose is it?",
+        "sheets": "Two sheets, one number. Nothing yet says they count the same way.",
+        "struck": "The reading stays. The label \u201ccoprocessor\u201d is struck out.",
     },
     "fr": {
         "black": "Écran noir. Rien n'est branché.",
@@ -129,11 +133,18 @@ VISUAL_CAPTIONS = {
         "pixel": "L'écran montre ce que le code dessine.",
         "crash": "Un plantage finit en vidage lisible, pas en redémarrage.",
         "empty": "Après un redémarrage, la RAM est vide.",
+        "switches": "Une rangée d'interrupteurs aux étiquettes incertaines. L'un est allumé ; à qui est-il ?",
+        "sheets": "Deux feuilles, un seul numéro. Rien ne dit encore qu'elles comptent de la même façon.",
+        "struck": "La lecture reste. L'étiquette \u00ab coprocesseur \u00bb est barrée.",
     },
 }
 SVG_LABELS = {
-    "en": {"host": "Host", "unlocked": "signature checks off", "ibss": "boot stage", "code": "our code"},
-    "fr": {"host": "Hôte", "unlocked": "signatures coupées", "ibss": "étape de démarrage", "code": "notre code"},
+    "en": {"host": "Host", "unlocked": "signature checks off", "ibss": "boot stage", "code": "our code",
+           "on": "ON", "off": "OFF", "dt": "device tree", "dt_line": "coprocessor: 0x27", "cap": "capture",
+           "cap_line": "gate 0x27 = 0xF", "same": "same number?", "reading": "reading: 0x27 = 0xF", "coproc": "coprocessor", "nand": "NAND controller 1"},
+    "fr": {"host": "Hôte", "unlocked": "signatures coupées", "ibss": "étape de démarrage", "code": "notre code",
+           "on": "ALLUMÉ", "off": "ÉTEINT", "dt": "device tree", "dt_line": "coprocesseur : 0x27", "cap": "capture",
+           "cap_line": "porte 0x27 = 0xF", "same": "même numéro ?", "reading": "lecture : 0x27 = 0xF", "coproc": "coprocesseur", "nand": "contrôleur NAND 1"},
 }
 _INK, _GREEN, _SCREEN, _TEXT = "#202522", "#356548", "#111613", "#8fcfa3"
 
@@ -172,6 +183,38 @@ def phone_svg(state, lang="en"):
     if state == "empty":
         out += ['<rect x="50" y="86" width="56" height="40" rx="3" fill="none" stroke="%s" stroke-width="1.5" stroke-dasharray="4 3" opacity=".7"/>' % _TEXT,
                 '<text x="78" y="110" text-anchor="middle" fill="%s" opacity=".7">RAM</text>' % _TEXT]
+    out.append("</svg>")
+    return "\n".join(out) + "\n"
+
+
+def scene_svg(state, lang="en"):
+    """The pictures of the 'false gate' episode. Every mark carries a word or a symbol as well as a colour."""
+    L = SVG_LABELS[lang]
+    out = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 224" role="img" font-family="system-ui, sans-serif" font-size="11">']
+    sheet = lambda x, y, w, h: '<path d="M%d %d h%d l14 14 v%d h-%d z" fill="#f8f8f4" stroke="%s" stroke-width="2"/><path d="M%d %d v14 h14" fill="none" stroke="%s" stroke-width="1.5"/>' % (x, y, w - 14, h - 14, w, _INK, x + w - 14, y, _INK)
+    if state == "switches":
+        for k in range(6):
+            x, on = 28 + k * 62, k == 3
+            out.append('<rect x="%d" y="96" width="44" height="22" rx="11" fill="%s" stroke="%s" stroke-width="2"/>' % (x, _GREEN if on else "#f8f8f4", _INK))
+            out.append('<circle cx="%d" cy="107" r="8" fill="#ffffff" stroke="%s" stroke-width="2"/>' % (x + (33 if on else 11), _INK))
+            out.append('<text x="%d" y="140" text-anchor="middle" fill="%s">%s</text>' % (x + 22, _INK, "0x27" if on else "?"))
+            out.append('<text x="%d" y="86" text-anchor="middle" fill="%s" font-weight="bold">%s</text>' % (x + 22, _INK, L["on"] if on else L["off"]))
+    elif state == "sheets":
+        out += [sheet(14, 40, 150, 130), sheet(256, 40, 150, 130)]
+        out += ['<text x="89" y="68" text-anchor="middle" fill="%s" font-weight="bold">%s</text>' % (_INK, L["dt"]),
+                '<text x="89" y="112" text-anchor="middle" fill="%s">%s</text>' % (_INK, L["dt_line"]),
+                '<text x="331" y="68" text-anchor="middle" fill="%s" font-weight="bold">%s</text>' % (_INK, L["cap"]),
+                '<text x="331" y="112" text-anchor="middle" fill="%s">%s</text>' % (_INK, L["cap_line"]),
+                '<path d="M164 108 H256" fill="none" stroke="%s" stroke-width="2.5" stroke-dasharray="5 4"/>' % _INK,
+                '<text x="210" y="96" text-anchor="middle" fill="%s">%s</text>' % (_INK, L["same"])]
+    elif state == "struck":
+        out += [sheet(110, 24, 200, 176)]
+        out += ['<text x="210" y="56" text-anchor="middle" fill="%s" font-weight="bold">%s</text>' % (_INK, L["cap"]),
+                '<text x="210" y="86" text-anchor="middle" fill="%s">\u2713 %s</text>' % (_GREEN, L["reading"]),
+                '<text x="150" y="122" fill="%s">\u2717</text>' % _INK,
+                '<text x="170" y="122" fill="%s">%s</text>' % (_INK, L["coproc"]),
+                '<path d="M168 118 H%d" fill="none" stroke="%s" stroke-width="2.5"/>' % (170 + int(6.3 * len(L["coproc"])), _INK),
+                '<text x="210" y="160" text-anchor="middle" fill="%s" font-weight="bold">\u2192 %s</text>' % (_INK, L["nand"])]
     out.append("</svg>")
     return "\n".join(out) + "\n"
 
@@ -676,7 +719,7 @@ def screen_files(g):
 def assets(g):
     """{path relative to docs: text} for the generated visuals this graph uses."""
     used = {n["visual"] for n in g["nodes"] if n.get("visual")}
-    return {visual_rel(g["lang"], v): phone_svg(v, g["lang"]) for v in sorted(used)}
+    return {visual_rel(g["lang"], v): (scene_svg if v in SCENE_STATES else phone_svg)(v, g["lang"]) for v in sorted(used)}
 
 
 def main(argv=None):

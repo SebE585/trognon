@@ -15,8 +15,9 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # Vous avez douté de la capture
 
-La capture n'est pas démentie : le code a lu `0xF`, et le dossier de preuve contient la lecture. Ce qui peut être faux,
-ce n'est pas la lecture mais ce que nous lui avons fait dire.
+Rien sur ces pages ne contredit la capture : le code a lu `0xF`, et le dossier de preuve, lié plus bas, contient la
+lecture. Le doute est légitime. Ce que ces pages peuvent mettre à l'épreuve, c'est l'autre côté : ce que nous avons fait
+dire à la lecture.
 
 La question passe donc de la capture au sens du numéro. Regardez ce que le code du téléphone fait de la porte `0x27`.
 
@@ -27,5 +28,12 @@ La question passe donc de la capture au sens du numéro. Regardez ce que le code
 - [Ouvrir la routine<span class="journey-hint">Ce que l'étape de démarrage fait de la porte 0x27</span>](fg-reveal.md)
 
 </div>
+
+<details class="journey-more" markdown="1">
+<summary>Preuves et référence</summary>
+
+**Preuves :** [`20261016T094945Z-trace_iop_clkgate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T094945Z-trace_iop_clkgate)
+
+</details>
 
 <p class="journey-nav" markdown="1">[← Étape précédente](fg-conclude.md) · [Carte du parcours](index.md) · [Manuel de référence](../README.md)</p>

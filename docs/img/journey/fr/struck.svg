@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 224" role="img" font-family="system-ui, sans-serif" font-size="11">
+<path d="M110 24 h186 l14 14 v162 h-200 z" fill="#f8f8f4" stroke="#202522" stroke-width="2"/><path d="M296 24 v14 h14" fill="none" stroke="#202522" stroke-width="1.5"/>
+<text x="210" y="56" text-anchor="middle" fill="#202522" font-weight="bold">capture</text>
+<text x="210" y="86" text-anchor="middle" fill="#356548">✓ lecture : 0x27 = 0xF</text>
+<text x="150" y="122" fill="#202522">✗</text>
+<text x="170" y="122" fill="#202522">coprocesseur</text>
+<path d="M168 118 H245" fill="none" stroke="#202522" stroke-width="2.5"/>
+<text x="210" y="160" text-anchor="middle" fill="#202522" font-weight="bold">→ contrôleur NAND 1</text>
+</svg>

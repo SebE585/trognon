@@ -15,21 +15,26 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # La fausse porte
 
-Imaginez une rangée d'interrupteurs aux étiquettes incertaines. Dans le téléphone, une *porte d'horloge* en est un : elle
-laisse passer ou coupe le signal qui donne le rythme à un bloc. Trouver un interrupteur activé ne suffit pas : il faut
-encore établir à quel bloc il correspond.
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/switches.svg){ .journey-visual }
+<figcaption>Une rangée d'interrupteurs aux étiquettes incertaines. L'un est allumé ; à qui est-il ?</figcaption>
+</figure>
 
-Ceci rejoue une vraie correction, faite le 16 octobre 2026. La question : l'horloge du coprocesseur placé derrière le
-Wi-Fi, celui derrière lequel dort [le Chuchoteur](../bestiaire.md#le-chuchoteur), tournait-elle déjà ? Deux feuilles
-portent le même numéro, `0x27`.
+Imaginez une rangée d'interrupteurs aux étiquettes peu fiables. Dans le téléphone, une *porte d'horloge* est un
+interrupteur de ce genre : elle laisse passer ou coupe le signal qui donne le rythme à un bloc. Trouver un interrupteur
+activé ne suffit pas : il faut encore établir à quel bloc il correspond.
 
-- **Feuille 1, le device tree.** Une description des blocs du téléphone, portée par son propre logiciel. Son entrée pour
-  le coprocesseur indique une valeur de porte d'horloge de `0x27`.
-- **Feuille 2, une capture.** Notre propre code a lu le tableau de portes du téléphone à la position `0x27` et obtenu
-  `0xF`, que nous lisons comme « allumée ». Observé sur le téléphone.
+Ceci rejoue une vraie correction, faite le 16 octobre 2026, avec un guide qui s'est déjà trompé, et le dit. La question :
+l'horloge du coprocesseur du Wi-Fi (là où dort [le Chuchoteur](../bestiaire.md#le-chuchoteur)) tournait-elle déjà ? Deux
+feuilles portent le même numéro, `0x27`.
 
-Quelqu'un a relié les deux : *« horloge du coprocesseur déjà active ? »* Le point d'interrogation est petit. Le reste est
-très convaincant.
+- **Feuille 1, la carte : le device tree.** Une description des blocs du téléphone, portée par son propre logiciel. Son
+  entrée pour le coprocesseur indique une valeur de porte d'horloge de `0x27`.
+- **Feuille 2, la trace : une capture.** Notre propre code a lu la liste des portes du téléphone (le tableau de portes) à
+  la position `0x27` et obtenu `0xF`, que nous lisons comme « allumée ». Observé sur le téléphone.
+
+Quelqu'un a relié les deux : *« horloge du coprocesseur déjà active ? »* Le point d'interrogation est discret ; tout le
+reste sonne comme une certitude.
 
 ## Et maintenant ?
 
@@ -37,7 +42,7 @@ très convaincant.
 
 - [Partir de la carte<span class="journey-hint">La feuille 1 d'abord : ce que dit le device tree</span>](fg-map.md)
 - [Partir de la trace<span class="journey-hint">La feuille 2 d'abord : ce que le téléphone a répondu</span>](fg-trace.md)
-- [Retour à la question du Wi-Fi<span class="journey-hint">Revenir à la page de cette question ouverte</span>](f-wifi.md)
+- [Retour à la question du Wi-Fi<span class="journey-hint">Revenir à la page du Wi-Fi</span>](f-wifi.md)
 
 </div>
 

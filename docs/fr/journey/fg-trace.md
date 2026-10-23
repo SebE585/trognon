@@ -22,21 +22,21 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 Degré de certitude : <span class="tag tag-device">DEVICE</span>
 
-Partons de ce que le téléphone a répondu. Notre code a lu le tableau de portes à la position `0x27` et la console
+Commençons par ce que le téléphone a répondu. Notre code a lu le tableau de portes à la position `0x27` et la console
 affiche `GATE+27  0000000F`. Cette lecture est réelle : le dossier de preuve la contient.
 
 Ce qu'elle montre : cette porte se lit allumée. Ce qu'elle ne montre pas : quel bloc cette porte alimente. Une lecture ne
 porte pas d'étiquette.
 
-Voici maintenant le device tree : son entrée pour le coprocesseur indique `0x27`. Côte à côte, les deux semblent
-s'accorder. Les deux feuilles utilisent le même numéro. Rien, pour l'instant, ne dit qu'elles comptent les portes de la
-même façon.
+Rapprochons maintenant la feuille 1, le device tree : son entrée pour le coprocesseur indique `0x27`. Côte à côte, les
+deux feuilles semblent s'accorder. Toutes deux utilisent le même numéro. Rien, pour l'instant, ne dit qu'elles comptent
+les portes de la même façon.
 
 ## Et maintenant ?
 
 <div class="journey-choices" markdown>
 
-- [Tirer une conclusion<span class="journey-hint">Dire ce que vous pensez que cela montre</span>](fg-conclude.md)
+- [Tirer une conclusion<span class="journey-hint">Formuler ce que vous pensez que cela montre</span>](fg-conclude.md)
 
 </div>
 

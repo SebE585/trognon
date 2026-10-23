@@ -15,8 +15,8 @@ You are exploring: [A 3GS in a drawer](start.md) → [The phone listens: DFU mod
 
 # You doubted the capture
 
-The capture is not contradicted: the code read `0xF`, and the evidence folder holds the reading. What may be wrong is
-not the reading but what we made it say.
+Nothing on these pages contradicts the capture: the code read `0xF`, and the evidence folder, linked below, holds the
+reading. The doubt is fair. What these pages can test is the other side: what we made the reading say.
 
 So the question moves from the capture to the meaning of the number. Look at what the phone's own code does with gate
 `0x27`.
@@ -28,5 +28,12 @@ So the question moves from the capture to the meaning of the number. Look at wha
 - [Open the routine<span class="journey-hint">What the boot stage does with gate 0x27</span>](fg-reveal.md)
 
 </div>
+
+<details class="journey-more" markdown="1">
+<summary>Proof and reference</summary>
+
+**Evidence:** [`20261016T094945Z-trace_iop_clkgate`](https://github.com/SebE585/trognon/tree/main/evidence/20261016T094945Z-trace_iop_clkgate)
+
+</details>
 
 <p class="journey-nav" markdown="1">[← Previous step](fg-conclude.md) · [Map of the journey](index.md) · [Reference manual](../README.md)</p>

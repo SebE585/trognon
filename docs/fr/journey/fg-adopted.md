@@ -15,12 +15,11 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # Vous avez relié les deux feuilles
 
-Vous avez relié les deux feuilles. C'est exactement ce qui a été conclu ce jour-là, et c'était plausible : la suite de
-l'histoire, c'est ce qui arrive à un lien plausible. Il repose sur une hypothèse, que le même numéro désigne la même
-porte sur les deux feuilles, et rien ne l'a encore montré.
+Vous avez relié les deux feuilles. C'est ce qui a été conclu à l'époque, et c'était plausible ; la suite montre ce qu'il
+advient d'un lien seulement plausible. Il repose sur une hypothèse, que le même numéro désigne la même porte sur les deux
+feuilles, et rien ne l'a encore montré.
 
-Il est temps de défaire le lien, ou de le confirmer. Pour cela, regardez ce que le code du téléphone fait de la porte
-`0x27`.
+Mettons ce lien à l'épreuve. Pour cela, regardez ce que le code du téléphone fait de la porte `0x27`.
 
 ## Et maintenant ?
 

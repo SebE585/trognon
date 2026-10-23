@@ -15,21 +15,26 @@ Vous explorez : [Un 3GS dans un tiroir](start.md) → [Le téléphone écoute : 
 
 # La lecture tient, l'étiquette non
 
+<figure class="journey-figure" markdown="1">
+![](../../img/journey/fr/struck.svg){ .journey-visual }
+<figcaption>La lecture reste. L'étiquette « coprocesseur » est barrée.</figcaption>
+</figure>
+
 Degré de certitude : <span class="tag tag-source">SOURCE</span>
 
 Le guide pose les deux feuilles côte à côte.
 
 *« Même numéro. Nous n'avions pas vérifié que c'était la même numérotation. »*
 
-Sur le tableau physique de portes, la lecture tient : porte `0x27`, valeur `0xF`. L'attribution ne tient pas : cette porte
-alimente le contrôleur NAND, pas le coprocesseur. Le guide barre « coprocesseur » dans la lecture de la capture, pas dans
-le device tree. La lecture reste ; l'attribution s'en va.
+La lecture tient : porte `0x27` du tableau physique de portes, valeur `0xF`, lue comme allumée. L'étiquette ne tient pas :
+d'après les deux sources, cette porte est celle du contrôleur NAND, et rien ici ne montre qu'elle alimente aussi le
+coprocesseur. Le guide barre « coprocesseur » sur la lecture de la capture seulement, pas sur le device tree.
 
 Le guide ne corrige pas le téléphone. Le guide corrige ce que nous avions conclu de sa réponse.
 
-*« Et le `0x27` de l'autre feuille ? »* Il est toujours là. Savoir si le device tree utilise une autre numérotation qui
-donne `0x27` par coïncidence, ou s'il contient une erreur, n'est pas démontré. Cela ne fait pas non plus fonctionner le
-Wi-Fi : l'état de l'horloge du coprocesseur est inconnu.
+*« Et le `0x27` de l'autre feuille ? »* Il est toujours là. On ignore si le device tree utilise une autre numérotation qui
+donne `0x27` par coïncidence, ou s'il contient une erreur. Dans les deux cas, le Wi-Fi ne fonctionne pas encore, et l'état
+de l'horloge du coprocesseur reste inconnu.
 
 ## Et maintenant ?
 
