@@ -149,3 +149,11 @@ docs-check: docs-build journey-check missions-check bestiary-check corpus-check 
 	  { echo "docs-check: evidence-table.{en,fr}.md are stale -- run 'make evidence-index' and commit the result"; exit 1; }
 	git diff --exit-code -- docs/snippets/iop-coverage.en.md || \
 	  { echo "docs-check: iop-coverage.en.md is stale -- run 'make iop-coverage' and commit the result"; exit 1; }
+
+# Reference tool stack (Ghidra, Heimdall, cross-build image): pinned versions are checked
+# by an external tooling repo. Delegated, never copied. Set INFRA= to its checkout.
+INFRA ?= $(HOME)/projects/common/tools/infrastructure
+.PHONY: infra-stack-check
+infra-stack-check:
+	@test -f "$(INFRA)/Makefile" || { echo "tooling repo not found: $(INFRA) (set INFRA=)"; exit 1; }
+	$(MAKE) -C "$(INFRA)" stack-check
