@@ -71,7 +71,7 @@ Depuis le 2026-10-21, le bloc `git` du manifeste porte `source_complete`, décid
 **Ce n'est pas un verdict de reproductibilité.** Une arborescence propre ne prouve pas que le binaire envoyé a été construit depuis ce commit (ce peut être
 une construction plus ancienne, ou faite avec d'autres options), et le nonce prouve que le binaire a tourné, pas d'où il vient. Un dossier est **reproductible**
 quand une reconstruction depuis son commit donne le même SHA-256 : c'est ce que vérifie `tools/rebuild_bundle.py`, et le résultat est consigné sur la page
-[Verifications](verifications.md) (match, mismatch ou not-reproducible).
+[Verifications](../en/verifications.md) (EN) (match, mismatch ou not-reproducible).
 
 Le compilateur et les options de `tools` sont ceux **installés au moment de l'enregistrement**. Le payload n'est pas reconstruit à cet instant : c'est un
 indice, pas une preuve. `tools/rebuild_bundle.py` les cite quand une reconstruction donne d'autres octets, un compilateur différent en étant la cause

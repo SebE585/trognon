@@ -26,7 +26,7 @@ See also [CONTRIBUTING](https://github.com/SebE585/trognon/blob/main/CONTRIBUTIN
 
 ## State of the missions
 
-7 open · 1 in progress · 1 blocked · 0 closed. **68 other open questions of the catalog are not framed as missions yet** (see the [map of what we know](journey/grimoire.md)).
+7 open · 1 in progress · 1 blocked · 0 closed. **74 other open questions of the catalog are not framed as missions yet** (see the [map of what we know](journey/grimoire.md)).
 
 ## First contributions
 
