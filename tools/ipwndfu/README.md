@@ -8,6 +8,7 @@ Trognon does not vendor ipwndfu. It drives it, at a pinned version, with a small
 | Pinned commit | `0e28932ec6a2a570b10fd77e50bda4216418cd98` |
 | Our patch | `python3-arm64.patch`: Python 3 port of the files we use, an arm64 macOS libusb path override (`TROGNON_LIBUSB_PATH`), no change to any exploit logic we are aware of |
 | Helper | `boot_ibss_only.py`: calls `boot_ibss()` and stops there (RAM only, never `flash_nor()`) |
+| Helper | `boot_ibss_n90ap.py`: the N90AP (iPhone 4) equivalent, since `dfuexec.py`'s own `boot_ibss()` refuses any CPID != 8920. Needs a GID-decrypted `iBSS.n90ap.decrypted_img3.bin` in the fw-cache (`decrypt_image3.py`). RAM only. First reliability data: `docs/journal/2026-11-09.md` (0/4). |
 
 The patch is a derivative of ipwndfu and carries its license, **GPL-3.0**. It is kept in this directory
 and is not part of Trognon's own GPL-2.0-only or MIT code.
